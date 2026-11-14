@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://features/player/character_model.gd" id="1_script"]
+[ext_resource type="AnimationLibrary" path="res://art/animations/ual1.glb" id="2_ual1"]
+[ext_resource type="AnimationLibrary" path="res://art/animations/ual2.glb" id="3_ual2"]
+
+[node name="CharacterModel" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+root_node = NodePath("../Body")
+libraries = {
+&"ual1": ExtResource("2_ual1"),
+&"ual2": ExtResource("3_ual2")
+}
