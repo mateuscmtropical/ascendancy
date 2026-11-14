@@ -174,6 +174,10 @@ BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
     (4, 64, 58, 88, "NWE"),
     (72, 102, 58, 88, "NW"),
 ]
+SHOP_FRONTAGES = {(1, "S"), (2, "S"), (4, "E"), (5, "W"), (7, "N"), (8, "N")}  # (bloco, lado) virados para as praças e a avenida
+SHOP_TYPES = ["smith", "armor", "magic", "alchemy", "tavern", "inn", "guild", "bakery", "tailor", "jeweler"]
+SHOP_SEED = 2207
+SHOP_WALL_GAP = 0.06
 KIT_COLLIDERS = {  # kit model name prefix -> simple solid in model space: ("cylinder", radius, height) or ("box", size, center)
     "CommonTree": ("cylinder", 0.35, 3.0),
     "Bush_Common": ("cylinder", 0.8, 1.2),
@@ -428,7 +432,7 @@ def house_row(block: tuple, side: str, earlier_sides: str, generator: random.Ran
         along = cursor + width / 2.0
         across = facade + inward * depth / 2.0
         position = (along, 0.0, across) if axis == "x" else (across, 0.0, along)
-        placements.append((house_name, position, SIDE_ROTATION[side]))
+        placements.append((house_name, position, SIDE_ROTATION[side], side))
         cursor += width + gap
 
     return placements
@@ -437,19 +441,61 @@ def house_row(block: tuple, side: str, earlier_sides: str, generator: random.Ran
 def add_buildings(scene: SceneWriter) -> None:
     generator = random.Random(1942)
     placements = []
+    shop_fronts = []
 
-    for block in BLOCKS:
+    for block_index, block in enumerate(BLOCKS):
         street_sides = block[4]
 
         for side_index, side in enumerate(street_sides):
-            placements += house_row(block, side, street_sides[:side_index], generator)
+            row = house_row(block, side, street_sides[:side_index], generator)
+            placements += row
+            shop_fronts += row if (block_index, side) in SHOP_FRONTAGES else []
 
     scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, SAO_JOSE[1]), -math.pi / 2.0)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
-    for index, (house_name, position, rotation_y) in enumerate(placements):
+    for index, (house_name, position, rotation_y, _side) in enumerate(placements):
         place(scene, f"House{index:03d}", "Buildings", f"res://art/town/{house_name}.gltf", position, rotation_y)
+
+    add_shops(scene, shop_fronts)
+
+
+def shop_types_for(count: int) -> list:
+    """One trade per shop front: every trade appears before any repeats, and neighbours never match."""
+    generator = random.Random(SHOP_SEED)
+    chosen = []
+
+    while len(chosen) < count:
+        round_of_types = [shop_type for shop_type in SHOP_TYPES]
+        generator.shuffle(round_of_types)
+
+        if chosen and round_of_types[0] == chosen[-1]:
+            round_of_types.append(round_of_types.pop(0))
+
+        chosen += round_of_types
+
+    return chosen[:count]
+
+
+def add_shops(scene: SceneWriter, shop_fronts: list) -> None:
+    """Dress the houses that face the squares and the avenue as RPG shops: hanging sign at the corner,
+    awning stall under the first window and the trade's big props under the last one (build_shops.py)."""
+    shop_types = shop_types_for(len(shop_fronts))
+
+    scene.add_node("Shops", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
+
+    for index, ((house_name, position, rotation_y, _side), shop_type) in enumerate(zip(shop_fronts, shop_types)):
+        width, depth = HOUSE_SIZES[house_name]
+        facade_offset = depth / 2.0 + SHOP_WALL_GAP
+        facade = (position[0] + facade_offset * math.sin(rotation_y), 0.0, position[2] + facade_offset * math.cos(rotation_y))
+        shop_name = f"Shop{index:02d}{shop_type.title()}"
+        pieces = {"stall": -(width / 2.0 - 1.1), "yard": width / 2.0 - 1.2, "sign": width / 2.0 - 0.15}
+
+        scene.add_node(shop_name, "Shops", "Node3D", properties={"position": vector(*facade), "rotation": vector(0.0, rotation_y, 0.0)}, groups=[f"shop_{shop_type}"])
+
+        for piece, offset_x in pieces.items():
+            place(scene, piece.title(), f"Shops/{shop_name}", f"res://art/town/shops/shop_{shop_type}_{piece}.gltf", (offset_x, 0, 0))
 
 
 def add_cathedral_lights(scene: SceneWriter) -> None:

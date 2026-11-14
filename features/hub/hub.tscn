@@ -1,4 +1,4 @@
-[gd_scene load_steps=73 format=3]
+[gd_scene load_steps=103 format=3]
 
 [ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
 [ext_resource type="Texture2D" path="res://art/town/textures/T_RockTrim_BaseColor.png" id="2_ext"]
@@ -11,41 +11,71 @@
 [ext_resource type="PackedScene" path="res://art/town/house_shop.gltf" id="9_ext"]
 [ext_resource type="PackedScene" path="res://art/town/house_plaster_wide.gltf" id="10_ext"]
 [ext_resource type="PackedScene" path="res://art/town/house_cottage.gltf" id="11_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/props/lamp_post.tscn" id="12_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/CommonTree_1.gltf" id="13_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/CommonTree_2.gltf" id="14_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/CommonTree_3.gltf" id="15_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/CommonTree_4.gltf" id="16_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/CommonTree_5.gltf" id="17_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/props/fountain_large.tscn" id="18_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/props/fountain_small.tscn" id="19_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Bench.gltf" id="20_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Flower_3_Group.gltf" id="21_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Flower_4_Group.gltf" id="22_ext"]
-[ext_resource type="PackedScene" path="res://art/town/planter.gltf" id="23_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Bush_Common_Flowers.gltf" id="24_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Stall_Empty.gltf" id="25_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Stall_Cart_Empty.gltf" id="26_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Barrel.gltf" id="27_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Barrel_Apples.gltf" id="28_ext"]
-[ext_resource type="PackedScene" path="res://art/props/FarmCrate_Apple.gltf" id="29_ext"]
-[ext_resource type="PackedScene" path="res://art/props/FarmCrate_Carrot.gltf" id="30_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Crate_Wooden.gltf" id="31_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Bucket_Wooden_1.gltf" id="32_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Table_Large.gltf" id="33_ext"]
-[ext_resource type="PackedScene" path="res://art/props/Stool.gltf" id="34_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Pine_1.gltf" id="35_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Pine_2.gltf" id="36_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Pine_3.gltf" id="37_ext"]
-[ext_resource type="NavigationMesh" path="res://features/hub/hub_navmesh.tres" id="38_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/villager_male.gltf" id="39_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/walking_npc.tscn" id="40_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/villager_female.gltf" id="41_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/adventurer_female.gltf" id="42_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="43_ext"]
-[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="44_ext"]
-[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="45_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="46_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_magic_stall.gltf" id="12_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_magic_yard.gltf" id="13_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_magic_sign.gltf" id="14_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_guild_stall.gltf" id="15_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_guild_yard.gltf" id="16_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_guild_sign.gltf" id="17_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_tailor_stall.gltf" id="18_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_tailor_yard.gltf" id="19_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_tailor_sign.gltf" id="20_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_smith_stall.gltf" id="21_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_smith_yard.gltf" id="22_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_smith_sign.gltf" id="23_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_armor_stall.gltf" id="24_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_armor_yard.gltf" id="25_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_armor_sign.gltf" id="26_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_bakery_stall.gltf" id="27_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_bakery_yard.gltf" id="28_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_bakery_sign.gltf" id="29_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_jeweler_stall.gltf" id="30_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_jeweler_yard.gltf" id="31_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_jeweler_sign.gltf" id="32_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_alchemy_stall.gltf" id="33_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_alchemy_yard.gltf" id="34_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_alchemy_sign.gltf" id="35_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_inn_stall.gltf" id="36_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_inn_yard.gltf" id="37_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_inn_sign.gltf" id="38_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_tavern_stall.gltf" id="39_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_tavern_yard.gltf" id="40_ext"]
+[ext_resource type="PackedScene" path="res://art/town/shops/shop_tavern_sign.gltf" id="41_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/props/lamp_post.tscn" id="42_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_1.gltf" id="43_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_2.gltf" id="44_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_3.gltf" id="45_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_4.gltf" id="46_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_5.gltf" id="47_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/props/fountain_large.tscn" id="48_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/props/fountain_small.tscn" id="49_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Bench.gltf" id="50_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Flower_3_Group.gltf" id="51_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Flower_4_Group.gltf" id="52_ext"]
+[ext_resource type="PackedScene" path="res://art/town/planter.gltf" id="53_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Bush_Common_Flowers.gltf" id="54_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Stall_Empty.gltf" id="55_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Stall_Cart_Empty.gltf" id="56_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Barrel.gltf" id="57_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Barrel_Apples.gltf" id="58_ext"]
+[ext_resource type="PackedScene" path="res://art/props/FarmCrate_Apple.gltf" id="59_ext"]
+[ext_resource type="PackedScene" path="res://art/props/FarmCrate_Carrot.gltf" id="60_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Crate_Wooden.gltf" id="61_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Bucket_Wooden_1.gltf" id="62_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Table_Large.gltf" id="63_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Stool.gltf" id="64_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_1.gltf" id="65_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_2.gltf" id="66_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_3.gltf" id="67_ext"]
+[ext_resource type="NavigationMesh" path="res://features/hub/hub_navmesh.tres" id="68_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/villager_male.gltf" id="69_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/walking_npc.tscn" id="70_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/villager_female.gltf" id="71_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_female.gltf" id="72_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="73_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="74_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="75_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="76_ext"]
 
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -670,6 +700,866 @@ rotation = Vector3(0.000, -1.571, 0.000)
 position = Vector3(78.000, 0.000, 82.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
+[node name="Shops" type="Node3D" parent="." groups=["navigation_source"]]
+
+[node name="Shop00Magic" type="Node3D" parent="Shops" groups=["shop_magic"]]
+position = Vector3(-58.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop00Magic" instance=ExtResource("12_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop00Magic" instance=ExtResource("13_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop00Magic" instance=ExtResource("14_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop01Guild" type="Node3D" parent="Shops" groups=["shop_guild"]]
+position = Vector3(-52.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop01Guild" instance=ExtResource("15_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop01Guild" instance=ExtResource("16_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop01Guild" instance=ExtResource("17_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop02Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(-46.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop02Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop02Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop02Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop03Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(-40.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop03Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop03Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop03Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop04Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(-34.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop04Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop04Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop04Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop05Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(-28.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop05Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop05Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop05Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop06Jeweler" type="Node3D" parent="Shops" groups=["shop_jeweler"]]
+position = Vector3(-22.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop06Jeweler" instance=ExtResource("30_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop06Jeweler" instance=ExtResource("31_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop06Jeweler" instance=ExtResource("32_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop07Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(-16.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop07Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop07Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop07Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop08Inn" type="Node3D" parent="Shops" groups=["shop_inn"]]
+position = Vector3(-10.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop08Inn" instance=ExtResource("36_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop08Inn" instance=ExtResource("37_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop08Inn" instance=ExtResource("38_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop09Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(10.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop09Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop09Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop09Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop10Jeweler" type="Node3D" parent="Shops" groups=["shop_jeweler"]]
+position = Vector3(16.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop10Jeweler" instance=ExtResource("30_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop10Jeweler" instance=ExtResource("31_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop10Jeweler" instance=ExtResource("32_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop11Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(22.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop11Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop11Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop11Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop12Magic" type="Node3D" parent="Shops" groups=["shop_magic"]]
+position = Vector3(28.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop12Magic" instance=ExtResource("12_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop12Magic" instance=ExtResource("13_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop12Magic" instance=ExtResource("14_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop13Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(34.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop13Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop13Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop13Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop14Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(40.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop14Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop14Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop14Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop15Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(46.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop15Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop15Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop15Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop16Inn" type="Node3D" parent="Shops" groups=["shop_inn"]]
+position = Vector3(52.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop16Inn" instance=ExtResource("36_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop16Inn" instance=ExtResource("37_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop16Inn" instance=ExtResource("38_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop17Guild" type="Node3D" parent="Shops" groups=["shop_guild"]]
+position = Vector3(58.000, 0.000, -68.940)
+rotation = Vector3(0.000, 0.000, 0.000)
+
+[node name="Stall" parent="Shops/Shop17Guild" instance=ExtResource("15_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop17Guild" instance=ExtResource("16_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop17Guild" instance=ExtResource("17_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop18Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(-74.940, 0.000, -42.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop18Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop18Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop18Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop19Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(-74.940, 0.000, -36.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop19Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop19Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop19Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop20Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(-74.940, 0.000, -30.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop20Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop20Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop20Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop21Jeweler" type="Node3D" parent="Shops" groups=["shop_jeweler"]]
+position = Vector3(-74.940, 0.000, -24.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop21Jeweler" instance=ExtResource("30_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop21Jeweler" instance=ExtResource("31_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop21Jeweler" instance=ExtResource("32_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop22Inn" type="Node3D" parent="Shops" groups=["shop_inn"]]
+position = Vector3(-74.940, 0.000, -18.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop22Inn" instance=ExtResource("36_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop22Inn" instance=ExtResource("37_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop22Inn" instance=ExtResource("38_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop23Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(-74.940, 0.000, -12.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop23Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop23Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop23Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop24Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(-74.940, 0.000, -6.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop24Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop24Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop24Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop25Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(-74.940, 0.000, 0.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop25Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop25Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop25Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop26Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(-74.940, 0.000, 6.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop26Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop26Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop26Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop27Magic" type="Node3D" parent="Shops" groups=["shop_magic"]]
+position = Vector3(-74.940, 0.000, 12.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop27Magic" instance=ExtResource("12_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop27Magic" instance=ExtResource("13_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop27Magic" instance=ExtResource("14_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop28Guild" type="Node3D" parent="Shops" groups=["shop_guild"]]
+position = Vector3(-74.940, 0.000, 18.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop28Guild" instance=ExtResource("15_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop28Guild" instance=ExtResource("16_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop28Guild" instance=ExtResource("17_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop29Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(-74.940, 0.000, 24.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop29Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop29Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop29Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop30Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(-74.940, 0.000, 30.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop30Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop30Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop30Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop31Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(-74.940, 0.000, 36.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop31Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop31Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop31Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop32Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(-74.940, 0.000, 42.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop32Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop32Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop32Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop33Inn" type="Node3D" parent="Shops" groups=["shop_inn"]]
+position = Vector3(74.940, 0.000, -42.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop33Inn" instance=ExtResource("36_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop33Inn" instance=ExtResource("37_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop33Inn" instance=ExtResource("38_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop34Jeweler" type="Node3D" parent="Shops" groups=["shop_jeweler"]]
+position = Vector3(74.940, 0.000, -36.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop34Jeweler" instance=ExtResource("30_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop34Jeweler" instance=ExtResource("31_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop34Jeweler" instance=ExtResource("32_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop35Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(74.940, 0.000, -30.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop35Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop35Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop35Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop36Magic" type="Node3D" parent="Shops" groups=["shop_magic"]]
+position = Vector3(74.940, 0.000, -24.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop36Magic" instance=ExtResource("12_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop36Magic" instance=ExtResource("13_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop36Magic" instance=ExtResource("14_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop37Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(74.940, 0.000, -18.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop37Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop37Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop37Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop38Guild" type="Node3D" parent="Shops" groups=["shop_guild"]]
+position = Vector3(74.940, 0.000, -12.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop38Guild" instance=ExtResource("15_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop38Guild" instance=ExtResource("16_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop38Guild" instance=ExtResource("17_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop39Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(74.940, 0.000, -6.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop39Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop39Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop39Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop40Magic" type="Node3D" parent="Shops" groups=["shop_magic"]]
+position = Vector3(74.940, 0.000, 0.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop40Magic" instance=ExtResource("12_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop40Magic" instance=ExtResource("13_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop40Magic" instance=ExtResource("14_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop41Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(74.940, 0.000, 6.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop41Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop41Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop41Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop42Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(74.940, 0.000, 12.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop42Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop42Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop42Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop43Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(74.940, 0.000, 18.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop43Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop43Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop43Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop44Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(74.940, 0.000, 24.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop44Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop44Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop44Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop45Inn" type="Node3D" parent="Shops" groups=["shop_inn"]]
+position = Vector3(74.940, 0.000, 30.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop45Inn" instance=ExtResource("36_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop45Inn" instance=ExtResource("37_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop45Inn" instance=ExtResource("38_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop46Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(74.940, 0.000, 36.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop46Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop46Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop46Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop47Guild" type="Node3D" parent="Shops" groups=["shop_guild"]]
+position = Vector3(74.940, 0.000, 42.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Stall" parent="Shops/Shop47Guild" instance=ExtResource("15_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop47Guild" instance=ExtResource("16_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop47Guild" instance=ExtResource("17_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop48Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(-58.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop48Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop48Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop48Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop49Jeweler" type="Node3D" parent="Shops" groups=["shop_jeweler"]]
+position = Vector3(-52.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop49Jeweler" instance=ExtResource("30_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop49Jeweler" instance=ExtResource("31_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop49Jeweler" instance=ExtResource("32_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop50Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(-46.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop50Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop50Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop50Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop51Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(-40.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop51Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop51Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop51Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop52Guild" type="Node3D" parent="Shops" groups=["shop_guild"]]
+position = Vector3(-34.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop52Guild" instance=ExtResource("15_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop52Guild" instance=ExtResource("16_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop52Guild" instance=ExtResource("17_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop53Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(-28.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop53Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop53Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop53Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop54Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(-22.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop54Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop54Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop54Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop55Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(-16.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop55Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop55Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop55Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop56Inn" type="Node3D" parent="Shops" groups=["shop_inn"]]
+position = Vector3(-10.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop56Inn" instance=ExtResource("36_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop56Inn" instance=ExtResource("37_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop56Inn" instance=ExtResource("38_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop57Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(10.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop57Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop57Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop57Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop58Jeweler" type="Node3D" parent="Shops" groups=["shop_jeweler"]]
+position = Vector3(16.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop58Jeweler" instance=ExtResource("30_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop58Jeweler" instance=ExtResource("31_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop58Jeweler" instance=ExtResource("32_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop59Magic" type="Node3D" parent="Shops" groups=["shop_magic"]]
+position = Vector3(22.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop59Magic" instance=ExtResource("12_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop59Magic" instance=ExtResource("13_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop59Magic" instance=ExtResource("14_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop60Bakery" type="Node3D" parent="Shops" groups=["shop_bakery"]]
+position = Vector3(28.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop60Bakery" instance=ExtResource("27_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop60Bakery" instance=ExtResource("28_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop60Bakery" instance=ExtResource("29_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop61Alchemy" type="Node3D" parent="Shops" groups=["shop_alchemy"]]
+position = Vector3(34.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop61Alchemy" instance=ExtResource("33_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop61Alchemy" instance=ExtResource("34_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop61Alchemy" instance=ExtResource("35_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop62Smith" type="Node3D" parent="Shops" groups=["shop_smith"]]
+position = Vector3(40.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop62Smith" instance=ExtResource("21_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop62Smith" instance=ExtResource("22_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop62Smith" instance=ExtResource("23_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop63Tailor" type="Node3D" parent="Shops" groups=["shop_tailor"]]
+position = Vector3(46.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop63Tailor" instance=ExtResource("18_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop63Tailor" instance=ExtResource("19_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop63Tailor" instance=ExtResource("20_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop64Tavern" type="Node3D" parent="Shops" groups=["shop_tavern"]]
+position = Vector3(52.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop64Tavern" instance=ExtResource("39_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop64Tavern" instance=ExtResource("40_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop64Tavern" instance=ExtResource("41_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
+[node name="Shop65Armor" type="Node3D" parent="Shops" groups=["shop_armor"]]
+position = Vector3(58.000, 0.000, 60.940)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="Stall" parent="Shops/Shop65Armor" instance=ExtResource("24_ext")]
+position = Vector3(-1.900, 0.000, 0.000)
+
+[node name="Yard" parent="Shops/Shop65Armor" instance=ExtResource("25_ext")]
+position = Vector3(1.800, 0.000, 0.000)
+
+[node name="Sign" parent="Shops/Shop65Armor" instance=ExtResource("26_ext")]
+position = Vector3(2.850, 0.000, 0.000)
+
 [node name="CathedralLights" type="Node3D" parent="."]
 
 [node name="NaveLight0" type="OmniLight3D" parent="CathedralLights"]
@@ -714,171 +1604,171 @@ spot_angle = 35.0
 
 [node name="Lamps" type="Node3D" parent="." groups=["navigation_source"]]
 
-[node name="Lamp00" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp00" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-25.685, 0.000, 3.444)
 
-[node name="Lamp01" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp01" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-30.556, 0.000, 8.315)
 
-[node name="Lamp02" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp02" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-37.444, 0.000, 8.315)
 
-[node name="Lamp03" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp03" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-42.315, 0.000, 3.444)
 
-[node name="Lamp04" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp04" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-42.315, 0.000, -3.444)
 
-[node name="Lamp05" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp05" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-37.444, 0.000, -8.315)
 
-[node name="Lamp06" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp06" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-30.556, 0.000, -8.315)
 
-[node name="Lamp07" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp07" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-25.685, 0.000, -3.444)
 
-[node name="Lamp08" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp08" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-63.400, 0.000, -36.000)
 
-[node name="Lamp09" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp09" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-63.400, 0.000, -18.000)
 
-[node name="Lamp10" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp10" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-63.400, 0.000, 0.000)
 
-[node name="Lamp11" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp11" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-63.400, 0.000, 18.000)
 
-[node name="Lamp12" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp12" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-63.400, 0.000, 36.000)
 
-[node name="Lamp13" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp13" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-4.600, 0.000, -36.000)
 
-[node name="Lamp14" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp14" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-4.600, 0.000, -18.000)
 
-[node name="Lamp15" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp15" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-4.600, 0.000, 0.000)
 
-[node name="Lamp16" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp16" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-4.600, 0.000, 18.000)
 
-[node name="Lamp17" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp17" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-4.600, 0.000, 36.000)
 
-[node name="Lamp18" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp18" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-52.000, 0.000, -47.400)
 
-[node name="Lamp19" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp19" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-34.000, 0.000, -47.400)
 
-[node name="Lamp20" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp20" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-16.000, 0.000, -47.400)
 
-[node name="Lamp21" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp21" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-52.000, 0.000, 47.400)
 
-[node name="Lamp22" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp22" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-34.000, 0.000, 47.400)
 
-[node name="Lamp23" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp23" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-16.000, 0.000, 47.400)
 
-[node name="Lamp24" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp24" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(6.000, 0.000, -15.000)
 
-[node name="Lamp25" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp25" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(6.000, 0.000, 15.000)
 
-[node name="Lamp26" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp26" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(13.500, 0.000, -12.000)
 
-[node name="Lamp27" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp27" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(13.500, 0.000, 12.000)
 
-[node name="Lamp28" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp28" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(26.000, 0.000, -14.000)
 
-[node name="Lamp29" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp29" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(38.000, 0.000, -14.000)
 
-[node name="Lamp30" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp30" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(50.000, 0.000, -14.000)
 
-[node name="Lamp31" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp31" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(62.000, 0.000, -14.000)
 
-[node name="Lamp32" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp32" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(26.000, 0.000, 14.000)
 
-[node name="Lamp33" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp33" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(38.000, 0.000, 14.000)
 
-[node name="Lamp34" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp34" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(50.000, 0.000, 14.000)
 
-[node name="Lamp35" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp35" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(62.000, 0.000, 14.000)
 
-[node name="Lamp36" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp36" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-96.000, 0.128, -57.000)
 
-[node name="Lamp37" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp37" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-80.000, 0.128, -57.000)
 
-[node name="Lamp38" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp38" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-64.000, 0.128, -57.000)
 
-[node name="Lamp39" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp39" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-48.000, 0.128, -57.000)
 
-[node name="Lamp40" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp40" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-32.000, 0.128, -57.000)
 
-[node name="Lamp41" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp41" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-16.000, 0.128, -57.000)
 
-[node name="Lamp42" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp42" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(16.000, 0.128, -57.000)
 
-[node name="Lamp43" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp43" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(32.000, 0.128, -57.000)
 
-[node name="Lamp44" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp44" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(48.000, 0.128, -57.000)
 
-[node name="Lamp45" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp45" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(64.000, 0.128, -57.000)
 
-[node name="Lamp46" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp46" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(80.000, 0.128, -57.000)
 
-[node name="Lamp47" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp47" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(96.000, 0.128, -57.000)
 
-[node name="Lamp48" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp48" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(6.495, 0.000, -53.250)
 
-[node name="Lamp49" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp49" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(0.000, 0.000, -49.500)
 
-[node name="Lamp50" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp50" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-6.495, 0.000, -53.250)
 
-[node name="Lamp51" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp51" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-6.495, 0.000, -60.750)
 
-[node name="Lamp52" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp52" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(-0.000, 0.000, -64.500)
 
-[node name="Lamp53" parent="Lamps" instance=ExtResource("12_ext")]
+[node name="Lamp53" parent="Lamps" instance=ExtResource("42_ext")]
 position = Vector3(6.495, 0.000, -60.750)
 
 [node name="Trees" type="Node3D" parent="."]
 
-[node name="Tree000" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree000" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-28.000, 0.362, 30.000)
 scale = Vector3(0.850, 0.850, 0.850)
 
@@ -888,7 +1778,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree001" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree001" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-26.000, 0.295, 41.000)
 rotation = Vector3(0.000, 1.300, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -899,7 +1789,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree002" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree002" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(-18.000, 0.279, 38.000)
 rotation = Vector3(0.000, 2.600, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -910,7 +1800,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree003" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree003" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(-14.000, 0.288, 14.000)
 rotation = Vector3(0.000, 3.900, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -921,7 +1811,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree004" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree004" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(-10.000, 0.210, 24.000)
 rotation = Vector3(0.000, 5.200, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -932,7 +1822,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree005" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree005" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-10.000, 0.210, 8.000)
 rotation = Vector3(0.000, 6.500, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -943,7 +1833,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree006" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree006" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-28.000, 0.362, -30.000)
 rotation = Vector3(0.000, 7.800, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -954,7 +1844,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree007" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree007" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(-26.000, 0.295, -41.000)
 rotation = Vector3(0.000, 9.100, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -965,7 +1855,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree008" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree008" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(-18.000, 0.279, -38.000)
 rotation = Vector3(0.000, 10.400, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -976,7 +1866,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree009" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree009" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(-14.000, 0.288, -14.000)
 rotation = Vector3(0.000, 11.700, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -987,7 +1877,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree010" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree010" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-10.000, 0.210, -24.000)
 rotation = Vector3(0.000, 13.000, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -998,7 +1888,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree011" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree011" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-10.000, 0.210, -8.000)
 rotation = Vector3(0.000, 14.300, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1009,7 +1899,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree012" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree012" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(-40.000, 0.362, 30.000)
 rotation = Vector3(0.000, 15.600, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1020,7 +1910,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree013" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree013" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(-42.000, 0.295, 41.000)
 rotation = Vector3(0.000, 16.900, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1031,7 +1921,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree014" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree014" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(-50.000, 0.279, 38.000)
 rotation = Vector3(0.000, 18.200, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1042,7 +1932,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree015" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree015" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-54.000, 0.288, 14.000)
 rotation = Vector3(0.000, 19.500, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1053,7 +1943,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree016" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree016" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-58.000, 0.210, 24.000)
 rotation = Vector3(0.000, 20.800, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1064,7 +1954,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree017" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree017" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(-58.000, 0.210, 8.000)
 rotation = Vector3(0.000, 22.100, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1075,7 +1965,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree018" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree018" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(-40.000, 0.362, -30.000)
 rotation = Vector3(0.000, 23.400, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1086,7 +1976,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree019" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree019" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(-42.000, 0.295, -41.000)
 rotation = Vector3(0.000, 24.700, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1097,7 +1987,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree020" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree020" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-50.000, 0.279, -38.000)
 rotation = Vector3(0.000, 26.000, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1108,7 +1998,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree021" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree021" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-58.000, 0.210, -24.000)
 rotation = Vector3(0.000, 27.300, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1119,7 +2009,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree022" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree022" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(12.000, 0.362, -21.000)
 rotation = Vector3(0.000, 28.600, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1130,7 +2020,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree023" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree023" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(12.000, 0.362, -39.000)
 rotation = Vector3(0.000, 29.900, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1141,7 +2031,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree024" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree024" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(21.000, 0.362, -21.000)
 rotation = Vector3(0.000, 31.200, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1152,7 +2042,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree025" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree025" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(21.000, 0.380, -39.000)
 rotation = Vector3(0.000, 32.500, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1163,7 +2053,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree026" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree026" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(30.000, 0.253, -21.000)
 rotation = Vector3(0.000, 33.800, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1174,7 +2064,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree027" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree027" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(30.000, 0.253, -39.000)
 rotation = Vector3(0.000, 35.100, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1185,7 +2075,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree028" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree028" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(39.000, 0.333, -21.000)
 rotation = Vector3(0.000, 36.400, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1196,7 +2086,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree029" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree029" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(39.000, 0.333, -39.000)
 rotation = Vector3(0.000, 37.700, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1207,7 +2097,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree030" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree030" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(48.000, 0.380, -21.000)
 rotation = Vector3(0.000, 39.000, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1218,7 +2108,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree031" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree031" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(48.000, 0.380, -39.000)
 rotation = Vector3(0.000, 40.300, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1229,7 +2119,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree032" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree032" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(57.000, 0.295, -21.000)
 rotation = Vector3(0.000, 41.600, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1240,7 +2130,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree033" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree033" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(57.000, 0.295, -39.000)
 rotation = Vector3(0.000, 42.900, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1251,7 +2141,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree034" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree034" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(12.000, 0.362, 21.000)
 rotation = Vector3(0.000, 44.200, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1262,7 +2152,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree035" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree035" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(12.000, 0.362, 39.000)
 rotation = Vector3(0.000, 45.500, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1273,7 +2163,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree036" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree036" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(21.000, 0.362, 21.000)
 rotation = Vector3(0.000, 46.800, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1284,7 +2174,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree037" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree037" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(21.000, 0.380, 39.000)
 rotation = Vector3(0.000, 48.100, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1295,7 +2185,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree038" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree038" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(30.000, 0.253, 21.000)
 rotation = Vector3(0.000, 49.400, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1306,7 +2196,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree039" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree039" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(30.000, 0.253, 39.000)
 rotation = Vector3(0.000, 50.700, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1317,7 +2207,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree040" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree040" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(39.000, 0.333, 21.000)
 rotation = Vector3(0.000, 52.000, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1328,7 +2218,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree041" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree041" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(39.000, 0.333, 39.000)
 rotation = Vector3(0.000, 53.300, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1339,7 +2229,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree042" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree042" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(48.000, 0.380, 21.000)
 rotation = Vector3(0.000, 54.600, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1350,7 +2240,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree043" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree043" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(48.000, 0.380, 39.000)
 rotation = Vector3(0.000, 55.900, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1361,7 +2251,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree044" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree044" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(57.000, 0.295, 21.000)
 rotation = Vector3(0.000, 57.200, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1372,7 +2262,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree045" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree045" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(57.000, 0.295, 39.000)
 rotation = Vector3(0.000, 58.500, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1383,7 +2273,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree046" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree046" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(16.500, 0.000, -30.000)
 rotation = Vector3(0.000, 59.800, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1394,7 +2284,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree047" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree047" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(34.500, 0.000, -30.000)
 rotation = Vector3(0.000, 61.100, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1405,7 +2295,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree048" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree048" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(52.500, 0.000, -30.000)
 rotation = Vector3(0.000, 62.400, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1416,7 +2306,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree049" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree049" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(16.500, 0.000, 30.000)
 rotation = Vector3(0.000, 63.700, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1427,7 +2317,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree050" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree050" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(34.500, 0.000, 30.000)
 rotation = Vector3(0.000, 65.000, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1438,7 +2328,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree051" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree051" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(52.500, 0.000, 30.000)
 rotation = Vector3(0.000, 66.300, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1449,7 +2339,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree052" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree052" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(-88.000, 0.128, -57.000)
 rotation = Vector3(0.000, 67.600, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1460,7 +2350,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree053" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree053" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(-72.000, 0.128, -57.000)
 rotation = Vector3(0.000, 68.900, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1471,7 +2361,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree054" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree054" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(-56.000, 0.128, -57.000)
 rotation = Vector3(0.000, 70.200, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1482,7 +2372,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree055" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree055" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-40.000, 0.128, -57.000)
 rotation = Vector3(0.000, 71.500, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1493,7 +2383,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree056" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree056" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-24.000, 0.128, -57.000)
 rotation = Vector3(0.000, 72.800, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1504,7 +2394,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree057" parent="Trees" instance=ExtResource("15_ext")]
+[node name="Tree057" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(24.000, 0.128, -57.000)
 rotation = Vector3(0.000, 74.100, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1515,7 +2405,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree058" parent="Trees" instance=ExtResource("16_ext")]
+[node name="Tree058" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(40.000, 0.128, -57.000)
 rotation = Vector3(0.000, 75.400, 0.000)
 scale = Vector3(1.010, 1.010, 1.010)
@@ -1526,7 +2416,7 @@ scale = Vector3(1.010, 1.010, 1.010)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree059" parent="Trees" instance=ExtResource("17_ext")]
+[node name="Tree059" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(56.000, 0.128, -57.000)
 rotation = Vector3(0.000, 76.700, 0.000)
 scale = Vector3(1.090, 1.090, 1.090)
@@ -1537,7 +2427,7 @@ scale = Vector3(1.090, 1.090, 1.090)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree060" parent="Trees" instance=ExtResource("13_ext")]
+[node name="Tree060" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(72.000, 0.128, -57.000)
 rotation = Vector3(0.000, 78.000, 0.000)
 scale = Vector3(0.850, 0.850, 0.850)
@@ -1548,7 +2438,7 @@ scale = Vector3(0.850, 0.850, 0.850)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="Tree061" parent="Trees" instance=ExtResource("14_ext")]
+[node name="Tree061" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(88.000, 0.128, -57.000)
 rotation = Vector3(0.000, 79.300, 0.000)
 scale = Vector3(0.930, 0.930, 0.930)
@@ -1559,7 +2449,7 @@ scale = Vector3(0.930, 0.930, 0.930)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree00" parent="Trees" instance=ExtResource("13_ext")]
+[node name="BackyardTree00" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(-87.000, 0.000, -81.000)
 scale = Vector3(1.100, 1.100, 1.100)
 
@@ -1569,7 +2459,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree01" parent="Trees" instance=ExtResource("14_ext")]
+[node name="BackyardTree01" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-34.000, 0.000, -81.000)
 rotation = Vector3(0.000, 0.900, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1580,7 +2470,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree02" parent="Trees" instance=ExtResource("15_ext")]
+[node name="BackyardTree02" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(34.000, 0.000, -81.000)
 rotation = Vector3(0.000, 1.800, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1591,7 +2481,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree03" parent="Trees" instance=ExtResource("16_ext")]
+[node name="BackyardTree03" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(87.000, 0.000, -81.000)
 rotation = Vector3(0.000, 2.700, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1602,7 +2492,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree04" parent="Trees" instance=ExtResource("17_ext")]
+[node name="BackyardTree04" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(-87.000, 0.000, 0.000)
 rotation = Vector3(0.000, 3.600, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1613,7 +2503,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree05" parent="Trees" instance=ExtResource("13_ext")]
+[node name="BackyardTree05" parent="Trees" instance=ExtResource("43_ext")]
 position = Vector3(87.000, 0.000, 0.000)
 rotation = Vector3(0.000, 4.500, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1624,7 +2514,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree06" parent="Trees" instance=ExtResource("14_ext")]
+[node name="BackyardTree06" parent="Trees" instance=ExtResource("44_ext")]
 position = Vector3(-87.000, 0.000, 73.000)
 rotation = Vector3(0.000, 5.400, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1635,7 +2525,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree07" parent="Trees" instance=ExtResource("15_ext")]
+[node name="BackyardTree07" parent="Trees" instance=ExtResource("45_ext")]
 position = Vector3(-34.000, 0.000, 73.000)
 rotation = Vector3(0.000, 6.300, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1646,7 +2536,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree08" parent="Trees" instance=ExtResource("16_ext")]
+[node name="BackyardTree08" parent="Trees" instance=ExtResource("46_ext")]
 position = Vector3(34.000, 0.000, 73.000)
 rotation = Vector3(0.000, 7.200, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1657,7 +2547,7 @@ scale = Vector3(1.100, 1.100, 1.100)
 position = Vector3(0.000, 1.500, 0.000)
 shape = SubResource("collider_CommonTree")
 
-[node name="BackyardTree09" parent="Trees" instance=ExtResource("17_ext")]
+[node name="BackyardTree09" parent="Trees" instance=ExtResource("47_ext")]
 position = Vector3(87.000, 0.000, 73.000)
 rotation = Vector3(0.000, 8.100, 0.000)
 scale = Vector3(1.100, 1.100, 1.100)
@@ -1670,13 +2560,13 @@ shape = SubResource("collider_CommonTree")
 
 [node name="SquareProps" type="Node3D" parent="." groups=["navigation_source"]]
 
-[node name="Chafariz" parent="SquareProps" instance=ExtResource("18_ext")]
+[node name="Chafariz" parent="SquareProps" instance=ExtResource("48_ext")]
 position = Vector3(-34.000, 0.000, 0.000)
 
-[node name="RoundaboutFountain" parent="SquareProps" instance=ExtResource("19_ext")]
+[node name="RoundaboutFountain" parent="SquareProps" instance=ExtResource("49_ext")]
 position = Vector3(0.000, 0.000, -57.000)
 
-[node name="Bench00" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench00" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-27.919, 0.000, 6.081)
 rotation = Vector3(0.000, -2.356, 0.000)
 
@@ -1686,7 +2576,7 @@ rotation = Vector3(0.000, -2.356, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench01" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench01" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-40.081, 0.000, 6.081)
 rotation = Vector3(0.000, 2.356, 0.000)
 
@@ -1696,7 +2586,7 @@ rotation = Vector3(0.000, 2.356, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench02" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench02" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-40.081, 0.000, -6.081)
 rotation = Vector3(0.000, 0.785, 0.000)
 
@@ -1706,7 +2596,7 @@ rotation = Vector3(0.000, 0.785, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench03" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench03" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-27.919, 0.000, -6.081)
 rotation = Vector3(0.000, -0.785, 0.000)
 
@@ -1716,7 +2606,7 @@ rotation = Vector3(0.000, -0.785, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench04" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench04" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-54.000, 0.000, -2.600)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/Bench04" groups=["navigation_source"]]
@@ -1725,7 +2615,7 @@ position = Vector3(-54.000, 0.000, -2.600)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench05" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench05" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-48.000, 0.125, -2.600)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/Bench05" groups=["navigation_source"]]
@@ -1734,7 +2624,7 @@ position = Vector3(-48.000, 0.125, -2.600)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench06" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench06" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-20.000, 0.125, -2.600)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/Bench06" groups=["navigation_source"]]
@@ -1743,7 +2633,7 @@ position = Vector3(-20.000, 0.125, -2.600)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench07" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench07" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-14.000, 0.000, -2.600)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/Bench07" groups=["navigation_source"]]
@@ -1752,7 +2642,7 @@ position = Vector3(-14.000, 0.000, -2.600)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench08" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench08" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-54.000, 0.000, 2.600)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -1762,7 +2652,7 @@ rotation = Vector3(0.000, 3.142, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench09" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench09" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-48.000, 0.125, 2.600)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -1772,7 +2662,7 @@ rotation = Vector3(0.000, 3.142, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench10" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench10" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-20.000, 0.125, 2.600)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -1782,7 +2672,7 @@ rotation = Vector3(0.000, 3.142, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench11" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench11" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(-14.000, 0.000, 2.600)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -1792,7 +2682,7 @@ rotation = Vector3(0.000, 3.142, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench12" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench12" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(32.000, 0.123, -15.400)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/Bench12" groups=["navigation_source"]]
@@ -1801,7 +2691,7 @@ position = Vector3(32.000, 0.123, -15.400)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench13" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench13" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(44.000, 0.136, -15.400)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/Bench13" groups=["navigation_source"]]
@@ -1810,7 +2700,7 @@ position = Vector3(44.000, 0.136, -15.400)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench14" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench14" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(32.000, 0.123, 15.400)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -1820,7 +2710,7 @@ rotation = Vector3(0.000, 3.142, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Bench15" parent="SquareProps" instance=ExtResource("20_ext")]
+[node name="Bench15" parent="SquareProps" instance=ExtResource("50_ext")]
 position = Vector3(44.000, 0.136, 15.400)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -1830,7 +2720,7 @@ rotation = Vector3(0.000, 3.142, 0.000)
 position = Vector3(0.000, 0.270, 0.000)
 shape = SubResource("collider_Bench")
 
-[node name="Flowers00" parent="SquareProps" instance=ExtResource("21_ext")]
+[node name="Flowers00" parent="SquareProps" instance=ExtResource("51_ext")]
 position = Vector3(-26.000, 0.352, 24.000)
 scale = Vector3(1.300, 1.300, 1.300)
 
@@ -1840,7 +2730,7 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_3_Group")
 
-[node name="Flowers01" parent="SquareProps" instance=ExtResource("22_ext")]
+[node name="Flowers01" parent="SquareProps" instance=ExtResource("52_ext")]
 position = Vector3(-17.000, 0.000, 8.000)
 rotation = Vector3(0.000, 1.100, 0.000)
 scale = Vector3(1.300, 1.300, 1.300)
@@ -1851,7 +2741,7 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_4_Group")
 
-[node name="Flowers02" parent="SquareProps" instance=ExtResource("21_ext")]
+[node name="Flowers02" parent="SquareProps" instance=ExtResource("51_ext")]
 position = Vector3(-26.000, 0.352, -24.000)
 rotation = Vector3(0.000, 2.200, 0.000)
 scale = Vector3(1.300, 1.300, 1.300)
@@ -1862,7 +2752,7 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_3_Group")
 
-[node name="Flowers03" parent="SquareProps" instance=ExtResource("22_ext")]
+[node name="Flowers03" parent="SquareProps" instance=ExtResource("52_ext")]
 position = Vector3(-17.000, 0.000, -8.000)
 rotation = Vector3(0.000, 3.300, 0.000)
 scale = Vector3(1.300, 1.300, 1.300)
@@ -1873,7 +2763,7 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_4_Group")
 
-[node name="Flowers04" parent="SquareProps" instance=ExtResource("21_ext")]
+[node name="Flowers04" parent="SquareProps" instance=ExtResource("51_ext")]
 position = Vector3(-42.000, 0.352, 24.000)
 rotation = Vector3(0.000, 4.400, 0.000)
 scale = Vector3(1.300, 1.300, 1.300)
@@ -1884,7 +2774,7 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_3_Group")
 
-[node name="Flowers05" parent="SquareProps" instance=ExtResource("22_ext")]
+[node name="Flowers05" parent="SquareProps" instance=ExtResource("52_ext")]
 position = Vector3(-51.000, 0.000, 8.000)
 rotation = Vector3(0.000, 5.500, 0.000)
 scale = Vector3(1.300, 1.300, 1.300)
@@ -1895,7 +2785,7 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_4_Group")
 
-[node name="Flowers06" parent="SquareProps" instance=ExtResource("21_ext")]
+[node name="Flowers06" parent="SquareProps" instance=ExtResource("51_ext")]
 position = Vector3(-42.000, 0.352, -24.000)
 rotation = Vector3(0.000, 6.600, 0.000)
 scale = Vector3(1.300, 1.300, 1.300)
@@ -1906,10 +2796,10 @@ scale = Vector3(1.300, 1.300, 1.300)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_3_Group")
 
-[node name="Planter00" parent="SquareProps" instance=ExtResource("23_ext")]
+[node name="Planter00" parent="SquareProps" instance=ExtResource("53_ext")]
 position = Vector3(10.500, 0.000, -12.000)
 
-[node name="PlanterFlowers00" parent="SquareProps" instance=ExtResource("21_ext")]
+[node name="PlanterFlowers00" parent="SquareProps" instance=ExtResource("51_ext")]
 position = Vector3(10.500, 0.420, -12.000)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/PlanterFlowers00" groups=["navigation_source"]]
@@ -1918,10 +2808,10 @@ position = Vector3(10.500, 0.420, -12.000)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_3_Group")
 
-[node name="Planter01" parent="SquareProps" instance=ExtResource("23_ext")]
+[node name="Planter01" parent="SquareProps" instance=ExtResource("53_ext")]
 position = Vector3(10.500, 0.000, 12.000)
 
-[node name="PlanterFlowers01" parent="SquareProps" instance=ExtResource("22_ext")]
+[node name="PlanterFlowers01" parent="SquareProps" instance=ExtResource("52_ext")]
 position = Vector3(10.500, 0.420, 12.000)
 rotation = Vector3(0.000, 1.700, 0.000)
 
@@ -1931,10 +2821,10 @@ rotation = Vector3(0.000, 1.700, 0.000)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_4_Group")
 
-[node name="Planter02" parent="SquareProps" instance=ExtResource("23_ext")]
+[node name="Planter02" parent="SquareProps" instance=ExtResource("53_ext")]
 position = Vector3(10.500, 0.000, -6.000)
 
-[node name="PlanterFlowers02" parent="SquareProps" instance=ExtResource("21_ext")]
+[node name="PlanterFlowers02" parent="SquareProps" instance=ExtResource("51_ext")]
 position = Vector3(10.500, 0.420, -6.000)
 rotation = Vector3(0.000, 3.400, 0.000)
 
@@ -1944,10 +2834,10 @@ rotation = Vector3(0.000, 3.400, 0.000)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_3_Group")
 
-[node name="Planter03" parent="SquareProps" instance=ExtResource("23_ext")]
+[node name="Planter03" parent="SquareProps" instance=ExtResource("53_ext")]
 position = Vector3(10.500, 0.000, 6.000)
 
-[node name="PlanterFlowers03" parent="SquareProps" instance=ExtResource("22_ext")]
+[node name="PlanterFlowers03" parent="SquareProps" instance=ExtResource("52_ext")]
 position = Vector3(10.500, 0.420, 6.000)
 rotation = Vector3(0.000, 5.100, 0.000)
 
@@ -1957,7 +2847,7 @@ rotation = Vector3(0.000, 5.100, 0.000)
 position = Vector3(0.000, 0.800, 0.000)
 shape = SubResource("collider_Flower_4_Group")
 
-[node name="FlowerBush00" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush00" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-23.375, 0.171, 4.401)
 
 [node name="Collider" type="StaticBody3D" parent="SquareProps/FlowerBush00" groups=["navigation_source"]]
@@ -1966,7 +2856,7 @@ position = Vector3(-23.375, 0.171, 4.401)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush01" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush01" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-29.599, 0.160, 10.625)
 rotation = Vector3(0.000, 0.900, 0.000)
 
@@ -1976,7 +2866,7 @@ rotation = Vector3(0.000, 0.900, 0.000)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush02" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush02" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-38.401, 0.160, 10.625)
 rotation = Vector3(0.000, 1.800, 0.000)
 
@@ -1986,7 +2876,7 @@ rotation = Vector3(0.000, 1.800, 0.000)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush03" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush03" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-44.625, 0.171, 4.401)
 rotation = Vector3(0.000, 2.700, 0.000)
 
@@ -1996,7 +2886,7 @@ rotation = Vector3(0.000, 2.700, 0.000)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush04" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush04" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-44.625, 0.171, -4.401)
 rotation = Vector3(0.000, 3.600, 0.000)
 
@@ -2006,7 +2896,7 @@ rotation = Vector3(0.000, 3.600, 0.000)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush05" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush05" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-38.401, 0.160, -10.625)
 rotation = Vector3(0.000, 4.500, 0.000)
 
@@ -2016,7 +2906,7 @@ rotation = Vector3(0.000, 4.500, 0.000)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush06" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush06" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-29.599, 0.160, -10.625)
 rotation = Vector3(0.000, 5.400, 0.000)
 
@@ -2026,7 +2916,7 @@ rotation = Vector3(0.000, 5.400, 0.000)
 position = Vector3(0.000, 0.600, 0.000)
 shape = SubResource("collider_Bush_Common")
 
-[node name="FlowerBush07" parent="SquareProps" instance=ExtResource("24_ext")]
+[node name="FlowerBush07" parent="SquareProps" instance=ExtResource("54_ext")]
 position = Vector3(-23.375, 0.171, -4.401)
 rotation = Vector3(0.000, 6.300, 0.000)
 
@@ -2038,7 +2928,7 @@ shape = SubResource("collider_Bush_Common")
 
 [node name="Market" type="Node3D" parent="." groups=["navigation_source"]]
 
-[node name="Stall_Empty00" parent="Market" instance=ExtResource("25_ext")]
+[node name="Stall_Empty00" parent="Market" instance=ExtResource("55_ext")]
 position = Vector3(-2.400, 0.000, -38.000)
 rotation = Vector3(0.000, 1.571, 0.000)
 
@@ -2048,7 +2938,7 @@ rotation = Vector3(0.000, 1.571, 0.000)
 position = Vector3(0.000, 1.310, 0.000)
 shape = SubResource("collider_Stall_Empty")
 
-[node name="Stall_Empty01" parent="Market" instance=ExtResource("25_ext")]
+[node name="Stall_Empty01" parent="Market" instance=ExtResource("55_ext")]
 position = Vector3(-2.400, 0.000, -33.600)
 rotation = Vector3(0.000, 1.571, 0.000)
 
@@ -2058,7 +2948,7 @@ rotation = Vector3(0.000, 1.571, 0.000)
 position = Vector3(0.000, 1.310, 0.000)
 shape = SubResource("collider_Stall_Empty")
 
-[node name="Stall_Cart_Empty02" parent="Market" instance=ExtResource("26_ext")]
+[node name="Stall_Cart_Empty02" parent="Market" instance=ExtResource("56_ext")]
 position = Vector3(-2.200, 0.000, -27.000)
 rotation = Vector3(0.000, 1.871, 0.000)
 
@@ -2068,7 +2958,7 @@ rotation = Vector3(0.000, 1.871, 0.000)
 position = Vector3(-0.600, 1.310, 0.000)
 shape = SubResource("collider_Stall_Cart_Empty")
 
-[node name="Stall_Empty03" parent="Market" instance=ExtResource("25_ext")]
+[node name="Stall_Empty03" parent="Market" instance=ExtResource("55_ext")]
 position = Vector3(-2.400, 0.000, 27.000)
 rotation = Vector3(0.000, 1.571, 0.000)
 
@@ -2078,7 +2968,7 @@ rotation = Vector3(0.000, 1.571, 0.000)
 position = Vector3(0.000, 1.310, 0.000)
 shape = SubResource("collider_Stall_Empty")
 
-[node name="Stall_Empty04" parent="Market" instance=ExtResource("25_ext")]
+[node name="Stall_Empty04" parent="Market" instance=ExtResource("55_ext")]
 position = Vector3(-2.400, 0.000, 31.400)
 rotation = Vector3(0.000, 1.571, 0.000)
 
@@ -2088,7 +2978,7 @@ rotation = Vector3(0.000, 1.571, 0.000)
 position = Vector3(0.000, 1.310, 0.000)
 shape = SubResource("collider_Stall_Empty")
 
-[node name="Stall_Cart_Empty05" parent="Market" instance=ExtResource("26_ext")]
+[node name="Stall_Cart_Empty05" parent="Market" instance=ExtResource("56_ext")]
 position = Vector3(-2.200, 0.000, 38.000)
 rotation = Vector3(0.000, 1.271, 0.000)
 
@@ -2098,7 +2988,7 @@ rotation = Vector3(0.000, 1.271, 0.000)
 position = Vector3(-0.600, 1.310, 0.000)
 shape = SubResource("collider_Stall_Cart_Empty")
 
-[node name="Barrel06" parent="Market" instance=ExtResource("27_ext")]
+[node name="Barrel06" parent="Market" instance=ExtResource("57_ext")]
 position = Vector3(-3.200, 0.000, -30.500)
 
 [node name="Collider" type="StaticBody3D" parent="Market/Barrel06" groups=["navigation_source"]]
@@ -2107,7 +2997,7 @@ position = Vector3(-3.200, 0.000, -30.500)
 position = Vector3(0.000, 0.450, 0.000)
 shape = SubResource("collider_Barrel")
 
-[node name="Barrel_Apples07" parent="Market" instance=ExtResource("28_ext")]
+[node name="Barrel_Apples07" parent="Market" instance=ExtResource("58_ext")]
 position = Vector3(-3.100, 0.000, -24.600)
 rotation = Vector3(0.000, 0.400, 0.000)
 
@@ -2117,15 +3007,15 @@ rotation = Vector3(0.000, 0.400, 0.000)
 position = Vector3(0.000, 0.450, 0.000)
 shape = SubResource("collider_Barrel")
 
-[node name="FarmCrate_Apple08" parent="Market" instance=ExtResource("29_ext")]
+[node name="FarmCrate_Apple08" parent="Market" instance=ExtResource("59_ext")]
 position = Vector3(-3.000, 0.000, 34.600)
 rotation = Vector3(0.000, 0.200, 0.000)
 
-[node name="FarmCrate_Carrot09" parent="Market" instance=ExtResource("30_ext")]
+[node name="FarmCrate_Carrot09" parent="Market" instance=ExtResource("60_ext")]
 position = Vector3(-3.000, 0.000, 24.300)
 rotation = Vector3(0.000, -0.200, 0.000)
 
-[node name="Crate_Wooden10" parent="Market" instance=ExtResource("31_ext")]
+[node name="Crate_Wooden10" parent="Market" instance=ExtResource("61_ext")]
 position = Vector3(3.000, 0.000, -36.000)
 rotation = Vector3(0.000, 0.300, 0.000)
 
@@ -2135,10 +3025,10 @@ rotation = Vector3(0.000, 0.300, 0.000)
 position = Vector3(0.000, 0.410, 0.000)
 shape = SubResource("collider_Crate_Wooden")
 
-[node name="Bucket_Wooden_111" parent="Market" instance=ExtResource("32_ext")]
+[node name="Bucket_Wooden_111" parent="Market" instance=ExtResource("62_ext")]
 position = Vector3(3.100, 0.000, -34.900)
 
-[node name="Table_Large12" parent="Market" instance=ExtResource("33_ext")]
+[node name="Table_Large12" parent="Market" instance=ExtResource("63_ext")]
 position = Vector3(2.600, 0.000, 34.000)
 rotation = Vector3(0.000, 1.571, 0.000)
 
@@ -2148,7 +3038,7 @@ rotation = Vector3(0.000, 1.571, 0.000)
 position = Vector3(0.000, 0.400, 0.000)
 shape = SubResource("collider_Table_Large")
 
-[node name="Stool13" parent="Market" instance=ExtResource("34_ext")]
+[node name="Stool13" parent="Market" instance=ExtResource("64_ext")]
 position = Vector3(2.600, 0.000, 32.400)
 
 [node name="Collider" type="StaticBody3D" parent="Market/Stool13" groups=["navigation_source"]]
@@ -2157,7 +3047,7 @@ position = Vector3(2.600, 0.000, 32.400)
 position = Vector3(0.000, 0.290, 0.000)
 shape = SubResource("collider_Stool")
 
-[node name="Stool14" parent="Market" instance=ExtResource("34_ext")]
+[node name="Stool14" parent="Market" instance=ExtResource("64_ext")]
 position = Vector3(2.600, 0.000, 35.600)
 
 [node name="Collider" type="StaticBody3D" parent="Market/Stool14" groups=["navigation_source"]]
@@ -2168,402 +3058,402 @@ shape = SubResource("collider_Stool")
 
 [node name="Backdrop" type="Node3D" parent="."]
 
-[node name="Pine00" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine00" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-112.000, 0.000, -110.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine01" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine01" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-112.000, 0.000, 102.000)
 rotation = Vector3(0.000, 0.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine02" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine02" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-98.000, 0.000, -110.000)
 rotation = Vector3(0.000, 1.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine03" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine03" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-98.000, 0.000, 102.000)
 rotation = Vector3(0.000, 1.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine04" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine04" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-84.000, 0.000, -110.000)
 rotation = Vector3(0.000, 2.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine05" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine05" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-84.000, 0.000, 102.000)
 rotation = Vector3(0.000, 2.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine06" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine06" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-70.000, 0.000, -110.000)
 rotation = Vector3(0.000, 3.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine07" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine07" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-70.000, 0.000, 102.000)
 rotation = Vector3(0.000, 3.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine08" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine08" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-56.000, 0.000, -110.000)
 rotation = Vector3(0.000, 4.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine09" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine09" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-56.000, 0.000, 102.000)
 rotation = Vector3(0.000, 4.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine10" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine10" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-42.000, 0.000, -110.000)
 rotation = Vector3(0.000, 5.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine11" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine11" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-42.000, 0.000, 102.000)
 rotation = Vector3(0.000, 5.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine12" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine12" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-28.000, 0.000, -110.000)
 rotation = Vector3(0.000, 6.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine13" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine13" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-28.000, 0.000, 102.000)
 rotation = Vector3(0.000, 6.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine14" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine14" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-14.000, 0.000, -110.000)
 rotation = Vector3(0.000, 7.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine15" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine15" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-14.000, 0.000, 102.000)
 rotation = Vector3(0.000, 7.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine16" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine16" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(0.000, 0.000, -110.000)
 rotation = Vector3(0.000, 8.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine17" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine17" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(0.000, 0.000, 102.000)
 rotation = Vector3(0.000, 8.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine18" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine18" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(14.000, 0.000, -110.000)
 rotation = Vector3(0.000, 9.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine19" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine19" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(14.000, 0.000, 102.000)
 rotation = Vector3(0.000, 9.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine20" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine20" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(28.000, 0.000, -110.000)
 rotation = Vector3(0.000, 10.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine21" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine21" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(28.000, 0.000, 102.000)
 rotation = Vector3(0.000, 10.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine22" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine22" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(42.000, 0.000, -110.000)
 rotation = Vector3(0.000, 11.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine23" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine23" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(42.000, 0.000, 102.000)
 rotation = Vector3(0.000, 11.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine24" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine24" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(56.000, 0.000, -110.000)
 rotation = Vector3(0.000, 12.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine25" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine25" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(56.000, 0.000, 102.000)
 rotation = Vector3(0.000, 12.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine26" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine26" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(70.000, 0.000, -110.000)
 rotation = Vector3(0.000, 13.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine27" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine27" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(70.000, 0.000, 102.000)
 rotation = Vector3(0.000, 13.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine28" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine28" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(84.000, 0.000, -110.000)
 rotation = Vector3(0.000, 14.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine29" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine29" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(84.000, 0.000, 102.000)
 rotation = Vector3(0.000, 14.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine30" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine30" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(98.000, 0.000, -110.000)
 rotation = Vector3(0.000, 15.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine31" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine31" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(98.000, 0.000, 102.000)
 rotation = Vector3(0.000, 15.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine32" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine32" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(112.000, 0.000, -110.000)
 rotation = Vector3(0.000, 16.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine33" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine33" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(112.000, 0.000, 102.000)
 rotation = Vector3(0.000, 16.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine34" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine34" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-116.000, 0.000, -96.000)
 rotation = Vector3(0.000, 17.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine35" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine35" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(116.000, 0.000, -96.000)
 rotation = Vector3(0.000, 17.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine36" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine36" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-116.000, 0.000, -82.000)
 rotation = Vector3(0.000, 18.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine37" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine37" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(116.000, 0.000, -82.000)
 rotation = Vector3(0.000, 18.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine38" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine38" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-116.000, 0.000, -68.000)
 rotation = Vector3(0.000, 19.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine39" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine39" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(116.000, 0.000, -68.000)
 rotation = Vector3(0.000, 19.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine40" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine40" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-116.000, 0.000, -54.000)
 rotation = Vector3(0.000, 20.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine41" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine41" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(116.000, 0.000, -54.000)
 rotation = Vector3(0.000, 20.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine42" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine42" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-116.000, 0.000, -40.000)
 rotation = Vector3(0.000, 21.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine43" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine43" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(116.000, 0.000, -40.000)
 rotation = Vector3(0.000, 21.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine44" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine44" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-116.000, 0.000, -26.000)
 rotation = Vector3(0.000, 22.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine45" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine45" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(116.000, 0.000, -26.000)
 rotation = Vector3(0.000, 22.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine46" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine46" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-116.000, 0.000, -12.000)
 rotation = Vector3(0.000, 23.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine47" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine47" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(116.000, 0.000, -12.000)
 rotation = Vector3(0.000, 23.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine48" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine48" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-116.000, 0.000, 2.000)
 rotation = Vector3(0.000, 24.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine49" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine49" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(116.000, 0.000, 2.000)
 rotation = Vector3(0.000, 24.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine50" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine50" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-116.000, 0.000, 16.000)
 rotation = Vector3(0.000, 25.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine51" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine51" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(116.000, 0.000, 16.000)
 rotation = Vector3(0.000, 25.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine52" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine52" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-116.000, 0.000, 30.000)
 rotation = Vector3(0.000, 26.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine53" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine53" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(116.000, 0.000, 30.000)
 rotation = Vector3(0.000, 26.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine54" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine54" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-116.000, 0.000, 44.000)
 rotation = Vector3(0.000, 27.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine55" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine55" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(116.000, 0.000, 44.000)
 rotation = Vector3(0.000, 27.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine56" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine56" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(-116.000, 0.000, 58.000)
 rotation = Vector3(0.000, 28.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine57" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine57" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(116.000, 0.000, 58.000)
 rotation = Vector3(0.000, 28.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine58" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine58" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(-116.000, 0.000, 72.000)
 rotation = Vector3(0.000, 29.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine59" parent="Backdrop" instance=ExtResource("37_ext")]
+[node name="Pine59" parent="Backdrop" instance=ExtResource("67_ext")]
 position = Vector3(116.000, 0.000, 72.000)
 rotation = Vector3(0.000, 29.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine60" parent="Backdrop" instance=ExtResource("35_ext")]
+[node name="Pine60" parent="Backdrop" instance=ExtResource("65_ext")]
 position = Vector3(-116.000, 0.000, 86.000)
 rotation = Vector3(0.000, 30.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine61" parent="Backdrop" instance=ExtResource("36_ext")]
+[node name="Pine61" parent="Backdrop" instance=ExtResource("66_ext")]
 position = Vector3(116.000, 0.000, 86.000)
 rotation = Vector3(0.000, 30.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
-navigation_mesh = ExtResource("38_ext")
+navigation_mesh = ExtResource("68_ext")
 
 [node name="Townsfolk" type="Node3D" parent="."]
 
-[node name="FountainWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="FountainWalker" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.160, 0.120, 0.100, 1)
 route = PackedVector3Array(-26.80, 0, 0.00, -27.76, 0, 3.60, -30.40, 0, 6.24, -34.00, 0, 7.20, -37.60, 0, 6.24, -40.24, 0, 3.60, -41.20, 0, 0.00, -40.24, 0, -3.60, -37.60, 0, -6.24, -34.00, 0, -7.20, -30.40, 0, -6.24, -27.76, 0, -3.60)
 walk_speed = 1.2
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="FountainWalkerReverse" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="FountainWalkerReverse" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 route = PackedVector3Array(-40.24, 0, 3.60, -37.60, 0, 6.24, -34.00, 0, 7.20, -30.40, 0, 6.24, -27.76, 0, 3.60, -26.80, 0, 0.00, -27.76, 0, -3.60, -30.40, 0, -6.24, -34.00, 0, -7.20, -37.60, 0, -6.24, -40.24, 0, -3.60, -41.20, 0, 0.00)
 walk_speed = 1.1
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="SquareWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("42_ext")
+[node name="SquareWalker" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("72_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 route = PackedVector3Array(-61.40, 0, -45.40, -6.60, 0, -45.40, -6.60, 0, 45.40, -61.40, 0, 45.40)
 walk_speed = 1.4
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="SquareWalkerReverse" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="SquareWalkerReverse" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 route = PackedVector3Array(-6.60, 0, -45.40, -61.40, 0, -45.40, -61.40, 0, 45.40, -6.60, 0, 45.40)
 walk_speed = 1.2
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="CalcadaoWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="CalcadaoWalker" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 route = PackedVector3Array(0.80, 0, -22.00, 0.80, 0, 22.00)
 walk_speed = 1.1
 pause_seconds = 4.0
 idle_animation = &"ual1/Idle_Talking"
 
-[node name="Worshipper" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="Worshipper" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 route = PackedVector3Array(8.00, 0, 5.00, 14.00, 0, 0.00, 44.00, 0, 0.00)
 walk_speed = 1.0
 pause_seconds = 6.0
 idle_animation = &"ual1/Idle"
 
-[node name="CathedralStroller" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="CathedralStroller" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 route = PackedVector3Array(8.00, 0, -16.50, 63.00, 0, -16.50, 63.00, 0, 16.50, 8.00, 0, 16.50)
 walk_speed = 1.2
 pause_seconds = 2.0
 idle_animation = &"ual2/Idle_FoldArms"
 
-[node name="MedianWalkerWest" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("43_ext")
+[node name="MedianWalkerWest" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("73_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 route = PackedVector3Array(-92.00, 0, -55.00, -14.00, 0, -55.00)
 walk_speed = 1.4
 pause_seconds = 3.0
 idle_animation = &"ual2/Idle_FoldArms"
 
-[node name="MedianWalkerEast" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="MedianWalkerEast" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 route = PackedVector3Array(14.00, 0, -55.00, 92.00, 0, -55.00)
 walk_speed = 1.2
 pause_seconds = 3.0
 idle_animation = &"ual1/Idle"
 
-[node name="SidewalkWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="SidewalkWalker" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 route = PackedVector3Array(-60.00, 0, -67.50, 60.00, 0, -67.50)
 walk_speed = 1.3
 pause_seconds = 5.0
 idle_animation = &"ual1/Idle"
 
-[node name="Merchant" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="Merchant" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 position = Vector3(-1.100, 0.000, -36.000)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -2571,8 +3461,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 1.1
 
-[node name="Shopper" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="Shopper" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 position = Vector3(0.400, 0.000, -35.400)
 rotation = Vector3(0.000, -1.871, 0.000)
@@ -2580,8 +3470,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.4
 
-[node name="TalkerA" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="TalkerA" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 position = Vector3(-22.000, 0.333, 9.000)
 rotation = Vector3(0.000, 2.280, 0.000)
@@ -2589,8 +3479,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 0.0
 
-[node name="TalkerB" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="TalkerB" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 position = Vector3(-20.600, 0.295, 7.800)
 rotation = Vector3(0.000, -0.860, 0.000)
@@ -2598,8 +3488,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.7
 
-[node name="SittingWest" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("41_ext")
+[node name="SittingWest" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("71_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 position = Vector3(-28.025, 0.000, 5.975)
 rotation = Vector3(0.000, -2.356, 0.000)
@@ -2607,8 +3497,8 @@ activity = 1
 idle_animation = &"ual1/Sitting_Idle"
 animation_offset_seconds = 0.3
 
-[node name="SittingEast" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="SittingEast" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 position = Vector3(-39.975, 0.000, -5.975)
 rotation = Vector3(0.000, 0.785, 0.000)
@@ -2616,8 +3506,8 @@ activity = 1
 idle_animation = &"ual1/Sitting_Talking"
 animation_offset_seconds = 0.0
 
-[node name="SittingCathedral" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("43_ext")
+[node name="SittingCathedral" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("73_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 position = Vector3(32.000, 0.123, -15.250)
 rotation = Vector3(0.000, 0.000, 0.000)
@@ -2625,8 +3515,8 @@ activity = 1
 idle_animation = &"ual1/Sitting_Talking"
 animation_offset_seconds = 0.5
 
-[node name="Bard" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("42_ext")
+[node name="Bard" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("72_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 position = Vector3(-50.000, 1.200, -12.000)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -2634,8 +3524,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 0.2
 
-[node name="Guard" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("42_ext")
+[node name="Guard" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("72_ext")
 hair_color = Color(0.160, 0.120, 0.100, 1)
 position = Vector3(13.800, 0.000, -6.500)
 rotation = Vector3(0.000, -1.571, 0.000)
@@ -2643,8 +3533,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
-[node name="Priest" parent="Townsfolk" instance=ExtResource("40_ext")]
-body_scene = ExtResource("39_ext")
+[node name="Priest" parent="Townsfolk" instance=ExtResource("70_ext")]
+body_scene = ExtResource("69_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 position = Vector3(51.600, 1.950, 0.000)
 rotation = Vector3(0.000, -1.571, 0.000)
@@ -2652,7 +3542,7 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Player" parent="." instance=ExtResource("44_ext")]
+[node name="Player" parent="." instance=ExtResource("74_ext")]
 position = Vector3(-43.000, 0.000, -10.500)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -2662,7 +3552,7 @@ rotation = Vector3(-0.122, 1.391, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
-script = ExtResource("45_ext")
+script = ExtResource("75_ext")
 
 [node name="Key0" type="Marker3D" parent="CinematicTour"]
 position = Vector3(-90.000, 28.000, -30.000)
@@ -2692,4 +3582,4 @@ rotation = Vector3(0.073, -1.571, 0.000)
 position = Vector3(-90.000, 4.000, -57.000)
 rotation = Vector3(-0.011, -1.571, 0.000)
 
-[node name="CharacterSelect" parent="." instance=ExtResource("46_ext")]
+[node name="CharacterSelect" parent="." instance=ExtResource("76_ext")]

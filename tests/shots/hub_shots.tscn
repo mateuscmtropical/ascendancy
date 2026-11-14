@@ -80,3 +80,13 @@ fov = 65.0
 [node name="ShotCapture" type="Node" parent="."]
 script = ExtResource("2_capture")
 seconds_before_capture = 3.0
+
+[node name="ShopsEye" type="Camera3D" parent="."]
+position = Vector3(-67.500, 1.700, 9.000)
+rotation = Vector3(0.060, 1.050, 0.000)
+fov = 65.0
+
+[node name="ShopClose" type="Camera3D" parent="."]
+position = Vector3(-70.500, 1.700, -3.000)
+rotation = Vector3(0.050, 1.900, 0.000)
+fov = 60.0

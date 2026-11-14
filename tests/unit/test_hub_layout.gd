@@ -7,6 +7,12 @@ const CITY_BOUNDS: Rect2 = Rect2(-102, -96, 204, 184)
 const NAVMESH_TOLERANCE: float = 0.3
 const CATHEDRAL_FORECOURT: Vector3 = Vector3(8, 0, 4)
 const CATHEDRAL_NAVE: Vector3 = Vector3(40, 1.05, 0)
+const SHOP_TYPES: Array[String] = [
+	"smith", "armor", "magic", "alchemy", "tavern", "inn", "guild", "bakery", "tailor", "jeweler"
+]
+const SHOP_PIECES: Array[String] = ["Sign", "Stall", "Yard"]
+const STREET_POINT: Vector2 = Vector2(-68, 0)
+const LAWN_POINT: Vector2 = Vector2(-20, -30)
 
 var _hub: Node3D
 
@@ -77,6 +83,39 @@ func test_character_select_opens_without_preset_character() -> void:
 
 	assert_true(character_select.visible)
 	assert_false(player.is_input_enabled)
+
+
+func test_every_shop_type_has_a_dressed_front() -> void:
+	for shop_type in SHOP_TYPES:
+		var shops: Array[Node] = get_tree().get_nodes_in_group("shop_" + shop_type)
+
+		assert_gt(shops.size(), 0, "%s shop exists" % shop_type)
+
+		for piece in SHOP_PIECES:
+			assert_not_null(
+				shops[0].get_node_or_null(piece), "%s shop has its %s" % [shop_type, piece]
+			)
+
+
+func test_streets_sit_below_pavement_and_lawns_above() -> void:
+	var street_height: float = await _ground_height_at(STREET_POINT)
+	var lawn_height: float = await _ground_height_at(LAWN_POINT)
+
+	assert_lt(street_height, -0.05, "street is lower than the pavement")
+	assert_gt(lawn_height, 0.1, "lawn bed is raised above the pavement")
+
+
+func _ground_height_at(ground_point: Vector2) -> float:
+	var space_state: PhysicsDirectSpaceState3D = _hub.get_world_3d().direct_space_state
+	var ray_top: Vector3 = Vector3(ground_point.x, 5.0, ground_point.y)
+	var ray_bottom: Vector3 = Vector3(ground_point.x, -5.0, ground_point.y)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_top, ray_bottom)
+	var hit: Dictionary
+
+	await wait_physics_frames(2)
+	hit = space_state.intersect_ray(query)
+
+	return hit.get("position", Vector3.ZERO).y
 
 
 func _townsfolk_by_activity(activity: WalkingNpc.Activity) -> Array[WalkingNpc]:
