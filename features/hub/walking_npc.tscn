@@ -1,6 +1,31 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://features/hub/walking_npc.gd" id="1_script"]
 
-[node name="WalkingNpc" type="Node3D"]
+[sub_resource type="CapsuleShape3D" id="capsule"]
+radius = 0.3
+height = 1.8
+
+[node name="WalkingNpc" type="CharacterBody3D"]
+collision_layer = 4
+collision_mask = 7
+motion_mode = 1
 script = ExtResource("1_script")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.9, 0)
+shape = SubResource("capsule")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.6
+target_desired_distance = 0.5
+avoidance_enabled = true
+radius = 0.4
+neighbor_distance = 8.0
+time_horizon_agents = 2.0
+time_horizon_obstacles = 1.0
+max_speed = 2.0
+
+[node name="NavigationObstacle3D" type="NavigationObstacle3D" parent="."]
+radius = 0.5
+avoidance_enabled = false

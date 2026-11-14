@@ -11,6 +11,8 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_PATH = PROJECT_DIR / "features" / "hub" / "hub.tscn"
+NAVMESH_PATH = PROJECT_DIR / "features" / "hub" / "hub_navmesh.tres"
+NAVIGATION_SOURCE_GROUP = "navigation_source"  # nós cujas malhas/colisões entram na navmesh (bake_hub_navmesh.gd)
 
 HOUSE_SIZES = {  # name -> (width along facade, depth)
     "house_stone_tall": (6, 8),
@@ -44,11 +46,12 @@ class SceneWriter:
     def add_sub_resource(self, text: str) -> None:
         self.sub_resources.append(text.strip() + "\n")
 
-    def add_node(self, name: str, parent: str, node_type: str = "", instance: str = "", properties: dict = None) -> None:
+    def add_node(self, name: str, parent: str, node_type: str = "", instance: str = "", properties: dict = None, groups: list = None) -> None:
         header = f'[node name="{name}"'
         header += f' type="{node_type}"' if node_type else ""
         header += f' parent="{parent}"' if parent is not None else ""
         header += f' instance=ExtResource("{instance}")' if instance else ""
+        header += " groups=[" + ", ".join(f'"{group}"' for group in groups) + "]" if groups else ""
         lines = [header + "]"] + [f"{key} = {value}" for key, value in (properties or {}).items()]
         self.nodes.append("\n".join(lines) + "\n")
 
@@ -173,7 +176,7 @@ material = SubResource("grass_material")
 size = Vector2(400, 400)''')
     scene.add_sub_resource('''
 [sub_resource type="WorldBoundaryShape3D" id="ground_shape"]''')
-    scene.add_node("Ground", ".", "StaticBody3D")
+    scene.add_node("Ground", ".", "StaticBody3D", groups=[NAVIGATION_SOURCE_GROUP])
     scene.add_node("Collision", "Ground", "CollisionShape3D", properties={"shape": 'SubResource("ground_shape")'})
     scene.add_node("Paving", "Ground", "MeshInstance3D", properties={"position": vector(0, 0.0, -8.0), "mesh": 'SubResource("paving_mesh")'})
     scene.add_node("Grass", "Ground", "MeshInstance3D", properties={"position": vector(0, -0.03, 0), "mesh": 'SubResource("grass_mesh")'})
@@ -182,7 +185,7 @@ size = Vector2(400, 400)''')
 def add_boundary(scene: SceneWriter) -> None:
     walls = [("North", (0, 3, -84), (110, 6, 1)), ("South", (0, 3, 46), (110, 6, 1)), ("West", (-46, 3, -19), (1, 6, 130)), ("East", (46, 3, -19), (1, 6, 130))]
 
-    scene.add_node("Boundary", ".", "StaticBody3D")
+    scene.add_node("Boundary", ".", "StaticBody3D", groups=[NAVIGATION_SOURCE_GROUP])
 
     for wall_name, center, size in walls:
         shape_id = f"boundary_{wall_name.lower()}"
@@ -219,7 +222,7 @@ def add_buildings(scene: SceneWriter) -> None:
     ]
     placements = [placement for row in rows for placement in row]
 
-    scene.add_node("Buildings", ".", "Node3D")
+    scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (0, 0, -34))
 
     for index, (house_name, position, rotation_y) in enumerate(placements):
@@ -234,7 +237,7 @@ def add_plaza_props(scene: SceneWriter) -> None:
     benches = [(side * 19.2, 0, z) for side in (-1, 1) for z in (-16, -8, 0, 8, 16, 24)]
     flower_ring = [(6.9 * math.cos(math.radians(45 * index)), 0, 6.9 * math.sin(math.radians(45 * index))) for index in range(8) if index not in (2, 6)]
 
-    scene.add_node("Plaza", ".", "Node3D")
+    scene.add_node("Plaza", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "FountainLarge", "Plaza", "res://features/hub/props/fountain_large.tscn", (0, 0, 0))
     place(scene, "FountainWest", "Plaza", "res://features/hub/props/fountain_small.tscn", (-12, 0, 17))
     place(scene, "FountainEast", "Plaza", "res://features/hub/props/fountain_small.tscn", (12, 0, 17))
@@ -280,7 +283,7 @@ def add_market(scene: SceneWriter) -> None:
         ("Banner_2", (29.7, 3.6, -5.0), -math.pi / 2.0),
     ]
 
-    scene.add_node("Market", ".", "Node3D")
+    scene.add_node("Market", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
 
     for index, (model_name, position, rotation_y) in enumerate(market_items):
         place(scene, f"{model_name}{index:02d}", "Market", f"res://art/props/{model_name}.gltf", position, rotation_y)
@@ -325,18 +328,20 @@ def stand(position: tuple, facing: float, animation: str, offset: float) -> dict
 
 
 def add_townsfolk(scene: SceneWriter) -> None:
-    fountain_loop = [(8.0 * math.cos(math.radians(angle)), 8.0 * math.sin(math.radians(angle))) for angle in range(0, 360, 45)]
+    # Fora do anel de postes (r=9) e dos canteiros de flores (r=6.9); a navmesh contorna o resto.
+    fountain_loop = [(10.5 * math.cos(math.radians(angle)), 10.5 * math.sin(math.radians(angle))) for angle in range(0, 360, 30)]
 
+    scene.add_node("Navigation", ".", "NavigationRegion3D", properties={"navigation_mesh": f'ExtResource("{scene.external_id("NavigationMesh", "res://features/hub/hub_navmesh.tres")}")'})
     scene.add_node("Townsfolk", ".", "Node3D")
     npc(scene, "FountainWalker", "villager_male", "dark", patrol(fountain_loop, 1.2, 0.0, "ual1/Idle"))
-    npc(scene, "FountainWalkerReverse", "villager_female", "auburn", patrol(list(reversed(fountain_loop[3:] + fountain_loop[:3])), 1.1, 0.0, "ual1/Idle"))
+    npc(scene, "FountainWalkerReverse", "villager_female", "auburn", patrol(list(reversed(fountain_loop[6:] + fountain_loop[:6])), 1.1, 0.0, "ual1/Idle"))
     npc(scene, "StreetWalker", "villager_male", "grey", patrol([(-2.5, 34), (-2.5, -27), (2.5, -27), (2.5, 34)], 1.3, 4.0, "ual2/Idle_FoldArms"))
-    npc(scene, "WestAvenueWalker", "adventurer_female", "blond", patrol([(-18.0, -22), (-18.0, 26)], 1.5, 3.0, "ual1/Idle"))
-    npc(scene, "EastAvenueWalker", "adventurer_male", "black", patrol([(18.0, 26), (18.0, -22)], 1.4, 5.0, "ual2/Idle_FoldArms"))
-    npc(scene, "MarketShopper", "villager_female", "brown", patrol([(8.0, 23.5), (16.5, 23.0), (12.0, 21.0)], 1.0, 4.5, "ual1/Idle_Talking"))
+    npc(scene, "WestAvenueWalker", "adventurer_female", "blond", patrol([(-15.5, -22), (-15.5, 20)], 1.5, 3.0, "ual1/Idle"))
+    npc(scene, "EastAvenueWalker", "adventurer_male", "black", patrol([(15.5, 20), (15.5, -22)], 1.4, 5.0, "ual2/Idle_FoldArms"))
+    npc(scene, "MarketShopper", "villager_female", "brown", patrol([(8.0, 23.5), (14.5, 22.5), (12.0, 21.0)], 1.0, 4.5, "ual1/Idle_Talking"))
     npc(scene, "CathedralVisitor", "villager_female", "black", patrol([(-9.0, -26.0), (9.0, -26.0)], 1.1, 6.0, "ual1/Idle"))
-    npc(scene, "TalkerA", "villager_male", "brown", stand((5.6, 10.2), 2.4, "ual1/Idle_Talking", 0.0))
-    npc(scene, "TalkerB", "villager_female", "blond", stand((6.9, 9.0), -0.75, "ual2/Idle_FoldArms", 0.7))
+    npc(scene, "TalkerA", "villager_male", "brown", stand((7.6, 11.8), 2.28, "ual1/Idle_Talking", 0.0))
+    npc(scene, "TalkerB", "villager_female", "blond", stand((9.0, 10.6), -0.86, "ual2/Idle_FoldArms", 0.7))
     npc(scene, "Merchant", "villager_male", "auburn", stand((10.0, 28.0), math.pi, "ual1/Idle_Talking", 1.1))
     npc(scene, "SittingWest", "villager_female", "grey", stand((-19.05, -8.0), math.pi / 2.0, "ual1/Sitting_Idle", 0.3))
     npc(scene, "SittingEast", "villager_male", "black", stand((19.05, 8.0), -math.pi / 2.0, "ual1/Sitting_Talking", 0.0))
@@ -384,5 +389,8 @@ def build_hub_scene() -> str:
 
 
 if __name__ == "__main__":
+    if not NAVMESH_PATH.exists():  # placeholder until tools_src/bake_hub_navmesh.gd bakes the real one
+        NAVMESH_PATH.write_text('[gd_resource type="NavigationMesh" format=3]\n\n[resource]\n', encoding="utf-8", newline="\n")
+
     OUTPUT_PATH.write_text(build_hub_scene(), encoding="utf-8", newline="\n")
     print(f"WROTE {OUTPUT_PATH}")

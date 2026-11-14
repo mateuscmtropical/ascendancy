@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Grava uma cena em vídeo (Movie Maker do Godot, 30 fps fixos) sem roubar foco nem abrir alerta.
+# Grava uma cena em vídeo (Movie Maker do Godot, 30 fps fixos, 1080p) sem roubar foco nem abrir alerta.
 # A cena precisa fechar sozinha (ex.: tests/promo/promo_reel.tscn) e mover a janela para fora da tela.
 # Uso: tools_src/record.sh <cena.tscn> <saida.avi> [argumentos extras da cena...]
 set -euo pipefail
@@ -35,13 +35,8 @@ window/size/borderless=true
 window/size/window_width_override=64
 window/size/window_height_override=64
 window/stretch/mode="viewport"
-
-[editor]
-
-movie_writer/fps=30
-movie_writer/mjpeg_quality=0.95
 CFG
 trap 'rm -f override.cfg' EXIT
 
-timeout 600 "$GODOT" --path . --screen 0 --write-movie "$OUTPUT" "$SCENE" -- "${EXTRA_ARGUMENTS[@]}" 2>&1 | grep -E "ERROR|Movie" | grep -vE "$NOISE" || true
+timeout 600 "$GODOT" --path . --screen 0 --fixed-fps 30 --write-movie "$OUTPUT" "$SCENE" -- "${EXTRA_ARGUMENTS[@]}" 2>&1 | grep -E "ERROR|Movie" | grep -vE "$NOISE" || true
 ls -la "$OUTPUT"

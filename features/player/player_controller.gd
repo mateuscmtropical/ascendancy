@@ -35,6 +35,7 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 @onready var _camera_yaw: Node3D = $CameraYaw
 @onready var _camera_pitch: Node3D = $CameraYaw/CameraPitch
 @onready var _camera: Camera3D = $CameraYaw/CameraPitch/SpringArm3D/Camera3D
+@onready var _avoidance_obstacle: NavigationObstacle3D = $AvoidanceObstacle
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -75,6 +76,8 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+	# NPCs desviam do jogador prevendo para onde ele vai.
+	_avoidance_obstacle.velocity = Vector3(velocity.x, 0.0, velocity.z)
 	_turn_model_toward(move_direction, delta)
 	_apply_stance(stance)
 

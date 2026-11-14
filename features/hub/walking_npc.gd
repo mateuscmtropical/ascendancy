@@ -1,13 +1,13 @@
 class_name WalkingNpc
-extends Node3D
-## Morador da praça: percorre uma rota em laço parando em cada ponto, ou fica parado numa animação.
+extends CharacterBody3D
+## Morador da praça: percorre uma rota em laço pela navmesh, desviando de objetos e de outras
+## pessoas (avoidance), ou fica parado numa animação servindo de obstáculo para quem passa.
 
 enum Activity { PATROL, STAND }
 enum PatrolState { WALKING, PAUSED }
 
 const CHARACTER_MODEL_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const WALK_ANIMATION: StringName = &"ual1/Walk"
-const ARRIVAL_DISTANCE: float = 0.15
 const TURN_SPEED: float = 6.0
 
 @export var body_scene: PackedScene
@@ -28,25 +28,35 @@ var _patrol_steps: Dictionary[PatrolState, Callable] = {
 	PatrolState.PAUSED: _wait_at_target,
 }
 
+@onready var _navigation_agent: NavigationAgent3D = $NavigationAgent3D
+@onready var _obstacle: NavigationObstacle3D = $NavigationObstacle3D
+
 
 func _ready() -> void:
-	var starts_walking: bool = activity == Activity.PATROL and route.size() > 1
+	var is_walking: bool = activity == Activity.PATROL and route.size() > 1
 
 	_model = CHARACTER_MODEL_SCENE.instantiate()
 	_model.body_scene = body_scene
 	_model.hair_color = hair_color
-	_model.start_animation = WALK_ANIMATION if starts_walking else idle_animation
+	_model.start_animation = WALK_ANIMATION if is_walking else idle_animation
 	_model.start_offset_seconds = animation_offset_seconds
 	add_child(_model)
 
-	set_process(starts_walking)
+	_navigation_agent.avoidance_enabled = is_walking
+	_obstacle.avoidance_enabled = not is_walking
+	set_physics_process(is_walking)
 
-	if starts_walking:
-		global_position = route[0]
-		_target_index = 1
+	if not is_walking:
+		return
+
+	global_position = route[0]
+	_target_index = 1
+	_navigation_agent.max_speed = walk_speed
+	_navigation_agent.target_position = route[_target_index]
+	_navigation_agent.velocity_computed.connect(_move_with_safe_velocity)
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	var patrol_step: Callable = _patrol_steps[_patrol_state]
 
 	patrol_step.call(delta)
@@ -56,33 +66,54 @@ static func next_route_index(current_index: int, route_size: int) -> int:
 	return (current_index + 1) % route_size
 
 
-func _walk_toward_target(delta: float) -> void:
-	var target: Vector3 = route[_target_index]
-	var to_target: Vector3 = target - global_position
+func _walk_toward_target(_delta: float) -> void:
+	var next_point: Vector3
+	var direction: Vector3
 
-	to_target.y = 0.0
-
-	if to_target.length() <= ARRIVAL_DISTANCE:
+	if _navigation_agent.is_navigation_finished():
 		_arrive_at_target()
 
 		return
 
-	global_position += to_target.normalized() * minf(walk_speed * delta, to_target.length())
-	rotation.y = lerp_angle(rotation.y, atan2(to_target.x, to_target.z), TURN_SPEED * delta)
+	next_point = _navigation_agent.get_next_path_position()
+	direction = next_point - global_position
+	direction.y = 0.0
+	_navigation_agent.velocity = direction.normalized() * walk_speed
+
+
+## Chamado pelo avoidance com a velocidade que não bate em ninguém.
+func _move_with_safe_velocity(safe_velocity: Vector3) -> void:
+	var delta: float = get_physics_process_delta_time()
+
+	if _patrol_state == PatrolState.PAUSED:
+		return
+
+	velocity = Vector3(safe_velocity.x, 0.0, safe_velocity.z)
+	move_and_slide()
+
+	if velocity.length() < 0.05:
+		return
+
+	rotation.y = lerp_angle(rotation.y, atan2(velocity.x, velocity.z), TURN_SPEED * delta)
 
 
 func _arrive_at_target() -> void:
 	_patrol_state = PatrolState.PAUSED
 	_pause_left = pause_seconds
 	_target_index = next_route_index(_target_index, route.size())
-	_model.play_animation(idle_animation)
+	_navigation_agent.velocity = Vector3.ZERO
+
+	if pause_seconds > 0.0:
+		_model.play_animation(idle_animation)
 
 
 func _wait_at_target(delta: float) -> void:
 	_pause_left -= delta
+	_navigation_agent.velocity = Vector3.ZERO
 
 	if _pause_left > 0.0:
 		return
 
 	_patrol_state = PatrolState.WALKING
+	_navigation_agent.target_position = route[_target_index]
 	_model.play_animation(WALK_ANIMATION)

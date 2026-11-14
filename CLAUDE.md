@@ -31,10 +31,12 @@ Depois de editar código: `gdformat` + `gdlint` (zero aviso) + testes headless.
 - Controles: WASD anda (trote), Shift corre, Ctrl caminha, Espaço pula, mouse gira câmera (clique captura, Esc solta).
 - Testes headless (GUT 9.7.1 em `addons/gut`): `tools/Godot_v4.7.2-stable_win64_console.exe --headless --audio-driver Dummy --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gexit`.
 - Prints: `bash tools_src/shot.sh res://tests/shots/hub_shots.tscn <saida.png> [Camera] [--character=male|--cinematic] [--shot-delay=s]` (janela 64x64 fora da tela, sem foco).
-- Vídeo promocional: `bash tools_src/record.sh res://tests/promo/promo_reel.tscn <saida.avi>` (Movie Maker, 1080p60, roteiro em `tests/promo/promo_director.gd`); depois `ffmpeg -i saida.avi -i trilha.wav -map 0:v -map 1:a -c:v libx264 -crf 24 -pix_fmt yuv420p -c:a aac -shortest saida.mp4`.
+- Vídeo promocional: `bash tools_src/record.sh res://tests/promo/promo_reel.tscn <saida.avi>` (Movie Maker, 1080p30, roteiro em `tests/promo/promo_director.gd`) + `python tools_src/compose_promo_music.py <trilha.wav> 56.2`; juntar em versão comprimida: `ffmpeg -i saida.avi -i trilha.wav -map 0:v -map 1:a -vf scale=1280:-2 -c:v libx264 -preset slow -crf 28 -pix_fmt yuv420p -c:a aac -b:a 128k -shortest saida.mp4`.
 
 ## Pipeline de arte da praça (Blender 5.2 em background, depois Godot importa)
 Ordem: `fetch_assets.py` (pacotes CC0 em `tools/vendor/`) → `build_characters.py` → `build_houses.py` → `build_cathedral.py` (gera texturas usadas pelos props) → `build_plaza_props.py` → `copy_kit_models.py` (natureza e props prontos) → `python tools_src/build_hub_scene.py` (escreve `features/hub/hub.tscn`; não editar a cena à mão, editar o gerador).
+  Depois: `tools/Godot_v4.7.2-stable_win64_console.exe --headless --path . -s tools_src/bake_hub_navmesh.gd` (navmesh dos NPCs em `features/hub/hub_navmesh.tres`; rodar de novo sempre que mudar prédio/prop de lugar).
+- NPCs: CharacterBody3D + NavigationAgent3D com avoidance; parados viram NavigationObstacle3D. Camadas de física: 1 mundo, 2 jogador, 3 NPC.
 - Malha com nome `*-colonly` vira colisão estática no Godot. Material `M_Water` é trocado por `art/materials/water.tres` via `_subresources` no `.import`.
 
 ## Ferramentas
