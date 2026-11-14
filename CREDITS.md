@@ -1,3 +1,4 @@
+| GUT (Godot Unit Test) 9.7.1 | Butch Wesley and contributors | MIT | https://github.com/bitwes/Gut |
 | Universal Base Characters | Quaternius | CC0 1.0 | https://quaternius.itch.io/universal-base-characters |
 | Modular Character Outfits – Fantasy | Quaternius | CC0 1.0 | https://quaternius.itch.io/modular-character-outfits-fantasy |
 | Universal Animation Library 1 & 2 | Quaternius | CC0 1.0 | https://quaternius.itch.io/universal-animation-library |

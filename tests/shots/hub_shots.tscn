@@ -1,0 +1,47 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="1_hub"]
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="2_capture"]
+
+[node name="HubShots" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("1_hub")]
+
+[node name="PlazaOverview" type="Camera3D" parent="."]
+position = Vector3(0, 9, 42)
+rotation = Vector3(-0.2, 0, 0)
+fov = 60.0
+
+[node name="FountainEye" type="Camera3D" parent="."]
+position = Vector3(9, 1.6, 14)
+rotation = Vector3(0.05, 0.6, 0)
+fov = 60.0
+
+[node name="CathedralEye" type="Camera3D" parent="."]
+position = Vector3(0, 1.6, -4)
+rotation = Vector3(0.38, 0, 0)
+fov = 70.0
+
+[node name="MarketEye" type="Camera3D" parent="."]
+position = Vector3(4, 1.6, 19)
+rotation = Vector3(-0.08, -2.0, 0)
+fov = 60.0
+
+[node name="AvenueEye" type="Camera3D" parent="."]
+position = Vector3(-16, 1.6, 30)
+rotation = Vector3(-0.02, -0.2, 0)
+fov = 60.0
+
+[node name="BenchEye" type="Camera3D" parent="."]
+position = Vector3(-14.5, 1.5, -9.5)
+rotation = Vector3(-0.14, 1.88, 0)
+fov = 55.0
+
+[node name="SitterSide" type="Camera3D" parent="."]
+position = Vector3(-19.2, 0.9, -5.2)
+rotation = Vector3(-0.05, 0, 0)
+fov = 50.0
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("2_capture")
+seconds_before_capture = 3.0

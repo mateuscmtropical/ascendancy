@@ -1,3 +1,1043 @@
-[gd_scene format=3]
+[gd_scene load_steps=61 format=3]
+
+[ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
+[ext_resource type="Texture2D" path="res://art/town/textures/T_UnevenBrick_BaseColor.png" id="2_ext"]
+[ext_resource type="Texture2D" path="res://art/town/textures/T_UnevenBrick_Normal.png" id="3_ext"]
+[ext_resource type="Texture2D" path="res://art/town/textures/T_UnevenBrick_Roughness.png" id="4_ext"]
+[ext_resource type="PackedScene" path="res://art/town/cathedral.gltf" id="5_ext"]
+[ext_resource type="PackedScene" path="res://art/town/house_narrow_three.gltf" id="6_ext"]
+[ext_resource type="PackedScene" path="res://art/town/house_stone_tall.gltf" id="7_ext"]
+[ext_resource type="PackedScene" path="res://art/town/house_plaster_wide.gltf" id="8_ext"]
+[ext_resource type="PackedScene" path="res://art/town/house_cottage.gltf" id="9_ext"]
+[ext_resource type="PackedScene" path="res://art/town/house_shop.gltf" id="10_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/props/fountain_large.tscn" id="11_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/props/fountain_small.tscn" id="12_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/props/lamp_post.tscn" id="13_ext"]
+[ext_resource type="PackedScene" path="res://art/town/planter.gltf" id="14_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_1.gltf" id="15_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_2.gltf" id="16_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_3.gltf" id="17_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_4.gltf" id="18_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/CommonTree_5.gltf" id="19_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Bench.gltf" id="20_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Bush_Common_Flowers.gltf" id="21_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Flower_3_Group.gltf" id="22_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Flower_4_Group.gltf" id="23_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Stall_Empty.gltf" id="24_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Stall_Cart_Empty.gltf" id="25_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Barrel.gltf" id="26_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Barrel_Apples.gltf" id="27_ext"]
+[ext_resource type="PackedScene" path="res://art/props/FarmCrate_Apple.gltf" id="28_ext"]
+[ext_resource type="PackedScene" path="res://art/props/FarmCrate_Carrot.gltf" id="29_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Crate_Wooden.gltf" id="30_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Bucket_Wooden_1.gltf" id="31_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Table_Large.gltf" id="32_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Stool.gltf" id="33_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Banner_1.gltf" id="34_ext"]
+[ext_resource type="PackedScene" path="res://art/props/Banner_2.gltf" id="35_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_1.gltf" id="36_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_2.gltf" id="37_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_3.gltf" id="38_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/villager_male.gltf" id="39_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/walking_npc.tscn" id="40_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/villager_female.gltf" id="41_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_female.gltf" id="42_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="43_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="44_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="45_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="46_ext"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.361, 0.561, 0.82, 1)
+sky_horizon_color = Color(0.78, 0.89, 0.95, 1)
+sky_curve = 0.12
+ground_horizon_color = Color(0.78, 0.89, 0.95, 1)
+ground_bottom_color = Color(0.35, 0.42, 0.33, 1)
+sun_angle_max = 20.0
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_color = Color(0.663, 0.784, 0.941, 1)
+ambient_light_sky_contribution = 0.75
+tonemap_mode = 2
+tonemap_exposure = 0.95
+tonemap_white = 1.4
+ssao_enabled = true
+ssao_radius = 1.4
+ssao_intensity = 1.6
+ssil_enabled = true
+glow_enabled = true
+glow_intensity = 0.35
+glow_bloom = 0.05
+glow_blend_mode = 1
+glow_hdr_threshold = 1.0
+fog_enabled = true
+fog_light_color = Color(0.78, 0.87, 0.95, 1)
+fog_density = 0.0016
+fog_sun_scatter = 0.25
+fog_aerial_perspective = 0.35
+adjustment_enabled = true
+adjustment_saturation = 1.08
+
+[sub_resource type="StandardMaterial3D" id="paving_material"]
+albedo_color = Color(0.9, 0.86, 0.82, 1)
+albedo_texture = ExtResource("2_ext")
+roughness_texture = ExtResource("4_ext")
+normal_enabled = true
+normal_scale = 0.8
+normal_texture = ExtResource("3_ext")
+uv1_scale = Vector3(0.38, 0.38, 0.38)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="PlaneMesh" id="paving_mesh"]
+material = SubResource("paving_material")
+size = Vector2(96, 110)
+
+[sub_resource type="FastNoiseLite" id="grass_noise"]
+frequency = 0.05
+
+[sub_resource type="NoiseTexture2D" id="grass_variation"]
+seamless = true
+noise = SubResource("grass_noise")
+
+[sub_resource type="StandardMaterial3D" id="grass_material"]
+albedo_color = Color(0.45, 0.66, 0.32, 1)
+albedo_texture = SubResource("grass_variation")
+roughness = 1.0
+uv1_scale = Vector3(30, 30, 30)
+
+[sub_resource type="PlaneMesh" id="grass_mesh"]
+material = SubResource("grass_material")
+size = Vector2(400, 400)
+
+[sub_resource type="WorldBoundaryShape3D" id="ground_shape"]
+
+[sub_resource type="BoxShape3D" id="boundary_north"]
+size = Vector3(110.000, 6.000, 1.000)
+
+[sub_resource type="BoxShape3D" id="boundary_south"]
+size = Vector3(110.000, 6.000, 1.000)
+
+[sub_resource type="BoxShape3D" id="boundary_west"]
+size = Vector3(1.000, 6.000, 130.000)
+
+[sub_resource type="BoxShape3D" id="boundary_east"]
+size = Vector3(1.000, 6.000, 130.000)
 
 [node name="Hub" type="Node3D"]
+script = ExtResource("1_ext")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.780, 0.550, 0.000)
+light_color = Color(1, 0.902, 0.769, 1)
+light_energy = 1.35
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_mode = 1
+directional_shadow_max_distance = 90.0
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="Collision" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("ground_shape")
+
+[node name="Paving" type="MeshInstance3D" parent="Ground"]
+position = Vector3(0.000, 0.000, -8.000)
+mesh = SubResource("paving_mesh")
+
+[node name="Grass" type="MeshInstance3D" parent="Ground"]
+position = Vector3(0.000, -0.030, 0.000)
+mesh = SubResource("grass_mesh")
+
+[node name="Boundary" type="StaticBody3D" parent="."]
+
+[node name="North" type="CollisionShape3D" parent="Boundary"]
+position = Vector3(0.000, 3.000, -84.000)
+shape = SubResource("boundary_north")
+
+[node name="South" type="CollisionShape3D" parent="Boundary"]
+position = Vector3(0.000, 3.000, 46.000)
+shape = SubResource("boundary_south")
+
+[node name="West" type="CollisionShape3D" parent="Boundary"]
+position = Vector3(-46.000, 3.000, -19.000)
+shape = SubResource("boundary_west")
+
+[node name="East" type="CollisionShape3D" parent="Boundary"]
+position = Vector3(46.000, 3.000, -19.000)
+shape = SubResource("boundary_east")
+
+[node name="Buildings" type="Node3D" parent="."]
+
+[node name="Cathedral" parent="Buildings" instance=ExtResource("5_ext")]
+position = Vector3(0.000, 0.000, -34.000)
+
+[node name="House00" parent="Buildings" instance=ExtResource("6_ext")]
+position = Vector3(-34.000, 0.000, -23.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House01" parent="Buildings" instance=ExtResource("7_ext")]
+position = Vector3(-34.000, 0.000, -16.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House02" parent="Buildings" instance=ExtResource("8_ext")]
+position = Vector3(-34.000, 0.000, -8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House03" parent="Buildings" instance=ExtResource("9_ext")]
+position = Vector3(-33.000, 0.000, 0.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House04" parent="Buildings" instance=ExtResource("10_ext")]
+position = Vector3(-35.000, 0.000, 8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House05" parent="Buildings" instance=ExtResource("6_ext")]
+position = Vector3(-34.000, 0.000, 16.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House06" parent="Buildings" instance=ExtResource("7_ext")]
+position = Vector3(-34.000, 0.000, 23.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="House07" parent="Buildings" instance=ExtResource("7_ext")]
+position = Vector3(34.000, 0.000, -23.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House08" parent="Buildings" instance=ExtResource("10_ext")]
+position = Vector3(35.000, 0.000, -15.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House09" parent="Buildings" instance=ExtResource("6_ext")]
+position = Vector3(34.000, 0.000, -7.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House10" parent="Buildings" instance=ExtResource("9_ext")]
+position = Vector3(33.000, 0.000, 0.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House11" parent="Buildings" instance=ExtResource("8_ext")]
+position = Vector3(34.000, 0.000, 8.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House12" parent="Buildings" instance=ExtResource("7_ext")]
+position = Vector3(34.000, 0.000, 16.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House13" parent="Buildings" instance=ExtResource("6_ext")]
+position = Vector3(34.000, 0.000, 23.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="House14" parent="Buildings" instance=ExtResource("8_ext")]
+position = Vector3(-24.500, 0.000, 40.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="House15" parent="Buildings" instance=ExtResource("6_ext")]
+position = Vector3(-16.500, 0.000, 40.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="House16" parent="Buildings" instance=ExtResource("7_ext")]
+position = Vector3(-9.500, 0.000, 40.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="House17" parent="Buildings" instance=ExtResource("9_ext")]
+position = Vector3(8.500, 0.000, 39.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="House18" parent="Buildings" instance=ExtResource("10_ext")]
+position = Vector3(16.500, 0.000, 41.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="House19" parent="Buildings" instance=ExtResource("6_ext")]
+position = Vector3(24.500, 0.000, 40.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
+[node name="House20" parent="Buildings" instance=ExtResource("8_ext")]
+position = Vector3(-25.000, 0.000, -35.000)
+
+[node name="House21" parent="Buildings" instance=ExtResource("10_ext")]
+position = Vector3(24.000, 0.000, -36.000)
+
+[node name="Plaza" type="Node3D" parent="."]
+
+[node name="FountainLarge" parent="Plaza" instance=ExtResource("11_ext")]
+position = Vector3(0.000, 0.000, 0.000)
+
+[node name="FountainWest" parent="Plaza" instance=ExtResource("12_ext")]
+position = Vector3(-12.000, 0.000, 17.000)
+
+[node name="FountainEast" parent="Plaza" instance=ExtResource("12_ext")]
+position = Vector3(12.000, 0.000, 17.000)
+
+[node name="Lamp00" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(8.315, 0.000, 3.444)
+
+[node name="Lamp01" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(3.444, 0.000, 8.315)
+
+[node name="Lamp02" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-3.444, 0.000, 8.315)
+
+[node name="Lamp03" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-8.315, 0.000, 3.444)
+
+[node name="Lamp04" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-8.315, 0.000, -3.444)
+
+[node name="Lamp05" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-3.444, 0.000, -8.315)
+
+[node name="Lamp06" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(3.444, 0.000, -8.315)
+
+[node name="Lamp07" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(8.315, 0.000, -3.444)
+
+[node name="Lamp08" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-17.000, 0.000, -22.000)
+
+[node name="Lamp09" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-17.000, 0.000, -6.000)
+
+[node name="Lamp10" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-17.000, 0.000, 10.000)
+
+[node name="Lamp11" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-17.000, 0.000, 26.000)
+
+[node name="Lamp12" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(17.000, 0.000, -22.000)
+
+[node name="Lamp13" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(17.000, 0.000, -6.000)
+
+[node name="Lamp14" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(17.000, 0.000, 10.000)
+
+[node name="Lamp15" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(17.000, 0.000, 26.000)
+
+[node name="Lamp16" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(-10.000, 0.000, -28.000)
+
+[node name="Lamp17" parent="Plaza" instance=ExtResource("13_ext")]
+position = Vector3(10.000, 0.000, -28.000)
+
+[node name="Planter00" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, -20.000)
+
+[node name="Tree00" parent="Plaza" instance=ExtResource("15_ext")]
+position = Vector3(-21.000, 0.350, -20.000)
+scale = Vector3(0.750, 0.750, 0.750)
+
+[node name="Planter01" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, -12.000)
+
+[node name="Tree01" parent="Plaza" instance=ExtResource("16_ext")]
+position = Vector3(-21.000, 0.350, -12.000)
+rotation = Vector3(0.000, 1.300, 0.000)
+scale = Vector3(0.810, 0.810, 0.810)
+
+[node name="Planter02" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, -4.000)
+
+[node name="Tree02" parent="Plaza" instance=ExtResource("17_ext")]
+position = Vector3(-21.000, 0.350, -4.000)
+rotation = Vector3(0.000, 2.600, 0.000)
+scale = Vector3(0.870, 0.870, 0.870)
+
+[node name="Planter03" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, 4.000)
+
+[node name="Tree03" parent="Plaza" instance=ExtResource("18_ext")]
+position = Vector3(-21.000, 0.350, 4.000)
+rotation = Vector3(0.000, 3.900, 0.000)
+scale = Vector3(0.750, 0.750, 0.750)
+
+[node name="Planter04" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, 12.000)
+
+[node name="Tree04" parent="Plaza" instance=ExtResource("19_ext")]
+position = Vector3(-21.000, 0.350, 12.000)
+rotation = Vector3(0.000, 5.200, 0.000)
+scale = Vector3(0.810, 0.810, 0.810)
+
+[node name="Planter05" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, 20.000)
+
+[node name="Tree05" parent="Plaza" instance=ExtResource("15_ext")]
+position = Vector3(-21.000, 0.350, 20.000)
+rotation = Vector3(0.000, 6.500, 0.000)
+scale = Vector3(0.870, 0.870, 0.870)
+
+[node name="Planter06" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(-21.000, 0.000, 28.000)
+
+[node name="Tree06" parent="Plaza" instance=ExtResource("16_ext")]
+position = Vector3(-21.000, 0.350, 28.000)
+rotation = Vector3(0.000, 7.800, 0.000)
+scale = Vector3(0.750, 0.750, 0.750)
+
+[node name="Planter07" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, -20.000)
+
+[node name="Tree07" parent="Plaza" instance=ExtResource("17_ext")]
+position = Vector3(21.000, 0.350, -20.000)
+rotation = Vector3(0.000, 9.100, 0.000)
+scale = Vector3(0.810, 0.810, 0.810)
+
+[node name="Planter08" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, -12.000)
+
+[node name="Tree08" parent="Plaza" instance=ExtResource("18_ext")]
+position = Vector3(21.000, 0.350, -12.000)
+rotation = Vector3(0.000, 10.400, 0.000)
+scale = Vector3(0.870, 0.870, 0.870)
+
+[node name="Planter09" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, -4.000)
+
+[node name="Tree09" parent="Plaza" instance=ExtResource("19_ext")]
+position = Vector3(21.000, 0.350, -4.000)
+rotation = Vector3(0.000, 11.700, 0.000)
+scale = Vector3(0.750, 0.750, 0.750)
+
+[node name="Planter10" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, 4.000)
+
+[node name="Tree10" parent="Plaza" instance=ExtResource("15_ext")]
+position = Vector3(21.000, 0.350, 4.000)
+rotation = Vector3(0.000, 13.000, 0.000)
+scale = Vector3(0.810, 0.810, 0.810)
+
+[node name="Planter11" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, 12.000)
+
+[node name="Tree11" parent="Plaza" instance=ExtResource("16_ext")]
+position = Vector3(21.000, 0.350, 12.000)
+rotation = Vector3(0.000, 14.300, 0.000)
+scale = Vector3(0.870, 0.870, 0.870)
+
+[node name="Planter12" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, 20.000)
+
+[node name="Tree12" parent="Plaza" instance=ExtResource("17_ext")]
+position = Vector3(21.000, 0.350, 20.000)
+rotation = Vector3(0.000, 15.600, 0.000)
+scale = Vector3(0.750, 0.750, 0.750)
+
+[node name="Planter13" parent="Plaza" instance=ExtResource("14_ext")]
+position = Vector3(21.000, 0.000, 28.000)
+
+[node name="Tree13" parent="Plaza" instance=ExtResource("18_ext")]
+position = Vector3(21.000, 0.350, 28.000)
+rotation = Vector3(0.000, 16.900, 0.000)
+scale = Vector3(0.810, 0.810, 0.810)
+
+[node name="Bench00" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(-19.200, 0.000, -16.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench01" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(-19.200, 0.000, -8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench02" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(-19.200, 0.000, 0.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench03" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(-19.200, 0.000, 8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench04" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(-19.200, 0.000, 16.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench05" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(-19.200, 0.000, 24.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench06" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(19.200, 0.000, -16.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench07" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(19.200, 0.000, -8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench08" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(19.200, 0.000, 0.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench09" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(19.200, 0.000, 8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench10" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(19.200, 0.000, 16.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Bench11" parent="Plaza" instance=ExtResource("20_ext")]
+position = Vector3(19.200, 0.000, 24.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="FlowerBush00" parent="Plaza" instance=ExtResource("21_ext")]
+position = Vector3(6.900, 0.000, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="FlowerBush01" parent="Plaza" instance=ExtResource("21_ext")]
+position = Vector3(4.879, 0.000, 4.879)
+rotation = Vector3(0.000, 0.900, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="FlowerBush02" parent="Plaza" instance=ExtResource("21_ext")]
+position = Vector3(-4.879, 0.000, 4.879)
+rotation = Vector3(0.000, 1.800, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="FlowerBush03" parent="Plaza" instance=ExtResource("21_ext")]
+position = Vector3(-6.900, 0.000, 0.000)
+rotation = Vector3(0.000, 2.700, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="FlowerBush04" parent="Plaza" instance=ExtResource("21_ext")]
+position = Vector3(-4.879, 0.000, -4.879)
+rotation = Vector3(0.000, 3.600, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="FlowerBush05" parent="Plaza" instance=ExtResource("21_ext")]
+position = Vector3(4.879, 0.000, -4.879)
+rotation = Vector3(0.000, 4.500, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="Flowers00" parent="Plaza" instance=ExtResource("22_ext")]
+position = Vector3(-11.500, 0.000, -29.500)
+
+[node name="Flowers01" parent="Plaza" instance=ExtResource("23_ext")]
+position = Vector3(11.500, 0.000, -29.500)
+rotation = Vector3(0.000, 1.100, 0.000)
+
+[node name="Flowers02" parent="Plaza" instance=ExtResource("22_ext")]
+position = Vector3(-14.500, 0.000, -29.000)
+rotation = Vector3(0.000, 2.200, 0.000)
+
+[node name="Flowers03" parent="Plaza" instance=ExtResource("23_ext")]
+position = Vector3(14.500, 0.000, -29.000)
+rotation = Vector3(0.000, 3.300, 0.000)
+
+[node name="Flowers04" parent="Plaza" instance=ExtResource("22_ext")]
+position = Vector3(-6.500, 0.000, -30.800)
+rotation = Vector3(0.000, 4.400, 0.000)
+
+[node name="Flowers05" parent="Plaza" instance=ExtResource("23_ext")]
+position = Vector3(6.500, 0.000, -30.800)
+rotation = Vector3(0.000, 5.500, 0.000)
+
+[node name="Market" type="Node3D" parent="."]
+
+[node name="Stall_Empty00" parent="Market" instance=ExtResource("24_ext")]
+position = Vector3(10.000, 0.000, 27.000)
+
+[node name="Stall_Empty01" parent="Market" instance=ExtResource("24_ext")]
+position = Vector3(14.200, 0.000, 27.000)
+
+[node name="Stall_Cart_Empty02" parent="Market" instance=ExtResource("25_ext")]
+position = Vector3(18.500, 0.000, 24.000)
+rotation = Vector3(0.000, -0.600, 0.000)
+
+[node name="Barrel03" parent="Market" instance=ExtResource("26_ext")]
+position = Vector3(8.400, 0.000, 25.200)
+
+[node name="Barrel_Apples04" parent="Market" instance=ExtResource("27_ext")]
+position = Vector3(11.900, 0.000, 25.400)
+rotation = Vector3(0.000, 0.400, 0.000)
+
+[node name="FarmCrate_Apple05" parent="Market" instance=ExtResource("28_ext")]
+position = Vector3(9.200, 0.000, 25.600)
+rotation = Vector3(0.000, 0.200, 0.000)
+
+[node name="FarmCrate_Carrot06" parent="Market" instance=ExtResource("29_ext")]
+position = Vector3(13.300, 0.000, 25.600)
+rotation = Vector3(0.000, -0.200, 0.000)
+
+[node name="Crate_Wooden07" parent="Market" instance=ExtResource("30_ext")]
+position = Vector3(16.200, 0.000, 27.600)
+rotation = Vector3(0.000, 0.300, 0.000)
+
+[node name="Bucket_Wooden_108" parent="Market" instance=ExtResource("31_ext")]
+position = Vector3(16.600, 0.000, 26.200)
+
+[node name="Table_Large09" parent="Market" instance=ExtResource("32_ext")]
+position = Vector3(-12.000, 0.000, 27.000)
+
+[node name="Stool10" parent="Market" instance=ExtResource("33_ext")]
+position = Vector3(-13.600, 0.000, 27.000)
+
+[node name="Stool11" parent="Market" instance=ExtResource("33_ext")]
+position = Vector3(-10.400, 0.000, 27.000)
+
+[node name="Stool12" parent="Market" instance=ExtResource("33_ext")]
+position = Vector3(-12.000, 0.000, 25.750)
+
+[node name="Barrel13" parent="Market" instance=ExtResource("26_ext")]
+position = Vector3(-15.000, 0.000, 28.500)
+
+[node name="Barrel14" parent="Market" instance=ExtResource("26_ext")]
+position = Vector3(-15.600, 0.000, 27.600)
+rotation = Vector3(0.000, 0.700, 0.000)
+
+[node name="Banner_115" parent="Market" instance=ExtResource("34_ext")]
+position = Vector3(-29.700, 3.600, -13.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+
+[node name="Banner_216" parent="Market" instance=ExtResource("35_ext")]
+position = Vector3(29.700, 3.600, -5.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+
+[node name="Backdrop" type="Node3D" parent="."]
+
+[node name="Tree00" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(-22.000, 0.000, -32.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree01" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(-18.500, 0.000, -36.000)
+rotation = Vector3(0.000, 0.700, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree02" parent="Backdrop" instance=ExtResource("17_ext")]
+position = Vector3(22.000, 0.000, -33.000)
+rotation = Vector3(0.000, 1.400, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree03" parent="Backdrop" instance=ExtResource("18_ext")]
+position = Vector3(18.000, 0.000, -37.000)
+rotation = Vector3(0.000, 2.100, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree04" parent="Backdrop" instance=ExtResource("19_ext")]
+position = Vector3(-27.000, 0.000, 31.000)
+rotation = Vector3(0.000, 2.800, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree05" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(27.000, 0.000, 31.000)
+rotation = Vector3(0.000, 3.500, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree06" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(-3.500, 0.000, 41.000)
+rotation = Vector3(0.000, 4.200, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree07" parent="Backdrop" instance=ExtResource("17_ext")]
+position = Vector3(3.500, 0.000, 41.000)
+rotation = Vector3(0.000, 4.900, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree08" parent="Backdrop" instance=ExtResource("18_ext")]
+position = Vector3(-42.000, 0.000, -60.000)
+rotation = Vector3(0.000, 5.600, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree09" parent="Backdrop" instance=ExtResource("19_ext")]
+position = Vector3(-42.000, 0.000, -51.000)
+rotation = Vector3(0.000, 6.300, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree10" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(-42.000, 0.000, -42.000)
+rotation = Vector3(0.000, 7.000, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree11" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(-42.000, 0.000, -33.000)
+rotation = Vector3(0.000, 7.700, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree12" parent="Backdrop" instance=ExtResource("17_ext")]
+position = Vector3(-42.000, 0.000, -24.000)
+rotation = Vector3(0.000, 8.400, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree13" parent="Backdrop" instance=ExtResource("18_ext")]
+position = Vector3(-42.000, 0.000, -15.000)
+rotation = Vector3(0.000, 9.100, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree14" parent="Backdrop" instance=ExtResource("19_ext")]
+position = Vector3(-42.000, 0.000, -6.000)
+rotation = Vector3(0.000, 9.800, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree15" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(-42.000, 0.000, 3.000)
+rotation = Vector3(0.000, 10.500, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree16" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(-42.000, 0.000, 12.000)
+rotation = Vector3(0.000, 11.200, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree17" parent="Backdrop" instance=ExtResource("17_ext")]
+position = Vector3(-42.000, 0.000, 21.000)
+rotation = Vector3(0.000, 11.900, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree18" parent="Backdrop" instance=ExtResource("18_ext")]
+position = Vector3(-42.000, 0.000, 30.000)
+rotation = Vector3(0.000, 12.600, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree19" parent="Backdrop" instance=ExtResource("19_ext")]
+position = Vector3(-42.000, 0.000, 39.000)
+rotation = Vector3(0.000, 13.300, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree20" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(42.000, 0.000, -60.000)
+rotation = Vector3(0.000, 14.000, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree21" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(42.000, 0.000, -51.000)
+rotation = Vector3(0.000, 14.700, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree22" parent="Backdrop" instance=ExtResource("17_ext")]
+position = Vector3(42.000, 0.000, -42.000)
+rotation = Vector3(0.000, 15.400, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree23" parent="Backdrop" instance=ExtResource("18_ext")]
+position = Vector3(42.000, 0.000, -33.000)
+rotation = Vector3(0.000, 16.100, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree24" parent="Backdrop" instance=ExtResource("19_ext")]
+position = Vector3(42.000, 0.000, -24.000)
+rotation = Vector3(0.000, 16.800, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree25" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(42.000, 0.000, -15.000)
+rotation = Vector3(0.000, 17.500, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree26" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(42.000, 0.000, -6.000)
+rotation = Vector3(0.000, 18.200, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree27" parent="Backdrop" instance=ExtResource("17_ext")]
+position = Vector3(42.000, 0.000, 3.000)
+rotation = Vector3(0.000, 18.900, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Tree28" parent="Backdrop" instance=ExtResource("18_ext")]
+position = Vector3(42.000, 0.000, 12.000)
+rotation = Vector3(0.000, 19.600, 0.000)
+scale = Vector3(0.850, 0.850, 0.850)
+
+[node name="Tree29" parent="Backdrop" instance=ExtResource("19_ext")]
+position = Vector3(42.000, 0.000, 21.000)
+rotation = Vector3(0.000, 20.300, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Tree30" parent="Backdrop" instance=ExtResource("15_ext")]
+position = Vector3(42.000, 0.000, 30.000)
+rotation = Vector3(0.000, 21.000, 0.000)
+scale = Vector3(1.050, 1.050, 1.050)
+
+[node name="Tree31" parent="Backdrop" instance=ExtResource("16_ext")]
+position = Vector3(42.000, 0.000, 39.000)
+rotation = Vector3(0.000, 21.700, 0.000)
+scale = Vector3(1.150, 1.150, 1.150)
+
+[node name="Pine00" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(66.000, 0.000, -15.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine01" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(63.751, 0.000, 2.082)
+rotation = Vector3(0.000, 0.500, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine02" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(57.158, 0.000, 18.000)
+rotation = Vector3(0.000, 1.000, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine03" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(46.669, 0.000, 31.669)
+rotation = Vector3(0.000, 1.500, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine04" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(33.000, 0.000, 42.158)
+rotation = Vector3(0.000, 2.000, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine05" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(17.082, 0.000, 48.751)
+rotation = Vector3(0.000, 2.500, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine06" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(0.000, 0.000, 51.000)
+rotation = Vector3(0.000, 3.000, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine07" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(-17.082, 0.000, 48.751)
+rotation = Vector3(0.000, 3.500, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine08" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(-33.000, 0.000, 42.158)
+rotation = Vector3(0.000, 4.000, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine09" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(-46.669, 0.000, 31.669)
+rotation = Vector3(0.000, 4.500, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine10" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(-57.158, 0.000, 18.000)
+rotation = Vector3(0.000, 5.000, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine11" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(-63.751, 0.000, 2.082)
+rotation = Vector3(0.000, 5.500, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine12" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(-66.000, 0.000, -15.000)
+rotation = Vector3(0.000, 6.000, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine13" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(-63.751, 0.000, -32.082)
+rotation = Vector3(0.000, 6.500, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine14" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(-57.158, 0.000, -48.000)
+rotation = Vector3(0.000, 7.000, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine15" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(-46.669, 0.000, -61.669)
+rotation = Vector3(0.000, 7.500, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine16" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(-33.000, 0.000, -72.158)
+rotation = Vector3(0.000, 8.000, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine17" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(-17.082, 0.000, -78.751)
+rotation = Vector3(0.000, 8.500, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine18" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(-0.000, 0.000, -81.000)
+rotation = Vector3(0.000, 9.000, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine19" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(17.082, 0.000, -78.751)
+rotation = Vector3(0.000, 9.500, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine20" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(33.000, 0.000, -72.158)
+rotation = Vector3(0.000, 10.000, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Pine21" parent="Backdrop" instance=ExtResource("36_ext")]
+position = Vector3(46.669, 0.000, -61.669)
+rotation = Vector3(0.000, 10.500, 0.000)
+scale = Vector3(1.600, 1.600, 1.600)
+
+[node name="Pine22" parent="Backdrop" instance=ExtResource("37_ext")]
+position = Vector3(57.158, 0.000, -48.000)
+rotation = Vector3(0.000, 11.000, 0.000)
+scale = Vector3(1.800, 1.800, 1.800)
+
+[node name="Pine23" parent="Backdrop" instance=ExtResource("38_ext")]
+position = Vector3(63.751, 0.000, -32.082)
+rotation = Vector3(0.000, 11.500, 0.000)
+scale = Vector3(2.000, 2.000, 2.000)
+
+[node name="Townsfolk" type="Node3D" parent="."]
+
+[node name="FountainWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("39_ext")
+hair_color = Color(0.160, 0.120, 0.100, 1)
+route = PackedVector3Array(8.00, 0, 0.00, 5.66, 0, 5.66, 0.00, 0, 8.00, -5.66, 0, 5.66, -8.00, 0, 0.00, -5.66, 0, -5.66, -0.00, 0, -8.00, 5.66, 0, -5.66)
+walk_speed = 1.2
+pause_seconds = 0.0
+idle_animation = &"ual1/Idle"
+
+[node name="FountainWalkerReverse" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("41_ext")
+hair_color = Color(0.550, 0.270, 0.150, 1)
+route = PackedVector3Array(0.00, 0, 8.00, 5.66, 0, 5.66, 8.00, 0, 0.00, 5.66, 0, -5.66, -0.00, 0, -8.00, -5.66, 0, -5.66, -8.00, 0, 0.00, -5.66, 0, 5.66)
+walk_speed = 1.1
+pause_seconds = 0.0
+idle_animation = &"ual1/Idle"
+
+[node name="StreetWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("39_ext")
+hair_color = Color(0.620, 0.600, 0.580, 1)
+route = PackedVector3Array(-2.50, 0, 34.00, -2.50, 0, -27.00, 2.50, 0, -27.00, 2.50, 0, 34.00)
+walk_speed = 1.3
+pause_seconds = 4.0
+idle_animation = &"ual2/Idle_FoldArms"
+
+[node name="WestAvenueWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("42_ext")
+hair_color = Color(0.850, 0.700, 0.450, 1)
+route = PackedVector3Array(-18.00, 0, -22.00, -18.00, 0, 26.00)
+walk_speed = 1.5
+pause_seconds = 3.0
+idle_animation = &"ual1/Idle"
+
+[node name="EastAvenueWalker" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("43_ext")
+hair_color = Color(0.080, 0.070, 0.070, 1)
+route = PackedVector3Array(18.00, 0, 26.00, 18.00, 0, -22.00)
+walk_speed = 1.4
+pause_seconds = 5.0
+idle_animation = &"ual2/Idle_FoldArms"
+
+[node name="MarketShopper" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("41_ext")
+hair_color = Color(0.320, 0.210, 0.140, 1)
+route = PackedVector3Array(8.00, 0, 23.50, 16.50, 0, 23.00, 12.00, 0, 21.00)
+walk_speed = 1.0
+pause_seconds = 4.5
+idle_animation = &"ual1/Idle_Talking"
+
+[node name="CathedralVisitor" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("41_ext")
+hair_color = Color(0.080, 0.070, 0.070, 1)
+route = PackedVector3Array(-9.00, 0, -26.00, 9.00, 0, -26.00)
+walk_speed = 1.1
+pause_seconds = 6.0
+idle_animation = &"ual1/Idle"
+
+[node name="TalkerA" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("39_ext")
+hair_color = Color(0.320, 0.210, 0.140, 1)
+position = Vector3(5.600, 0.000, 10.200)
+rotation = Vector3(0.000, 2.400, 0.000)
+activity = 1
+idle_animation = &"ual1/Idle_Talking"
+animation_offset_seconds = 0.0
+
+[node name="TalkerB" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("41_ext")
+hair_color = Color(0.850, 0.700, 0.450, 1)
+position = Vector3(6.900, 0.000, 9.000)
+rotation = Vector3(0.000, -0.750, 0.000)
+activity = 1
+idle_animation = &"ual2/Idle_FoldArms"
+animation_offset_seconds = 0.7
+
+[node name="Merchant" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("39_ext")
+hair_color = Color(0.550, 0.270, 0.150, 1)
+position = Vector3(10.000, 0.000, 28.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+activity = 1
+idle_animation = &"ual1/Idle_Talking"
+animation_offset_seconds = 1.1
+
+[node name="SittingWest" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("41_ext")
+hair_color = Color(0.620, 0.600, 0.580, 1)
+position = Vector3(-19.050, 0.000, -8.000)
+rotation = Vector3(0.000, 1.571, 0.000)
+activity = 1
+idle_animation = &"ual1/Sitting_Idle"
+animation_offset_seconds = 0.3
+
+[node name="SittingEast" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("39_ext")
+hair_color = Color(0.080, 0.070, 0.070, 1)
+position = Vector3(19.050, 0.000, 8.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+activity = 1
+idle_animation = &"ual1/Sitting_Talking"
+animation_offset_seconds = 0.0
+
+[node name="TavernGuest" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("43_ext")
+hair_color = Color(0.320, 0.210, 0.140, 1)
+position = Vector3(-12.000, 0.000, 25.600)
+rotation = Vector3(0.000, 0.000, 0.000)
+activity = 1
+idle_animation = &"ual1/Sitting_Talking"
+animation_offset_seconds = 0.5
+
+[node name="Guard" parent="Townsfolk" instance=ExtResource("40_ext")]
+body_scene = ExtResource("42_ext")
+hair_color = Color(0.160, 0.120, 0.100, 1)
+position = Vector3(-7.000, 0.000, -28.400)
+rotation = Vector3(0.000, 0.250, 0.000)
+activity = 1
+idle_animation = &"ual2/Idle_FoldArms"
+animation_offset_seconds = 0.0
+
+[node name="Player" parent="." instance=ExtResource("44_ext")]
+position = Vector3(0.000, 0.000, 27.000)
+
+[node name="SelectCamera" type="Camera3D" parent="."]
+position = Vector3(0.800, 1.350, 31.400)
+rotation = Vector3(-0.122, 0.180, 0.000)
+fov = 42.0
+
+[node name="CinematicTour" type="Node3D" parent="."]
+script = ExtResource("45_ext")
+
+[node name="Key0" type="Marker3D" parent="CinematicTour"]
+position = Vector3(0.000, 15.000, 50.000)
+rotation = Vector3(-0.033, 0.000, 0.000)
+
+[node name="Key1" type="Marker3D" parent="CinematicTour"]
+position = Vector3(12.000, 2.400, 12.000)
+rotation = Vector3(-0.012, 0.785, 0.000)
+
+[node name="Key2" type="Marker3D" parent="CinematicTour"]
+position = Vector3(22.000, 3.200, 35.000)
+rotation = Vector3(-0.098, 0.829, 0.000)
+
+[node name="Key3" type="Marker3D" parent="CinematicTour"]
+position = Vector3(-19.500, 1.900, 30.000)
+rotation = Vector3(0.012, -0.000, 0.000)
+
+[node name="Key4" type="Marker3D" parent="CinematicTour"]
+position = Vector3(9.000, 1.300, -21.000)
+rotation = Vector3(0.868, 0.487, 0.000)
+
+[node name="Key5" type="Marker3D" parent="CinematicTour"]
+position = Vector3(-42.000, 32.000, -6.000)
+rotation = Vector3(-0.588, -1.571, 0.000)
+
+[node name="CharacterSelect" parent="." instance=ExtResource("46_ext")]

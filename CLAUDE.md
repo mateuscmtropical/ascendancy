@@ -1,4 +1,4 @@
-# Projeto Torre (codinome; nome final a definir)
+# Ascendancy (pasta local: projeto-torre)
 
 Action RPG em terceira pessoa, fantasia estilizada (referências de clima: anime Sword Art Online + Monster Hunter). Personagens no design Quaternius Universal Base Characters, aprovado pelo usuário. Single-player e online no mesmo código. Repositório público (código MIT).
 
@@ -25,6 +25,16 @@ Action RPG em terceira pessoa, fantasia estilizada (referências de clima: anime
 | Baixar/importar modelo, textura, animação, addon | `asset-intake` |
 
 Depois de editar código: `gdformat` + `gdlint` (zero aviso) + testes headless.
+
+## Rodar e testar
+- Jogar: `jogar.bat` (praça com escolha de personagem; `jogar.bat --character=female` pula a escolha; `--cinematic` roda o tour de câmera).
+- Controles: WASD anda (trote), Shift corre, Ctrl caminha, Espaço pula, mouse gira câmera (clique captura, Esc solta).
+- Testes headless (GUT 9.7.1 em `addons/gut`): `tools/Godot_v4.7.2-stable_win64_console.exe --headless --audio-driver Dummy --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gexit`.
+- Prints: `bash tools_src/shot.sh res://tests/shots/hub_shots.tscn <saida.png> [Camera] [--character=male|--cinematic] [--shot-delay=s]` (janela 64x64 fora da tela, sem foco).
+
+## Pipeline de arte da praça (Blender 5.2 em background, depois Godot importa)
+Ordem: `fetch_assets.py` (pacotes CC0 em `tools/vendor/`) → `build_characters.py` → `build_houses.py` → `build_cathedral.py` (gera texturas usadas pelos props) → `build_plaza_props.py` → `copy_kit_models.py` (natureza e props prontos) → `python tools_src/build_hub_scene.py` (escreve `features/hub/hub.tscn`; não editar a cena à mão, editar o gerador).
+- Malha com nome `*-colonly` vira colisão estática no Godot. Material `M_Water` é trocado por `art/materials/water.tres` via `_subresources` no `.import`.
 
 ## Ferramentas
 - Godot 4.7.2 portátil em `tools/` (modo autocontido, `tools/._sc_`). Fora do git. Para desinstalar: apagar `tools/`.

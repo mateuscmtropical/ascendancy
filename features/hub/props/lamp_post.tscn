@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://art/town/lamp_post.gltf" id="1_model"]
+
+[node name="LampPost" type="Node3D"]
+
+[node name="Model" parent="." instance=ExtResource("1_model")]
+
+[node name="Light" type="OmniLight3D" parent="."]
+position = Vector3(0, 3.55, 0)
+light_color = Color(1, 0.78, 0.5, 1)
+light_energy = 0.8
+omni_range = 7.0
+distance_fade_enabled = true
+distance_fade_begin = 40.0
+distance_fade_length = 15.0

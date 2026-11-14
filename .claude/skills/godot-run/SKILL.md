@@ -16,7 +16,7 @@ G=tools/Godot_v4.7.2-stable_win64_console.exe (sempre a versão _console para ve
 
 ## Testes de lógica (sem janela nenhuma)
 ```
-timeout 120 $G --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+timeout 300 $G --headless --audio-driver Dummy --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gexit
 ```
 `--headless` = renderer dummy: não gera imagem. Serve para rede, seed, combate, NPC.
 

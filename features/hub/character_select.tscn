@@ -1,0 +1,91 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://features/hub/character_select.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="panel_style"]
+bg_color = Color(0.09, 0.08, 0.13, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.86, 0.71, 0.42, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 28.0
+content_margin_top = 20.0
+content_margin_right = 28.0
+content_margin_bottom = 22.0
+
+[sub_resource type="StyleBoxFlat" id="button_style"]
+bg_color = Color(0.2, 0.17, 0.26, 1)
+border_width_bottom = 2
+border_color = Color(0.86, 0.71, 0.42, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 30.0
+content_margin_top = 10.0
+content_margin_right = 30.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="button_hover_style"]
+bg_color = Color(0.33, 0.27, 0.4, 1)
+border_width_bottom = 2
+border_color = Color(1, 0.86, 0.55, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 30.0
+content_margin_top = 10.0
+content_margin_right = 30.0
+content_margin_bottom = 10.0
+
+[node name="CharacterSelect" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -190.0
+offset_right = 260.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("panel_style")
+
+[node name="Layout" type="VBoxContainer" parent="Panel"]
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Panel/Layout"]
+theme_override_colors/font_color = Color(1, 0.9, 0.68, 1)
+theme_override_font_sizes/font_size = 26
+text = "Choose your adventurer"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Panel/Layout"]
+alignment = 1
+theme_override_constants/separation = 24
+
+[node name="MaleButton" type="Button" parent="Panel/Layout/Buttons"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("button_style")
+theme_override_styles/hover = SubResource("button_hover_style")
+theme_override_styles/pressed = SubResource("button_hover_style")
+text = "Adventurer"
+
+[node name="FemaleButton" type="Button" parent="Panel/Layout/Buttons"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("button_style")
+theme_override_styles/hover = SubResource("button_hover_style")
+theme_override_styles/pressed = SubResource("button_hover_style")
+text = "Adventuress"
