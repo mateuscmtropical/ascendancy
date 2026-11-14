@@ -1,3 +1,5 @@
+STATUS: CONCLUIDO
+
 # Handoff: fidelidade da cidade + lojas de RPG
 
 Branch de trabalho: `wip/city-fidelity` (nunca commitar na `main`; push a cada etapa concluída).
@@ -88,70 +90,75 @@ push. Toda rodada que encontrar `STATUS: CONCLUIDO` aqui encerra imediatamente, 
 ferramenta para gerenciar rotinas (conector Claude_Code_Remote), desative também a rotina
 `trig_01VU2ckA2tjxuEUfaaMP82Zr` (enabled = false). Não invente trabalho extra além do pedido.
 
-## Estado (rodada na nuvem de 2026-11-14, ~17:40–18:50 UTC)
+## Estado (rodadas na nuvem de 2026-11-14: ~17:40–18:50 e ~21:40–22:50 UTC)
 
-Os sete itens da ordem de trabalho têm uma primeira versão completa, com testes (16) e lint passando.
-**Falta a validação visual do usuário no render real (Forward+)**; por isso o arquivo ainda não está marcado
-como `STATUS: CONCLUIDO`.
+Os sete itens da ordem de trabalho estão feitos, com testes (16) e lint passando. A segunda rodada fechou o
+que a primeira tinha deixado em aberto dentro da lista (casas de loja por seed, acabamento do interior da
+catedral, jatos do chafariz). **O que resta é só a conferência do usuário no render real (Forward+)** e o vídeo
+promocional, ambos da sessão local com GPU.
 
 ### Feito
-1. **Chão** — gerador novo `tools_src/build_ground.py` → `art/town/ground.gltf`. Ruas de pedra 12 cm abaixo
-   das calçadas, meio-fio de pedra em toda laje (quadras, praças, canteiro central, rotatória), canteiros de
-   gramado elevados com meio-fio próprio e leve abaulado, bordas curvas (praça do chafariz, anel, praça do
-   coreto, quatro rondéis nas diagonais), sebes aparadas no lado da rua, incrustações de pedra nos largos,
-   normal map no tijolo, grama com textura gerada + tufos de capim por seed. O layout (caminhos, campo de
-   distância `bed_field`, alturas `ground_height`) fica em `build_hub_scene.py` e é a fonte única: os props
-   (árvores, postes, bancos, NPCs parados) usam `grounded()` para ficar na altura certa. Colisão: lajes com
-   saia em rampa (`-convcolonly`) e canteiros com borda em rampa (`-colonly`), então personagem sobe o
-   meio-fio andando (teste `test_player_walks_up_the_curb_from_the_street`).
+1. **Chão** — `tools_src/build_ground.py` → `art/town/ground.gltf`. Ruas de pedra 12 cm abaixo das calçadas,
+   meio-fio de pedra em toda laje (quadras, praças, canteiro central, rotatória), canteiros de gramado elevados
+   com meio-fio próprio e leve abaulado, bordas curvas (praça do chafariz, anel, praça do coreto, quatro rondéis
+   nas diagonais), sebes aparadas no lado da rua, incrustações de pedra nos largos, normal map no tijolo, grama
+   com textura gerada + tufos de capim por seed. O layout (caminhos, campo de distância `bed_field`, alturas
+   `ground_height`) fica em `build_hub_scene.py` e é a fonte única: os props usam `grounded()`. Colisão: lajes
+   com saia em rampa (`-convcolonly`) e canteiros com borda em rampa (`-colonly`); o personagem sobe o meio-fio
+   andando (teste `test_player_walks_up_the_curb_from_the_street`).
 2. **Coreto** — refeito em `build_plaza_props.py`: base com plinto e friso, balaustrada torneada entre postes
    de madeira (só o lado da escada fica aberto), telhado em dois níveis com lanternim, escada com muretas.
-   O defeito antigo era caixa girada em torno da origem (guarda-corpo ia parar no lugar errado).
 3. **Santos** — `build_cathedral.py` `build_robed_figure`/`build_saint_figure`: aldeão CC0 do próprio repo em
    pose fixa, túnica e manto canelados, cajado e auréola, mármore; pedestal alto com moldura e placa.
-4. **Interior da catedral** — vitrais altos em arco com figura de santo (textura gerada
-   `T_StainedGlassFigure`), colunas caneladas com capitel dourado de folhas, teto de vigas fundas com painéis
-   grandes, três lustres, lambri escuro, bancos escuros (18 fileiras, agora virados para o altar), altares
-   laterais com nicho pintado, pintura do santo no retábulo.
-5. **Chafariz** — tanque redondo largo, tambor com painéis, três bacias com gomos, quatro aguadeiras de pedra
-   (aldeã CC0 em pose fixa), partículas novas em `features/hub/props/fountain_large.tscn` (transbordo das
-   três bacias + oito jatos em arco).
+4. **Interior da catedral** — vitrais altos em arco com figura de santo, teto de vigas fundas com painéis
+   grandes, três lustres, lambri escuro, altares laterais com nicho pintado, pintura do santo no retábulo.
+   Na segunda rodada: a parede entre os arcos foi aberta abaixo da imposta, então a arcada se apoia em
+   **colunas caneladas soltas** (antes ficavam embutidas num pilar chato); capitel dourado com duas fileiras
+   de folhas e volutas nos cantos (`make_acanthus_leaf`); aduelas vermelho/branco com **folha dourada** em
+   cada aduela vermelha; **arandela** com globo aceso em cada coluna, virada para a nave (`build_sconce`);
+   bancos em madeira castanha (antes quase pretos); dourado menos metálico (lia esverdeado sem reflexo).
+5. **Chafariz** — tanque redondo largo, tambor com painéis, três bacias com gomos, quatro aguadeiras de pedra,
+   partículas em `features/hub/props/fountain_large.tscn` (transbordo das três bacias + oito jatos em arco);
+   gotas maiores e mais opacas na segunda rodada.
 6. **Vegetação** — palmeira-imperial procedural (`art/town/palm.gltf`, 15 na praça), árvores da São José com
-   copa 45% maior, tufos de capim, vasos com flores no adro (antes as flores nasciam do tijolo).
+   copa 45% maior, tufos de capim, vasos com flores no adro.
 7. **Lojas de RPG** — `tools_src/build_shops.py` → `art/town/shops/shop_<tipo>_{sign,stall,yard}.gltf` para
-   ferreiro, armaduras, magia, alquimista, taverna, estalagem, guilda, padeiro, alfaiate e joalheiro: placa
-   pendurada com emblema, toldo listrado com balcão e mercadoria, props grandes do ofício (forja com chaminé
-   e brasa, manequim de armadura, cristais, caldeirão, barris, quadro de missões...). `add_shops` em
+   ferreiro, armaduras, magia, alquimista, taverna, estalagem, guilda, padeiro, alfaiate e joalheiro (placa
+   com emblema, toldo listrado com balcão e mercadoria, props grandes do ofício). `add_shops` em
    `build_hub_scene.py` veste as 66 casas viradas para as praças e a avenida (`SHOP_FRONTAGES`), tipo por
    seed fixa (`SHOP_SEED`), vizinhos nunca repetem.
+   Na segunda rodada, **casas de loja por seed**: `tools_src/build_shop_houses.py` desmonta as casas de 6 m
+   (`house_stone_tall`, `house_narrow_three`) em térreo, andares de cima e telhado (ilhas da malha, pela
+   altura) e remonta oito variantes `art/town/shops/house_shop_narrow_1..8.gltf` com seed fixa: qual térreo,
+   um ou dois andares de cima e quais, qual telhado, espelhada ou não, cor do reboco e das telhas (cor de
+   vértice, que o Godot multiplica sobre a textura do kit). `shop_houses_for` em `build_hub_scene.py` troca a
+   casa de cada fachada de loja por uma variante da mesma planta, sem repetir a vizinha.
 
-### Falta / ideias para a próxima rodada
-- **Casas modulares por seed** (largura, andares, sacadas, telhado): não foi possível, porque as peças do
-  Medieval Village MegaKit ficam em `tools/vendor/` e o itch.io está bloqueado na nuvem. As lojas hoje são as
-  cinco casas existentes + kit procedural na fachada. Fazer na sessão local, ou liberar `itch.io` e
-  `quaternius.itch.io` no ambiente da rotina.
-- Lojistas (NPC parado atrás de cada balcão) e interação com as lojas.
-- Catedral: parede já clareada para creme (`T_CathedralWall`), conferir o tom no render real. Falta o
-  ornamento de folha nas aduelas dos arcos e luminárias de parede.
-- Jatos do chafariz são gotas pequenas; conferir no Forward+ se leem bem e engrossar se preciso.
-- Conferir no render real: brilho dos emissivos das lojas (cristais, poções, brasa), tom da grama, contorno.
-- Vídeo promocional novo (sessão local com GPU), sem legenda citando Campo Mourão.
+### Sobra para a sessão local (fora da lista ou dependente de GPU)
+- Conferir no Forward+: tom das paredes da catedral (no render por software a luz ambiente azulada deixa o
+  creme esverdeado), brilho dos emissivos (arandelas, lustres, cristais, brasa), leitura dos jatos do chafariz,
+  cores do reboco das lojas (`PLASTER_TINTS`/`ROOF_TINTS` em `build_shop_houses.py`, hoje bem suaves).
+- Com o Medieval Village MegaKit baixado (`fetch_assets.py`), dá para gerar receitas novas direto em
+  `build_houses.py` (larguras de 8 m, janelas e sacadas por módulo). Na nuvem o kit não baixa (itch.io
+  bloqueado), por isso as variantes são recombinações dos andares das casas já exportadas.
+- Lojistas (NPC atrás de cada balcão) e interação com as lojas: não fazem parte desta lista.
+- Vídeo promocional novo, sem legenda citando Campo Mourão.
 
 ### Problemas do ambiente na nuvem
 - `download.blender.org` bloqueado: Blender substituído por `pip install bpy==5.2.4` (Python 3.13) + wrapper
-  local que importa `bpy` antes de rodar o script (o módulo pip exige `import bpy` antes de `import bmesh`).
+  local que importa `bpy` antes de rodar o script.
 - `itch.io` bloqueado: `fetch_assets.py` não roda. As texturas do kit que os geradores leem foram copiadas de
   `art/town/textures/` para um `tools/vendor/` local (fora do git). `build_houses.py`, `build_characters.py`
   e `copy_kit_models.py` **não** foram rodados (saídas antigas mantidas).
 - Sem Vulkan por software (pacote `mesa-vulkan-drivers` indisponível): prints feitos com
-  `xvfb-run` + `--rendering-driver opengl3` (Mesa llvmpipe, renderer Compatibility, 1280x720). Servem para
-  conferir geometria e composição; **não** têm SSAO/SSIL/glow do Forward+, e as cores saem mais lavadas.
-- A exportação glTF regrava `art/town/textures/T_UnevenBrick_Roughness.png` com outro empacotamento; foi
-  revertido a cada rodada (`git checkout`) para não sujar o histórico.
+  `xvfb-run` + `--rendering-driver opengl3` (Mesa llvmpipe, renderer Compatibility). Servem para conferir
+  geometria e composição; **não** têm SSAO/SSIL/glow do Forward+, e as cores saem mais lavadas.
+- `bpy.ops.object.transform_apply` com escala negativa derruba o `bpy` do pip (falha de segmentação); o
+  espelhamento em `build_shop_houses.py` é feito direto na malha (`transform` + `flip_normals`).
 
 ### Prints
-`ascendancy-refs/game_after/*.png` (mesmos nomes de câmera de `game_before/`, mais `ShopsEye` e `ShopClose`,
-câmeras novas em `tests/shots/hub_shots.tscn`). Render Compatibility por software, ver ressalva acima.
+`ascendancy-refs/game_after/*.png` (mesmos nomes de câmera de `game_before/`, mais `ShopsEye` e `ShopClose`),
+atualizados na segunda rodada. Render Compatibility por software, ver ressalva acima.
 
 ## Ao terminar uma rodada
 Atualizar a seção "Estado" deste arquivo (o que foi feito, o que falta, problemas), commitar e dar push na
