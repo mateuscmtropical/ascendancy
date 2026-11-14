@@ -163,6 +163,10 @@ HOUSE_SIZES = {  # name -> (width along facade, depth)
     "house_shop": (8, 10),
     "house_cottage": (6, 6),
 }
+SHOP_HOUSES = {  # casa da fileira -> variantes de loja com a mesma planta (build_shop_houses.py)
+    "house_stone_tall": [f"shops/house_shop_narrow_{index}" for index in range(1, 9)],
+    "house_narrow_three": [f"shops/house_shop_narrow_{index}" for index in range(1, 9)],
+}
 HOUSES_BY_WIDTH = {6: ["house_stone_tall", "house_narrow_three", "house_cottage"], 8: ["house_plaster_wide", "house_shop"]}
 SIDE_ROTATION = {"N": math.pi, "S": 0.0, "W": -math.pi / 2.0, "E": math.pi / 2.0}  # house front faces the street
 BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
@@ -442,6 +446,19 @@ def house_row(block: tuple, side: str, earlier_sides: str, generator: random.Ran
     return placements
 
 
+def shop_houses_for(shop_fronts: list) -> dict:
+    """Position -> shop house variant that replaces the row house there; neighbours never get the same variant."""
+    generator = random.Random(SHOP_SEED)
+    chosen = {}
+    previous = ""
+
+    for house_name, position, _rotation_y, _side in shop_fronts:
+        previous = generator.choice([variant for variant in SHOP_HOUSES.get(house_name, [house_name]) if variant != previous])
+        chosen[position] = previous
+
+    return chosen
+
+
 def add_buildings(scene: SceneWriter) -> None:
     generator = random.Random(1942)
     placements = []
@@ -459,8 +476,10 @@ def add_buildings(scene: SceneWriter) -> None:
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, SAO_JOSE[1]), -math.pi / 2.0)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
+    shop_houses = shop_houses_for(shop_fronts)
+
     for index, (house_name, position, rotation_y, _side) in enumerate(placements):
-        place(scene, f"House{index:03d}", "Buildings", f"res://art/town/{house_name}.gltf", position, rotation_y)
+        place(scene, f"House{index:03d}", "Buildings", f"res://art/town/{shop_houses.get(position, house_name)}.gltf", position, rotation_y)
 
     add_shops(scene, shop_fronts)
 

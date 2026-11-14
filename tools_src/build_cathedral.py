@@ -56,6 +56,9 @@ PORTAL_WIDTH = 4.0
 PORTAL_SPRING = 4.0
 AISLE_WINDOW = (1.5, 6.6)  # vitral alto em arco de cada tramo (largura, altura)
 CHANDELIER_Y = [6.0, 14.0, 22.0]
+CAPITAL_LEAVES = 8
+CAPITAL_LEAF_ROWS = [(0.0, 0.4, 0.34), (0.24, 0.47, 0.36)]  # (altura, raio, tamanho) de cada fileira de folhas do capitel
+SCONCE_HEIGHT = 3.4
 PEW_ROWS = (8.0, 26.0)  # primeira e última fileira de bancos ao longo da nave
 
 GLASS_COLORS = numpy.array([
@@ -239,14 +242,14 @@ def build_materials() -> dict:
         "figure_glass": figure_glass,
         "figure_painting": make_material("M_SaintPainting", figure_image),
         "lamp_glow": make_glow("M_ChandelierGlow", (1.0, 0.86, 0.6), 2.5),
-        "pew_wood": make_plain_material("M_PewWood", (0.09, 0.045, 0.025), 0.0, 0.5),
+        "pew_wood": make_plain_material("M_PewWood", (0.3, 0.16, 0.08), 0.0, 0.55),
         "stone": make_material("M_CathedralStone", stone_image, load_kit_image("T_Brick_Normal.png", False), load_kit_image("T_Brick_Roughness.png", False)),
         "wall": make_material("M_CathedralWall", wall_image, plaster_normal),
         "trim": make_material("M_CathedralTrim", trim_image, plaster_normal),
         "roof": make_material("M_CathedralRoof", roof_image, load_kit_image("T_RoundTiles_Normal.png", False)),
         "floor": make_material("M_CathedralFloor", make_floor_image()),
         "glass": make_material("M_StainedGlass", make_stained_glass_image(), emission=1.2),
-        "gold": make_plain_material("M_Gold", (0.95, 0.72, 0.28), 1.0, 0.3),
+        "gold": make_plain_material("M_Gold", (0.95, 0.72, 0.28), 0.55, 0.35),
         "marble": make_plain_material("M_Marble", (0.93, 0.91, 0.88), 0.0, 0.35),
         "paint_red": make_plain_material("M_PaintRed", (0.6, 0.18, 0.14), 0.0, 0.8),
         "paint_ochre": make_plain_material("M_PaintOchre", (0.82, 0.6, 0.28), 0.0, 0.8),
@@ -451,10 +454,11 @@ def wall_opening(name: str, profile: list, position: tuple, facing: str, wall_de
         make_profile_prism(name + "_pane", profile, 0.05, transform @ Matrix.Translation((0, wall_depth * pane_depth, 0)), pane_material)
 
 
-def make_voussoirs(name: str, center: Vector, radius: float, start_angle: float, end_angle: float, count: int, radial_size: float, front_y: float, depth: float, material, frame: Matrix = None) -> None:
+def make_voussoirs(name: str, center: Vector, radius: float, start_angle: float, end_angle: float, count: int, radial_size: float, front_y: float, depth: float, material, frame: Matrix = None, ornament_material=None) -> None:
     """Ring of blocks around an arch in the local XZ plane, protruding toward local -Y.
 
     material may be a list to alternate colours; frame places the ring on a wall that is not the facade.
+    ornament_material adds a small leaf (pointed lozenge with a midrib) on every block of the first colour.
     """
     block_materials = material if isinstance(material, list) else [material]
     frame = frame or Matrix.Identity(4)
@@ -467,6 +471,13 @@ def make_voussoirs(name: str, center: Vector, radius: float, start_angle: float,
         position = Vector((center.x + radial_center * math.cos(angle), front_y + depth / 2.0, center.z + radial_center * math.sin(angle)))
         block = make_box(f"{name}{block_index}", (0, 0, 0), (block_length, depth, radial_size), block_materials[block_index % len(block_materials)])
         block.matrix_world = frame @ Matrix.Translation(position) @ Matrix.Rotation(math.pi / 2.0 - angle, 4, "Y")
+
+        if ornament_material and block_index % len(block_materials) == 0:
+            leaf_frame = frame @ Matrix.Translation(position - Vector((0.0, depth / 2.0, 0.0))) @ Matrix.Rotation(math.pi / 2.0 - angle, 4, "Y")
+            leaf = make_box(f"{name}Leaf{block_index}", (0, 0, 0), (radial_size * 0.5, 0.03, radial_size * 0.5), ornament_material)
+            leaf.matrix_world = leaf_frame @ Matrix.Diagonal((0.55, 1.0, 1.0, 1.0)) @ Matrix.Rotation(math.pi / 4.0, 4, "Y")
+            midrib = make_box(f"{name}LeafRib{block_index}", (0, 0, 0), (0.035, 0.05, radial_size * 0.78), ornament_material)
+            midrib.matrix_world = leaf_frame
 
 
 def make_balustrade(name: str, start: tuple, end: tuple, bottom: float, materials: dict) -> None:
@@ -731,11 +742,14 @@ def build_arcade_wall(side_sign: int, facing: str, materials: dict) -> None:
     for bay_y, slit_offset in itertools.product(BAY_CENTERS, (-0.35, 0.35)):
         wall_opening(f"Clerestory{tag}{bay_y}{slit_offset:+.1f}", rectangle_profile(0.32, 1.9), (side_sign * (NAVE_HALF + WALL), bay_y + slit_offset, BASE + AISLE_TOP + 0.6), facing, WALL, materials["glass"], cutters)
 
+    # The wall between two arches is cut away below the springing: the arcade stands on the free columns.
+    cutters += [make_box(f"PierVoid{tag}{pier_y}", (side_sign * (NAVE_HALF + WALL / 2.0), pier_y, BASE + ARCH_SPRING / 2.0 - 0.1), (WALL + 0.4, PIER_Y[1] - PIER_Y[0] - ARCH_WIDTH + 0.04, ARCH_SPRING + 0.2), None) for pier_y in PIER_Y]
+
     carve(wall, cutters)
 
     for bay_y in BAY_CENTERS:
         frame = facing_transform((nave_face_x, bay_y, 0.0), nave_side_facing)
-        make_voussoirs(f"ArchVoussoir{tag}{bay_y}", Vector((0, 0, BASE + ARCH_SPRING)), ARCH_WIDTH / 2.0, 0.0, math.pi, 11, 0.5, -0.12, 0.14, [materials["paint_red"], materials["paint_ochre"]], frame)
+        make_voussoirs(f"ArchVoussoir{tag}{bay_y}", Vector((0, 0, BASE + ARCH_SPRING)), ARCH_WIDTH / 2.0, 0.0, math.pi, 11, 0.5, -0.12, 0.14, [materials["paint_red"], materials["trim"]], frame, materials["gold"])
 
     for pier_y in PIER_Y:
         build_column(side_sign * (NAVE_HALF + WALL / 2.0), pier_y, f"{tag}{pier_y}", materials)
@@ -795,14 +809,53 @@ def build_column(column_x: float, column_y: float, tag: str, materials: dict) ->
     make_cylinder(f"ColumnScotia{tag}", (column_x, column_y, BASE + 0.44), 0.47, 0.08, 20, materials["trim"])
     make_fluted_shaft(f"ColumnShaft{tag}", (column_x, column_y), BASE + 0.52, capital_bottom - BASE - 0.52, 0.43, 14, materials["trim"])
     make_cylinder(f"ColumnNecking{tag}", (column_x, column_y, capital_bottom - 0.06), 0.43, 0.08, 20, materials["gold"])
-    make_cone(f"ColumnBell{tag}", (column_x, column_y, capital_bottom), 0.38, 0.62, 16, materials["gold"], top_radius=0.56)
+    make_cone(f"ColumnBell{tag}", (column_x, column_y, capital_bottom), 0.4, 0.62, 16, materials["gold"], top_radius=0.6)
     make_box(f"ColumnAbacus{tag}", (column_x, column_y, BASE + ARCH_SPRING - 0.07), (1.25, 1.25, 0.14), materials["gold"])
 
-    for leaf_row, (leaf_count, row_height, row_radius, leaf_size) in enumerate(((8, 0.02, 0.42, 0.3), (8, 0.28, 0.5, 0.34))):
-        for leaf_index in range(leaf_count):
-            angle = 2.0 * math.pi * (leaf_index + 0.5 * leaf_row) / leaf_count
-            leaf = make_cone(f"ColumnLeaf{tag}{leaf_row}{leaf_index}", (0, 0, 0), 0.11, leaf_size, 5, materials["gold"])
-            leaf.matrix_world = Matrix.Translation((column_x + row_radius * math.cos(angle), column_y + row_radius * math.sin(angle), capital_bottom + row_height)) @ Matrix.Rotation(angle, 4, "Z") @ Matrix.Rotation(math.radians(28.0), 4, "Y")
+    for leaf_row, leaf_index in itertools.product(range(len(CAPITAL_LEAF_ROWS)), range(CAPITAL_LEAVES)):
+        row_height, row_radius, leaf_height = CAPITAL_LEAF_ROWS[leaf_row]
+        angle = 2.0 * math.pi * (leaf_index + 0.5 * leaf_row) / CAPITAL_LEAVES
+        make_acanthus_leaf(f"ColumnLeaf{tag}{leaf_row}{leaf_index}", (column_x, column_y, capital_bottom + row_height), angle, row_radius, leaf_height, materials["gold"])
+
+    for corner_x, corner_y in itertools.product((-1, 1), (-1, 1)):
+        volute = make_cylinder(f"ColumnVolute{tag}{corner_x:+d}{corner_y:+d}", (0, 0, -0.07), 0.13, 0.14, 12, materials["gold"])
+        volute.matrix_world = Matrix.Translation((column_x + corner_x * 0.53, column_y + corner_y * 0.53, BASE + ARCH_SPRING - 0.25)) @ Matrix.Rotation(math.atan2(corner_y, corner_x) + math.pi / 2.0, 4, "Z") @ Matrix.Rotation(math.pi / 2.0, 4, "Y")
+
+    build_sconce(tag, (column_x, column_y), materials)
+
+
+def make_acanthus_leaf(name: str, capital_center: tuple, angle: float, radius: float, height: float, material) -> bpy.types.Object:
+    """Leaf of a capital: a pointed blade standing against the bell, leaning out and curling over at the tip."""
+    leaf_bmesh = bmesh.new()
+    half_width = height * 0.36
+    thickness = 0.035
+    outline = [(0.55, 0.0, 0.0), (1.0, 0.45, 0.04), (0.7, 0.8, 0.14), (0.0, 1.0, 0.3)]  # (width, rise, lean outward), base to tip
+    rows = []
+
+    for width, rise, lean in outline:
+        offsets = (-1.0, 0.0, 1.0) if width else (0.0,)
+        rows.append([leaf_bmesh.verts.new((lean * height + (thickness if offset == 0.0 else 0.0), offset * width * half_width, rise * height - (0.12 * height if rise == 1.0 else 0.0))) for offset in offsets])
+
+    for lower, upper in zip(rows, rows[1:]):
+        for side in range(len(lower) - 1):
+            upper_pair = [upper[min(side + 1, len(upper) - 1)], upper[min(side, len(upper) - 1)]]
+            leaf_bmesh.faces.new(list(dict.fromkeys([lower[side], lower[side + 1], *upper_pair])))
+
+    leaf = object_from_bmesh(name, leaf_bmesh, material)
+    leaf.matrix_world = Matrix.Translation(capital_center) @ Matrix.Rotation(angle, 4, "Z") @ Matrix.Translation((radius, 0.0, 0.0))
+
+    return leaf
+
+
+def build_sconce(tag: str, column: tuple, materials: dict) -> None:
+    """Lamp on a column, facing the nave: gilded band, arm and cup with a glowing globe."""
+    toward_nave = -math.copysign(1.0, column[0])
+    lamp_x = column[0] + toward_nave * 0.72
+
+    make_cylinder(f"SconceBand{tag}", (column[0], column[1], BASE + SCONCE_HEIGHT - 0.05), 0.46, 0.1, 20, materials["gold"])
+    make_box(f"SconceArm{tag}", (column[0] + toward_nave * 0.55, column[1], BASE + SCONCE_HEIGHT), (0.4, 0.05, 0.05), materials["gold"])
+    make_cone(f"SconceCup{tag}", (lamp_x, column[1], BASE + SCONCE_HEIGHT), 0.05, 0.12, 10, materials["gold"], top_radius=0.12)
+    make_sphere(f"SconceGlobe{tag}", (lamp_x, column[1], BASE + SCONCE_HEIGHT + 0.22), 0.13, materials["lamp_glow"])
 
 
 def build_chandeliers(materials: dict) -> None:

@@ -11,7 +11,7 @@
 | Fantasy Props MegaKit | Quaternius | CC0 1.0 | https://quaternius.itch.io/fantasy-props-megakit |
 | KayKit Character Animations | Kay Lousberg | CC0 1.0 | https://kaylousberg.itch.io/kaykit-character-animations |
 
-CC0 verified from the License.txt inside each downloaded zip (2026-11-14). Characters in `art/characters` are assembled from these packs by `tools_src/build_characters.py`. The stone figures (cathedral saints, fountain water bearers) are those same CC0 characters posed and dressed by `tools_src/build_cathedral.py` / `build_plaza_props.py`. Ground, coreto, fountains, palms, shop dressings and the cathedral are modelled from primitives by the scripts in `tools_src/` (original work, MIT like the rest of the code); their textures are generated or tinted from the Medieval Village MegaKit textures.
+CC0 verified from the License.txt inside each downloaded zip (2026-11-14). Characters in `art/characters` are assembled from these packs by `tools_src/build_characters.py`. The stone figures (cathedral saints, fountain water bearers) are those same CC0 characters posed and dressed by `tools_src/build_cathedral.py` / `build_plaza_props.py`. Ground, coreto, fountains, palms, shop dressings and the cathedral are modelled from primitives by the scripts in `tools_src/` (original work, MIT like the rest of the code); their textures are generated or tinted from the Medieval Village MegaKit textures. The shop houses in `art/town/shops/house_shop_*.gltf` are the Medieval Village MegaKit houses re-stacked storey by storey and tinted by `tools_src/build_shop_houses.py`.
 
 ## Reference data
 
