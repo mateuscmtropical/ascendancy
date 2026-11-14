@@ -37,15 +37,34 @@ CATHEDRAL_FLOOR = 1.05
 COREO_POSITION = (-50.0, -12.0)
 PLAYER_SPAWN = (-43.0, -10.5)  # pé da escada do coreto, olhando para a catedral (+X)
 PATH_WIDTH = 4.0
+PLANTER_SOIL_HEIGHT = 0.42
 
 RING_RADII = (18.5, 21.5)  # passeio em anel ao redor do chafariz
 PLAZA_RADIUS = 10.0
 COREO_PLAZA_RADIUS = 7.5
+RONDEL_RADIUS = 3.4
+RONDEL_ALONG = 0.78  # fração do meio-diagonal onde fica cada rondel
 STREET_DROP = 0.12  # asfalto fica abaixo das calçadas (meio-fio)
+CURB_WIDTH = 0.22  # meio-fio de pedra dos canteiros
+CURB_HEIGHT = 0.16
+LAWN_EDGE_HEIGHT = 0.12  # a grama começa abaixo do topo do meio-fio e sobe para o meio do canteiro
+LAWN_SWELL_HEIGHT = 0.26
+LAWN_SWELL_DISTANCE = 4.5
+ROUNDABOUT_RADIUS = 9.0
+ROUNDABOUT_LAWN_RADII = (2.7, 6.0)  # canteiro em anel entre a fonte pequena e o passeio
+MEDIAN_BEDS = [((CITY_MIN[0] + 4.0, MEDIAN_Z[0] + 0.7), (ROUNDABOUT[0] - 12.0, MEDIAN_Z[1] - 2.3)), ((ROUNDABOUT[0] + 12.0, MEDIAN_Z[0] + 0.7), (CITY_MAX[0] - 4.0, MEDIAN_Z[1] - 2.3))]
 LAWN_RECTS = {  # canteiros = retângulo menos os caminhos de SQUARE_PATHS
     "GetulioVargas": ((GETULIO_VARGAS[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (GETULIO_VARGAS[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
     "SaoJose": ((SAO_JOSE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (SAO_JOSE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
 }
+
+
+def rondel_centers() -> list:
+    """Small round widenings where each diagonal of Getúlio Vargas crosses the outer half of its run."""
+    center_x, center_z = GETULIO_VARGAS
+    reach = (SQUARE_HALF[0] - 2.0) * RONDEL_ALONG, (SQUARE_HALF[1] - 2.0) * RONDEL_ALONG
+
+    return [(center_x + sign_x * reach[0], center_z + sign_z * reach[1]) for sign_x in (-1, 1) for sign_z in (-1, 1)]
 
 
 def square_paths() -> list:
@@ -67,6 +86,7 @@ def square_paths() -> list:
         ("strip", (sao_jose_x, -half_z), (sao_jose_x, half_z), 3.0),
         ("strip", (sao_jose_x - half_x, -31.0), (sao_jose_x + half_x, -31.0), 3.0),
         ("strip", (sao_jose_x - half_x, 31.0), (sao_jose_x + half_x, 31.0), 3.0),
+        *[("disc", rondel, RONDEL_RADIUS) for rondel in rondel_centers()],
     ]
 
 
@@ -87,11 +107,50 @@ def path_distance(point: tuple, path: tuple) -> float:
     return radial - rest[0] if kind == "disc" else abs(radial - (rest[0] + rest[1]) / 2.0) - (rest[1] - rest[0]) / 2.0
 
 
-def on_lawn(point: tuple, margin: float = 0.0) -> bool:
-    """True when the point is on a lawn bed, at least margin away from every paved edge."""
-    inside_rect = any(minimum[0] + margin < point[0] < maximum[0] - margin and minimum[1] + margin < point[1] < maximum[1] - margin for minimum, maximum in LAWN_RECTS.values())
+SQUARE_PATHS = square_paths()
 
-    return inside_rect and min(path_distance(point, path) for path in square_paths()) > margin
+
+def inside_distance(point: tuple, minimum: tuple, maximum: tuple) -> float:
+    """Distance from a point to the nearest edge of a rectangle (negative outside)."""
+    return min(point[0] - minimum[0], maximum[0] - point[0], point[1] - minimum[1], maximum[1] - point[1])
+
+
+def square_edge_distance(point: tuple) -> float:
+    """How far inside the lawn rectangle of a square the point is (negative outside both)."""
+    return max(inside_distance(point, minimum, maximum) for minimum, maximum in LAWN_RECTS.values())
+
+
+def bed_field(point: tuple) -> float:
+    """Signed distance into the nearest planted bed (positive = on a bed, value = distance to its curb)."""
+    square_bed = min(square_edge_distance(point), min(path_distance(point, path) for path in SQUARE_PATHS))
+    roundabout_radial = math.hypot(point[0] - ROUNDABOUT[0], point[1] - ROUNDABOUT[1])
+    roundabout_bed = min(ROUNDABOUT_LAWN_RADII[1] - roundabout_radial, roundabout_radial - ROUNDABOUT_LAWN_RADII[0])
+    median_bed = max(inside_distance(point, minimum, maximum) for minimum, maximum in MEDIAN_BEDS)
+
+    return max(square_bed, roundabout_bed, median_bed)
+
+
+def bed_height(field: float) -> float:
+    """Ground height on a bed: stone curb at the edge, then a lawn that swells gently toward the middle."""
+    if field <= 0.0:
+        return 0.0
+
+    if field < CURB_WIDTH:
+        return CURB_HEIGHT
+
+    swell = min(1.0, (field - CURB_WIDTH) / LAWN_SWELL_DISTANCE)
+
+    return LAWN_EDGE_HEIGHT + LAWN_SWELL_HEIGHT * swell * swell * (3.0 - 2.0 * swell)
+
+
+def ground_height(point: tuple) -> float:
+    """Height of the walkable ground at a point of the squares, blocks or median (streets are STREET_DROP lower)."""
+    return bed_height(bed_field(point))
+
+
+def on_lawn(point: tuple, margin: float = 0.0) -> bool:
+    """True when the point is on a planted bed, at least margin away from its curb."""
+    return bed_field(point) > margin
 
 
 HOUSE_SIZES = {  # name -> (width along facade, depth)
@@ -238,27 +297,9 @@ def add_kit_collider(scene: SceneWriter, node_path: str, model_name: str) -> Non
 # ---------- ground ----------
 
 def add_materials(scene: SceneWriter) -> None:
-    paving = {name: scene.external_id("Texture2D", f"res://art/town/textures/T_UnevenBrick_{name}.png") for name in ("BaseColor", "Normal", "Roughness")}
-    brick = scene.external_id("Texture2D", "res://art/town/textures/T_BrickPaving_BaseColor.png")
     rock = scene.external_id("Texture2D", "res://art/town/textures/T_RockTrim_BaseColor.png")
+    lawn = scene.external_id("Texture2D", "res://art/town/textures/T_Lawn_BaseColor.png")
 
-    scene.add_sub_resource(f'''
-[sub_resource type="StandardMaterial3D" id="paving_material"]
-albedo_color = Color(0.9, 0.86, 0.82, 1)
-albedo_texture = ExtResource("{paving["BaseColor"]}")
-roughness_texture = ExtResource("{paving["Roughness"]}")
-normal_enabled = true
-normal_scale = 0.8
-normal_texture = ExtResource("{paving["Normal"]}")
-uv1_scale = Vector3(0.38, 0.38, 0.38)
-uv1_triplanar = true
-uv1_world_triplanar = true''')
-    scene.add_sub_resource(f'''
-[sub_resource type="StandardMaterial3D" id="brick_material"]
-albedo_texture = ExtResource("{brick}")
-roughness = 0.95
-uv1_triplanar = true
-uv1_world_triplanar = true''')
     scene.add_sub_resource(f'''
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -266,140 +307,33 @@ albedo_texture = ExtResource("{rock}")
 uv1_scale = Vector3(0.25, 0.25, 0.25)
 uv1_triplanar = true
 uv1_world_triplanar = true''')
-    scene.add_sub_resource('''
-[sub_resource type="FastNoiseLite" id="ground_noise"]
-frequency = 0.05''')
-    scene.add_sub_resource('''
-[sub_resource type="NoiseTexture2D" id="ground_variation"]
-seamless = true
-noise = SubResource("ground_noise")''')
-    scene.add_sub_resource('''
-[sub_resource type="StandardMaterial3D" id="grass_material"]
-albedo_color = Color(0.45, 0.66, 0.32, 1)
-albedo_texture = SubResource("ground_variation")
+    scene.add_sub_resource(f'''
+[sub_resource type="StandardMaterial3D" id="countryside_material"]
+albedo_color = Color(0.9, 0.95, 0.85, 1)
+albedo_texture = ExtResource("{lawn}")
 roughness = 1.0
-uv1_scale = Vector3(0.08, 0.08, 0.08)
+uv1_scale = Vector3(0.05, 0.05, 0.05)
 uv1_triplanar = true
 uv1_world_triplanar = true''')
-    scene.add_sub_resource('''
-[sub_resource type="StandardMaterial3D" id="asphalt_material"]
-albedo_color = Color(0.36, 0.36, 0.38, 1)
-albedo_texture = SubResource("ground_variation")
-roughness = 0.9
-uv1_scale = Vector3(0.3, 0.3, 0.3)
-uv1_triplanar = true
-uv1_world_triplanar = true''')
-
-
-def ground_patch(scene: SceneWriter, name: str, center: tuple, size: tuple, height: float, material: str, rotation_y: float = 0.0) -> None:
-    """Flat box of paving, lawn or asphalt; height orders overlapping layers (asphalt < lawn < paths)."""
-    resource_id = f"patch_{material}_{size[0] * 100:.0f}_{size[1] * 100:.0f}"
-    mesh_id = scene.add_sub_resource_once(resource_id, f'''
-[sub_resource type="BoxMesh" id="{resource_id}"]
-material = SubResource("{material}")
-size = Vector3({size[0]:.3f}, 0.1, {size[1]:.3f})''')
-    properties = {"position": vector(center[0], height - 0.05, center[1]), "mesh": f'SubResource("{mesh_id}")'}
-
-    if rotation_y:
-        properties["rotation"] = vector(0.0, rotation_y, 0.0)
-
-    scene.add_node(name, "Ground", "MeshInstance3D", properties=properties)
-
-
-def ground_disc(scene: SceneWriter, name: str, center: tuple, radius: float, height: float, material: str) -> None:
-    resource_id = f"disc_{material}_{radius * 100:.0f}"
-    mesh_id = scene.add_sub_resource_once(resource_id, f'''
-[sub_resource type="CylinderMesh" id="{resource_id}"]
-material = SubResource("{material}")
-top_radius = {radius:.3f}
-bottom_radius = {radius:.3f}
-height = 0.1
-radial_segments = 48
-rings = 1''')
-    scene.add_node(name, "Ground", "MeshInstance3D", properties={"position": vector(center[0], height - 0.05, center[1]), "mesh": f'SubResource("{mesh_id}")'})
-
-
-def ground_strip(scene: SceneWriter, name: str, start: tuple, end: tuple, width: float, height: float, material: str) -> None:
-    length = math.hypot(end[0] - start[0], end[1] - start[1])
-    center = ((start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0)
-    rotation_y = math.atan2(-(end[1] - start[1]), end[0] - start[0])
-
-    ground_patch(scene, name, center, (length, width), height, material, rotation_y)
-
-
-def rectangle(name: str, minimum: tuple, maximum: tuple) -> tuple:
-    return name, ((minimum[0] + maximum[0]) / 2.0, (minimum[1] + maximum[1]) / 2.0), (maximum[0] - minimum[0], maximum[1] - minimum[1])
 
 
 def add_ground(scene: SceneWriter) -> None:
-    city_center = ((CITY_MIN[0] + CITY_MAX[0]) / 2.0, (CITY_MIN[1] + CITY_MAX[1]) / 2.0)
-    city_size = (CITY_MAX[0] - CITY_MIN[0], CITY_MAX[1] - CITY_MIN[1])
-    block_patches = [rectangle(f"Block{index}", (block[0], block[2]), (block[1], block[3])) for index, block in enumerate(BLOCKS)]
-    square_lawns = [rectangle(f"Lawn{name}", (center[0] - SQUARE_HALF[0], -SQUARE_HALF[1]), (center[0] + SQUARE_HALF[0], SQUARE_HALF[1])) for name, center in (("GetulioVargas", GETULIO_VARGAS), ("SaoJose", SAO_JOSE))]
-    stone_patches = [rectangle("Calcadao", (-4, -SQUARE_HALF[1]), (4, SQUARE_HALF[1]))] + block_patches
-
+    """Streets, curbed pavements and raised beds come modelled from build_ground.py; here only the endless floor under them."""
     scene.add_sub_resource('''
 [sub_resource type="WorldBoundaryShape3D" id="ground_shape"]''')
     scene.add_sub_resource('''
 [sub_resource type="PlaneMesh" id="countryside_mesh"]
-material = SubResource("grass_material")
+material = SubResource("countryside_material")
 size = Vector2(500, 500)''')
     scene.add_node("Ground", ".", "StaticBody3D", groups=[NAVIGATION_SOURCE_GROUP])
-    scene.add_node("Collision", "Ground", "CollisionShape3D", properties={"shape": 'SubResource("ground_shape")'})
-    scene.add_node("Countryside", "Ground", "MeshInstance3D", properties={"position": vector(0, -0.06, 0), "mesh": 'SubResource("countryside_mesh")'})
-    ground_patch(scene, "Streets", city_center, city_size, 0.0, "asphalt_material")
-
-    for name, center, size in stone_patches:
-        ground_patch(scene, name, center, size, 0.01, "paving_material")
-
-    for name, center, size in square_lawns:
-        ground_patch(scene, name, center, size, 0.01, "grass_material")
-
-    ground_patch(scene, "Median", (0.0, sum(MEDIAN_Z) / 2.0), (city_size[0], MEDIAN_Z[1] - MEDIAN_Z[0]), 0.01, "brick_material")
-    ground_disc(scene, "RoundaboutRing", ROUNDABOUT, 9.0, 0.012, "brick_material")
-    ground_disc(scene, "RoundaboutLawn", ROUNDABOUT, 6.0, 0.016, "grass_material")
-    add_getulio_vargas_paths(scene)
-    add_sao_jose_paths(scene)
+    scene.add_node("Collision", "Ground", "CollisionShape3D", properties={"position": vector(0, -STREET_DROP, 0), "shape": 'SubResource("ground_shape")'})
+    scene.add_node("Countryside", "Ground", "MeshInstance3D", properties={"position": vector(0, -STREET_DROP - 0.03, 0), "mesh": 'SubResource("countryside_mesh")'})
+    place(scene, "City", "Ground", "res://art/town/ground.gltf", (0, 0, 0))
 
 
-def perimeter_strips(scene: SceneWriter, prefix: str, center: tuple) -> None:
-    half_x, half_z = SQUARE_HALF
-    inset = PATH_WIDTH / 2.0
-    strips = [
-        ("North", (center[0] - half_x, center[1] - half_z + inset), (center[0] + half_x, center[1] - half_z + inset)),
-        ("South", (center[0] - half_x, center[1] + half_z - inset), (center[0] + half_x, center[1] + half_z - inset)),
-        ("West", (center[0] - half_x + inset, center[1] - half_z), (center[0] - half_x + inset, center[1] + half_z)),
-        ("East", (center[0] + half_x - inset, center[1] - half_z), (center[0] + half_x - inset, center[1] + half_z)),
-    ]
-
-    for name, start, end in strips:
-        ground_strip(scene, f"{prefix}Path{name}", start, end, PATH_WIDTH, 0.02, "brick_material")
-
-
-def add_getulio_vargas_paths(scene: SceneWriter) -> None:
-    """Union-jack plan: perimeter, two axes and two diagonals meeting at the chafariz circle."""
-    center_x, center_z = GETULIO_VARGAS
-    half_x, half_z = SQUARE_HALF
-    corners = [(center_x - half_x + 2, center_z - half_z + 2), (center_x + half_x - 2, center_z + half_z - 2), (center_x - half_x + 2, center_z + half_z - 2), (center_x + half_x - 2, center_z - half_z + 2)]
-
-    perimeter_strips(scene, "GetulioVargas", GETULIO_VARGAS)
-    ground_strip(scene, "GetulioVargasAxisU", (center_x - half_x, center_z), (center_x + half_x, center_z), PATH_WIDTH, 0.02, "brick_material")
-    ground_strip(scene, "GetulioVargasAxisV", (center_x, center_z - half_z), (center_x, center_z + half_z), PATH_WIDTH, 0.02, "brick_material")
-    ground_strip(scene, "GetulioVargasDiagonalA", corners[0], corners[1], 3.5, 0.021, "brick_material")
-    ground_strip(scene, "GetulioVargasDiagonalB", corners[2], corners[3], 3.5, 0.021, "brick_material")
-    ground_disc(scene, "GetulioVargasCircle", GETULIO_VARGAS, 10.0, 0.022, "brick_material")
-    ground_disc(scene, "CoretoCircle", COREO_POSITION, 7.5, 0.022, "brick_material")
-
-
-def add_sao_jose_paths(scene: SceneWriter) -> None:
-    """Brick forecourt and a ring around the cathedral; the side lawns stay under dense shade trees."""
-    center_x = SAO_JOSE[0]
-    half_x = SQUARE_HALF[0]
-    lawn_east = center_x + half_x - PATH_WIDTH
-
-    perimeter_strips(scene, "SaoJose", SAO_JOSE)
-    ground_patch(scene, "SaoJoseForecourt", ((center_x - half_x + CATHEDRAL_FACADE_X) / 2.0, 0.0), (CATHEDRAL_FACADE_X - (center_x - half_x), 34.0), 0.02, "brick_material")
-    ground_patch(scene, "SaoJoseCathedralRing", ((CATHEDRAL_FACADE_X + lawn_east + PATH_WIDTH) / 2.0, 0.0), (lawn_east + PATH_WIDTH - CATHEDRAL_FACADE_X, 29.0), 0.02, "brick_material")
+def grounded(x: float, z: float) -> tuple:
+    """Position standing on the ground at (x, z): raised on the planted beds."""
+    return x, ground_height((x, z)), z
 
 
 def add_town_wall(scene: SceneWriter) -> None:
@@ -566,7 +500,7 @@ def add_lamps(scene: SceneWriter) -> list:
     scene.add_node("Lamps", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
 
     for index, (x, z) in enumerate(positions):
-        place(scene, f"Lamp{index:02d}", "Lamps", "res://features/hub/props/lamp_post.tscn", (x, 0, z))
+        place(scene, f"Lamp{index:02d}", "Lamps", "res://features/hub/props/lamp_post.tscn", grounded(x, z))
 
     return positions
 
@@ -595,7 +529,7 @@ def add_trees(scene: SceneWriter) -> None:
     scene.add_node("Trees", ".", "Node3D")
 
     for index, (x, z) in enumerate(lawn_trees + median):
-        place(scene, f"Tree{index:03d}", "Trees", f"res://art/nature/CommonTree_{index % 5 + 1}.gltf", (x, 0, z), rotation_y=index * 1.3, scale=0.85 + 0.08 * (index % 4))
+        place(scene, f"Tree{index:03d}", "Trees", f"res://art/nature/CommonTree_{index % 5 + 1}.gltf", grounded(x, z), rotation_y=index * 1.3, scale=0.85 + 0.08 * (index % 4))
 
     for index, (x, z) in enumerate(backyards):
         place(scene, f"BackyardTree{index:02d}", "Trees", f"res://art/nature/CommonTree_{index % 5 + 1}.gltf", (x, 0, z), rotation_y=index * 0.9, scale=1.1)
@@ -609,7 +543,8 @@ def add_square_props(scene: SceneWriter) -> list:
     cathedral_benches = [((x, side * 15.4), 0.0 if side < 0 else math.pi) for side in (-1, 1) for x in (32.0, 44.0)]
     benches = circle_benches + axis_benches + cathedral_benches
     getulio_vargas_beds = [spot for spot in mirrored_in_quadrants(GETULIO_VARGAS, [(8.0, 24.0), (17.0, 8.0)]) if clear_of_coreto(spot)]
-    flower_beds = getulio_vargas_beds + [(10.5, -12.0), (10.5, 12.0), (10.5, -6.0), (10.5, 6.0)]
+    flower_beds = getulio_vargas_beds
+    forecourt_planters = [(10.5, -12.0), (10.5, 12.0), (10.5, -6.0), (10.5, 6.0)]
     getulio_vargas_bushes = ring_points(GETULIO_VARGAS, 11.5, 8, 22.5)
 
     scene.add_node("SquareProps", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
@@ -617,13 +552,17 @@ def add_square_props(scene: SceneWriter) -> list:
     place(scene, "RoundaboutFountain", "SquareProps", "res://features/hub/props/fountain_small.tscn", (ROUNDABOUT[0], 0, ROUNDABOUT[1]))
 
     for index, ((x, z), rotation_y) in enumerate(benches):
-        place(scene, f"Bench{index:02d}", "SquareProps", "res://art/props/Bench.gltf", (x, 0, z), rotation_y)
+        place(scene, f"Bench{index:02d}", "SquareProps", "res://art/props/Bench.gltf", grounded(x, z), rotation_y)
 
     for index, (x, z) in enumerate(flower_beds):
-        place(scene, f"Flowers{index:02d}", "SquareProps", f"res://art/nature/Flower_{3 + index % 2}_Group.gltf", (x, 0, z), rotation_y=index * 1.1, scale=1.3)
+        place(scene, f"Flowers{index:02d}", "SquareProps", f"res://art/nature/Flower_{3 + index % 2}_Group.gltf", grounded(x, z), rotation_y=index * 1.1, scale=1.3)
+
+    for index, (x, z) in enumerate(forecourt_planters):
+        place(scene, f"Planter{index:02d}", "SquareProps", "res://art/town/planter.gltf", (x, 0, z))
+        place(scene, f"PlanterFlowers{index:02d}", "SquareProps", f"res://art/nature/Flower_{3 + index % 2}_Group.gltf", (x, PLANTER_SOIL_HEIGHT, z), rotation_y=index * 1.7)
 
     for index, (x, z) in enumerate(getulio_vargas_bushes):
-        place(scene, f"FlowerBush{index:02d}", "SquareProps", "res://art/nature/Bush_Common_Flowers.gltf", (x, 0, z), rotation_y=index * 0.9)
+        place(scene, f"FlowerBush{index:02d}", "SquareProps", "res://art/nature/Bush_Common_Flowers.gltf", grounded(x, z), rotation_y=index * 0.9)
 
     return benches
 
@@ -683,7 +622,7 @@ def patrol(points: list, speed: float, pause: float, idle: str) -> dict:
 
 def stand(position: tuple, facing: float, animation: str, offset: float, height: float = 0.0) -> dict:
     return {
-        "position": vector(position[0], height, position[1]),
+        "position": vector(position[0], height or ground_height(position), position[1]),
         "rotation": vector(0, facing, 0),
         "activity": "1",
         "idle_animation": f'&"{animation}"',
