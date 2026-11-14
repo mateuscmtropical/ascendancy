@@ -86,6 +86,13 @@ fotorrealista, mas com cara de feito com cuidado.
 - Push só na branch `wip/city-fidelity`. Nada de merge na `main`.
 - Guardar só resultado final; apagar temporários.
 
+## Condição de parada (obrigatória)
+A rotina agendada só existe para cumprir a "Ordem de trabalho" acima (itens 1 a 7). Quando todos estiverem feitos
+e validados (testes e lint passando), escreva na primeira linha deste arquivo `STATUS: CONCLUIDO`, commite e dê
+push. Toda rodada que encontrar `STATUS: CONCLUIDO` aqui encerra imediatamente, sem mudar nada. Se houver
+ferramenta para gerenciar rotinas (conector Claude_Code_Remote), desative também a rotina
+`trig_01VU2ckA2tjxuEUfaaMP82Zr` (enabled = false). Não invente trabalho extra além do pedido.
+
 ## Ao terminar uma rodada
 Atualizar a seção "Estado" deste arquivo (o que foi feito, o que falta, problemas), commitar e dar push na
 branch; subir prints novos (se houver) para `ascendancy-refs/game_after/`.
