@@ -13,12 +13,15 @@ from pathlib import Path
 
 import bpy
 import numpy
+from mathutils import Matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_cathedral import (  # noqa: E402
     GENERATED_TEXTURES,
     OUTPUT_DIR,
+    PROJECT_DIR,
+    build_robed_figure,
     load_kit_image,
     make_box,
     make_cone,
@@ -87,23 +90,100 @@ def make_octagon_ring(name: str, outer_radius: float, inner_radius: float, heigh
     return ring
 
 
+NYMPH_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_female.gltf"  # CC0, montada por build_characters.py
+NYMPH_PARTS = ("Head", "Hair_Buns", "Eyebrows", "Female_Peasant_Arms", "Female_Peasant_Body", "Female_Peasant_Feet")
+NYMPH_POSE = [("upperarm_l", "Y", 66.0), ("upperarm_r", "Y", -66.0), ("lowerarm_l", "X", -78.0), ("lowerarm_r", "X", -78.0), ("lowerarm_l", "Z", -24.0), ("lowerarm_r", "Z", 24.0), ("Head", "X", 12.0)]
+FOUNTAIN_STATUE_RADIUS = 3.45
+
+
+def make_round_ring(name: str, outer_radius: float, inner_radius: float, base_z: float, height: float, material, segments: int = 40):
+    """Round wall: annulus extruded from base_z, smooth all around."""
+    import bmesh
+
+    from build_cathedral import object_from_bmesh
+
+    ring_bmesh = bmesh.new()
+    loops = [[ring_bmesh.verts.new((radius * math.cos(2.0 * math.pi * index / segments), radius * math.sin(2.0 * math.pi * index / segments), z)) for index in range(segments)] for radius, z in ((outer_radius, base_z), (outer_radius, base_z + height), (inner_radius, base_z + height), (inner_radius, base_z))]
+
+    for lower, upper in zip(loops, loops[1:]):
+        for index in range(segments):
+            following = (index + 1) % segments
+            ring_bmesh.faces.new([lower[index], lower[following], upper[following], upper[index]])
+
+    return object_from_bmesh(name, ring_bmesh, material)
+
+
+def build_fountain_bowl(name: str, base_z: float, radius: float, materials: dict, lobes: int) -> None:
+    """Shallow bowl on a baluster stem, with a rolled rim, a ring of lobes under it and water inside."""
+    make_frustum(f"{name}Stem", base_z, radius * 0.2, radius * 0.13, radius * 0.3, 12, materials["trim"])
+    make_sphere(f"{name}Knop", (0, 0, base_z + radius * 0.32), radius * 0.17, materials["trim"])
+    make_frustum(f"{name}Cup", base_z + radius * 0.4, radius * 0.22, radius, radius * 0.28, 28, materials["trim"])
+    make_round_ring(f"{name}Rim", radius * 1.03, radius * 0.92, base_z + radius * 0.68, radius * 0.06 + 0.03, materials["trim"], 28)
+    make_cylinder("Water", (0, 0, base_z + radius * 0.6), radius * 0.94, radius * 0.08, 28, materials["water"])
+
+    for lobe_index in range(lobes):
+        angle = 2.0 * math.pi * lobe_index / lobes
+        lobe = make_sphere(f"{name}Lobe{lobe_index}", (radius * 0.72 * math.cos(angle), radius * 0.72 * math.sin(angle), base_z + radius * 0.52), radius * 0.16, materials["trim"])
+        lobe.scale = (1.0, 1.0, 0.8)
+
+
+def build_fountain_statues(materials: dict) -> None:
+    """Four water bearers on round plinths standing in the tank, facing outward."""
+    figure, bones = build_robed_figure("Nymph", NYMPH_SOURCE, NYMPH_PARTS, NYMPH_POSE, materials["trim"])
+    hands = (bones["hand_l"] + bones["hand_r"]) / 2.0
+
+    figure.append(make_sphere("NymphJar", (hands.x, hands.y - 0.06, hands.z - 0.02), 0.13, materials["trim"]))
+    figure.append(make_frustum("NymphJarNeck", hands.z + 0.07, 0.05, 0.085, 0.12, 10, materials["trim"]))
+    figure[-1].data.transform(Matrix.Translation((hands.x, hands.y - 0.06, 0.0)))
+
+    for statue_index in range(4):
+        angle = math.pi / 4.0 + statue_index * math.pi / 2.0
+        spot = (FOUNTAIN_STATUE_RADIUS * math.cos(angle), FOUNTAIN_STATUE_RADIUS * math.sin(angle))
+        placement = Matrix.Translation((spot[0], spot[1], 0.95)) @ Matrix.Rotation(angle + math.pi / 2.0, 4, "Z")
+
+        make_cylinder(f"NymphPlinth{statue_index}", (spot[0], spot[1], 0.0), 0.62, 0.8, 16, materials["stone"])
+        make_cylinder(f"NymphPlinthCap{statue_index}", (spot[0], spot[1], 0.8), 0.7, 0.12, 16, materials["trim"])
+
+        for part in figure:
+            copy = bpy.data.objects.new(f"{part.name}{statue_index}", part.data.copy())
+            copy.data.transform(placement)
+            bpy.context.scene.collection.objects.link(copy)
+
+    for part in figure:
+        bpy.data.objects.remove(part, do_unlink=True)
+
+
 def build_large_fountain(materials: dict) -> None:
-    make_octagon_ring("BasinStep", 5.7, 4.0, 0.18, materials["trim"])
-    make_octagon_ring("BasinWall", 5.0, 4.55, 0.75, materials["stone"])
-    make_octagon_ring("BasinRim", 5.12, 4.45, 0.12, materials["trim"]).location.z = 0.75
-    make_cylinder("BasinFloor", (0, 0, 0), 4.6, 0.3, 8, materials["stone"]).rotation_euler.z = math.pi / 8.0
-    make_cylinder("Water", (0, 0, 0.3), 4.58, 0.28, 32, materials["water"])
-    make_frustum("Pedestal", 0.3, 0.9, 0.55, 0.5, 8, materials["trim"])
-    make_cylinder("Column", (0, 0, 0.8), 0.42, 1.0, 12, materials["trim"])
-    make_frustum("LowerBowl", 1.8, 0.45, 2.1, 0.5, 24, materials["trim"])
-    make_cylinder("LowerBowlRim", (0, 0, 2.3), 2.12, 0.08, 24, materials["trim"])
-    make_cylinder("Water", (0, 0, 2.2), 1.95, 0.16, 24, materials["water"])
-    make_cylinder("UpperColumn", (0, 0, 2.38), 0.24, 0.9, 12, materials["trim"])
-    make_frustum("UpperBowl", 3.28, 0.25, 1.05, 0.35, 20, materials["trim"])
-    make_cylinder("Water", (0, 0, 3.5), 0.95, 0.1, 20, materials["water"])
-    make_frustum("FinialBase", 3.6, 0.22, 0.14, 0.35, 12, materials["trim"])
-    make_cone("Finial", (0, 0, 3.95), 0.16, 0.6, 12, materials["trim"])
-    make_cylinder("Fountain-colonly", (0, 0, 0), 5.1, 1.2, 8, None).rotation_euler.z = math.pi / 8.0
+    """Chafariz: wide round tank with a sitting rim, four water bearers and a three-tier fountain on a panelled drum."""
+    tank_radius = 5.5
+
+    make_round_ring("TankStep", tank_radius + 0.45, tank_radius - 0.1, 0.0, 0.14, materials["trim"])
+    make_round_ring("TankWall", tank_radius, tank_radius - 0.42, 0.0, 0.52, materials["stone"])
+    make_round_ring("TankRim", tank_radius + 0.08, tank_radius - 0.52, 0.52, 0.1, materials["trim"])
+    make_cylinder("TankFloor", (0, 0, 0), tank_radius - 0.4, 0.12, 40, materials["stone"])
+    make_cylinder("Water", (0, 0, 0.12), tank_radius - 0.42, 0.3, 40, materials["water"])
+
+    make_cylinder("DrumBase", (0, 0, 0.1), 1.55, 0.45, 8, materials["trim"]).rotation_euler.z = math.pi / 8.0
+    make_cylinder("Drum", (0, 0, 0.55), 1.15, 0.85, 8, materials["stone"]).rotation_euler.z = math.pi / 8.0
+    make_cylinder("DrumCornice", (0, 0, 1.4), 1.35, 0.14, 8, materials["trim"]).rotation_euler.z = math.pi / 8.0
+
+    for panel_index in range(8):
+        angle = panel_index * math.pi / 4.0
+        apothem = 1.15 * math.cos(math.pi / 8.0)
+        panel = make_box(f"DrumPanel{panel_index}", (0, 0, 0), (0.56, 0.06, 0.56), materials["trim"])
+        panel.location = (apothem * math.cos(angle), apothem * math.sin(angle), 0.98)
+        panel.rotation_euler.z = angle + math.pi / 2.0
+        boss = make_sphere(f"DrumBoss{panel_index}", ((apothem + 0.04) * math.cos(angle), (apothem + 0.04) * math.sin(angle), 0.98), 0.12, materials["trim"])
+        boss.scale = (1.0, 1.0, 1.0)
+
+    build_fountain_bowl("LowerBowl", 1.54, 2.3, materials, 12)
+    build_fountain_bowl("MiddleBowl", 3.2, 1.45, materials, 10)
+    build_fountain_bowl("UpperBowl", 4.25, 0.85, materials, 8)
+    make_frustum("FinialUrn", 4.85, 0.1, 0.2, 0.25, 12, materials["trim"])
+    make_sphere("FinialBud", (0, 0, 5.22), 0.16, materials["trim"])
+    make_cone("FinialSpout", (0, 0, 5.3), 0.07, 0.3, 10, materials["trim"])
+    build_fountain_statues(materials)
+    make_cylinder("Fountain-colonly", (0, 0, 0), tank_radius + 0.1, 1.2, 16, None)
 
 
 def build_small_fountain(materials: dict) -> None:

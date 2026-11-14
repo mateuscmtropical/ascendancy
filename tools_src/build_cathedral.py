@@ -792,41 +792,50 @@ def make_draped_cone(name: str, bottom: float, top: float, bottom_radius: float,
     return object_from_bmesh(name, drape_bmesh, material)
 
 
-def build_saint_figure(materials: dict) -> list:
-    """Robed saint carved in marble: the CC0 villager in a fixed pose, dressed in a tunic and mantle, with staff and halo.
-    Returned meshes stand at the origin facing -Y, already scaled to STATUE_SCALE."""
+def build_robed_figure(name: str, source: Path, part_names: tuple, pose: list, material) -> tuple:
+    """Stone figure from a CC0 character: fixed pose, carved in one material and dressed in a fluted tunic.
+    Returns (meshes standing at the origin facing -Y, {bone name: posed world position})."""
     objects_before = set(bpy.data.objects)
 
-    bpy.ops.import_scene.gltf(filepath=str(STATUE_SOURCE))
+    bpy.ops.import_scene.gltf(filepath=str(source))
 
     imported = list(set(bpy.data.objects) - objects_before)
     armature = next(scene_object for scene_object in imported if scene_object.type == "ARMATURE")
 
     bpy.context.view_layer.update()
 
-    for bone_name, axis, degrees in STATUE_POSE:
+    for bone_name, axis, degrees in pose:
         pose_bone_about_world_axis(armature, bone_name, axis, degrees)
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    staff_hand = (armature.matrix_world @ armature.pose.bones["hand_l"].matrix).to_translation()
-    head_top = (armature.matrix_world @ armature.pose.bones["Head"].matrix).to_translation()
+    bone_positions = {pose_bone.name: (armature.matrix_world @ pose_bone.matrix).to_translation() for pose_bone in armature.pose.bones}
     figure = []
 
-    for part_name in STATUE_PARTS:
+    for part_name in part_names:
         posed = bpy.data.objects[part_name].evaluated_get(depsgraph)
         carved_mesh = bpy.data.meshes.new_from_object(posed)
         carved_mesh.transform(posed.matrix_world)
         carved_mesh.materials.clear()
-        carved_mesh.materials.append(materials["marble"])
-        carved = bpy.data.objects.new(f"Saint{part_name}", carved_mesh)
+        carved_mesh.materials.append(material)
+        carved = bpy.data.objects.new(f"{name}{part_name}", carved_mesh)
         bpy.context.scene.collection.objects.link(carved)
         figure.append(carved)
 
     for scene_object in imported:
         bpy.data.objects.remove(scene_object, do_unlink=True)
 
-    figure.append(make_draped_cone("SaintTunic", 0.03, 1.4, 0.36, 0.17, 9, 0.035, materials["marble"]))
+    figure.append(make_draped_cone(f"{name}Tunic", 0.03, 1.4, 0.36, 0.17, 9, 0.035, material))
+
+    return figure, bone_positions
+
+
+def build_saint_figure(materials: dict) -> list:
+    """Robed saint carved in marble, with mantle, staff and halo. Meshes stand at the origin facing -Y, scaled to STATUE_SCALE."""
+    figure, bones = build_robed_figure("Saint", STATUE_SOURCE, STATUE_PARTS, STATUE_POSE, materials["marble"])
+    staff_hand = bones["hand_l"]
+    head_top = bones["Head"]
     mantle = make_draped_cone("SaintMantle", 0.55, 1.52, 0.34, 0.19, 7, 0.03, materials["marble"])
+
     mantle.data.transform(Matrix.Translation((0.0, 0.035, 0.0)))
     figure.append(mantle)
     figure.append(make_cylinder("SaintStaff", (staff_hand.x, staff_hand.y - 0.02, 0.0), 0.022, 1.95, 8, materials["marble"]))
