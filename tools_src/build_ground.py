@@ -43,7 +43,7 @@ SKIRT_WIDTH = 0.3  # largura da rampa de colisão do meio-fio
 HEDGE_BAND = (0.45, 1.25)  # distância da borda do canteiro (lado da rua) onde fica a sebe
 HEDGE_PATH_CLEARANCE = 1.6
 HEDGE_HEIGHT = 0.8
-METERS_PER_TILE = {"brick": 1.0, "stone": 1.7, "street": 2.4, "curb": 1.5, "grass": 7.0, "hedge": 1.6}
+METERS_PER_TILE = {"brick": 1.0, "stone": 1.7, "street": 1.8, "curb": 1.5, "grass": 7.0, "hedge": 1.6}
 
 
 # ---------- textures ----------

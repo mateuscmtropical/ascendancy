@@ -26,12 +26,7 @@ fotorrealista, mas com cara de feito com cuidado.
    asfalto abaixo da calçada, canteiros de gramado elevados com borda de pedra/concreto e formas curvas como na
    foto aérea (`real/opera/maps_aerial_praca_z19.png`), arbustos/sebes nas bordas, piso com relevo
    (normal/roughness) sem moiré, variação de material.
-   - **Estado:** o Fable começou aqui e foi parado. Já existem no gerador `RING_RADII`, `PLAZA_RADIUS`,
-     `COREO_PLAZA_RADIUS`, `STREET_DROP`, `LAWN_RECTS`, `square_paths()` e `path_distance()` (formas de piso
-     recortadas dos gramados, distância com sinal). Ainda **não** estão ligados em `add_ground` /
-     `add_getulio_vargas_paths` / `add_sao_jose_paths`, e `features/hub/hub.tscn` não foi regerado com eles.
-     Ideia em curso: gramado como malha gerada (grade fina) com altura = canteiro elevado onde
-     `path_distance > 0`, e meio-fio na curva de nível zero.
+   - **Estado:** feito na rodada de 2026-11-14 (`tools_src/build_ground.py`); ver a seção "Estado".
 2. **Coreto** (`tools_src/build_plaza_props.py` `build_coreto`): guarda-corpo quebrado (placa verde opaca,
    corrimão flutuando). Refazer como o real (`real/opera/praca_getulio_fountain_coreto_1.png`): telhado de
    telha octogonal sobre postes, balaustrada com balaústres ou grade de ferro, abertura certa na escada, base
@@ -92,6 +87,71 @@ e validados (testes e lint passando), escreva na primeira linha deste arquivo `S
 push. Toda rodada que encontrar `STATUS: CONCLUIDO` aqui encerra imediatamente, sem mudar nada. Se houver
 ferramenta para gerenciar rotinas (conector Claude_Code_Remote), desative também a rotina
 `trig_01VU2ckA2tjxuEUfaaMP82Zr` (enabled = false). Não invente trabalho extra além do pedido.
+
+## Estado (rodada na nuvem de 2026-11-14, ~17:40–18:50 UTC)
+
+Os sete itens da ordem de trabalho têm uma primeira versão completa, com testes (16) e lint passando.
+**Falta a validação visual do usuário no render real (Forward+)**; por isso o arquivo ainda não está marcado
+como `STATUS: CONCLUIDO`.
+
+### Feito
+1. **Chão** — gerador novo `tools_src/build_ground.py` → `art/town/ground.gltf`. Ruas de pedra 12 cm abaixo
+   das calçadas, meio-fio de pedra em toda laje (quadras, praças, canteiro central, rotatória), canteiros de
+   gramado elevados com meio-fio próprio e leve abaulado, bordas curvas (praça do chafariz, anel, praça do
+   coreto, quatro rondéis nas diagonais), sebes aparadas no lado da rua, incrustações de pedra nos largos,
+   normal map no tijolo, grama com textura gerada + tufos de capim por seed. O layout (caminhos, campo de
+   distância `bed_field`, alturas `ground_height`) fica em `build_hub_scene.py` e é a fonte única: os props
+   (árvores, postes, bancos, NPCs parados) usam `grounded()` para ficar na altura certa. Colisão: lajes com
+   saia em rampa (`-convcolonly`) e canteiros com borda em rampa (`-colonly`), então personagem sobe o
+   meio-fio andando (teste `test_player_walks_up_the_curb_from_the_street`).
+2. **Coreto** — refeito em `build_plaza_props.py`: base com plinto e friso, balaustrada torneada entre postes
+   de madeira (só o lado da escada fica aberto), telhado em dois níveis com lanternim, escada com muretas.
+   O defeito antigo era caixa girada em torno da origem (guarda-corpo ia parar no lugar errado).
+3. **Santos** — `build_cathedral.py` `build_robed_figure`/`build_saint_figure`: aldeão CC0 do próprio repo em
+   pose fixa, túnica e manto canelados, cajado e auréola, mármore; pedestal alto com moldura e placa.
+4. **Interior da catedral** — vitrais altos em arco com figura de santo (textura gerada
+   `T_StainedGlassFigure`), colunas caneladas com capitel dourado de folhas, teto de vigas fundas com painéis
+   grandes, três lustres, lambri escuro, bancos escuros (18 fileiras, agora virados para o altar), altares
+   laterais com nicho pintado, pintura do santo no retábulo.
+5. **Chafariz** — tanque redondo largo, tambor com painéis, três bacias com gomos, quatro aguadeiras de pedra
+   (aldeã CC0 em pose fixa), partículas novas em `features/hub/props/fountain_large.tscn` (transbordo das
+   três bacias + oito jatos em arco).
+6. **Vegetação** — palmeira-imperial procedural (`art/town/palm.gltf`, 15 na praça), árvores da São José com
+   copa 45% maior, tufos de capim, vasos com flores no adro (antes as flores nasciam do tijolo).
+7. **Lojas de RPG** — `tools_src/build_shops.py` → `art/town/shops/shop_<tipo>_{sign,stall,yard}.gltf` para
+   ferreiro, armaduras, magia, alquimista, taverna, estalagem, guilda, padeiro, alfaiate e joalheiro: placa
+   pendurada com emblema, toldo listrado com balcão e mercadoria, props grandes do ofício (forja com chaminé
+   e brasa, manequim de armadura, cristais, caldeirão, barris, quadro de missões...). `add_shops` em
+   `build_hub_scene.py` veste as 66 casas viradas para as praças e a avenida (`SHOP_FRONTAGES`), tipo por
+   seed fixa (`SHOP_SEED`), vizinhos nunca repetem.
+
+### Falta / ideias para a próxima rodada
+- **Casas modulares por seed** (largura, andares, sacadas, telhado): não foi possível, porque as peças do
+  Medieval Village MegaKit ficam em `tools/vendor/` e o itch.io está bloqueado na nuvem. As lojas hoje são as
+  cinco casas existentes + kit procedural na fachada. Fazer na sessão local, ou liberar `itch.io` e
+  `quaternius.itch.io` no ambiente da rotina.
+- Lojistas (NPC parado atrás de cada balcão) e interação com as lojas.
+- Catedral: parede já clareada para creme (`T_CathedralWall`), conferir o tom no render real. Falta o
+  ornamento de folha nas aduelas dos arcos e luminárias de parede.
+- Jatos do chafariz são gotas pequenas; conferir no Forward+ se leem bem e engrossar se preciso.
+- Conferir no render real: brilho dos emissivos das lojas (cristais, poções, brasa), tom da grama, contorno.
+- Vídeo promocional novo (sessão local com GPU), sem legenda citando Campo Mourão.
+
+### Problemas do ambiente na nuvem
+- `download.blender.org` bloqueado: Blender substituído por `pip install bpy==5.2.4` (Python 3.13) + wrapper
+  local que importa `bpy` antes de rodar o script (o módulo pip exige `import bpy` antes de `import bmesh`).
+- `itch.io` bloqueado: `fetch_assets.py` não roda. As texturas do kit que os geradores leem foram copiadas de
+  `art/town/textures/` para um `tools/vendor/` local (fora do git). `build_houses.py`, `build_characters.py`
+  e `copy_kit_models.py` **não** foram rodados (saídas antigas mantidas).
+- Sem Vulkan por software (pacote `mesa-vulkan-drivers` indisponível): prints feitos com
+  `xvfb-run` + `--rendering-driver opengl3` (Mesa llvmpipe, renderer Compatibility, 1280x720). Servem para
+  conferir geometria e composição; **não** têm SSAO/SSIL/glow do Forward+, e as cores saem mais lavadas.
+- A exportação glTF regrava `art/town/textures/T_UnevenBrick_Roughness.png` com outro empacotamento; foi
+  revertido a cada rodada (`git checkout`) para não sujar o histórico.
+
+### Prints
+`ascendancy-refs/game_after/*.png` (mesmos nomes de câmera de `game_before/`, mais `ShopsEye` e `ShopClose`,
+câmeras novas em `tests/shots/hub_shots.tscn`). Render Compatibility por software, ver ressalva acima.
 
 ## Ao terminar uma rodada
 Atualizar a seção "Estado" deste arquivo (o que foi feito, o que falta, problemas), commitar e dar push na

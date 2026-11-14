@@ -4812,11 +4812,11 @@ idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
 [node name="Player" parent="." instance=ExtResource("76_ext")]
-position = Vector3(-43.000, 0.000, -10.500)
+position = Vector3(-42.400, 0.000, -12.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
 [node name="SelectCamera" type="Camera3D" parent="."]
-position = Vector3(-38.600, 1.350, -9.700)
+position = Vector3(-38.000, 1.350, -11.200)
 rotation = Vector3(-0.122, 1.391, 0.000)
 fov = 42.0
 

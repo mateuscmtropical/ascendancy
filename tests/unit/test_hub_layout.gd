@@ -13,6 +13,9 @@ const SHOP_TYPES: Array[String] = [
 const SHOP_PIECES: Array[String] = ["Sign", "Stall", "Yard"]
 const STREET_POINT: Vector2 = Vector2(-68, 0)
 const LAWN_POINT: Vector2 = Vector2(-20, -30)
+## Na rua a oeste da Getúlio Vargas, entre dois postes da borda da praça.
+const STREET_START: Vector3 = Vector3(-68, 0, 9)
+const CURB_DISTANCE: float = 4.0
 
 var _hub: Node3D
 
@@ -103,6 +106,23 @@ func test_streets_sit_below_pavement_and_lawns_above() -> void:
 
 	assert_lt(street_height, -0.05, "street is lower than the pavement")
 	assert_gt(lawn_height, 0.1, "lawn bed is raised above the pavement")
+
+
+func test_player_walks_up_the_curb_from_the_street() -> void:
+	var player: PlayerController = _hub.get_node("Player")
+	var travelled: float
+
+	player.global_position = STREET_START
+	player.velocity = Vector3.ZERO
+	player.is_input_enabled = true
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(110)
+	Input.action_release(&"move_forward")
+	player.is_input_enabled = false
+	travelled = absf(player.global_position.x - STREET_START.x)
+
+	assert_gt(travelled, CURB_DISTANCE + 1.0, "player crossed the curb instead of stopping at it")
+	assert_almost_eq(player.global_position.y, 0.0, 0.06, "player stands on the pavement")
 
 
 func _ground_height_at(ground_point: Vector2) -> float:

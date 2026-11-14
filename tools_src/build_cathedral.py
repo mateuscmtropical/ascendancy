@@ -228,7 +228,7 @@ def build_materials() -> dict:
     # Stone and trim textures are also loaded by build_plaza_props.py.
     stone_image = make_tinted_image("T_Brick_BaseColor.png", "T_CathedralStone_BaseColor", (1.08, 1.06, 1.0), (0.09, 0.08, 0.06))
     trim_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralTrim_BaseColor", (1.0, 1.0, 1.0), (0.08, 0.08, 0.08))
-    wall_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralWall_BaseColor", (0.98, 0.93, 0.82), (0.12, 0.11, 0.09))
+    wall_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralWall_BaseColor", (1.0, 0.97, 0.9), (0.17, 0.16, 0.14))
     roof_image = make_tinted_image("T_RoundTiles_BaseColor.png", "T_CathedralRoof_BaseColor", (1.15, 0.62, 0.48), (0.08, 0.02, 0.0))
     plaster_normal = load_kit_image("T_Plaster_Normal.png", False)
     figure_image = make_figure_glass_image()
