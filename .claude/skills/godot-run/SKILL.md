@@ -21,14 +21,14 @@ timeout 120 $G --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests 
 `--headless` = renderer dummy: não gera imagem. Serve para rede, seed, combate, NPC.
 
 ## Prints (precisa de render real)
-Testado em 2026-11-14:
-- `window/size/initial_position` é forçado para (0,0) pelo Windows → não serve.
-- Minimizar a janela para o render (trava) → não serve.
-- Funciona: `window/size/no_focus=true` no projeto + no `_ready` do script de captura `DisplayServer.window_set_position(Vector2i(-20000, -20000))`. Janela aparece uma fração de segundo no monitor 0 e sai da tela; não rouba foco.
-```
-timeout 120 $G --path . --screen 0 --audio-driver Dummy --resolution 1920x1080 res://tests/shots/shot_runner.tscn -- --shot <nome> --eye x,y,z,yaw,pitch
-```
-Captura: esperar alguns frames + `await RenderingServer.frame_post_draw`, depois `get_viewport().get_texture().get_image().save_png()`.
+Sempre por `tools_src/shot.sh <cena.tscn> <saida.png> [NomeDaCamera3D]` (a cena precisa do nó `tests/shots/shot_capture.gd`). O script:
+1. `--import` headless (rodar cena não reimporta asset alterado);
+2. roda a cena `--headless` e aborta se houver ERROR (evita alerta modal na tela);
+3. escreve `override.cfg` temporário: janela 64x64 sem borda, sem foco, sem splash, `stretch/mode=viewport` (render continua 1920x1080);
+4. abre com `--screen 0`; no `_ready` a janela vai para (-20000,-20000); salva PNG e fecha; apaga `override.cfg`.
+Usuário reclamou de janela grande abrindo na tela (2026-11-14): nunca abrir Godot com janela normal. `--position` negativo é ignorado (vai para 0,0 do monitor principal = monitor do usuário).
+Não pôr "ERROR" em print de debug: o passo 2 trata como falha.
+Godot no modo autocontido grava `user://` em `./Godot/app_userdata` (gitignored, com `.gdignore`).
 Prints de trabalho: scratchpad. Imagem para o usuário ver: sempre em `C:\Users\mateu\Downloads\jogo\` com nome descritivo (nunca caminho do scratchpad).
 
 ## Validação visual
