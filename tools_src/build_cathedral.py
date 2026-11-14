@@ -735,17 +735,161 @@ def build_pews(materials: dict) -> None:
         make_box(f"PewEndB{tag}", (block_x + pew_length / 2.0, row_y + 0.05, BASE + 0.47), (0.08, 0.6, 0.94), materials["wood"])
 
 
+STATUE_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_male.gltf"  # CC0, montado por build_characters.py
+STATUE_PARTS = ("Head", "Hair_Beard", "Hair_Buzzed", "Eyebrows", "Male_Peasant_Arms", "Male_Peasant_Body", "Male_Peasant_Feet")
+STATUE_SCALE = 1.25
+STATUE_SPOTS = [(-9.6, -2.0), (9.6, -2.0)]
+PEDESTAL_HEIGHT = 2.35
+STATUE_POSE = [  # (bone, world axis, degrees), applied in order: arms lowered, right hand to the chest, left hand forward on the staff
+    ("upperarm_l", "Y", 74.0),
+    ("upperarm_r", "Y", -70.0),
+    ("lowerarm_r", "X", -118.0),
+    ("lowerarm_r", "Z", 38.0),
+    ("lowerarm_l", "X", -52.0),
+    ("Head", "X", 9.0),
+]
+
+
+def pose_bone_about_world_axis(armature, bone_name: str, axis: str, degrees: float) -> None:
+    pose_bone = armature.pose.bones[bone_name]
+    pivot = (armature.matrix_world @ pose_bone.matrix).to_translation()
+    turn = Matrix.Translation(pivot) @ Matrix.Rotation(math.radians(degrees), 4, axis) @ Matrix.Translation(-pivot)
+
+    pose_bone.matrix = armature.matrix_world.inverted() @ turn @ armature.matrix_world @ pose_bone.matrix
+    bpy.context.view_layer.update()
+
+
+def make_draped_cone(name: str, bottom: float, top: float, bottom_radius: float, top_radius: float, folds: int, fold_depth: float, material) -> bpy.types.Object:
+    """Robe as a fluted, slightly flattened cone: the folds deepen toward the hem."""
+    drape_bmesh = bmesh.new()
+    segments = folds * 6
+    ring_count = 7
+    rings = []
+
+    for ring_index in range(ring_count):
+        rise = ring_index / (ring_count - 1)
+        radius = bottom_radius + (top_radius - bottom_radius) * rise ** 0.8
+        depth = fold_depth * (1.0 - rise) ** 1.5
+        ring = []
+
+        for segment in range(segments):
+            angle = 2.0 * math.pi * segment / segments
+            folded = radius + depth * math.cos(folds * angle + 0.6 * math.sin(3.0 * angle))
+            ring.append(drape_bmesh.verts.new((folded * math.cos(angle), 0.72 * folded * math.sin(angle), bottom + (top - bottom) * rise)))
+
+        rings.append(ring)
+
+    for lower, upper in zip(rings, rings[1:]):
+        for segment in range(segments):
+            following = (segment + 1) % segments
+            drape_bmesh.faces.new([lower[segment], lower[following], upper[following], upper[segment]])
+
+    drape_bmesh.faces.new(rings[-1])
+
+    for face in drape_bmesh.faces:
+        face.smooth = True
+
+    return object_from_bmesh(name, drape_bmesh, material)
+
+
+def build_saint_figure(materials: dict) -> list:
+    """Robed saint carved in marble: the CC0 villager in a fixed pose, dressed in a tunic and mantle, with staff and halo.
+    Returned meshes stand at the origin facing -Y, already scaled to STATUE_SCALE."""
+    objects_before = set(bpy.data.objects)
+
+    bpy.ops.import_scene.gltf(filepath=str(STATUE_SOURCE))
+
+    imported = list(set(bpy.data.objects) - objects_before)
+    armature = next(scene_object for scene_object in imported if scene_object.type == "ARMATURE")
+
+    bpy.context.view_layer.update()
+
+    for bone_name, axis, degrees in STATUE_POSE:
+        pose_bone_about_world_axis(armature, bone_name, axis, degrees)
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    staff_hand = (armature.matrix_world @ armature.pose.bones["hand_l"].matrix).to_translation()
+    head_top = (armature.matrix_world @ armature.pose.bones["Head"].matrix).to_translation()
+    figure = []
+
+    for part_name in STATUE_PARTS:
+        posed = bpy.data.objects[part_name].evaluated_get(depsgraph)
+        carved_mesh = bpy.data.meshes.new_from_object(posed)
+        carved_mesh.transform(posed.matrix_world)
+        carved_mesh.materials.clear()
+        carved_mesh.materials.append(materials["marble"])
+        carved = bpy.data.objects.new(f"Saint{part_name}", carved_mesh)
+        bpy.context.scene.collection.objects.link(carved)
+        figure.append(carved)
+
+    for scene_object in imported:
+        bpy.data.objects.remove(scene_object, do_unlink=True)
+
+    figure.append(make_draped_cone("SaintTunic", 0.03, 1.4, 0.36, 0.17, 9, 0.035, materials["marble"]))
+    mantle = make_draped_cone("SaintMantle", 0.55, 1.52, 0.34, 0.19, 7, 0.03, materials["marble"])
+    mantle.data.transform(Matrix.Translation((0.0, 0.035, 0.0)))
+    figure.append(mantle)
+    figure.append(make_cylinder("SaintStaff", (staff_hand.x, staff_hand.y - 0.02, 0.0), 0.022, 1.95, 8, materials["marble"]))
+    figure.append(make_sphere("SaintStaffBloom", (staff_hand.x, staff_hand.y - 0.02, 2.0), 0.075, materials["marble"]))
+    figure.append(make_cylinder("SaintBase", (0, 0, -0.14), 0.5, 0.16, 20, materials["marble"]))
+
+    halo_bmesh = bmesh.new()
+    bmesh.ops.create_cone(halo_bmesh, cap_ends=False, segments=24, radius1=0.19, radius2=0.19, depth=0.02)
+    halo = object_from_bmesh("SaintHalo", halo_bmesh, materials["gold"])
+    halo.data.transform(Matrix.Translation((0.0, head_top.y + 0.1, head_top.z + 0.14)) @ Matrix.Rotation(math.radians(80.0), 4, "X"))
+    figure.append(halo)
+
+    for part in figure:
+        part.data.transform(Matrix.Scale(STATUE_SCALE, 4))
+
+    return figure
+
+
+def build_pedestal(tag: str, center: tuple, materials: dict) -> None:
+    """Tall pedestal: stepped base, plinth, dado with a framed bronze plaque on the front (-Y), cornice and cap."""
+    x, y = center
+    dado_bottom, dado_top = 0.5, PEDESTAL_HEIGHT - 0.35
+    courses = [
+        ("Step", 1.9, 0.0, 0.22, "stone"),
+        ("Plinth", 1.55, 0.22, 0.5, "trim"),
+        ("Dado", 1.2, dado_bottom, dado_top, "wall"),
+        ("Necking", 1.3, dado_top, dado_top + 0.08, "trim"),
+        ("Cornice", 1.55, dado_top + 0.08, dado_top + 0.22, "trim"),
+        ("Cap", 1.3, dado_top + 0.22, PEDESTAL_HEIGHT, "stone"),
+    ]
+    frame_bars = [((0.0, dado_top - 0.2), (0.86, 0.07)), ((0.0, dado_bottom + 0.2), (0.86, 0.07)), ((-0.4, (dado_bottom + dado_top) / 2.0), (0.07, dado_top - dado_bottom - 0.4)), ((0.4, (dado_bottom + dado_top) / 2.0), (0.07, dado_top - dado_bottom - 0.4))]
+
+    for name, width, bottom, top, material_key in courses:
+        make_span(f"Pedestal{name}{tag}", (x - width / 2.0, y - width / 2.0, bottom), (x + width / 2.0, y + width / 2.0, top), materials[material_key])
+
+    for bar_index, ((offset_x, height), (size_x, size_z)) in enumerate(frame_bars):
+        make_box(f"PedestalFrame{tag}{bar_index}", (x + offset_x, y - 0.62, height), (size_x, 0.05, size_z), materials["trim"])
+
+    make_box(f"PedestalPlaque{tag}", (x, y - 0.61, (dado_bottom + dado_top) / 2.0 + 0.1), (0.52, 0.03, 0.36), materials["gold"])
+
+
 def build_statues(materials: dict) -> None:
-    """Two robed figures on pedestals flanking the stairs."""
-    for side_sign in (-1, 1):
-        statue_x = side_sign * 9.6
-        statue_y = -2.0
-        tag = "L" if side_sign < 0 else "R"
-        make_box(f"Pedestal{tag}", (statue_x, statue_y, 0.7), (1.1, 1.1, 1.4), materials["stone"])
-        make_box(f"PedestalCap{tag}", (statue_x, statue_y, 1.45), (1.3, 1.3, 0.1), materials["trim"])
-        make_cone(f"StatueRobe{tag}", (statue_x, statue_y, 1.5), 0.42, 1.45, 16, materials["marble"], top_radius=0.2)
-        make_cone(f"StatueShoulders{tag}", (statue_x, statue_y, 2.85), 0.26, 0.22, 16, materials["marble"], top_radius=0.12)
-        make_sphere(f"StatueHead{tag}", (statue_x, statue_y, 3.2), 0.15, materials["marble"])
+    """Two robed saints on tall pedestals flanking the stairs, facing the forecourt."""
+    figure = build_saint_figure(materials)
+
+    for spot_index, (statue_x, statue_y) in enumerate(STATUE_SPOTS):
+        tag = "LR"[spot_index]
+        mirror = Matrix.Scale(-1.0 if spot_index else 1.0, 4, (1, 0, 0))
+        placement = Matrix.Translation((statue_x, statue_y, PEDESTAL_HEIGHT + 0.14 * STATUE_SCALE)) @ mirror
+
+        build_pedestal(tag, (statue_x, statue_y), materials)
+
+        for part in figure:
+            copy = bpy.data.objects.new(f"{part.name}{tag}", part.data.copy())
+            copy.data.transform(placement)
+
+            if spot_index:
+                copy.data.flip_normals()
+
+            bpy.context.scene.collection.objects.link(copy)
+
+    for part in figure:
+        bpy.data.objects.remove(part, do_unlink=True)
 
 
 # ---------- collision ----------
@@ -785,7 +929,7 @@ def build_colliders() -> None:
         segment.matrix_world = Matrix.Translation((radius * math.cos(angle), BODY_LENGTH + radius * math.sin(angle), BASE + NAVE_CEILING / 2.0)) @ Matrix.Rotation(angle - math.pi / 2.0, 4, "Z")
 
     for side_sign in (-1, 1):
-        make_box(f"Statue{side_sign:+d}-colonly", (side_sign * 9.6, -2.0, 1.6), (1.1, 1.1, 3.2), None)
+        make_box(f"Statue{side_sign:+d}-colonly", (side_sign * 9.6, -2.0, 2.4), (1.6, 1.6, 4.8), None)
 
 
 # ---------- export ----------
