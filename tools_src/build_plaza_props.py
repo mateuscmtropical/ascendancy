@@ -48,8 +48,17 @@ def build_prop_materials() -> dict:
         "roof": make_material("M_CathedralRoof", bpy.data.images.load(str(GENERATED_TEXTURES / "T_CathedralRoof_BaseColor.png")), load_kit_image("T_RoundTiles_Normal.png", False)),
         "lamp_glass": make_lamp_glass_material(),
         "soil": make_plain_material("M_Soil", (0.22, 0.15, 0.10), 0.0, 1.0),
+        "palm_trunk": make_plain_material("M_PalmTrunk", (0.3, 0.26, 0.21), 0.0, 0.95),
+        "palm_leaf": make_two_sided_material("M_PalmLeaf", (0.07, 0.3, 0.07)),
         "wood": make_plain_material("M_PropWood", (0.2, 0.11, 0.06), 0.0, 0.7),
     }
+
+
+def make_two_sided_material(name: str, color: tuple):
+    material = make_plain_material(name, color, 0.0, 0.8)
+    material.use_backface_culling = False
+
+    return material
 
 
 def make_lamp_glass_material():
@@ -354,6 +363,60 @@ def build_coreto(materials: dict) -> None:
     build_coreto_stairs(platform_height, apothem, materials)
 
 
+def make_palm_frond(name: str, yaw: float, pitch: float, length: float, material):
+    """Arching frond: a V-shaped blade of ragged leaflets that droops toward the tip."""
+    import bmesh
+
+    from build_cathedral import object_from_bmesh
+
+    frond_bmesh = bmesh.new()
+    segments = 9
+    spine, left, right = [], [], []
+
+    for segment in range(segments + 1):
+        along = segment / segments
+        reach = length * along
+        droop = math.sin(pitch) * reach - 0.42 * length * along * along
+        out = math.cos(pitch) * reach
+        half_width = 0.42 * math.sin(math.pi * min(1.0, along * 1.15 + 0.08)) * (1.0 if segment % 2 == 0 else 0.72) + 0.02
+        spine.append(frond_bmesh.verts.new((out, 0.0, droop)))
+        left.append(frond_bmesh.verts.new((out - 0.08, half_width, droop - 0.5 * half_width)))
+        right.append(frond_bmesh.verts.new((out - 0.08, -half_width, droop - 0.5 * half_width)))
+
+    for segment in range(segments):
+        frond_bmesh.faces.new([spine[segment], spine[segment + 1], left[segment + 1], left[segment]])
+        frond_bmesh.faces.new([spine[segment + 1], spine[segment], right[segment], right[segment + 1]])
+
+    frond = object_from_bmesh(name, frond_bmesh, material)
+    frond.rotation_euler.z = yaw
+
+    return frond
+
+
+def build_palm(materials: dict) -> None:
+    """Royal palm: ringed trunk with a slight lean, green crownshaft and a crown of arching fronds."""
+    trunk_height = 7.2
+    ring_count = 12
+    lean = lambda rise: (0.35 * rise * rise, 0.12 * math.sin(rise * 2.4))
+    crown = (*lean(1.0), trunk_height)
+
+    for ring_index in range(ring_count):
+        rise = ring_index / ring_count
+        radius = 0.3 - 0.11 * rise + (0.07 if ring_index == 0 else 0.0)
+        segment = make_frustum(f"Trunk{ring_index}", trunk_height * rise, radius, radius - 0.025, trunk_height / ring_count, 10, materials["palm_trunk"])
+        segment.location.x, segment.location.y = lean(rise)
+        ring = make_cylinder(f"TrunkRing{ring_index}", (*lean(rise), trunk_height * rise), radius + 0.012, 0.05, 10, materials["palm_trunk"])
+        ring.scale = (1.0, 1.0, 1.0)
+
+    shaft = make_frustum("Crownshaft", trunk_height, 0.2, 0.13, 0.9, 10, materials["palm_leaf"])
+    shaft.location.x, shaft.location.y = crown[0], crown[1]
+
+    for frond_index in range(16):
+        tier = frond_index % 3
+        frond = make_palm_frond(f"Frond{frond_index}", frond_index * math.radians(137.5), math.radians(58.0 - 30.0 * tier), 3.1 - 0.25 * tier, materials["palm_leaf"])
+        frond.location = (crown[0], crown[1], trunk_height + 0.75 - 0.12 * tier)
+
+
 def build_planter(materials: dict) -> None:
     make_octagon_ring("PlanterWall", 1.3, 1.08, 0.5, materials["stone"])
     make_octagon_ring("PlanterRim", 1.36, 1.02, 0.08, materials["trim"]).location.z = 0.5
@@ -367,6 +430,7 @@ PROPS = {
     "lamp_post": build_lamp_post,
     "coreto": build_coreto,
     "planter": build_planter,
+    "palm": build_palm,
 }
 
 

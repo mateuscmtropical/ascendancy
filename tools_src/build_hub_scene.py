@@ -38,6 +38,9 @@ COREO_POSITION = (-50.0, -12.0)
 PLAYER_SPAWN = (-43.0, -10.5)  # pé da escada do coreto, olhando para a catedral (+X)
 PATH_WIDTH = 4.0
 PLANTER_SOIL_HEIGHT = 0.42
+SHADE_TREE_SCALE = 1.45
+GRASS_SEED = 77
+GRASS_TUFTS_PER_SQUARE = 110
 
 RING_RADII = (18.5, 21.5)  # passeio em anel ao redor do chafariz
 PLAZA_RADIUS = 10.0
@@ -180,6 +183,7 @@ SHOP_SEED = 2207
 SHOP_WALL_GAP = 0.06
 KIT_COLLIDERS = {  # kit model name prefix -> simple solid in model space: ("cylinder", radius, height) or ("box", size, center)
     "CommonTree": ("cylinder", 0.35, 3.0),
+    "palm": ("cylinder", 0.32, 3.0),
     "Bush_Common": ("cylinder", 0.8, 1.2),
     "Flower_3_Group": ("cylinder", 0.5, 1.6),
     "Flower_4_Group": ("cylinder", 0.5, 1.6),
@@ -561,6 +565,28 @@ def clear_of_coreto(spot: tuple) -> bool:
     return math.hypot(spot[0] - COREO_POSITION[0], spot[1] - COREO_POSITION[1]) > 9.5
 
 
+def grass_tuft_spots() -> list:
+    """Seeded scatter of grass tufts over the lawns of both squares, clear of curbs and hedges."""
+    generator = random.Random(GRASS_SEED)
+    spots = []
+
+    for minimum, maximum in LAWN_RECTS.values():
+        candidates = [(generator.uniform(minimum[0], maximum[0]), generator.uniform(minimum[1], maximum[1])) for _ in range(GRASS_TUFTS_PER_SQUARE * 3)]
+        spots += [spot for spot in candidates if on_lawn(spot, 0.6) and square_edge_distance(spot) > 2.0][:GRASS_TUFTS_PER_SQUARE]
+
+    return spots
+
+
+def palm_spots() -> list:
+    """Royal palms: a ring around the chafariz plaza, pairs along the long axis of Getúlio Vargas and the edge of the forecourt."""
+    center_x, center_z = GETULIO_VARGAS
+    around_chafariz = ring_points(GETULIO_VARGAS, 14.6, 8, 22.5)
+    along_axis = [(center_x + side * 4.6, center_z + sign * offset) for side in (-1, 1) for sign in (-1, 1) for offset in (26.0, 34.0, 42.0)]
+    forecourt = [(8.5, sign * offset) for sign in (-1, 1) for offset in (20.0, 26.0)]
+
+    return [spot for spot in around_chafariz + along_axis + forecourt if on_lawn(spot, 0.7)]
+
+
 def add_trees(scene: SceneWriter) -> None:
     """Shade trees on the lawns (dense in São José, as in the real square), the median and behind the houses."""
     center_x, center_z = GETULIO_VARGAS
@@ -575,7 +601,15 @@ def add_trees(scene: SceneWriter) -> None:
     scene.add_node("Trees", ".", "Node3D")
 
     for index, (x, z) in enumerate(lawn_trees + median):
-        place(scene, f"Tree{index:03d}", "Trees", f"res://art/nature/CommonTree_{index % 5 + 1}.gltf", grounded(x, z), rotation_y=index * 1.3, scale=0.85 + 0.08 * (index % 4))
+        is_shade_tree = len(getulio_vargas) <= index < len(lawn_trees)  # São José: copas grandes e fechadas
+        scale = (0.85 + 0.08 * (index % 4)) * (SHADE_TREE_SCALE if is_shade_tree else 1.0)
+        place(scene, f"Tree{index:03d}", "Trees", f"res://art/nature/CommonTree_{index % 5 + 1}.gltf", grounded(x, z), rotation_y=index * 1.3, scale=scale)
+
+    for index, (x, z) in enumerate(grass_tuft_spots()):
+        place(scene, f"Grass{index:03d}", "Trees", "res://art/nature/Grass_Common_Short.gltf", grounded(x, z), rotation_y=index * 0.7, scale=0.4 + 0.08 * (index % 3))
+
+    for index, (x, z) in enumerate(palm_spots()):
+        place(scene, f"Palm{index:02d}", "Trees", "res://art/town/palm.gltf", grounded(x, z), rotation_y=index * 2.1, scale=0.9 + 0.07 * (index % 3))
 
     for index, (x, z) in enumerate(backyards):
         place(scene, f"BackyardTree{index:02d}", "Trees", f"res://art/nature/CommonTree_{index % 5 + 1}.gltf", (x, 0, z), rotation_y=index * 0.9, scale=1.1)

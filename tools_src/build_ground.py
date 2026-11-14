@@ -104,7 +104,7 @@ def brick_paving_height(size: int = 500) -> numpy.ndarray:
 def build_ground_materials() -> dict:
     grass_noise = 0.55 * fractal_noise(512, [(4, 1.0), (9, 0.6), (21, 0.3)], 5) + 0.45 * fractal_noise(512, [(128, 1.0), (256, 0.8)], 6)
     hedge_noise = fractal_noise(256, [(24, 1.0), (64, 1.0), (128, 0.6)], 8)
-    grass_image = make_ramp_image("T_Lawn_BaseColor", grass_noise, (0.15, 0.34, 0.13), (0.4, 0.62, 0.27))
+    grass_image = make_ramp_image("T_Lawn_BaseColor", grass_noise, (0.07, 0.2, 0.06), (0.3, 0.52, 0.19))
     hedge_image = make_ramp_image("T_Hedge_BaseColor", hedge_noise, (0.08, 0.26, 0.13), (0.3, 0.56, 0.24))
     hedge_normal = make_normal_image("T_Hedge_Normal", hedge_noise, 6.0)
     street_image = make_tinted_image("T_UnevenBrick_BaseColor.png", "T_Street_BaseColor", (0.6, 0.6, 0.66), (0.02, 0.02, 0.04))
