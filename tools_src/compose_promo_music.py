@@ -1,6 +1,6 @@
 """Compose the promo reel soundtrack: original ambient pad in D major + bell arpeggio + reverb.
 
-Cues match tests/promo/promo_director.gd: arpeggio enters at the first cut (7.5 s), final chord under the end title (48.5 s).
+Cues match tests/promo/promo_director.gd: arpeggio and beat enter at the first cut (7 s), final chord under the end title (67.5 s).
 Usage: python tools_src/compose_promo_music.py <output.wav> [duration_seconds]
 """
 
@@ -10,8 +10,9 @@ import wave
 import numpy as np
 
 RATE = 48000
-ARPEGGIO_START = 7.5
-END_TITLE_START = 48.5
+ARPEGGIO_START = 7.0
+END_TITLE_START = 67.5
+BEAT_SECONDS = 0.5
 CHORD_SECONDS = 4.0
 D_MAJOR, A_MAJOR, B_MINOR, G_MAJOR = [50, 54, 57, 62], [45, 52, 57, 61], [47, 50, 54, 59], [43, 50, 55, 59]
 PROGRESSION = [D_MAJOR, A_MAJOR, B_MINOR, G_MAJOR, D_MAJOR, A_MAJOR, G_MAJOR, A_MAJOR, D_MAJOR, B_MINOR, G_MAJOR, A_MAJOR]
@@ -51,6 +52,21 @@ def bass(midi_note: int, seconds: float) -> np.ndarray:
     return tone * np.minimum(1, time / 0.3) * np.minimum(1, (seconds - time) / 0.8).clip(0) * 0.11
 
 
+def kick(seconds: float = 0.35) -> np.ndarray:
+    time = timeline(seconds)
+    phase = 2 * np.pi * (48 * time + 70 * (1 - np.exp(-time * 30)) / 30)
+
+    return np.sin(phase) * np.exp(-time * 9) * 0.22
+
+
+def hat(seed: int, seconds: float = 0.08) -> np.ndarray:
+    time = timeline(seconds)
+    noise = np.random.default_rng(seed).standard_normal(len(time))
+    bright = np.diff(noise, prepend=0.0)
+
+    return bright * np.exp(-time * 60) * 0.025
+
+
 def reverb(signal: np.ndarray, seed: int) -> np.ndarray:
     time = timeline(2.6)
     impulse = np.random.default_rng(seed).standard_normal(len(time)) * np.exp(-time / 0.55)
@@ -73,12 +89,19 @@ def compose(duration: float) -> np.ndarray:
         channels[0, first:last] += sound[: last - first] * (1 - pan)
         channels[1, first:last] += sound[: last - first] * pan
 
-    chords = PROGRESSION + [D_MAJOR]
+    chord_count = int(np.ceil(END_TITLE_START / CHORD_SECONDS))
+    chords = [PROGRESSION[index % len(PROGRESSION)] for index in range(chord_count)] + [D_MAJOR]
+    beat_count = int((END_TITLE_START - ARPEGGIO_START) / BEAT_SECONDS)
+
+    for beat_index in range(beat_count):
+        beat_time = ARPEGGIO_START + beat_index * BEAT_SECONDS
+        add(kick() * (1.0 if beat_index % 2 == 0 else 0.6), beat_time)
+        add(hat(beat_index), beat_time + BEAT_SECONDS / 2, pan=0.6)
 
     for index, chord in enumerate(chords):
-        start = index * CHORD_SECONDS
-        is_final = index == len(PROGRESSION)
-        seconds = duration - start if is_final else CHORD_SECONDS + 1.6
+        is_final = index == chord_count
+        start = END_TITLE_START if is_final else index * CHORD_SECONDS
+        seconds = duration - start if is_final else min(CHORD_SECONDS + 1.6, END_TITLE_START - start + 1.0)
 
         for note in chord:
             add(pad_note(note, seconds), start, pan=0.35 + 0.3 * rng.random())
@@ -92,7 +115,7 @@ def compose(duration: float) -> np.ndarray:
         for step, tone_index in enumerate(ARPEGGIO_PATTERN):
             note_time = start + step * 0.5
 
-            if note_time >= ARPEGGIO_START:
+            if ARPEGGIO_START <= note_time < END_TITLE_START:
                 add(bell(chord[tone_index] + 12), note_time, pan=0.3 + 0.4 * (step % 2))
 
     for offset, note in enumerate([74, 78, 81, 86]):

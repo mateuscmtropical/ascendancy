@@ -1,3 +1,7 @@
+# Credits
+
+| Asset / library | Author | License | Source |
+|---|---|---|---|
 | GUT (Godot Unit Test) 9.7.1 | Butch Wesley and contributors | MIT | https://github.com/bitwes/Gut |
 | Universal Base Characters | Quaternius | CC0 1.0 | https://quaternius.itch.io/universal-base-characters |
 | Modular Character Outfits – Fantasy | Quaternius | CC0 1.0 | https://quaternius.itch.io/modular-character-outfits-fantasy |
@@ -8,3 +12,7 @@
 | KayKit Character Animations | Kay Lousberg | CC0 1.0 | https://kaylousberg.itch.io/kaykit-character-animations |
 
 CC0 verified from the License.txt inside each downloaded zip (2026-11-14). Characters in `art/characters` are assembled from these packs by `tools_src/build_characters.py`.
+
+## Reference data
+
+The city layout (two squares, Rua Brasil promenade, avenue with roundabout) is loosely based on the street plan of Campo Mourão (PR, Brazil) from OpenStreetMap. Map data © OpenStreetMap contributors, available under the Open Database License (ODbL 1.0): https://www.openstreetmap.org/copyright. No map data is shipped; the layout is hand-built in `tools_src/build_hub_scene.py`.

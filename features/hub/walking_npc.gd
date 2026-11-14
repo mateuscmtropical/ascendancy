@@ -23,6 +23,8 @@ var _model: CharacterModel
 var _patrol_state: PatrolState = PatrolState.WALKING
 var _target_index: int = 0
 var _pause_left: float = 0.0
+## Subida por metro andado até o próximo ponto do caminho (escadas e rampas da navmesh).
+var _climb_per_meter: float = 0.0
 var _patrol_steps: Dictionary[PatrolState, Callable] = {
 	PatrolState.WALKING: _walk_toward_target,
 	PatrolState.PAUSED: _wait_at_target,
@@ -69,6 +71,7 @@ static func next_route_index(current_index: int, route_size: int) -> int:
 func _walk_toward_target(_delta: float) -> void:
 	var next_point: Vector3
 	var direction: Vector3
+	var horizontal_distance: float
 
 	if _navigation_agent.is_navigation_finished():
 		_arrive_at_target()
@@ -77,6 +80,8 @@ func _walk_toward_target(_delta: float) -> void:
 
 	next_point = _navigation_agent.get_next_path_position()
 	direction = next_point - global_position
+	horizontal_distance = Vector2(direction.x, direction.z).length()
+	_climb_per_meter = direction.y / horizontal_distance if horizontal_distance > 0.05 else 0.0
 	direction.y = 0.0
 	_navigation_agent.velocity = direction.normalized() * walk_speed
 
@@ -84,11 +89,12 @@ func _walk_toward_target(_delta: float) -> void:
 ## Chamado pelo avoidance com a velocidade que não bate em ninguém.
 func _move_with_safe_velocity(safe_velocity: Vector3) -> void:
 	var delta: float = get_physics_process_delta_time()
+	var horizontal_speed: float = Vector2(safe_velocity.x, safe_velocity.z).length()
 
 	if _patrol_state == PatrolState.PAUSED:
 		return
 
-	velocity = Vector3(safe_velocity.x, 0.0, safe_velocity.z)
+	velocity = Vector3(safe_velocity.x, horizontal_speed * _climb_per_meter, safe_velocity.z)
 	move_and_slide()
 
 	if velocity.length() < 0.05:

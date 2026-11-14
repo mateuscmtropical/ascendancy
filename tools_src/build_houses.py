@@ -268,6 +268,25 @@ def merge_duplicate_datablocks() -> None:
             collection.remove(duplicate)
 
 
+def merge_visible_meshes() -> None:
+    """Join every kit piece into one mesh (one surface per material) so a house costs a handful of draw calls."""
+    meshes = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and not scene_object.name.endswith("-colonly")]
+    world_matrices = [mesh_object.matrix_world.copy() for mesh_object in meshes]
+
+    for mesh_object, world_matrix in zip(meshes, world_matrices):
+        mesh_object.parent = None
+        mesh_object.matrix_world = world_matrix
+        mesh_object.data = mesh_object.data.copy()
+
+    for empty in [scene_object for scene_object in bpy.data.objects if scene_object.type == "EMPTY"]:
+        bpy.data.objects.remove(empty, do_unlink=True)
+
+    with bpy.context.temp_override(active_object=meshes[0], selected_editable_objects=meshes):
+        bpy.ops.object.join()
+
+    meshes[0].name = "House"
+
+
 def build_house(house_name: str) -> Path:
     recipe = HOUSES[house_name]
     modules = recipe["modules"]
@@ -292,6 +311,7 @@ def build_house(house_name: str) -> Path:
     import_piece("Prop_Chimney", Vector((chimney_x, chimney_y, chimney_base)), 0.0)
     add_collision_box(footprint, roof_height)
     merge_duplicate_datablocks()
+    merge_visible_meshes()
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(output_path), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True)

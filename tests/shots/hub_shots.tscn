@@ -7,40 +7,75 @@
 
 [node name="Hub" parent="." instance=ExtResource("1_hub")]
 
-[node name="PlazaOverview" type="Camera3D" parent="."]
-position = Vector3(0, 9, 42)
-rotation = Vector3(-0.2, 0, 0)
+[node name="CityOverview" type="Camera3D" parent="."]
+position = Vector3(-100.000, 38.000, 34.000)
+rotation = Vector3(-0.287, -1.216, 0.000)
 fov = 60.0
 
-[node name="FountainEye" type="Camera3D" parent="."]
-position = Vector3(9, 1.6, 14)
-rotation = Vector3(0.05, 0.6, 0)
+[node name="SpawnEye" type="Camera3D" parent="."]
+position = Vector3(-47.000, 1.800, -10.500)
+rotation = Vector3(-0.050, -1.571, 0.000)
+fov = 65.0
+
+[node name="CoretoEye" type="Camera3D" parent="."]
+position = Vector3(-38.000, 1.600, -19.000)
+rotation = Vector3(0.058, 2.099, 0.000)
+fov = 60.0
+
+[node name="FacadeFar" type="Camera3D" parent="."]
+position = Vector3(-12.000, 1.600, 0.000)
+rotation = Vector3(0.363, -1.571, 0.000)
 fov = 60.0
 
 [node name="CathedralEye" type="Camera3D" parent="."]
-position = Vector3(0, 1.6, -4)
-rotation = Vector3(0.38, 0, 0)
+position = Vector3(5.000, 1.600, 2.000)
+rotation = Vector3(0.795, -1.418, 0.000)
 fov = 70.0
 
-[node name="MarketEye" type="Camera3D" parent="."]
-position = Vector3(4, 1.6, 19)
-rotation = Vector3(-0.08, -2.0, 0)
+[node name="NaveEye" type="Camera3D" parent="."]
+position = Vector3(22.000, 2.650, 0.000)
+rotation = Vector3(0.066, -1.571, 0.000)
+fov = 70.0
+
+[node name="AltarEye" type="Camera3D" parent="."]
+position = Vector3(40.000, 2.650, 2.500)
+rotation = Vector3(0.214, -1.342, 0.000)
+fov = 65.0
+
+[node name="CalcadaoEye" type="Camera3D" parent="."]
+position = Vector3(0.500, 1.600, 44.000)
+rotation = Vector3(0.012, 0.007, 0.000)
 fov = 60.0
 
 [node name="AvenueEye" type="Camera3D" parent="."]
-position = Vector3(-16, 1.6, 30)
-rotation = Vector3(-0.02, -0.2, 0)
+position = Vector3(-62.000, 1.600, -55.000)
+rotation = Vector3(0.023, -1.522, 0.000)
 fov = 60.0
 
-[node name="BenchEye" type="Camera3D" parent="."]
-position = Vector3(-14.5, 1.5, -9.5)
-rotation = Vector3(-0.14, 1.88, 0)
-fov = 55.0
+[node name="StreetEye" type="Camera3D" parent="."]
+position = Vector3(-60.000, 1.600, -64.000)
+rotation = Vector3(0.024, -1.511, 0.000)
+fov = 60.0
 
-[node name="SitterSide" type="Camera3D" parent="."]
-position = Vector3(-19.2, 0.9, -5.2)
-rotation = Vector3(-0.05, 0, 0)
-fov = 50.0
+[node name="FountainEye" type="Camera3D" parent="."]
+position = Vector3(-24.000, 1.600, 8.000)
+rotation = Vector3(0.047, 0.896, 0.000)
+fov = 60.0
+
+[node name="CoretoClose" type="Camera3D" parent="."]
+position = Vector3(-43.500, 2.000, -16.500)
+rotation = Vector3(0.000, 2.176, 0.000)
+fov = 65.0
+
+[node name="SaintsClose" type="Camera3D" parent="."]
+position = Vector3(12.500, 2.200, 7.000)
+rotation = Vector3(0.023, -2.210, 0.000)
+fov = 65.0
+
+[node name="LawnEye" type="Camera3D" parent="."]
+position = Vector3(-20.000, 1.600, -30.000)
+rotation = Vector3(-0.048, 2.481, 0.000)
+fov = 65.0
 
 [node name="ShotCapture" type="Node" parent="."]
 script = ExtResource("2_capture")

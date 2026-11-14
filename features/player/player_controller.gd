@@ -128,7 +128,7 @@ func _turn_model_toward(direction: Vector3, delta: float) -> void:
 		return
 
 	target_yaw = atan2(direction.x, direction.z)
-	_model.rotation.y = lerp_angle(_model.rotation.y, target_yaw, TURN_SPEED * delta)
+	_model.global_rotation.y = lerp_angle(_model.global_rotation.y, target_yaw, TURN_SPEED * delta)
 
 
 func _rotate_camera(mouse_delta: Vector2) -> void:

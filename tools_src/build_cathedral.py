@@ -1,15 +1,20 @@
-"""Model the hub cathedral (original gothic design) and export it as art/town/cathedral.gltf.
+"""Model the hub cathedral and export it as art/town/cathedral.gltf.
 
-Built from solid volumes; windows and portals are boolean recesses with stained glass at the back.
-Textures come from the CC0 Medieval Village MegaKit (stone, plaster) plus two derived here
-(slate tiles from the round tiles, procedural stained glass).
+Art Deco church inspired by the Catedral São José of Campo Mourão (PR): twin stepped towers with
+white fins and slit windows, stepped central gable, twin segmental arches over stained glass, round
+portal with voussoirs, low aisles with balustrades and rounded front corners. Scaled ~0.8 (20 x 40 m).
+The interior is open and walkable: narthex, nave on finned piers, aisles, pews, raised chancel and apse.
+
 Blender coords: facade faces -Y, nave runs toward +Y. Collision boxes are named *-colonly for Godot.
+Visible meshes are merged per material at the end (few draw calls).
 
 Usage:
   blender -b --factory-startup -P tools_src/build_cathedral.py
 """
 
+import itertools
 import math
+from collections import defaultdict
 from pathlib import Path
 
 import bmesh
@@ -23,26 +28,36 @@ KIT_TEXTURES = KIT_DIR / "Textures"
 OUTPUT_DIR = PROJECT_DIR / "art" / "town"
 GENERATED_TEXTURES = OUTPUT_DIR / "textures"
 
-PLINTH = 0.6
-NAVE_HALF_WIDTH = 6.0
-NAVE_LENGTH = 34.0
-NAVE_HEIGHT = 18.0
-NAVE_RIDGE = 9.0
-AISLE_OUTER = 11.0
-AISLE_HEIGHT = 9.0
-BAY_CENTERS = [8.25, 13.75, 19.25, 24.75, 30.25]
-PIER_POSITIONS = [5.5, 11.0, 16.5, 22.0, 27.5, 33.0]
-TOWER_CENTER_X = 9.5
-TOWER_HALF = 3.5
-TOWER_FRONT = -1.0
-TOWER_HEIGHT = 30.0
-SPIRE_TOP = 48.0
+STEP_COUNT = 7
+STEP_RISE = 0.15
+STEP_TREAD = 0.45
+BASE = STEP_COUNT * STEP_RISE
+HALF_WIDTH = 10.0
+CENTER_HALF = 2.8
+TOWER_OUTER = 7.0
+NAVE_HALF = 4.5
+WALL = 0.6
+FACADE_DEPTH = 1.0
+NARTHEX_DEPTH = 5.0
+BODY_LENGTH = 34.0
+APSE_RADIUS = NAVE_HALF
+AISLE_TOP = 11.4
+ARCADE_TOP = 9.0
+NAVE_CEILING = 14.0
+NAVE_WALL_TOP = 15.5
+TOWER_BASE_TOP = 17.0
+PIER_Y = [10.4, 15.8, 21.2, 26.6]
+ARCH_WIDTH = 4.4
+ARCH_SPRING = 6.0
+BAY_CENTERS = [7.7, 13.1, 18.5, 23.9, 29.3]
+CHANCEL_FRONT = 29.0
+CHANCEL_HEIGHT = 0.9
+PORTAL_WIDTH = 4.0
+PORTAL_SPRING = 4.0
 
-SLATE_DARK = numpy.array([0.21, 0.23, 0.29])
-SLATE_LIGHT = numpy.array([0.50, 0.54, 0.62])
 GLASS_COLORS = numpy.array([
-    [0.12, 0.25, 0.75], [0.10, 0.20, 0.60], [0.75, 0.12, 0.15], [0.95, 0.70, 0.15],
-    [0.15, 0.55, 0.30], [0.45, 0.20, 0.65], [0.20, 0.45, 0.85],
+    [0.12, 0.25, 0.75], [0.10, 0.20, 0.60], [0.95, 0.62, 0.15], [0.98, 0.78, 0.30],
+    [0.20, 0.45, 0.85], [0.15, 0.35, 0.70], [0.85, 0.30, 0.15],
 ])
 
 
@@ -78,18 +93,6 @@ def make_tinted_image(source_name: str, name: str, multiply: tuple, add: tuple):
     return save_generated_image(name, rgba, size)
 
 
-def make_slate_image():
-    source = load_kit_image("T_RoundTiles_BaseColor.png", True)
-    size = source.size[0]
-    pixels = numpy.array(source.pixels[:]).reshape(size, size, 4)
-    luminance = (pixels[..., :3] @ numpy.array([0.3, 0.59, 0.11]))[..., None]
-    normalized = numpy.clip((luminance - 0.15) / 0.5, 0.0, 1.0)
-    slate = SLATE_DARK + (SLATE_LIGHT - SLATE_DARK) * normalized
-    rgba = numpy.concatenate([slate, numpy.ones((size, size, 1))], axis=2)
-
-    return save_generated_image("T_SlateTiles_BaseColor", rgba, size)
-
-
 def make_stained_glass_image():
     size = 256
     generator = numpy.random.default_rng(7)
@@ -106,6 +109,24 @@ def make_stained_glass_image():
     rgba = numpy.concatenate([rgb, numpy.ones((len(rgb), 1))], axis=1).reshape(size, size, 4)
 
     return save_generated_image("T_StainedGlass", rgba, size)
+
+
+def make_floor_image():
+    """Two-tone stone checker (one 2x2 tile per texture), slight per-tile shade noise."""
+    size = 256
+    generator = numpy.random.default_rng(11)
+    cream = numpy.array([0.9, 0.87, 0.81])
+    slate = numpy.array([0.7, 0.69, 0.68])
+    coordinates = numpy.arange(size)
+    tile_x, tile_y = numpy.meshgrid(coordinates // (size // 2), coordinates // (size // 2))
+    is_cream = ((tile_x + tile_y) % 2 == 0)[..., None]
+    rgb = numpy.where(is_cream, cream, slate) * (0.96 + 0.04 * generator.random((size, size, 1)))
+    grout = (coordinates % (size // 2) < 2)
+    rgb[grout, :] = 0.55
+    rgb[:, grout] = 0.55
+    rgba = numpy.concatenate([rgb, numpy.ones((size, size, 1))], axis=2)
+
+    return save_generated_image("T_CathedralFloor_BaseColor", rgba, size)
 
 
 def make_material(name: str, base_image, normal_image=None, roughness_image=None, emission=0.0):
@@ -151,16 +172,27 @@ def make_plain_material(name: str, color: tuple, metallic: float, roughness: flo
 
 
 def build_materials() -> dict:
+    # Stone and trim textures are also loaded by build_plaza_props.py.
     stone_image = make_tinted_image("T_Brick_BaseColor.png", "T_CathedralStone_BaseColor", (1.08, 1.06, 1.0), (0.09, 0.08, 0.06))
     trim_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralTrim_BaseColor", (1.0, 1.0, 1.0), (0.08, 0.08, 0.08))
+    wall_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralWall_BaseColor", (0.98, 0.93, 0.82), (0.12, 0.11, 0.09))
+    roof_image = make_tinted_image("T_RoundTiles_BaseColor.png", "T_CathedralRoof_BaseColor", (1.15, 0.62, 0.48), (0.08, 0.02, 0.0))
+    plaster_normal = load_kit_image("T_Plaster_Normal.png", False)
 
     return {
         "stone": make_material("M_CathedralStone", stone_image, load_kit_image("T_Brick_Normal.png", False), load_kit_image("T_Brick_Roughness.png", False)),
-        "trim": make_material("M_CathedralTrim", trim_image, load_kit_image("T_Plaster_Normal.png", False)),
-        "slate": make_material("M_CathedralSlate", make_slate_image(), load_kit_image("T_RoundTiles_Normal.png", False)),
-        "glass": make_material("M_StainedGlass", make_stained_glass_image(), emission=1.5),
+        "wall": make_material("M_CathedralWall", wall_image, plaster_normal),
+        "trim": make_material("M_CathedralTrim", trim_image, plaster_normal),
+        "roof": make_material("M_CathedralRoof", roof_image, load_kit_image("T_RoundTiles_Normal.png", False)),
+        "floor": make_material("M_CathedralFloor", make_floor_image()),
+        "glass": make_material("M_StainedGlass", make_stained_glass_image(), emission=1.2),
         "gold": make_plain_material("M_Gold", (0.95, 0.72, 0.28), 1.0, 0.3),
-        "wood": make_material("M_DoorWood", load_kit_image("T_WoodTrim_BaseColor.png", True), load_kit_image("T_WoodTrim_Normal.png", False)),
+        "marble": make_plain_material("M_Marble", (0.93, 0.91, 0.88), 0.0, 0.35),
+        "paint_red": make_plain_material("M_PaintRed", (0.6, 0.18, 0.14), 0.0, 0.8),
+        "paint_ochre": make_plain_material("M_PaintOchre", (0.82, 0.6, 0.28), 0.0, 0.8),
+        "painting": make_plain_material("M_Painting", (0.16, 0.22, 0.48), 0.0, 0.6),
+        "slit_glass": make_plain_material("M_SlitGlass", (0.08, 0.12, 0.25), 0.2, 0.15),
+        "wood": make_plain_material("M_DoorWood", (0.26, 0.14, 0.08), 0.0, 0.6),
         "dark": make_plain_material("M_RecessShadow", (0.06, 0.05, 0.07), 0.0, 1.0),
     }
 
@@ -189,6 +221,22 @@ def make_box(name: str, center: tuple, size: tuple, material) -> bpy.types.Objec
     return object_from_bmesh(name, box_bmesh, material)
 
 
+def make_span(name: str, minimum: tuple, maximum: tuple, material) -> bpy.types.Object:
+    """Axis-aligned box from its min and max corners."""
+    center = tuple((low + high) / 2.0 for low, high in zip(minimum, maximum))
+    size = tuple(high - low for low, high in zip(minimum, maximum))
+
+    return make_box(name, center, size, material)
+
+
+def make_mirrored_span(name: str, minimum: tuple, maximum: tuple, material) -> None:
+    """Span on the +X side plus its mirror on -X (minimum.x and maximum.x given for the +X side)."""
+    stem, separator, suffix = name.partition("-")
+
+    make_span(f"{stem}R{separator}{suffix}", minimum, maximum, material)
+    make_span(f"{stem}L{separator}{suffix}", (-maximum[0], minimum[1], minimum[2]), (-minimum[0], maximum[1], maximum[2]), material)
+
+
 def make_profile_prism(name: str, profile_xz: list, depth: float, transform: Matrix, material) -> bpy.types.Object:
     """Extrude a closed XZ polygon along +Y by depth, then place it with transform."""
     prism_bmesh = bmesh.new()
@@ -204,27 +252,54 @@ def make_profile_prism(name: str, profile_xz: list, depth: float, transform: Mat
     return object_from_bmesh(name, prism_bmesh, material)
 
 
-def pointed_arch_profile(width: float, spring_height: float, segments: int = 10) -> list:
-    """Equilateral gothic arch: each side is an arc of radius = width centered on the opposite springer."""
+def make_vertical_prism(name: str, profile_xy: list, bottom: float, height: float, material) -> bpy.types.Object:
+    """Extrude a closed XY polygon (plan view) upward from bottom by height."""
+    prism_bmesh = bmesh.new()
+    floor_vertices = [prism_bmesh.verts.new((x, y, bottom)) for x, y in profile_xy]
+    floor_face = prism_bmesh.faces.new(floor_vertices)
+    extruded = bmesh.ops.extrude_face_region(prism_bmesh, geom=[floor_face])
+    moved_vertices = [element for element in extruded["geom"] if isinstance(element, bmesh.types.BMVert)]
+
+    bmesh.ops.translate(prism_bmesh, vec=(0.0, 0.0, height), verts=moved_vertices)
+    bmesh.ops.recalc_face_normals(prism_bmesh, faces=prism_bmesh.faces)
+
+    return object_from_bmesh(name, prism_bmesh, material)
+
+
+def rectangle_profile(width: float, height: float) -> list:
     half = width / 2.0
-    angles = [math.radians(180.0 - 60.0 * step / segments) for step in range(segments + 1)]
-    left_arc = [(half + width * math.cos(angle), spring_height + width * math.sin(angle)) for angle in angles]
-    right_arc = [(-x, z) for x, z in reversed(left_arc[:-1])]
 
-    return [(-half, 0.0)] + left_arc + right_arc + [(half, 0.0)]
+    return [(-half, 0.0), (half, 0.0), (half, height), (-half, height)]
 
 
-def arch_spring(width: float, height: float) -> float:
-    return height - width * math.sin(math.radians(60.0))
+def round_arch_profile(width: float, spring_height: float, segments: int = 16) -> list:
+    half = width / 2.0
+    arc = [(half * math.cos(math.pi * step / segments), spring_height + half * math.sin(math.pi * step / segments)) for step in range(segments + 1)]
+
+    return [(-half, 0.0), (half, 0.0)] + arc
 
 
-def circle_profile(radius: float, segments: int = 32) -> list:
-    return [(radius * math.cos(2 * math.pi * step / segments), radius * math.sin(2 * math.pi * step / segments)) for step in range(segments)]
+def segmental_arc(width: float, spring_height: float, rise: float) -> tuple:
+    """Circle center height, radius and half-angle of a segmental arch."""
+    half = width / 2.0
+    radius = (half * half + rise * rise) / (2.0 * rise)
+    center_height = spring_height + rise - radius
+    half_angle = math.asin(half / radius)
+
+    return center_height, radius, half_angle
 
 
-def make_cone(name: str, base_center: tuple, radius: float, height: float, sides: int, material, rotation: float = 0.0) -> bpy.types.Object:
+def segmental_arch_profile(width: float, spring_height: float, rise: float, segments: int = 12) -> list:
+    center_height, radius, half_angle = segmental_arc(width, spring_height, rise)
+    angles = [math.pi / 2.0 - half_angle + 2.0 * half_angle * step / segments for step in range(segments + 1)]
+    arc = [(radius * math.cos(angle), center_height + radius * math.sin(angle)) for angle in angles]
+
+    return [(-width / 2.0, 0.0), (width / 2.0, 0.0)] + arc
+
+
+def make_cone(name: str, base_center: tuple, radius: float, height: float, sides: int, material, rotation: float = 0.0, top_radius: float = 0.0) -> bpy.types.Object:
     cone_bmesh = bmesh.new()
-    bmesh.ops.create_cone(cone_bmesh, cap_ends=True, segments=sides, radius1=radius, radius2=0.0, depth=height)
+    bmesh.ops.create_cone(cone_bmesh, cap_ends=True, segments=sides, radius1=radius, radius2=top_radius, depth=height)
     bmesh.ops.rotate(cone_bmesh, verts=cone_bmesh.verts, matrix=Matrix.Rotation(rotation, 3, "Z"))
     bmesh.ops.translate(cone_bmesh, vec=(base_center[0], base_center[1], base_center[2] + height / 2.0), verts=cone_bmesh.verts)
 
@@ -239,13 +314,12 @@ def make_cylinder(name: str, base_center: tuple, radius: float, height: float, s
     return object_from_bmesh(name, cylinder_bmesh, material)
 
 
-def make_torus(name: str, center: Vector, major_radius: float, minor_radius: float, material) -> bpy.types.Object:
-    bpy.ops.mesh.primitive_torus_add(major_radius=major_radius, minor_radius=minor_radius, major_segments=40, minor_segments=8, location=center, rotation=(math.pi / 2.0, 0, 0))
-    torus = bpy.context.active_object
-    torus.name = name
-    torus.data.materials.append(material)
+def make_sphere(name: str, center: tuple, radius: float, material) -> bpy.types.Object:
+    sphere_bmesh = bmesh.new()
+    bmesh.ops.create_uvsphere(sphere_bmesh, u_segments=16, v_segments=10, radius=radius)
+    bmesh.ops.translate(sphere_bmesh, vec=center, verts=sphere_bmesh.verts)
 
-    return torus
+    return object_from_bmesh(name, sphere_bmesh, material)
 
 
 def facing_transform(position: tuple, facing: str) -> Matrix:
@@ -290,218 +364,459 @@ def map_uvs_per_face(mesh_object: bpy.types.Object, meters_per_tile: float) -> N
     uv_bmesh.free()
 
 
+# ---------- reusable pieces ----------
+
+def wall_opening(name: str, profile: list, position: tuple, facing: str, wall_depth: float, pane_material, cutters: list, pane_depth: float = 0.5) -> None:
+    """Cut an opening through (or into) a wall and set a pane at pane_depth (0 = outer face, 1 = inner face)."""
+    transform = facing_transform(position, facing)
+
+    cutters.append(make_profile_prism(name + "_cut", profile, wall_depth + 0.4, transform @ Matrix.Translation((0, -0.2, 0)), None))
+
+    if pane_material:
+        make_profile_prism(name + "_pane", profile, 0.05, transform @ Matrix.Translation((0, wall_depth * pane_depth, 0)), pane_material)
+
+
+def make_voussoirs(name: str, center: Vector, radius: float, start_angle: float, end_angle: float, count: int, radial_size: float, front_y: float, depth: float, material, frame: Matrix = None) -> None:
+    """Ring of blocks around an arch in the local XZ plane, protruding toward local -Y.
+
+    material may be a list to alternate colours; frame places the ring on a wall that is not the facade.
+    """
+    block_materials = material if isinstance(material, list) else [material]
+    frame = frame or Matrix.Identity(4)
+    arc_step = (end_angle - start_angle) / count
+    block_length = (radius + radial_size / 2.0) * arc_step * 0.86
+
+    for block_index in range(count):
+        angle = start_angle + arc_step * (block_index + 0.5)
+        radial_center = radius + radial_size / 2.0
+        position = Vector((center.x + radial_center * math.cos(angle), front_y + depth / 2.0, center.z + radial_center * math.sin(angle)))
+        block = make_box(f"{name}{block_index}", (0, 0, 0), (block_length, depth, radial_size), block_materials[block_index % len(block_materials)])
+        block.matrix_world = frame @ Matrix.Translation(position) @ Matrix.Rotation(math.pi / 2.0 - angle, 4, "Y")
+
+
+def make_balustrade(name: str, start: tuple, end: tuple, bottom: float, materials: dict) -> None:
+    """Plinth rail, turned balusters and a top rail between two plan points."""
+    start_vector = Vector((start[0], start[1], 0.0))
+    direction = Vector((end[0], end[1], 0.0)) - start_vector
+    length = direction.length
+    rotation = Matrix.Rotation(math.atan2(direction.y, direction.x), 4, "Z")
+    middle = start_vector + direction / 2.0
+    baluster_count = max(2, int(length / 0.32))
+
+    make_box(name + "Plinth", (0, 0, 0), (length, 0.36, 0.16), materials["trim"]).matrix_world = Matrix.Translation(middle + Vector((0, 0, bottom + 0.08))) @ rotation
+    make_box(name + "Rail", (0, 0, 0), (length + 0.1, 0.42, 0.14), materials["trim"]).matrix_world = Matrix.Translation(middle + Vector((0, 0, bottom + 0.88))) @ rotation
+
+    for baluster_index in range(baluster_count):
+        position = start_vector + direction * ((baluster_index + 0.5) / baluster_count)
+        make_cone(f"{name}Baluster{baluster_index}", (position.x, position.y, bottom + 0.16), 0.09, 0.65, 8, materials["trim"], top_radius=0.06)
+
+
+def make_cross(name: str, base: tuple, height: float, thickness: float, material, front_offset: float = 0.0) -> None:
+    arm_length = height * 0.48
+
+    make_box(name + "Upright", (base[0], base[1] + front_offset, base[2] + height / 2.0), (thickness, thickness, height), material)
+    make_box(name + "Arm", (base[0], base[1] + front_offset, base[2] + height * 0.7), (arm_length, thickness, thickness), material)
+
+
 # ---------- cathedral parts ----------
 
-def window_opening(name: str, position: tuple, facing: str, width: float, height: float, wall_depth: float, materials: dict, cutters: list) -> None:
-    """Recessed pointed window: a cutter for the wall plus a stained glass pane at the back of the recess."""
-    spring = arch_spring(width, height)
-    profile = pointed_arch_profile(width, spring)
-    transform = facing_transform(position, facing)
-    cutters.append(make_profile_prism(name + "_cut", profile, wall_depth * 2.0, transform @ Matrix.Translation((0, -wall_depth, 0)), None))
-    make_profile_prism(name + "_glass", profile, 0.05, transform @ Matrix.Translation((0, wall_depth * 0.85, 0)), materials["glass"])
-    make_box(name + "_mullion", (0, 0, 0), (0.12, 0.12, spring), materials["trim"]).matrix_world = transform @ Matrix.Translation((0, wall_depth * 0.78, spring / 2.0))
+def build_podium(materials: dict) -> None:
+    make_span("Plinth", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), materials["stone"])
+    make_cylinder("ApsePlinth", (0, BODY_LENGTH, 0), APSE_RADIUS + WALL, BASE, 32, materials["stone"])
+    make_span("NaveFloor", (-HALF_WIDTH + WALL, FACADE_DEPTH - 0.1, BASE), (HALF_WIDTH - WALL, BODY_LENGTH, BASE + 0.02), materials["floor"])
+
+    for step_index in range(STEP_COUNT):
+        step_front = -(STEP_COUNT - step_index) * STEP_TREAD
+        make_span(f"Step{step_index}", (-9.0, step_front, 0.0), (9.0, 0.0, (step_index + 1) * STEP_RISE), materials["stone"])
 
 
-def build_plinth_and_steps(materials: dict) -> None:
-    make_box("Plinth", (0, 20.0, PLINTH / 2.0), (30.0, 44.0, PLINTH), materials["trim"])
-
-    for step_index in range(3):
-        step_height = PLINTH * (step_index + 1) / 3.0
-        step_front = -3.5 + step_index * 0.5
-        make_box(f"Step{step_index}", (0, (step_front - 2.0) / 2.0, step_height / 2.0), (18.0 - step_index, -2.0 - step_front, step_height), materials["trim"])
-
-    make_box("Plinth-colonly", (0, 20.0, PLINTH / 2.0), (30.0, 44.0, PLINTH), None)
-    ramp = make_box("Steps-colonly", (0, -2.75, PLINTH / 2.0 - 0.05), (18.0, 1.62, 0.1), None)
-    ramp.rotation_euler.x = math.atan2(PLINTH, 1.5)
-
-
-def build_nave(materials: dict) -> None:
-    base = PLINTH
-    nave = make_box("Nave", (0, (NAVE_LENGTH + 1.4) / 2.0, base + NAVE_HEIGHT / 2.0), (NAVE_HALF_WIDTH * 2, NAVE_LENGTH - 1.4, NAVE_HEIGHT), materials["stone"])
+def build_facade_center(materials: dict) -> None:
+    """Portal, balustrade band, twin segmental windows and the stepped gable between the towers."""
+    window_bottom = BASE + 8.2
+    window_spring = BASE + 12.4
+    window_width = 2.3
+    window_rise = 0.6
+    window_centers = (-1.35, 1.35)
+    facade = make_span("FacadeCenter", (-CENTER_HALF, 0.0, BASE), (CENTER_HALF, FACADE_DEPTH, BASE + NAVE_WALL_TOP), materials["wall"])
     cutters = []
-    clerestory_bottom = base + AISLE_HEIGHT + 3.4
+    portal_center = Vector((0.0, 0.0, BASE + PORTAL_SPRING))
 
-    for bay_index, bay_y in enumerate(BAY_CENTERS):
-        window_opening(f"ClerestoryL{bay_index}", (-NAVE_HALF_WIDTH, bay_y, clerestory_bottom), "-X", 2.2, 4.6, 0.8, materials, cutters)
-        window_opening(f"ClerestoryR{bay_index}", (NAVE_HALF_WIDTH, bay_y, clerestory_bottom), "+X", 2.2, 4.6, 0.8, materials, cutters)
+    wall_opening("Portal", round_arch_profile(PORTAL_WIDTH, PORTAL_SPRING), (0, 0, BASE), "-Y", FACADE_DEPTH, None, cutters)
 
-    carve(nave, cutters)
+    for window_index, window_x in enumerate(window_centers):
+        profile = segmental_arch_profile(window_width, window_spring - window_bottom, window_rise)
+        center_height, radius, half_angle = segmental_arc(window_width, window_spring, window_rise)
+        wall_opening(f"ArchWindow{window_index}", profile, (window_x, 0, window_bottom), "-Y", FACADE_DEPTH, materials["glass"], cutters)
+        make_voussoirs(f"ArchVoussoir{window_index}", Vector((window_x, 0, center_height)), radius, math.pi / 2.0 - half_angle - 0.12, math.pi / 2.0 + half_angle + 0.12, 9, 0.45, -0.2, 0.3, materials["trim"])
 
-    roof_profile = [(-NAVE_HALF_WIDTH - 0.5, base + NAVE_HEIGHT - 0.3), (0.0, base + NAVE_HEIGHT + NAVE_RIDGE), (NAVE_HALF_WIDTH + 0.5, base + NAVE_HEIGHT - 0.3)]
-    make_profile_prism("NaveRoof", roof_profile, NAVE_LENGTH - 0.7, Matrix.Translation((0, 1.0, 0)), materials["slate"])
-    make_box("NaveCornice", (0, (NAVE_LENGTH + 1.4) / 2.0, base + NAVE_HEIGHT - 0.25), (NAVE_HALF_WIDTH * 2 + 0.8, NAVE_LENGTH - 1.4, 0.5), materials["trim"])
-    make_box("Nave-colonly", (0, 19.0, base + NAVE_HEIGHT / 2.0), (AISLE_OUTER * 2 + 4, 40.0, NAVE_HEIGHT), None)
+        for fin_offset in (-0.58, 0.0, 0.58):
+            make_span(f"ArchFin{window_index}{fin_offset:+.1f}", (window_x + fin_offset - 0.09, 0.15, window_bottom), (window_x + fin_offset + 0.09, 0.45, window_spring), materials["trim"])
 
-
-def build_aisles(materials: dict) -> None:
-    base = PLINTH
-    aisle_center_x = (NAVE_HALF_WIDTH + AISLE_OUTER) / 2.0
-    aisle_width = AISLE_OUTER - NAVE_HALF_WIDTH + 0.2
-    aisle_length = NAVE_LENGTH - 6.0
-    aisle_center_y = 6.0 + aisle_length / 2.0
-
-    for side_sign, side_name, facing in ((-1, "L", "-X"), (1, "R", "+X")):
-        aisle = make_box(f"Aisle{side_name}", (side_sign * aisle_center_x, aisle_center_y, base + AISLE_HEIGHT / 2.0), (aisle_width, aisle_length, AISLE_HEIGHT), materials["stone"])
-        cutters = []
-
-        for bay_index, bay_y in enumerate(BAY_CENTERS):
-            window_opening(f"AisleWindow{side_name}{bay_index}", (side_sign * AISLE_OUTER, bay_y, base + 2.2), facing, 1.9, 5.2, 0.7, materials, cutters)
-
-        carve(aisle, cutters)
-
-        roof_profile = [(side_sign * (NAVE_HALF_WIDTH - 0.1), base + AISLE_HEIGHT + 3.0), (side_sign * (AISLE_OUTER + 0.6), base + AISLE_HEIGHT - 0.3), (side_sign * (NAVE_HALF_WIDTH - 0.1), base + AISLE_HEIGHT - 0.3)]
-        make_profile_prism(f"AisleRoof{side_name}", roof_profile, aisle_length + 0.6, Matrix.Translation((0, 6.0 - 0.3, 0)), materials["slate"])
-
-
-def build_flying_buttresses(materials: dict) -> None:
-    base = PLINTH
-    pier_x = AISLE_OUTER + 1.8
-    pier_top = base + AISLE_HEIGHT + 4.0
-    piers = [(side_sign, pier_y) for side_sign in (-1, 1) for pier_y in PIER_POSITIONS]
-
-    for side_sign, pier_y in piers:
-        tag = f"{'L' if side_sign < 0 else 'R'}{pier_y:.0f}"
-        make_box(f"Pier{tag}", (side_sign * pier_x, pier_y, base + pier_top / 2.0 - base / 2.0), (1.4, 1.6, pier_top - base), materials["stone"])
-        make_box(f"PierCap{tag}", (side_sign * pier_x, pier_y, pier_top + 0.2), (1.7, 1.9, 0.4), materials["trim"])
-        make_cone(f"Pinnacle{tag}", (side_sign * pier_x, pier_y, pier_top + 0.4), 0.85, 4.2, 4, materials["trim"], math.pi / 4.0)
-        make_box(f"Pilaster{tag}", (side_sign * (NAVE_HALF_WIDTH + 0.25), pier_y, base + NAVE_HEIGHT / 2.0 + 2.0), (0.6, 1.0, NAVE_HEIGHT - 4.0), materials["stone"])
-        flyer_start = Vector((side_sign * (pier_x - 0.7), pier_y, pier_top - 0.6))
-        flyer_end = Vector((side_sign * (NAVE_HALF_WIDTH + 0.5), pier_y, base + NAVE_HEIGHT - 2.0))
-        flyer_vector = flyer_end - flyer_start
-        flyer = make_box(f"Flyer{tag}", (0, 0, 0), (flyer_vector.length, 0.7, 0.55), materials["trim"])
-        flyer.matrix_world = Matrix.Translation((flyer_start + flyer_end) / 2.0) @ Matrix.Rotation(side_sign * math.atan2(flyer_vector.z, abs(flyer_vector.x)), 4, "Y")
-
-
-def build_apse(materials: dict) -> None:
-    base = PLINTH
-    apse = make_cylinder("Apse", (0, NAVE_LENGTH, base), NAVE_HALF_WIDTH, NAVE_HEIGHT - 2.0, 20, materials["stone"])
-    cutters = []
-    window_angles = [-60, -30, 0, 30, 60]
-
-    for window_index, angle_degrees in enumerate(window_angles):
-        angle = math.radians(angle_degrees)
-        direction = Vector((math.sin(angle), math.cos(angle), 0))
-        position = Vector((0, NAVE_LENGTH, base + 5.0)) + direction * NAVE_HALF_WIDTH
-        rotation = Matrix.Translation(position) @ Matrix.Rotation(math.pi - angle, 4, "Z")
-        profile = pointed_arch_profile(1.8, 7.0)
-        cutters.append(make_profile_prism(f"ApseCut{window_index}", profile, 1.6, rotation @ Matrix.Translation((0, -0.8, 0)), None))
-        make_profile_prism(f"ApseGlass{window_index}", profile, 0.05, rotation @ Matrix.Translation((0, 0.45, 0)), materials["glass"])
-
-    carve(apse, cutters)
-    make_cone("ApseRoof", (0, NAVE_LENGTH, base + NAVE_HEIGHT - 2.3), NAVE_HALF_WIDTH + 0.5, 7.5, 20, materials["slate"])
-
-
-def build_facade(materials: dict) -> None:
-    base = PLINTH
-    facade = make_box("Facade", (0, 0.6, base + NAVE_HEIGHT / 2.0 + 1.0), (NAVE_HALF_WIDTH * 2, 1.6, NAVE_HEIGHT + 2.0), materials["stone"])
-    cutters = []
-    portal_layers = [(5.6, 9.6), (4.8, 8.8), (4.0, 8.0)]
-
-    for layer_index, (width, height) in enumerate(portal_layers):
-        layer_back = -0.2 + 0.45 * (layer_index + 1)
-        cutters.append(make_profile_prism(f"PortalCut{layer_index}", pointed_arch_profile(width, arch_spring(width, height)), layer_back + 0.3, Matrix.Translation((0, -0.3, base)), None))
-
-    make_profile_prism("PortalBack", pointed_arch_profile(4.0, arch_spring(4.0, 8.0)), 0.2, Matrix.Translation((0, 1.15, base)), materials["trim"])
-    make_box("PortalDoors", (0, 1.1, base + 2.6), (3.6, 0.1, 5.2), materials["wood"])
-    make_box("PortalLintel", (0, 1.05, base + 5.35), (4.0, 0.2, 0.3), materials["trim"])
-
-    gallery_bottom = base + 11.0
-    gallery_positions = [-4.0, -2.0, 0.0, 2.0, 4.0]
-
-    for gallery_index, gallery_x in enumerate(gallery_positions):
-        window_opening(f"Gallery{gallery_index}", (gallery_x, -0.2, gallery_bottom), "-Y", 1.3, 3.0, 0.6, materials, cutters)
-
-    rose_center = Vector((0, -0.2, base + 18.3))
-    cutters.append(make_profile_prism("RoseCut", circle_profile(3.4), 1.2, Matrix.Translation(rose_center + Vector((0, -0.6, 0))), None))
-    make_profile_prism("RoseGlass", circle_profile(3.4), 0.05, Matrix.Translation(rose_center + Vector((0, 0.5, 0))), materials["glass"])
-    make_torus("RoseRing", rose_center + Vector((0, 0.15, 0)), 3.35, 0.2, materials["trim"])
-    make_torus("RoseInnerRing", rose_center + Vector((0, 0.3, 0)), 1.7, 0.12, materials["trim"])
-
-    for spoke_index in range(8):
-        spoke = make_box(f"RoseSpoke{spoke_index}", (0, 0, 0), (0.18, 0.2, 6.8), materials["trim"])
-        spoke.matrix_world = Matrix.Translation(rose_center + Vector((0, 0.35, 0))) @ Matrix.Rotation(math.pi * spoke_index / 8.0, 4, "Y")
-
-    make_cylinder("RoseHub", (0, 0, 0), 0.7, 0.3, 16, materials["trim"]).matrix_world = Matrix.Translation(rose_center + Vector((0, 0.35, 0))) @ Matrix.Rotation(math.pi / 2.0, 4, "X")
     carve(facade, cutters)
 
-    gable_profile = [(-NAVE_HALF_WIDTH, base + NAVE_HEIGHT + 2.0), (0.0, base + NAVE_HEIGHT + NAVE_RIDGE + 2.5), (NAVE_HALF_WIDTH, base + NAVE_HEIGHT + 2.0)]
-    make_profile_prism("FacadeGable", gable_profile, 1.4, Matrix.Translation((0, -0.1, 0)), materials["stone"])
-    make_box("FacadeCornice", (0, 0.5, base + NAVE_HEIGHT + 2.1), (NAVE_HALF_WIDTH * 2 + 0.4, 1.9, 0.4), materials["trim"])
-    make_cone("GablePinnacle", (0, 0.6, base + NAVE_HEIGHT + NAVE_RIDGE + 2.3), 0.6, 3.0, 4, materials["trim"], math.pi / 4.0)
+    make_voussoirs("PortalVoussoir", portal_center, PORTAL_WIDTH / 2.0, 0.0, math.pi, 13, 0.7, -0.3, 0.35, materials["trim"])
+    make_mirrored_span("PortalJamb", (PORTAL_WIDTH / 2.0, -0.3, BASE), (PORTAL_WIDTH / 2.0 + 0.7, 0.05, BASE + PORTAL_SPRING), materials["trim"])
+    make_balustrade("ArchBalustrade", (-CENTER_HALF, -0.25), (CENTER_HALF, -0.25), BASE + 7.2, materials)
+    make_span("ArchSill", (-CENTER_HALF, -0.5, BASE + 7.05), (CENTER_HALF, 0.1, BASE + 7.2), materials["trim"])
+
+    for column_x in (-0.3, 0.3):
+        make_cylinder(f"ArchColumn{column_x:+.1f}", (column_x, -0.3, window_bottom), 0.17, window_spring - window_bottom + 0.3, 12, materials["trim"])
+
+    gable_steps = [(5.6, NAVE_WALL_TOP, 16.3), (3.8, 16.3, 17.1), (1.8, 17.1, 18.8)]
+
+    for step_index, (width, bottom, top) in enumerate(gable_steps):
+        make_span(f"GableStep{step_index}", (-width / 2.0, -0.1, BASE + bottom), (width / 2.0, FACADE_DEPTH, BASE + top), materials["wall"])
+        make_span(f"GableCoping{step_index}", (-width / 2.0 - 0.1, -0.2, BASE + top), (width / 2.0 + 0.1, FACADE_DEPTH + 0.1, BASE + top + 0.12), materials["trim"])
+
+    make_cross("GableRelief", (0, -0.1, BASE + 17.3), 1.4, 0.18, materials["trim"], front_offset=-0.05)
+
+
+def build_portal_doors(materials: dict) -> None:
+    """Carved double doors, both leaves swung open against the narthex walls."""
+    leaf_width = PORTAL_WIDTH / 2.0 - 0.05
+    leaf_height = PORTAL_SPRING
+
+    for side_sign in (-1, 1):
+        leaf_x = side_sign * (PORTAL_WIDTH / 2.0 - 0.08)
+        make_span(f"DoorLeaf{side_sign:+d}", (leaf_x - 0.06, FACADE_DEPTH, BASE + 0.02), (leaf_x + 0.06, FACADE_DEPTH + leaf_width, BASE + leaf_height), materials["wood"])
+
+        for panel_index in range(3):
+            panel_bottom = BASE + 0.4 + panel_index * 1.2
+            make_span(f"DoorPanel{side_sign:+d}{panel_index}", (leaf_x - side_sign * 0.1 - 0.03, FACADE_DEPTH + 0.3, panel_bottom), (leaf_x - side_sign * 0.1 + 0.03, FACADE_DEPTH + leaf_width - 0.3, panel_bottom + 0.9), materials["wood"])
 
 
 def build_tower(side_sign: int, materials: dict) -> None:
-    base = PLINTH
     tag = "L" if side_sign < 0 else "R"
-    center = Vector((side_sign * TOWER_CENTER_X, TOWER_FRONT + TOWER_HALF, base))
-    tower = make_box(f"Tower{tag}", (center.x, center.y, base + TOWER_HEIGHT / 2.0), (TOWER_HALF * 2, TOWER_HALF * 2, TOWER_HEIGHT), materials["stone"])
-    cutters = []
-    front_y = TOWER_FRONT
-    side_x = center.x + side_sign * TOWER_HALF
+    inner_x = CENTER_HALF
+    outer_x = TOWER_OUTER
+    middle_x = side_sign * (inner_x + outer_x) / 2.0
+    center_y = NARTHEX_DEPTH / 2.0
     side_facing = "+X" if side_sign > 0 else "-X"
+    tower_base = make_span(f"TowerBase{tag}", (min(side_sign * inner_x, side_sign * outer_x), 0.0, BASE), (max(side_sign * inner_x, side_sign * outer_x), NARTHEX_DEPTH, BASE + TOWER_BASE_TOP), materials["wall"])
+    cutters = []
 
-    spring = arch_spring(2.6, 4.6)
-    cutters.append(make_profile_prism(f"SidePortalCut{tag}", pointed_arch_profile(2.6, spring), 1.6, Matrix.Translation((center.x, front_y - 0.4, base)), None))
-    make_box(f"SidePortalDoor{tag}", (center.x, front_y + 1.05, base + 1.7), (2.4, 0.1, 3.4), materials["wood"])
-    make_profile_prism(f"SidePortalBack{tag}", pointed_arch_profile(2.6, spring), 0.1, Matrix.Translation((center.x, front_y + 1.1, base)), materials["trim"])
-    window_opening(f"TowerWindow{tag}", (center.x, front_y, base + 12.0), "-Y", 1.8, 5.0, 0.7, materials, cutters)
-    window_opening(f"TowerSideWindow{tag}", (side_x, center.y, base + 12.0), side_facing, 1.8, 5.0, 0.7, materials, cutters)
+    for slit_offset in (-0.65, 0.0, 0.65):
+        wall_opening(f"TowerSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, 13.5), (middle_x + slit_offset, 0, BASE + 1.5), "-Y", 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
 
-    for belfry_offset in (-1.3, 1.3):
-        window_opening(f"BelfryFront{tag}{belfry_offset:+.0f}", (center.x + belfry_offset, front_y, base + 21.0), "-Y", 1.6, 6.5, 0.8, materials, cutters)
-        window_opening(f"BelfrySide{tag}{belfry_offset:+.0f}", (side_x, center.y + belfry_offset, base + 21.0), side_facing, 1.6, 6.5, 0.8, materials, cutters)
+    for slit_offset in (-0.5, 0.5):
+        wall_opening(f"TowerSideSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, 3.6), (side_sign * outer_x, center_y + slit_offset, BASE + AISLE_TOP + 1.4), side_facing, 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
 
-    carve(tower, cutters)
+    carve(tower_base, cutters)
 
+    make_span(f"TowerPierInner{tag}", (middle_x - 2.1, -0.3, BASE), (middle_x - 1.2, 0.0, BASE + 15.8), materials["trim"])
+    make_span(f"TowerPierOuter{tag}", (middle_x + 1.2, -0.3, BASE), (middle_x + 2.1, 0.0, BASE + 15.8), materials["trim"])
+
+    for fin_offset in (-0.325, 0.325):
+        make_span(f"TowerFin{tag}{fin_offset:+.1f}", (middle_x + fin_offset - 0.11, -0.22, BASE + 1.2), (middle_x + fin_offset + 0.11, 0.0, BASE + TOWER_BASE_TOP + 0.6), materials["trim"])
+
+    make_span(f"TowerBaseCornice{tag}", (middle_x - 2.3, -0.4, BASE + TOWER_BASE_TOP), (middle_x + 2.3, NARTHEX_DEPTH + 0.2, BASE + TOWER_BASE_TOP + 0.35), materials["trim"])
+    build_tower_upper(tag, Vector((middle_x, center_y, BASE + TOWER_BASE_TOP + 0.35)), materials)
+
+
+def build_tower_upper(tag: str, base_center: Vector, materials: dict) -> None:
+    """Belfry stage with overshooting corner fins, clock stage, stepped crown and cross."""
+    belfry_half = 1.7
+    belfry_top = 8.65
+    belfry = make_span(f"Belfry{tag}", (base_center.x - belfry_half, base_center.y - belfry_half, base_center.z), (base_center.x + belfry_half, base_center.y + belfry_half, base_center.z + belfry_top), materials["wall"])
+    cutters = []
+    faces = {
+        "-Y": Vector((0, -belfry_half, 0)),
+        "+Y": Vector((0, belfry_half, 0)),
+        "-X": Vector((-belfry_half, 0, 0)),
+        "+X": Vector((belfry_half, 0, 0)),
+    }
     corner_offsets = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
 
+    for (facing, face_offset), slit_offset in itertools.product(faces.items(), (-0.42, 0.42)):
+        lateral = Vector((slit_offset, 0, 0)) if facing in ("-Y", "+Y") else Vector((0, slit_offset, 0))
+        position = base_center + face_offset + lateral + Vector((0, 0, 1.1))
+        wall_opening(f"BelfrySlit{tag}{facing}{slit_offset:+.1f}", rectangle_profile(0.34, 6.4), tuple(position), facing, 0.5, materials["dark"], cutters, pane_depth=1.0)
+
+    carve(belfry, cutters)
+
     for corner_index, (corner_x, corner_y) in enumerate(corner_offsets):
-        corner_position = (center.x + corner_x * (TOWER_HALF + 0.1), center.y + corner_y * (TOWER_HALF + 0.1))
-        make_box(f"TowerButtress{tag}{corner_index}", (corner_position[0], corner_position[1], base + 13.0), (1.3, 1.3, 26.0), materials["stone"])
-        make_box(f"TowerButtressCap{tag}{corner_index}", (corner_position[0], corner_position[1], base + 26.2), (1.5, 1.5, 0.4), materials["trim"])
-        make_cone(f"TowerPinnacle{tag}{corner_index}", (corner_position[0], corner_position[1], base + TOWER_HEIGHT + 0.6), 0.75, 4.5, 4, materials["trim"], math.pi / 4.0)
-        make_box(f"TowerPinnacleBase{tag}{corner_index}", (corner_position[0], corner_position[1], base + TOWER_HEIGHT + 0.3), (1.2, 1.2, 0.6), materials["trim"])
+        corner = (base_center.x + corner_x * belfry_half, base_center.y + corner_y * belfry_half)
+        make_span(f"BelfryCornerFin{tag}{corner_index}", (corner[0] - 0.3, corner[1] - 0.3, base_center.z), (corner[0] + 0.3, corner[1] + 0.3, base_center.z + belfry_top + 0.6), materials["trim"])
 
-    make_box(f"TowerCornice{tag}", (center.x, center.y, base + TOWER_HEIGHT + 0.3), (TOWER_HALF * 2 + 0.8, TOWER_HALF * 2 + 0.8, 0.6), materials["trim"])
-    make_cylinder(f"SpireDrum{tag}", (center.x, center.y, base + TOWER_HEIGHT + 0.6), TOWER_HALF - 0.4, 2.0, 8, materials["stone"])
-    make_cone(f"Spire{tag}", (center.x, center.y, base + TOWER_HEIGHT + 2.6), TOWER_HALF - 0.2, SPIRE_TOP - TOWER_HEIGHT - 2.6, 8, materials["slate"], math.pi / 8.0)
-    make_cylinder(f"FinialRod{tag}", (center.x, center.y, base + SPIRE_TOP - 0.5), 0.08, 2.2, 8, materials["gold"])
-    make_cylinder(f"FinialBall{tag}", (center.x, center.y, base + SPIRE_TOP + 0.4), 0.35, 0.7, 12, materials["gold"])
-    make_box(f"Tower{tag}-colonly", (center.x, center.y, base + TOWER_HEIGHT / 2.0), (TOWER_HALF * 2 + 1.4, TOWER_HALF * 2 + 1.4, TOWER_HEIGHT), None)
+    clock_half = 1.5
+    clock_bottom = base_center.z + belfry_top
+    clock_top = clock_bottom + 3.4
+    make_span(f"ClockStage{tag}", (base_center.x - clock_half, base_center.y - clock_half, clock_bottom), (base_center.x + clock_half, base_center.y + clock_half, clock_top), materials["wall"])
+    make_span(f"ClockCornice{tag}", (base_center.x - 1.75, base_center.y - 1.75, clock_top), (base_center.x + 1.75, base_center.y + 1.75, clock_top + 0.3), materials["trim"])
+
+    for facing_index, facing_angle in enumerate((0.0, math.pi / 2.0, math.pi, -math.pi / 2.0)):
+        build_clock(f"Clock{tag}{facing_index}", base_center, clock_half, clock_bottom + 1.8, facing_angle, materials)
+
+    crown_steps = [(2.4, 0.6, "wall"), (1.5, 0.6, "trim"), (0.7, 0.4, "trim")]
+    crown_bottom = clock_top + 0.3
+
+    for step_index, (width, height, material_key) in enumerate(crown_steps):
+        make_span(f"Crown{tag}{step_index}", (base_center.x - width / 2.0, base_center.y - width / 2.0, crown_bottom), (base_center.x + width / 2.0, base_center.y + width / 2.0, crown_bottom + height), materials[material_key])
+        crown_bottom += height
+
+    make_cross(f"TowerCross{tag}", (base_center.x, base_center.y, crown_bottom), 3.4, 0.28, materials["trim"])
 
 
-def build_crossing_spire(materials: dict) -> None:
-    base = PLINTH
-    crossing = (0, 24.0, base + NAVE_HEIGHT + NAVE_RIDGE - 2.0)
+def build_clock(name: str, tower_center: Vector, half_size: float, height: float, facing_angle: float, materials: dict) -> None:
+    """White dial with dark rim and hands on one tower face; facing_angle 0 = facing -Y."""
+    rotation = Matrix.Rotation(facing_angle, 4, "Z")
+    face_center = tower_center.copy()
+    face_center.z = height
+    outward = rotation @ Vector((0, -1, 0))
+    dial_transform = Matrix.Translation(face_center + outward * (half_size + 0.04)) @ rotation @ Matrix.Rotation(math.pi / 2.0, 4, "X")
 
-    make_cylinder("FlecheDrum", crossing, 1.3, 4.0, 8, materials["trim"])
-    make_cone("Fleche", (crossing[0], crossing[1], crossing[2] + 4.0), 1.5, 8.0, 8, materials["slate"], math.pi / 8.0)
-    make_cylinder("FlecheFinial", (crossing[0], crossing[1], crossing[2] + 11.5), 0.07, 1.6, 8, materials["gold"])
+    make_cylinder(name + "Rim", (0, 0, -0.06), 0.8, 0.08, 24, materials["dark"]).matrix_world = dial_transform
+    make_cylinder(name + "Dial", (0, 0, -0.04), 0.7, 0.1, 24, materials["marble"]).matrix_world = dial_transform
+    make_box(name + "HourHand", (0, 0, 0), (0.06, 0.04, 0.42), materials["dark"]).matrix_world = Matrix.Translation(face_center + outward * (half_size + 0.12)) @ rotation @ Matrix.Rotation(0.5, 4, "Y") @ Matrix.Translation((0, 0, 0.17))
+    make_box(name + "MinuteHand", (0, 0, 0), (0.05, 0.04, 0.6), materials["dark"]).matrix_world = Matrix.Translation(face_center + outward * (half_size + 0.14)) @ rotation @ Matrix.Rotation(-1.9, 4, "Y") @ Matrix.Translation((0, 0, 0.26))
 
 
-def build_string_courses(materials: dict) -> None:
-    """Horizontal moulding bands that break the facade into storeys."""
-    base = PLINTH
-    facade_band_heights = [10.4, 14.45]
-    tower_band_heights = [10.4, 19.6]
+def build_aisle_front(side_sign: int, materials: dict) -> None:
+    """Low aisle front with a rounded outer corner, stacked slit pairs and a balustrade on top."""
+    tag = "L" if side_sign < 0 else "R"
+    corner_radius = 1.0
+    front = make_span(f"AisleFront{tag}", (min(side_sign * TOWER_OUTER, side_sign * (HALF_WIDTH - corner_radius)), 0.0, BASE), (max(side_sign * TOWER_OUTER, side_sign * (HALF_WIDTH - corner_radius)), FACADE_DEPTH, BASE + AISLE_TOP), materials["wall"])
+    cutters = []
+    slit_rows = (1.5, 4.2, 6.9, 9.6)
+    slit_columns = (7.55, 8.35)
 
-    for band_height in facade_band_heights:
-        make_box(f"FacadeBand{band_height}", (0, -0.32, base + band_height), (NAVE_HALF_WIDTH * 2, 0.3, 0.35), materials["trim"])
+    for row_height, column_x in itertools.product(slit_rows, slit_columns):
+        wall_opening(f"AisleFrontSlit{tag}{row_height}{column_x}", rectangle_profile(0.3, 1.6), (side_sign * column_x, 0, BASE + row_height), "-Y", 0.5, materials["slit_glass"], cutters)
 
-    for band_height in tower_band_heights:
-        for side_sign in (-1, 1):
-            make_box(f"TowerBand{side_sign}{band_height}", (side_sign * TOWER_CENTER_X, TOWER_FRONT + TOWER_HALF, base + band_height), (TOWER_HALF * 2 + 0.3, TOWER_HALF * 2 + 0.3, 0.35), materials["trim"])
+    carve(front, cutters)
+
+    make_cylinder(f"AisleCorner{tag}", (side_sign * (HALF_WIDTH - corner_radius), corner_radius, BASE), corner_radius, AISLE_TOP, 20, materials["wall"])
+    make_span(f"AisleFrontCornice{tag}", (min(side_sign * TOWER_OUTER, side_sign * (HALF_WIDTH - 1.0)), -0.15, BASE + AISLE_TOP), (max(side_sign * TOWER_OUTER, side_sign * (HALF_WIDTH - 1.0)), FACADE_DEPTH, BASE + AISLE_TOP + 0.25), materials["trim"])
+    make_cylinder(f"AisleCornerCornice{tag}", (side_sign * (HALF_WIDTH - corner_radius), corner_radius, BASE + AISLE_TOP), corner_radius + 0.15, 0.25, 20, materials["trim"])
+    make_balustrade(f"AisleBalustrade{tag}", (side_sign * TOWER_OUTER, 0.05), (side_sign * (HALF_WIDTH - corner_radius), 0.05), BASE + AISLE_TOP + 0.25, materials)
+
+
+def build_side_wall(side_sign: int, materials: dict) -> None:
+    tag = "L" if side_sign < 0 else "R"
+    facing = "+X" if side_sign > 0 else "-X"
+    inner_x = HALF_WIDTH - WALL
+    wall = make_span(f"SideWall{tag}", (min(side_sign * inner_x, side_sign * HALF_WIDTH), 1.0, BASE), (max(side_sign * inner_x, side_sign * HALF_WIDTH), BODY_LENGTH, BASE + AISLE_TOP), materials["wall"])
+    cutters = []
+    fin_positions = [NARTHEX_DEPTH] + PIER_Y + [BODY_LENGTH - 0.5]
+
+    for bay_y, slit_offset in itertools.product(BAY_CENTERS, (-0.4, 0.4)):
+        wall_opening(f"AisleWindow{tag}{bay_y}{slit_offset:+.1f}", rectangle_profile(0.38, 7.6), (side_sign * HALF_WIDTH, bay_y + slit_offset, BASE + 1.8), facing, WALL, materials["glass"], cutters)
+
+    carve(wall, cutters)
+
+    for fin_y in fin_positions:
+        make_span(f"SideFin{tag}{fin_y}", (min(side_sign * HALF_WIDTH, side_sign * (HALF_WIDTH + 0.3)), fin_y - 0.4, BASE), (max(side_sign * HALF_WIDTH, side_sign * (HALF_WIDTH + 0.3)), fin_y + 0.4, BASE + AISLE_TOP + 0.25), materials["trim"])
+
+    make_span(f"SideParapet{tag}", (min(side_sign * inner_x, side_sign * HALF_WIDTH), 2.0, BASE + AISLE_TOP), (max(side_sign * inner_x, side_sign * HALF_WIDTH), BODY_LENGTH, BASE + AISLE_TOP + 1.0), materials["wall"])
+    make_span(f"SideCoping{tag}", (min(side_sign * (inner_x - 0.05), side_sign * (HALF_WIDTH + 0.1)), 2.0, BASE + AISLE_TOP + 1.0), (max(side_sign * (inner_x - 0.05), side_sign * (HALF_WIDTH + 0.1)), BODY_LENGTH + 0.1, BASE + AISLE_TOP + 1.15), materials["trim"])
+    make_span(f"AisleRoof{tag}", (min(side_sign * NAVE_HALF, side_sign * inner_x), 1.0, BASE + AISLE_TOP), (max(side_sign * NAVE_HALF, side_sign * inner_x), BODY_LENGTH, BASE + AISLE_TOP + 0.4), materials["trim"])
+    make_span(f"AisleBackWall{tag}", (min(side_sign * NAVE_HALF, side_sign * HALF_WIDTH), BODY_LENGTH - WALL, BASE), (max(side_sign * NAVE_HALF, side_sign * HALF_WIDTH), BODY_LENGTH, BASE + AISLE_TOP), materials["wall"])
+
+
+def build_nave(materials: dict) -> None:
+    """Arcade walls with round arches on round columns, clerestory slits, coffered ceiling and the tiled roof."""
+    nave_roof_profile = [(-NAVE_HALF - 0.9, BASE + NAVE_WALL_TOP - 0.1), (0.0, BASE + NAVE_WALL_TOP + 2.2), (NAVE_HALF + 0.9, BASE + NAVE_WALL_TOP - 0.1)]
+    coffer_ribs_y = [NARTHEX_DEPTH - 2.7 + 2.7 * rib_index for rib_index in range(12)]
+
+    for side_sign, facing in ((-1, "-X"), (1, "+X")):
+        build_arcade_wall(side_sign, facing, materials)
+
+    for rib_y in coffer_ribs_y:
+        make_span(f"CofferRibAcross{rib_y:.1f}", (-NAVE_HALF, rib_y - 0.15, BASE + NAVE_CEILING - 0.35), (NAVE_HALF, rib_y + 0.15, BASE + NAVE_CEILING), materials["trim"])
+
+    for rib_x in (-3.0, -1.5, 0.0, 1.5, 3.0):
+        make_span(f"CofferRibAlong{rib_x:+.1f}", (rib_x - 0.15, 1.0, BASE + NAVE_CEILING - 0.35), (rib_x + 0.15, BODY_LENGTH, BASE + NAVE_CEILING), materials["trim"])
+
+    make_span("NaveCeiling", (-NAVE_HALF - WALL, 1.0, BASE + NAVE_CEILING), (NAVE_HALF + WALL, BODY_LENGTH, BASE + NAVE_CEILING + 0.4), materials["trim"])
+    make_span("NarthexRoof", (-CENTER_HALF, FACADE_DEPTH, BASE + NAVE_WALL_TOP - 0.2), (CENTER_HALF, NARTHEX_DEPTH, BASE + NAVE_WALL_TOP + 0.2), materials["trim"])
+    make_profile_prism("NaveRoof", nave_roof_profile, BODY_LENGTH - NARTHEX_DEPTH + 0.6, Matrix.Translation((0, NARTHEX_DEPTH, 0)), materials["roof"])
+    make_span("NaveCornice", (-NAVE_HALF - WALL - 0.25, NARTHEX_DEPTH, BASE + NAVE_WALL_TOP - 0.3), (NAVE_HALF + WALL + 0.25, BODY_LENGTH + 0.2, BASE + NAVE_WALL_TOP), materials["trim"])
+    make_span("NaveBackUpper", (-NAVE_HALF - WALL, BODY_LENGTH - WALL, BASE + NAVE_CEILING), (NAVE_HALF + WALL, BODY_LENGTH, BASE + NAVE_WALL_TOP), materials["wall"])
+
+
+def build_arcade_wall(side_sign: int, facing: str, materials: dict) -> None:
+    """One nave side wall: round arches into the aisle, painted voussoirs, columns with gilded capitals."""
+    tag = "L" if side_sign < 0 else "R"
+    nave_face_x = side_sign * NAVE_HALF
+    wall = make_span(f"ArcadeWall{tag}", (min(nave_face_x, side_sign * (NAVE_HALF + WALL)), NARTHEX_DEPTH, BASE), (max(nave_face_x, side_sign * (NAVE_HALF + WALL)), BODY_LENGTH, BASE + NAVE_WALL_TOP), materials["wall"])
+    nave_side_facing = "+X" if side_sign < 0 else "-X"
+    cutters = []
+
+    for bay_y in BAY_CENTERS:
+        wall_opening(f"Arch{tag}{bay_y}", round_arch_profile(ARCH_WIDTH, ARCH_SPRING), (side_sign * (NAVE_HALF + WALL), bay_y, BASE), facing, WALL, None, cutters)
+
+    for bay_y, slit_offset in itertools.product(BAY_CENTERS, (-0.35, 0.35)):
+        wall_opening(f"Clerestory{tag}{bay_y}{slit_offset:+.1f}", rectangle_profile(0.32, 1.9), (side_sign * (NAVE_HALF + WALL), bay_y + slit_offset, BASE + AISLE_TOP + 0.6), facing, WALL, materials["glass"], cutters)
+
+    carve(wall, cutters)
+
+    for bay_y in BAY_CENTERS:
+        frame = facing_transform((nave_face_x, bay_y, 0.0), nave_side_facing)
+        make_voussoirs(f"ArchVoussoir{tag}{bay_y}", Vector((0, 0, BASE + ARCH_SPRING)), ARCH_WIDTH / 2.0, 0.0, math.pi, 11, 0.5, -0.12, 0.14, [materials["paint_red"], materials["paint_ochre"]], frame)
+
+    for pier_y in PIER_Y:
+        build_column(side_sign * (NAVE_HALF + WALL / 2.0), pier_y, f"{tag}{pier_y}", materials)
+
+    make_span(f"Frieze{tag}", (min(nave_face_x, nave_face_x - side_sign * 0.06), NARTHEX_DEPTH, BASE + 9.2), (max(nave_face_x, nave_face_x - side_sign * 0.06), BODY_LENGTH - WALL, BASE + 9.7), materials["paint_ochre"])
+
+
+def build_column(column_x: float, column_y: float, tag: str, materials: dict) -> None:
+    capital_bottom = BASE + ARCH_SPRING - 0.55
+
+    make_box(f"ColumnPlinth{tag}", (column_x, column_y, BASE + 0.2), (1.1, 1.1, 0.4), materials["trim"])
+    make_cylinder(f"ColumnShaft{tag}", (column_x, column_y, BASE + 0.4), 0.42, capital_bottom - BASE - 0.4, 16, materials["trim"])
+    make_cone(f"ColumnCapital{tag}", (column_x, column_y, capital_bottom), 0.44, 0.45, 16, materials["gold"], top_radius=0.62)
+    make_box(f"ColumnAbacus{tag}", (column_x, column_y, BASE + ARCH_SPRING - 0.05), (1.2, 1.2, 0.1), materials["gold"])
+
+
+def build_apse(materials: dict) -> None:
+    """Half-round apse wall with three tall slits, closing the nave behind the chancel."""
+    segments = 24
+    apse_top = NAVE_CEILING + 0.4
+    outer_arc = [((APSE_RADIUS + WALL) * math.cos(math.pi * step / segments), BODY_LENGTH + (APSE_RADIUS + WALL) * math.sin(math.pi * step / segments)) for step in range(segments + 1)]
+    inner_arc = [(APSE_RADIUS * math.cos(math.pi * step / segments), BODY_LENGTH + APSE_RADIUS * math.sin(math.pi * step / segments)) for step in reversed(range(segments + 1))]
+    apse = make_vertical_prism("Apse", outer_arc + inner_arc, BASE, apse_top, materials["wall"])
+    cutters = []
+
+    for window_index, angle_degrees in enumerate((-40, 0, 40)):
+        angle = math.radians(angle_degrees)
+        direction = Vector((math.sin(angle), math.cos(angle), 0))
+        position = Vector((0, BODY_LENGTH, BASE + 3.0)) + direction * (APSE_RADIUS + WALL)
+        transform = Matrix.Translation(position) @ Matrix.Rotation(math.pi - angle, 4, "Z")
+        cutters.append(make_profile_prism(f"ApseCut{window_index}", rectangle_profile(0.45, 8.5), WALL + 0.6, transform @ Matrix.Translation((0, -0.3, 0)), None))
+        make_profile_prism(f"ApseGlass{window_index}", rectangle_profile(0.45, 8.5), 0.05, transform @ Matrix.Translation((0, WALL / 2.0, 0)), materials["glass"])
+
+    carve(apse, cutters)
+
+    make_cylinder("ApseRoof", (0, BODY_LENGTH, BASE + apse_top), APSE_RADIUS + WALL + 0.2, 0.4, 32, materials["trim"])
+
+
+def build_chancel(materials: dict) -> None:
+    """Raised chancel with altar and a stepped reredos that repeats the facade gable."""
+    floor_top = BASE + CHANCEL_HEIGHT
+    step_count = 5
+    reredos_y = BODY_LENGTH + APSE_RADIUS - 0.9
+    reredos_steps = [(4.4, 5.6), (3.0, 7.4), (1.4, 9.7)]
+
+    make_span("ChancelFloor", (-NAVE_HALF, CHANCEL_FRONT, BASE), (NAVE_HALF, BODY_LENGTH, floor_top), materials["marble"])
+    make_cylinder("ChancelApseFloor", (0, BODY_LENGTH, BASE), APSE_RADIUS, CHANCEL_HEIGHT, 32, materials["marble"])
+
+    for step_index in range(step_count):
+        step_front = CHANCEL_FRONT - (step_count - step_index) * 0.4
+        make_span(f"ChancelStep{step_index}", (-3.6, step_front, BASE), (3.6, CHANCEL_FRONT, BASE + (step_index + 1) * CHANCEL_HEIGHT / step_count), materials["marble"])
+
+    make_box("Altar", (0, BODY_LENGTH - 1.4, floor_top + 0.5), (2.6, 1.0, 1.0), materials["marble"])
+    make_box("AltarFrontal", (0, BODY_LENGTH - 1.92, floor_top + 0.5), (1.8, 0.06, 0.7), materials["gold"])
+
+    for candle_x in (-1.0, 1.0):
+        make_cylinder(f"Candlestick{candle_x:+.0f}", (candle_x, BODY_LENGTH - 1.4, floor_top + 1.0), 0.05, 0.55, 8, materials["gold"])
+
+    for step_index, (width, height) in enumerate(reredos_steps):
+        make_span(f"Reredos{step_index}", (-width / 2.0, reredos_y, floor_top), (width / 2.0, reredos_y + 0.6, floor_top + height), materials["marble"])
+        make_span(f"ReredosCoping{step_index}", (-width / 2.0 - 0.08, reredos_y - 0.08, floor_top + height), (width / 2.0 + 0.08, reredos_y + 0.6, floor_top + height + 0.12), materials["gold"])
+
+    make_cross("ReredosCross", (0, reredos_y, floor_top + 6.2), 3.0, 0.2, materials["gold"], front_offset=-0.12)
+
+    for panel_x, panel_width, panel_height in ((0.0, 1.0, 3.0), (-1.65, 0.8, 2.2), (1.65, 0.8, 2.2)):
+        make_span(f"PaintingFrame{panel_x:+.1f}", (panel_x - panel_width / 2.0 - 0.1, reredos_y - 0.06, floor_top + 1.5), (panel_x + panel_width / 2.0 + 0.1, reredos_y, floor_top + 1.7 + panel_height), materials["gold"])
+        make_span(f"Painting{panel_x:+.1f}", (panel_x - panel_width / 2.0, reredos_y - 0.09, floor_top + 1.6), (panel_x + panel_width / 2.0, reredos_y - 0.06, floor_top + 1.6 + panel_height), materials["painting"])
+
+
+def build_pews(materials: dict) -> None:
+    rows = [13.0 + row_index * 1.0 for row_index in range(12)]
+    blocks = (-2.3, 2.3)
+    pew_length = 2.6
+
+    for block_x, row_y in itertools.product(blocks, rows):
+        tag = f"{block_x:+.0f}_{row_y:.0f}"
+        make_box(f"PewSeat{tag}", (block_x, row_y, BASE + 0.45), (pew_length, 0.45, 0.07), materials["wood"])
+        make_box(f"PewBack{tag}", (block_x, row_y + 0.24, BASE + 0.75), (pew_length, 0.07, 0.55), materials["wood"])
+        make_box(f"PewEndA{tag}", (block_x - pew_length / 2.0, row_y + 0.05, BASE + 0.47), (0.08, 0.6, 0.94), materials["wood"])
+        make_box(f"PewEndB{tag}", (block_x + pew_length / 2.0, row_y + 0.05, BASE + 0.47), (0.08, 0.6, 0.94), materials["wood"])
+
+
+def build_statues(materials: dict) -> None:
+    """Two robed figures on pedestals flanking the stairs."""
+    for side_sign in (-1, 1):
+        statue_x = side_sign * 9.6
+        statue_y = -2.0
+        tag = "L" if side_sign < 0 else "R"
+        make_box(f"Pedestal{tag}", (statue_x, statue_y, 0.7), (1.1, 1.1, 1.4), materials["stone"])
+        make_box(f"PedestalCap{tag}", (statue_x, statue_y, 1.45), (1.3, 1.3, 0.1), materials["trim"])
+        make_cone(f"StatueRobe{tag}", (statue_x, statue_y, 1.5), 0.42, 1.45, 16, materials["marble"], top_radius=0.2)
+        make_cone(f"StatueShoulders{tag}", (statue_x, statue_y, 2.85), 0.26, 0.22, 16, materials["marble"], top_radius=0.12)
+        make_sphere(f"StatueHead{tag}", (statue_x, statue_y, 3.2), 0.15, materials["marble"])
+
+
+# ---------- collision ----------
+
+def build_colliders() -> None:
+    """Simple boxes for the player and the navmesh; names ending in -colonly become static bodies in Godot."""
+    stairs_length = math.hypot(STEP_COUNT * STEP_TREAD, BASE)
+    stairs = make_box("Stairs-colonly", (0, -STEP_COUNT * STEP_TREAD / 2.0, BASE / 2.0 - 0.06), (18.0, stairs_length, 0.1), None)
+    stairs.rotation_euler.x = math.atan2(BASE, STEP_COUNT * STEP_TREAD)
+    chancel_steps = make_box("ChancelSteps-colonly", (0, CHANCEL_FRONT - 1.0, BASE + CHANCEL_HEIGHT / 2.0 - 0.06), (7.2, math.hypot(2.0, CHANCEL_HEIGHT), 0.1), None)
+    chancel_steps.rotation_euler.x = math.atan2(CHANCEL_HEIGHT, 2.0)
+
+    make_span("Plinth-colonly", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), None)
+    make_span("ApsePlinth-colonly", (-APSE_RADIUS - WALL, BODY_LENGTH, 0.0), (APSE_RADIUS + WALL, BODY_LENGTH + APSE_RADIUS + WALL, BASE), None)
+    make_span("Chancel-colonly", (-NAVE_HALF, CHANCEL_FRONT, BASE), (NAVE_HALF, BODY_LENGTH + APSE_RADIUS, BASE + CHANCEL_HEIGHT), None)
+    make_span("Altar-colonly", (-1.3, BODY_LENGTH - 1.9, BASE + CHANCEL_HEIGHT), (1.3, BODY_LENGTH - 0.9, BASE + CHANCEL_HEIGHT + 1.0), None)
+    make_span("Reredos-colonly", (-2.2, BODY_LENGTH + APSE_RADIUS - 0.9, BASE + CHANCEL_HEIGHT), (2.2, BODY_LENGTH + APSE_RADIUS, BASE + 7.0), None)
+    make_span("Lintel-colonly", (-PORTAL_WIDTH / 2.0, 0.0, BASE + PORTAL_SPRING), (PORTAL_WIDTH / 2.0, FACADE_DEPTH, BASE + NAVE_WALL_TOP), None)
+    make_mirrored_span("Jamb-colonly", (PORTAL_WIDTH / 2.0, -0.3, BASE), (CENTER_HALF, FACADE_DEPTH, BASE + NAVE_WALL_TOP), None)
+    make_mirrored_span("Tower-colonly", (CENTER_HALF, -0.3, 0.0), (TOWER_OUTER, NARTHEX_DEPTH, BASE + TOWER_BASE_TOP), None)
+    make_mirrored_span("AisleFront-colonly", (TOWER_OUTER, 0.0, 0.0), (HALF_WIDTH, FACADE_DEPTH, BASE + AISLE_TOP), None)
+    make_mirrored_span("SideWall-colonly", (HALF_WIDTH - WALL, 0.0, 0.0), (HALF_WIDTH + 0.3, BODY_LENGTH, BASE + AISLE_TOP), None)
+    make_mirrored_span("BackWall-colonly", (NAVE_HALF, BODY_LENGTH - WALL, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE + AISLE_TOP), None)
+    make_mirrored_span("Pews-colonly", (1.0, 12.7, BASE), (3.6, 24.5, BASE + 1.0), None)
+    make_mirrored_span("DoorLeaf-colonly", (PORTAL_WIDTH / 2.0 - 0.15, FACADE_DEPTH, BASE), (PORTAL_WIDTH / 2.0, FACADE_DEPTH + PORTAL_WIDTH / 2.0, BASE + PORTAL_SPRING), None)
+
+    make_mirrored_span("ArcadeEndFront-colonly", (NAVE_HALF, NARTHEX_DEPTH, BASE), (NAVE_HALF + WALL, BAY_CENTERS[0] - ARCH_WIDTH / 2.0, BASE + ARCH_SPRING), None)
+    make_mirrored_span("ArcadeEndBack-colonly", (NAVE_HALF, BAY_CENTERS[-1] + ARCH_WIDTH / 2.0, BASE), (NAVE_HALF + WALL, BODY_LENGTH, BASE + ARCH_SPRING), None)
+
+    for side_sign, pier_y in itertools.product((-1, 1), PIER_Y):
+        make_box(f"Pier{side_sign:+d}{pier_y}-colonly", (side_sign * (NAVE_HALF + WALL / 2.0), pier_y, BASE + ARCH_SPRING / 2.0), (1.1, 1.1, ARCH_SPRING), None)
+
+    for segment_index in range(8):
+        angle = math.pi * (segment_index + 0.5) / 8.0
+        radius = APSE_RADIUS + WALL / 2.0
+        segment = make_box(f"ApseWall{segment_index}-colonly", (0, 0, 0), (2.0 * radius * math.sin(math.pi / 16.0) + 0.2, WALL, NAVE_CEILING), None)
+        segment.matrix_world = Matrix.Translation((radius * math.cos(angle), BODY_LENGTH + radius * math.sin(angle), BASE + NAVE_CEILING / 2.0)) @ Matrix.Rotation(angle - math.pi / 2.0, 4, "Z")
+
+    for side_sign in (-1, 1):
+        make_box(f"Statue{side_sign:+d}-colonly", (side_sign * 9.6, -2.0, 1.6), (1.1, 1.1, 3.2), None)
+
+
+# ---------- export ----------
+
+def merge_meshes_by_material(name_prefix: str) -> None:
+    """Join all visible meshes that share a material into one object (one draw call per material)."""
+    visible_meshes = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and not scene_object.name.endswith("-colonly")]
+    meshes_by_material = defaultdict(list)
+
+    for mesh_object in visible_meshes:
+        meshes_by_material[mesh_object.data.materials[0].name].append(mesh_object)
+
+    for material_name, mesh_objects in meshes_by_material.items():
+        with bpy.context.temp_override(active_object=mesh_objects[0], selected_editable_objects=mesh_objects):
+            bpy.ops.object.join()
+
+        mesh_objects[0].name = name_prefix + material_name.removeprefix("M_")
 
 
 def finalize_objects(materials: dict) -> None:
-    tile_sizes = {materials["stone"].name: 4.5, materials["trim"].name: 2.5, materials["slate"].name: 3.0, materials["glass"].name: 4.0}
+    """World-space UVs per material, then merge per material."""
+    tile_sizes = {"stone": 4.5, "wall": 4.0, "trim": 2.5, "roof": 3.0, "floor": 2.4, "glass": 3.0, "wood": 2.0}
+    meters_per_tile = {materials[key].name: size for key, size in tile_sizes.items()}
     visible_meshes = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and not scene_object.name.endswith("-colonly")]
 
     bpy.context.view_layer.update()
 
     for mesh_object in visible_meshes:
-        material_name = mesh_object.data.materials[0].name if mesh_object.data.materials else ""
-        map_uvs_per_face(mesh_object, tile_sizes.get(material_name, 2.0))
+        map_uvs_per_face(mesh_object, meters_per_tile.get(mesh_object.data.materials[0].name, 2.0))
+
+    merge_meshes_by_material("Cathedral")
 
 
 def build_cathedral() -> Path:
@@ -510,16 +825,21 @@ def build_cathedral() -> Path:
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
     materials = build_materials()
-    build_plinth_and_steps(materials)
-    build_nave(materials)
-    build_aisles(materials)
-    build_flying_buttresses(materials)
-    build_apse(materials)
-    build_facade(materials)
+    build_podium(materials)
+    build_facade_center(materials)
+    build_portal_doors(materials)
     build_tower(-1, materials)
     build_tower(1, materials)
-    build_crossing_spire(materials)
-    build_string_courses(materials)
+    build_aisle_front(-1, materials)
+    build_aisle_front(1, materials)
+    build_side_wall(-1, materials)
+    build_side_wall(1, materials)
+    build_nave(materials)
+    build_apse(materials)
+    build_chancel(materials)
+    build_pews(materials)
+    build_statues(materials)
+    build_colliders()
     finalize_objects(materials)
 
     bpy.ops.export_scene.gltf(filepath=str(output_path), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True)
