@@ -34,7 +34,8 @@ Nada abaixo foi renderizado nem testado no Godot: só `py_compile`, execução e
 6. **Fonte pequena (I/K)**: `make_jet_mesh`/`make_curtain_mesh` parametrizados; fonte pequena com jato central, 4 arcos do pináculo e véu da taça ao tanque; `.import` já mapeia `M_WaterJet`/`M_WaterCurtain`; `fountain_small.tscn` com respingo em anel e névoa de sprite redondo (sem quadradinhos).
 7. CLAUDE.md: ordem do pipeline atualizada (entra `build_trees.py` e `build_town_houses.py`).
 
-## Regenerar localmente (nesta ordem; nada disso foi gerado na nuvem)
+## Regenerar localmente (nesta ordem)
+Feito em 2026-11-15 na máquina local (commit b32f82d): tudo gerado, navmesh refeita, 20 testes GUT ok, gdlint ok. Corrigidos nas lojas: moldura de porta/vitrine que tampava a abertura, placa escura na porta, piso esticado. Conferido em print: crucifixo, vitrais com pomba, bancos 3+3 (nave interna, entre colunas, lateral), lojas com interior visível pela porta.
 1. `blender -b --factory-startup -P tools_src/build_cathedral.py` → `art/town/cathedral.gltf` (precisa de `tools/vendor/ubc` para o Cristo e dos personagens em `art/characters`).
 2. `blender ... -P tools_src/build_plaza_props.py` → `fountain_small.gltf` (e os demais props).
 3. `blender ... -P tools_src/build_trees.py` → gera `tree_bloom_1/2` e regera árvores/palmeiras sem `Trunk-colonly` (os .gltf atuais já foram limpos à mão).
