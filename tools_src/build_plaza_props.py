@@ -146,6 +146,11 @@ CENTER_JET = {"base": (0.0, 0.0, 5.6), "height": 0.95, "radius": 0.04}
 UPPER_CURTAIN = {"radius": 0.9, "top_z": 4.91, "outward_speed": 0.3, "bottom_z": 4.3}
 MIDDLE_CURTAIN = {"radius": 1.51, "top_z": 4.31, "outward_speed": 0.4, "bottom_z": 3.27}
 LOWER_CURTAIN = {"radius": 2.39, "top_z": 3.28, "outward_speed": 0.45, "bottom_z": TANK_WATER_TOP + 0.02}
+# Fonte pequena da rotatória (mesma receita): jato central e 4 arcos do pináculo caindo na taça, véu da taça ao tanque.
+SMALL_BASIN_WATER_TOP = 0.47
+SMALL_CENTER_JET = {"base": (0.0, 0.0, 2.08), "height": 0.55, "radius": 0.025}
+SMALL_FINIAL_JETS = {"count": 4, "start": (0.08, 1.98), "horizontal_speed": 0.5, "vertical_speed": 1.2, "land_z": 1.62, "radius": 0.022}
+SMALL_BOWL_CURTAIN = {"radius": 0.82, "top_z": 1.64, "outward_speed": 0.35, "bottom_z": SMALL_BASIN_WATER_TOP + 0.02}
 
 
 def ballistic_path(azimuth: float, jet: dict) -> list:
@@ -204,14 +209,15 @@ def add_tube(stream_bmesh, path: list, stream_index: int, radius: float, uv_laye
         add_quad(stream_bmesh, corners, uvs, uv_layer)
 
 
-def make_jet_mesh(material):
+def make_jet_mesh(material, center_jet: dict = CENTER_JET, arc_jets: tuple = (CROWN_JETS, BOWL_JETS)):
+    """Every jet of a fountain as tapered tubes: the vertical centre jet plus the ballistic arcs."""
     stream_bmesh = bmesh.new()
     uv_layer = stream_bmesh.loops.layers.uv.new("UVMap")
-    base = Vector(CENTER_JET["base"])
-    center_path = [base + Vector((0.0, 0.0, CENTER_JET["height"] * step / JET_PATH_STEPS)) for step in range(JET_PATH_STEPS + 1)]
-    arc_paths = [(ballistic_path(azimuth, jet), jet["radius"]) for jet in (CROWN_JETS, BOWL_JETS) for azimuth in jet_azimuths(jet)]
+    base = Vector(center_jet["base"])
+    center_path = [base + Vector((0.0, 0.0, center_jet["height"] * step / JET_PATH_STEPS)) for step in range(JET_PATH_STEPS + 1)]
+    arc_paths = [(ballistic_path(azimuth, jet), jet["radius"]) for jet in arc_jets for azimuth in jet_azimuths(jet)]
 
-    for stream_index, (path, radius) in enumerate([(center_path, CENTER_JET["radius"])] + arc_paths):
+    for stream_index, (path, radius) in enumerate([(center_path, center_jet["radius"])] + arc_paths):
         add_tube(stream_bmesh, path, stream_index, radius, uv_layer)
 
     jet_object = object_from_bmesh("WaterJets", stream_bmesh, material)
@@ -248,11 +254,11 @@ def add_curtain(curtain_bmesh, curtain: dict, uv_layer) -> None:
         add_quad(curtain_bmesh, corners, uvs, uv_layer)
 
 
-def make_curtain_mesh(material):
+def make_curtain_mesh(material, curtains: tuple = (UPPER_CURTAIN, MIDDLE_CURTAIN, LOWER_CURTAIN)):
     curtain_bmesh = bmesh.new()
     uv_layer = curtain_bmesh.loops.layers.uv.new("UVMap")
 
-    for curtain in (UPPER_CURTAIN, MIDDLE_CURTAIN, LOWER_CURTAIN):
+    for curtain in curtains:
         add_curtain(curtain_bmesh, curtain, uv_layer)
 
     curtain_object = object_from_bmesh("WaterCurtains", curtain_bmesh, material)
@@ -340,11 +346,13 @@ def build_small_fountain(materials: dict) -> None:
     make_octagon_ring("BasinWall", 2.0, 1.7, 0.6, materials["stone"])
     make_octagon_ring("BasinRim", 2.08, 1.62, 0.1, materials["trim"]).location.z = 0.6
     make_cylinder("BasinFloor", (0, 0, 0), 1.75, 0.25, 8, materials["stone"]).rotation_euler.z = math.pi / 8.0
-    make_cylinder("Water", (0, 0, 0.25), 1.72, 0.22, 24, materials["water"])
+    make_cylinder("Water", (0, 0, 0.25), 1.72, SMALL_BASIN_WATER_TOP - 0.25, 24, materials["water"])
     make_cylinder("Column", (0, 0, 0.25), 0.22, 1.1, 10, materials["trim"])
     make_frustum("Bowl", 1.35, 0.22, 0.8, 0.3, 16, materials["trim"])
     make_cylinder("Water", (0, 0, 1.55), 0.72, 0.08, 16, materials["water"])
     make_cone("Finial", (0, 0, 1.65), 0.12, 0.45, 10, materials["trim"])
+    make_jet_mesh(materials["water_jet"], SMALL_CENTER_JET, (SMALL_FINIAL_JETS,))
+    make_curtain_mesh(materials["water_curtain"], (SMALL_BOWL_CURTAIN,))
     # Taller than a jump so nobody ends up standing in the jets.
     make_cylinder("Fountain-colonly", (0, 0, 0), 2.1, 2.6, 8, None).rotation_euler.z = math.pi / 8.0
 
