@@ -1,7 +1,8 @@
 extends SceneTree
 ## Assa a navmesh da cidade a partir das malhas e colisões do grupo "navigation_source" e salva em
 ## features/hub/hub_navmesh.tres. Rodar depois de build_hub_scene.py:
-##   tools/Godot_v4.7.2-stable_win64_console.exe --headless --path . -s tools_src/bake_hub_navmesh.gd
+##   tools/Godot_v4.7.2-stable_win64_console.exe --headless --path .
+##     -s tools_src/bake_hub_navmesh.gd
 
 const HUB_SCENE_PATH: String = "res://features/hub/hub.tscn"
 const OUTPUT_PATH: String = "res://features/hub/hub_navmesh.tres"
