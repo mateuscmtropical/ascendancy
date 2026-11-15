@@ -208,7 +208,9 @@ void sky() {
 	vec3 color = sky_gradient(direction, sun_height);
 
 	if (direction.y < 0.0) {
-		COLOR = mix(color, ground_color * mix(0.08, 1.0, day_amount), smoothstep(0.0, -0.08, direction.y));
+		vec3 ground = mix(color, ground_color, 0.55) * mix(0.08, 1.0, day_amount);
+
+		COLOR = mix(color, ground, smoothstep(0.0, -0.35, direction.y));
 	} else if (AT_CUBEMAP_PASS) {
 		vec4 clouds = cloud_layer(direction, sun_height);
 
