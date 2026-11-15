@@ -39,6 +39,7 @@ PLAYER_SPAWN = (-42.4, -12.0)  # pé da escada do coreto, olhando para a catedra
 PATH_WIDTH = 4.0
 PLANTER_SOIL_HEIGHT = 0.42
 SHADE_TREE_SCALE = 1.45
+TREE_BED_CLEARANCE = 1.2  # tronco a pelo menos isto do meio-fio
 GRASS_SEED = 77
 GRASS_TUFTS_PER_SQUARE = 110
 
@@ -615,7 +616,10 @@ def add_trees(scene: SceneWriter) -> None:
     sao_jose_extra = [(x, side * 30.0) for side in (-1, 1) for x in (16.5, 34.5, 52.5)]
     median = [(x, sum(MEDIAN_Z) / 2.0) for x in range(-88, 89, 16) if abs(x) > 14]
     backyards = [((block[0] + block[1]) / 2.0, (block[2] + block[3]) / 2.0) for block in BLOCKS]
-    lawn_trees = getulio_vargas + sao_jose + sao_jose_extra
+    # Troncos e raízes só dentro dos canteiros, nunca na calçada.
+    getulio_vargas = [spot for spot in getulio_vargas if on_lawn(spot, TREE_BED_CLEARANCE)]
+    sao_jose = [spot for spot in sao_jose + sao_jose_extra if on_lawn(spot, TREE_BED_CLEARANCE)]
+    lawn_trees = getulio_vargas + sao_jose
 
     scene.add_node("Trees", ".", "Node3D")
 
