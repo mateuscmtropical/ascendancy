@@ -24,6 +24,7 @@ enum Setting {
 	MASTER_VOLUME,
 	AMBIENT_VOLUME,
 	EFFECTS_VOLUME,
+	MUSIC_VOLUME,
 }
 
 const SETTINGS_PATH: String = "user://settings.cfg"
@@ -44,6 +45,7 @@ const SECTION_BY_SETTING: Dictionary[Setting, Section] = {
 	Setting.MASTER_VOLUME: Section.AUDIO,
 	Setting.AMBIENT_VOLUME: Section.AUDIO,
 	Setting.EFFECTS_VOLUME: Section.AUDIO,
+	Setting.MUSIC_VOLUME: Section.AUDIO,
 }
 const LABEL_BY_SETTING: Dictionary[Setting, String] = {
 	Setting.MONITOR: "Monitor",
@@ -61,6 +63,7 @@ const LABEL_BY_SETTING: Dictionary[Setting, String] = {
 	Setting.MASTER_VOLUME: "Master volume",
 	Setting.AMBIENT_VOLUME: "Ambience",
 	Setting.EFFECTS_VOLUME: "Effects",
+	Setting.MUSIC_VOLUME: "Music",
 }
 ## Cada lista tem constante tipada própria: lista solta dentro do dicionário constante
 ## fica sem tipo e chega vazia ao OptionButton.
@@ -94,6 +97,7 @@ const FIXED_OPTION_LABELS: Dictionary[Setting, PackedStringArray] = {
 	Setting.MASTER_VOLUME: VOLUME_LABELS,
 	Setting.AMBIENT_VOLUME: VOLUME_LABELS,
 	Setting.EFFECTS_VOLUME: VOLUME_LABELS,
+	Setting.MUSIC_VOLUME: VOLUME_LABELS,
 }
 ## Padrão = o que o projeto já usa (project.godot e o Environment da praça).
 const DEFAULT_OPTION: Dictionary[Setting, int] = {
@@ -112,6 +116,7 @@ const DEFAULT_OPTION: Dictionary[Setting, int] = {
 	Setting.MASTER_VOLUME: 8,
 	Setting.AMBIENT_VOLUME: 10,
 	Setting.EFFECTS_VOLUME: 10,
+	Setting.MUSIC_VOLUME: 6,
 }
 const WINDOW_MODES: Array[DisplayServer.WindowMode] = [
 	DisplayServer.WINDOW_MODE_WINDOWED,
@@ -167,6 +172,7 @@ var _appliers: Dictionary[Setting, Callable] = {
 	Setting.MASTER_VOLUME: _apply_volume.bind(&"Master"),
 	Setting.AMBIENT_VOLUME: _apply_volume.bind(&"Ambient"),
 	Setting.EFFECTS_VOLUME: _apply_volume.bind(&"Effects"),
+	Setting.MUSIC_VOLUME: _apply_volume.bind(&"Music"),
 }
 
 
