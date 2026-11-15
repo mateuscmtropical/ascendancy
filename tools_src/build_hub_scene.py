@@ -278,18 +278,6 @@ def hedge_gaps() -> list:
     return gaps
 
 
-HOUSE_SIZES = {  # name -> (width along facade, depth)
-    "house_stone_tall": (6, 8),
-    "house_narrow_three": (6, 8),
-    "house_plaster_wide": (8, 8),
-    "house_shop": (8, 10),
-    "house_cottage": (6, 6),
-}
-SHOP_HOUSES = {  # casa da fileira -> variantes de loja com a mesma planta (build_shop_houses.py)
-    "house_stone_tall": [f"shops/house_shop_narrow_{index}" for index in range(1, 9)],
-    "house_narrow_three": [f"shops/house_shop_narrow_{index}" for index in range(1, 9)],
-}
-HOUSES_BY_WIDTH = {6: ["house_stone_tall", "house_narrow_three", "house_cottage"], 8: ["house_plaster_wide", "house_shop"]}
 SIDE_ROTATION = {"N": math.pi, "S": 0.0, "W": -math.pi / 2.0, "E": math.pi / 2.0}  # house front faces the street
 BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
     (-102, -72, -96, -66, "S"),  # fileira norte = comércio e ofícios: as lojas grandes ocupam a quadra de ponta a ponta
@@ -303,10 +291,6 @@ BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
     (4, 64, 58, 88, "NWE"),
     (72, 102, 58, 88, "NW"),
 ]
-SHOP_FRONTAGES = {(1, "S"), (2, "S"), (4, "E"), (5, "W"), (7, "N"), (8, "N")}  # (bloco, lado) virados para as praças e a avenida
-SHOP_TYPES = ["smith", "armor", "magic", "alchemy", "tavern", "inn", "guild", "bakery", "tailor", "jeweler"]
-SHOP_SEED = 2207
-SHOP_WALL_GAP = 0.06
 KIT_COLLIDERS = {  # kit model name prefix -> simple solid in model space: ("cylinder", radius, height) or ("box", size, center)
     "CommonTree": ("cylinder", 0.35, 3.0),
     "old_tree": ("cylinder", 0.85, 3.0),
@@ -525,139 +509,19 @@ def trimmed_run(block: tuple, side: str, earlier_sides: str) -> tuple:
     return facade, run_start, run_end, axis
 
 
-def house_widths_for(length: float) -> list:
-    """Mix of 8 m and 6 m houses that fills length with the least slack (slack becomes small gaps)."""
-    candidates = [(length - 8 * wide_count - 6 * int((length - 8 * wide_count) // 6), wide_count) for wide_count in range(int(length // 8) + 1)]
-    slack, wide_count = min(candidates)
-    narrow_count = int((length - 8 * wide_count) // 6)
-    widths = [8] * wide_count + [6] * narrow_count
-
-    return widths
-
-
-def pick_house_types(widths: list, generator: random.Random, allow_cottage: bool) -> list:
-    """One house type per width, never the same type twice in a row."""
-    chosen = []
-
-    for width in widths:
-        options = [name for name in HOUSES_BY_WIDTH[width] if name != (chosen[-1] if chosen else "") and (allow_cottage or name != "house_cottage")]
-        chosen.append(generator.choice(options))
-
-    return chosen
-
-
-def house_row(block: tuple, side: str, earlier_sides: str, generator: random.Random) -> list:
-    """Row houses along one block side; returns (model, position, rotation)."""
-    facade, run_start, run_end, axis = trimmed_run(block, side, earlier_sides)
-    length = run_end - run_start
-    widths = house_widths_for(length)
-    generator.shuffle(widths)
-    is_main_front = earlier_sides == ""
-    names = pick_house_types(widths, generator, allow_cottage=not is_main_front)
-    gap = (length - sum(widths)) / max(1, len(widths))
-    inward = {"N": 1.0, "S": -1.0, "W": 1.0, "E": -1.0}[side]
-    placements = []
-    cursor = run_start + gap / 2.0
-
-    for house_name, width in zip(names, widths):
-        depth = HOUSE_SIZES[house_name][1]
-        along = cursor + width / 2.0
-        across = facade + inward * depth / 2.0
-        position = (along, 0.0, across) if axis == "x" else (across, 0.0, along)
-        placements.append((house_name, position, SIDE_ROTATION[side], side))
-        cursor += width + gap
-
-    return placements
-
-
-def shop_houses_for(shop_fronts: list) -> dict:
-    """Position -> shop house variant that replaces the row house there; neighbours never get the same variant."""
-    generator = random.Random(SHOP_SEED)
-    chosen = {}
-    previous = ""
-
-    for house_name, position, _rotation_y, _side in shop_fronts:
-        previous = generator.choice([variant for variant in SHOP_HOUSES.get(house_name, [house_name]) if variant != previous])
-        chosen[position] = previous
-
-    return chosen
-
-
 def add_buildings(scene: SceneWriter) -> None:
-    """Cathedral, coreto and the town rows: the modelled lots of town_lots() once build_town_houses.py has run,
-    the kit row houses with dressed shop fronts until then."""
+    """Cathedral, coreto and the modelled lots of town_lots() (build_town_houses.py and build_market_shops.py)."""
     lots = town_lots()
+    missing = missing_town_models(lots)
+
+    assert not missing, f"rode build_town_houses.py / build_market_shops.py antes; faltam: {missing[:4]}"
 
     check_town_plan(lots)
     scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), -math.pi / 2.0)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
-    if town_models_ready(lots):
-        add_town_lots(scene, lots)
-        return
-
-    print("AVISO: modelos de build_town_houses.py ausentes; usando as casas antigas do kit")
-    add_kit_rows(scene)
-
-
-def add_kit_rows(scene: SceneWriter) -> None:
-    """Old kit row houses with stalls and signs (kept only until the town models are generated)."""
-    generator = random.Random(1942)
-    placements = []
-    shop_fronts = []
-
-    for block_index, block in enumerate(BLOCKS):
-        street_sides = block[4]
-
-        for side_index, side in enumerate(street_sides):
-            row = house_row(block, side, street_sides[:side_index], generator)
-            placements += row
-            shop_fronts += row if (block_index, side) in SHOP_FRONTAGES else []
-
-    shop_houses = shop_houses_for(shop_fronts)
-
-    for index, (house_name, position, rotation_y, _side) in enumerate(placements):
-        place(scene, f"House{index:03d}", "Buildings", f"res://art/town/{shop_houses.get(position, house_name)}.gltf", position, rotation_y)
-
-    add_shops(scene, shop_fronts)
-
-
-def shop_types_for(count: int) -> list:
-    """One trade per shop front: every trade appears before any repeats, and neighbours never match."""
-    generator = random.Random(SHOP_SEED)
-    chosen = []
-
-    while len(chosen) < count:
-        round_of_types = [shop_type for shop_type in SHOP_TYPES]
-        generator.shuffle(round_of_types)
-
-        if chosen and round_of_types[0] == chosen[-1]:
-            round_of_types.append(round_of_types.pop(0))
-
-        chosen += round_of_types
-
-    return chosen[:count]
-
-
-def add_shops(scene: SceneWriter, shop_fronts: list) -> None:
-    """Dress the houses that face the squares and the avenue as RPG shops: hanging sign at the corner,
-    awning stall under the first window and the trade's big props under the last one (build_shops.py)."""
-    shop_types = shop_types_for(len(shop_fronts))
-
-    scene.add_node("Shops", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
-
-    for index, ((house_name, position, rotation_y, _side), shop_type) in enumerate(zip(shop_fronts, shop_types)):
-        width, depth = HOUSE_SIZES[house_name]
-        facade_offset = depth / 2.0 + SHOP_WALL_GAP
-        facade = (position[0] + facade_offset * math.sin(rotation_y), 0.0, position[2] + facade_offset * math.cos(rotation_y))
-        shop_name = f"Shop{index:02d}{shop_type.title()}"
-        pieces = {"stall": -(width / 2.0 - 1.1), "yard": width / 2.0 - 1.2, "sign": width / 2.0 - 0.15}
-
-        scene.add_node(shop_name, "Shops", "Node3D", properties={"position": vector(*facade), "rotation": vector(0.0, rotation_y, 0.0)}, groups=[f"shop_{shop_type}"])
-
-        for piece, offset_x in pieces.items():
-            place(scene, piece.title(), f"Shops/{shop_name}", f"res://art/town/shops/shop_{shop_type}_{piece}.gltf", (offset_x, 0, 0))
+    add_town_lots(scene, lots)
 
 
 # ---------- town plan: lots, archetypes and shops (seções C e D) ----------
@@ -910,16 +774,9 @@ def rectangle_inside(inner: tuple, outer: tuple, tolerance: float) -> bool:
     return inner[0] >= outer[0] - tolerance and inner[1] <= outer[1] + tolerance and inner[2] >= outer[2] - tolerance and inner[3] <= outer[3] + tolerance
 
 
-def ready_town_lots() -> list:
-    """The plan's lots when their models exist, else nothing (the kit rows stand in)."""
-    lots = town_lots()
-
-    return lots if town_models_ready(lots) else []
-
-
-def town_models_ready(lots: list) -> bool:
-    """True once build_town_houses.py has written every model the plan uses."""
-    return all((PROJECT_DIR / lot["model"].removeprefix("res://")).exists() for lot in lots)
+def missing_town_models(lots: list) -> list:
+    """Models the plan uses that build_town_houses.py / build_market_shops.py have not written yet."""
+    return [lot["model"] for lot in lots if not (PROJECT_DIR / lot["model"].removeprefix("res://")).exists()]
 
 
 SHOPKEEPERS = {  # prédio -> (corpo, cabelo, animação) de quem atende atrás do balcão
@@ -1560,7 +1417,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "SittingCathedral", "adventurer_male", "brown", stand(cathedral_bench_seat, cathedral_bench_facing, "ual1/Sitting_Talking", 0.5))
     npc(scene, "Bard", "adventurer_female", "auburn", stand((COREO_POSITION[0], COREO_POSITION[1]), math.pi / 2.0, "ual1/Idle_Talking", 0.2, height=1.2))
     npc(scene, "Guard", "adventurer_female", "dark", stand((CATHEDRAL_FACADE_X - 4.2, -6.5), -math.pi / 2.0, "ual2/Idle_FoldArms", 0.0))
-    add_shopkeepers(scene, ready_town_lots())
+    add_shopkeepers(scene, town_lots())
     npc(scene, "Priest", "villager_male", "grey", stand((CATHEDRAL_FACADE_X + 40.4, 0.0), -math.pi / 2.0, "ual1/Idle", 0.0, height=CHANCEL_FLOOR + 0.3))
 
 
