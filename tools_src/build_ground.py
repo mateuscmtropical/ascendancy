@@ -16,6 +16,7 @@ Usage (after build_cathedral.py, which writes the stone textures):
 """
 
 import math
+import random
 import sys
 from pathlib import Path
 
@@ -31,6 +32,7 @@ from build_cathedral import (  # noqa: E402
     OUTPUT_DIR,
     load_kit_image,
     make_material,
+    make_plain_material,
     make_tinted_image,
     object_from_bmesh,
     save_generated_image,
@@ -49,6 +51,9 @@ MARCO_BASE = 1.2
 MARCO_HEIGHT = 5.0
 HEDGE_GAPS = layout.hedge_gaps()
 METERS_PER_TILE = {"brick": 1.0, "stone": 1.7, "street": 1.8, "curb": 1.5, "grass": 7.0, "hedge": 1.6}
+FLOWER_LEAF_COLOR = "3F8A50"
+FLOWER_HEADS = (3, 5)  # cabeças por tufo
+FLOWER_HEAD_RADIUS = (0.045, 0.07)
 
 
 # ---------- textures ----------
@@ -127,7 +132,13 @@ def build_ground_materials() -> dict:
         "curb": make_material("M_GroundCurb", curb_image, load_kit_image("T_RockTrim_Normal.png", False)),
         "grass": make_material("M_GroundLawn", grass_image),
         "hedge": make_material("M_GroundHedge", hedge_image, hedge_normal),
+        "flower_leaf": make_plain_material("M_GroundFlowerLeaf", linear_color(FLOWER_LEAF_COLOR), 0.0, 0.85),
+        **{f"flower_{name}": make_plain_material(f"M_GroundFlower{name.title()}", linear_color(hex_value), 0.0, 0.7) for name, hex_value in layout.FLOWER_COLORS.items()},
     }
+
+
+def linear_color(hex_value: str) -> tuple:
+    return tuple((int(hex_value[offset:offset + 2], 16) / 255.0) ** 2.2 for offset in (0, 2, 4))
 
 
 # ---------- clipped grid meshes ----------
@@ -284,6 +295,49 @@ def build_topiary(materials: dict) -> None:
         bmesh.ops.create_icosphere(ball_bmesh, subdivisions=2, radius=TOPIARY_RADIUS)
         bmesh.ops.translate(ball_bmesh, vec=(x, -z, height), verts=ball_bmesh.verts)
         object_from_bmesh(f"Topiary{index}", ball_bmesh, materials["hedge"])
+
+
+# ---------- flowers (L.1) ----------
+
+def add_leaf_cross(leaf_bmesh, x: float, y: float, base: float, height: float, yaw: float) -> None:
+    """Two crossed upright quads of foliage (the material is double-sided)."""
+    half = 0.14
+
+    for turn in (0.0, math.pi / 2.0):
+        dx, dy = half * math.cos(yaw + turn), half * math.sin(yaw + turn)
+        corners = [(x - dx, y - dy, base), (x + dx, y + dy, base), (x + dx * 0.6, y + dy * 0.6, base + height), (x - dx * 0.6, y - dy * 0.6, base + height)]
+        leaf_bmesh.faces.new([leaf_bmesh.verts.new(corner) for corner in corners])
+
+
+def add_flower_head(head_bmesh, center: tuple, radius: float) -> None:
+    """Flattened four-sided pyramid: a blossom seen from above and the side."""
+    apex = head_bmesh.verts.new((center[0], center[1], center[2] + radius * 0.6))
+    rim = [head_bmesh.verts.new((center[0] + radius * math.cos(side * math.pi / 2.0), center[1] + radius * math.sin(side * math.pi / 2.0), center[2])) for side in range(4)]
+
+    for side in range(4):
+        head_bmesh.faces.new([rim[side], rim[(side + 1) % 4], apex])
+
+
+def build_flowers(materials: dict) -> None:
+    """Low flower patches inside the hedges: one mesh of leaf crosses and one of blossoms per colour (layout.flower_tufts)."""
+    generator = random.Random(layout.FLOWER_SEED + 1)
+    leaf_bmesh = bmesh.new()
+    head_bmeshes = {name: bmesh.new() for name in layout.FLOWER_COLORS}
+
+    for x, z, color, height, yaw in layout.flower_tufts():
+        base = layout.ground_height((x, z))
+        add_leaf_cross(leaf_bmesh, x, -z, base, height * 0.85, yaw)
+
+        for _ in range(generator.randint(*FLOWER_HEADS)):
+            angle = generator.uniform(0.0, 2.0 * math.pi)
+            reach = generator.uniform(0.0, 0.1)
+            head = (x + reach * math.cos(angle), -z + reach * math.sin(angle), base + height * generator.uniform(0.8, 1.0))
+            add_flower_head(head_bmeshes[color], head, generator.uniform(*FLOWER_HEAD_RADIUS))
+
+    object_from_bmesh("FlowerLeaves", leaf_bmesh, materials["flower_leaf"])
+
+    for name, head_bmesh in head_bmeshes.items():
+        object_from_bmesh(f"FlowerHeads{name.title()}", head_bmesh, materials[f"flower_{name}"])
 
 
 # ---------- slabs ----------
@@ -546,8 +600,11 @@ def merge_by_material(materials: dict) -> None:
     for key, material in materials.items():
         mesh_objects = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and scene_object.data.materials and scene_object.data.materials[0] == material]
 
+        if not mesh_objects:
+            continue
+
         for mesh_object in mesh_objects:
-            map_world_uvs(mesh_object, METERS_PER_TILE[key])
+            map_world_uvs(mesh_object, METERS_PER_TILE.get(key, 1.0))
 
         with bpy.context.temp_override(active_object=mesh_objects[0], selected_editable_objects=mesh_objects):
             bpy.ops.object.join()
@@ -571,6 +628,7 @@ def build_ground() -> Path:
     build_marco(materials)
     build_beds(materials)
     build_topiary(materials)
+    build_flowers(materials)
     merge_by_material(materials)
 
     bpy.ops.export_scene.gltf(filepath=str(output_path), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True)

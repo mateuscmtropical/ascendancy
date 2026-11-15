@@ -1186,6 +1186,99 @@ def palm_spots(old_trees: list) -> list:
     return palms
 
 
+FLOWER_COLORS = {"vermelho": "D9483B", "amarelo": "F2C544", "laranja": "E8962E", "branco": "F4EFE6", "rosa": "E9A6C0", "lilas": "B79AD6"}  # L.1
+FLOWER_DENSITY = 7.0  # tufos por m² (spec 9; 7 segura o orçamento de triângulos)
+FLOWER_SEED = 61
+FLOWER_HEIGHTS = (0.22, 0.38)
+FLOWER_TRUNK_CLEARANCE = 1.5
+FLOWER_BED_MIN = 1.0  # por dentro da sebe
+FLOWER_DOMINANT_SHARE = 0.8  # cada mancha: 1 cor dominante + branco ou amarelo
+ROUND_BED_LIMIT = 8
+ROUND_BED_SPACING = 14.0
+
+
+class FlowerZone:
+    """A kind of flower patch (L.2): where it grows (bounds + test on the point and its bed field) and its two colours."""
+
+    def __init__(self, name: str, bounds: tuple, test, colors, field_band: tuple = (FLOWER_BED_MIN, math.inf), trunk_clearance: float = FLOWER_TRUNK_CLEARANCE) -> None:
+        self.name = name
+        self.bounds = bounds
+        self.test = test
+        self.colors = colors
+        self.field_band = field_band
+        self.trunk_clearance = trunk_clearance
+
+
+def around(center: tuple, reach: float) -> tuple:
+    return center[0] - reach, center[1] - reach, center[0] + reach, center[1] + reach
+
+
+def round_bed_centers(trunks: list) -> list:
+    """Centres of the round flower beds: deepest lawn points of the Getúlio Vargas, far from trunks and from each other."""
+    minimum, maximum = LAWN_RECTS["GetulioVargas"]
+    grid = itertools.product(range(int(minimum[0]), int(maximum[0]) + 1), range(int(minimum[1]), int(maximum[1]) + 1))
+    candidates = sorted(((bed_field((x, z)), (float(x), float(z))) for x, z in grid), reverse=True)
+    centers = []
+
+    for field, point in candidates:
+        is_free = field >= 4.0 and far_from_all(point, centers, ROUND_BED_SPACING) and far_from_all(point, trunks, 4.0)
+        centers += [point] if is_free and len(centers) < ROUND_BED_LIMIT else []
+
+    return centers
+
+
+def flower_zones(trunks: list, palms: list) -> list:
+    """The patches of L.2: esplanade border, fountain crown, half-moons of the plazas, round beds, coreto ring, palm
+    feet, forecourt strips, roundabout and marco rings, median patches."""
+    gv_min, gv_max = LAWN_RECTS["GetulioVargas"]
+    esplanade_edge = ESPLANADE_WIDTH / 2.0
+    coreto_mouth = math.degrees(math.atan2(COREO_ACCESS_END[1] - COREO_POSITION[1], COREO_ACCESS_END[0] - COREO_POSITION[0]))
+    round_beds = round_bed_centers(trunks)
+    adro_edge = ADRO_WIDTH / 2.0
+    median_z = (MEDIAN_BEDS[0][0][1] + MEDIAN_BEDS[0][1][1]) / 2.0
+    zones = [
+        FlowerZone("esplanada", (gv_min[0], -esplanade_edge - 3.0, gv_max[0], esplanade_edge + 3.0), lambda p: (-60.0 <= p[0] <= -46.0 or -22.0 <= p[0] <= -8.0) and abs(p[1]) <= esplanade_edge + 2.5, lambda p: ("vermelho", "branco") if int((p[0] + 100.0) / 6.0) % 2 else ("amarelo", "branco"), (FLOWER_BED_MIN, 1.8)),
+        FlowerZone("coroa", around(GETULIO_VARGAS, 13.5), lambda p: 11.0 <= distance(p, GETULIO_VARGAS) <= 13.5, lambda p: ("vermelho", "branco"), (FLOWER_BED_MIN, 2.0)),
+        *[FlowerZone(f"meia_lua{index}", around(center, radius + 2.0), lambda p, center=center, radius=radius: radius + 1.0 <= distance(p, center) <= radius + 1.9, lambda p, center=center: ("rosa", "branco") if center[0] < GETULIO_VARGAS[0] else ("lilas", "branco")) for index, (center, radius) in enumerate(secondary_plazas())],
+        *[FlowerZone(f"redondo{index}", around(center, 2.4), lambda p, center=center, index=index: distance(p, center) <= 1.8 + 0.2 * (index % 4), lambda p: ("laranja", "amarelo")) for index, center in enumerate(round_beds)],
+        FlowerZone("coreto", around(COREO_POSITION, 6.5), lambda p: 5.6 <= distance(p, COREO_POSITION) <= 6.4 and angle_gap(math.degrees(math.atan2(p[1] - COREO_POSITION[1], p[0] - COREO_POSITION[0])), coreto_mouth) > 30.0, lambda p: ("branco", "rosa")),
+        *[FlowerZone(f"palmeira{index}", around(palm, 0.7), lambda p, palm=palm: TRUNK_RADIUS["palm"] + 0.15 <= distance(p, palm) <= 0.7, lambda p: ("amarelo", "branco"), (FLOWER_BED_MIN, math.inf), 0.0) for index, palm in enumerate(palms[::3]) if palm[0] < 0.0],
+        FlowerZone("adro", (CATHEDRAL_FACADE_X - 11.0, -adro_edge - 3.0, CATHEDRAL_FACADE_X - 2.0, adro_edge + 3.0), lambda p: CATHEDRAL_FACADE_X - 10.0 <= p[0] <= CATHEDRAL_FACADE_X - 2.0 and abs(p[1]) >= adro_edge, lambda p: ("branco", "vermelho"), (FLOWER_BED_MIN, 2.0)),
+        FlowerZone("rotatoria", around(ROUNDABOUT, ROUNDABOUT_LAWN_RADII[1]), lambda p: True, lambda p: ("vermelho", "branco"), (0.9, math.inf)),
+        FlowerZone("marco", around(MARCO, MARCO_LAWN_RADII[1]), lambda p: True, lambda p: ("amarelo", "branco"), (0.45, math.inf)),
+        FlowerZone("canteiro_central", (CITY_MIN[0], median_z - 1.0, CITY_MAX[0], median_z + 1.0), lambda p: abs(p[0]) > MEDIAN_NOSE_X + 2.0 and abs((p[0] - 8.0) % 16.0 - 8.0) >= 6.5, lambda p: ("rosa", "branco") if int((p[0] + 200.0) / 16.0) % 2 else ("laranja", "amarelo"), (0.6, math.inf)),
+    ]
+
+    return zones
+
+
+def flower_tufts() -> list:
+    """(x, z, colour name, height, yaw) of every flower tuft, by zone; seeded and independent of the scene writer."""
+    generator = random.Random(FLOWER_SEED)
+    old_trees = old_tree_spots()
+    palms = palm_spots(old_trees)
+    bloom_trees = [spot for spot in mirrored_in_z(BLOOM_TREES_WEST_EDGE) if can_plant(spot, "tree_bloom")]
+    trunks = old_trees + palms + bloom_trees
+    step = 1.0 / math.sqrt(FLOWER_DENSITY)
+    tufts = []
+
+    for zone in flower_zones(old_trees + bloom_trees, palms):
+        min_x, min_z, max_x, max_z = zone.bounds
+        cells = itertools.product(range(int((max_x - min_x) / step) + 1), range(int((max_z - min_z) / step) + 1))
+
+        for column, row in cells:
+            point = (min_x + (column + generator.uniform(0.1, 0.9)) * step, min_z + (row + generator.uniform(0.1, 0.9)) * step)
+            dominant, accent = zone.colors(point)
+            color = dominant if generator.random() < FLOWER_DOMINANT_SHARE else accent
+            height = generator.uniform(*FLOWER_HEIGHTS)
+            yaw = generator.uniform(0.0, math.pi)
+
+            if zone.test(point) and zone.field_band[0] <= bed_field(point) <= zone.field_band[1] and far_from_all(point, trunks, zone.trunk_clearance):
+                tufts.append((point[0], point[1], color, height, yaw))
+
+    return tufts
+
+
 def grass_tuft_spots() -> list:
     """Seeded scatter of grass tufts over the lawns of both squares, inside the hedges."""
     generator = random.Random(GRASS_SEED)
