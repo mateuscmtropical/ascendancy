@@ -795,6 +795,7 @@ def add_player_and_cameras(scene: SceneWriter) -> None:
         scene.add_node(f"Key{index}", "CinematicTour", "Marker3D", properties={"position": vector(*eye), "rotation": look_rotation(eye, target)})
 
     scene.add_node("CharacterSelect", ".", instance=scene.external_id("PackedScene", "res://features/hub/character_select.tscn"))
+    scene.add_node("FpsCounter", ".", instance=scene.external_id("PackedScene", "res://features/hub/fps_counter.tscn"))
 
 
 def add_environment(scene: SceneWriter) -> None:

@@ -1116,7 +1116,7 @@ def build_statues(materials: dict) -> None:
 
 # ---------- collision ----------
 
-def make_stair_ramp(name: str, width: float, first_step_front: float, step_count: int, tread: float, rise: float, bottom: float) -> None:
+def make_stair_ramp(name: str, width: float, first_step_front: float, step_count: int, tread: float, rise: float, bottom: float, landing_length: float = 0.0) -> None:
     """Ramp collider touching every step nosing (feet never sink into a tread), from the floor one tread
     before the first step up to the last nosing, plus a flat landing over the top tread. The box is built
     at the origin and then placed, so its rotation turns about its own center."""
@@ -1129,7 +1129,7 @@ def make_stair_ramp(name: str, width: float, first_step_front: float, step_count
 
     ramp.location = (0, (ramp_start + ramp_end) / 2.0 + math.sin(slope) * thickness / 2.0, (bottom + ramp_top) / 2.0 - math.cos(slope) * thickness / 2.0)
     ramp.rotation_euler.x = slope
-    make_span(f"{name}Landing-colonly", (-width / 2.0, ramp_end, ramp_top - thickness), (width / 2.0, ramp_end + tread, ramp_top), None)
+    make_span(f"{name}Landing-colonly", (-width / 2.0, ramp_end, ramp_top - thickness), (width / 2.0, ramp_end + (landing_length or tread), ramp_top), None)
 
 
 def build_colliders() -> None:

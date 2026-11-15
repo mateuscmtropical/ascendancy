@@ -20,6 +20,10 @@ const CURB_DISTANCE: float = 4.0
 const CATHEDRAL_STAIRS_START: Vector3 = Vector3(11, 0.1, -1.5)
 const NAVE_FLOOR_HEIGHT: float = 1.05
 const NAVE_ENTRANCE_X: float = 21.0
+## Pé da escada do coreto; a escada sobe para -X.
+const CORETO_STAIRS_START: Vector3 = Vector3(-41.5, 0.1, -12.0)
+const CORETO_FLOOR_HEIGHT: float = 1.2
+const CORETO_FLOOR_X: float = -47.0
 
 var _hub: Node3D
 
@@ -143,6 +147,23 @@ func test_player_climbs_the_cathedral_stairs_into_the_nave() -> void:
 	assert_gt(player.global_position.x, NAVE_ENTRANCE_X, "player walked through the portal")
 	assert_almost_eq(
 		player.global_position.y, NAVE_FLOOR_HEIGHT, 0.05, "player stands on the nave floor"
+	)
+
+
+func test_player_climbs_the_coreto_stairs() -> void:
+	var player: PlayerController = _hub.get_node("Player")
+
+	player.global_position = CORETO_STAIRS_START
+	player.velocity = Vector3.ZERO
+	player.is_input_enabled = true
+	Input.action_press(&"move_back")
+	await wait_physics_frames(110)
+	Input.action_release(&"move_back")
+	player.is_input_enabled = false
+
+	assert_lt(player.global_position.x, CORETO_FLOOR_X, "player reached the bandstand floor")
+	assert_almost_eq(
+		player.global_position.y, CORETO_FLOOR_HEIGHT, 0.05, "player stands on the floor"
 	)
 
 

@@ -22,6 +22,7 @@ const HAIR_BY_CHOICE: Dictionary[CharacterSelect.Choice, Color] = {
 @onready var _character_select: CharacterSelect = $CharacterSelect
 @onready var _select_camera: Camera3D = $SelectCamera
 @onready var _cinematic_tour: CinematicTour = $CinematicTour
+@onready var _fps_counter: FpsCounter = $FpsCounter
 
 
 func _ready() -> void:
@@ -65,6 +66,7 @@ func start_playing(choice: CharacterSelect.Choice) -> void:
 ## Esconde a interface e trava o jogador; a câmera fica com quem chamou (tour, vídeo).
 func show_scenery() -> void:
 	_character_select.hide()
+	_fps_counter.hide()
 	_player.is_input_enabled = false
 
 

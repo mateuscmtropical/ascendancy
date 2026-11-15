@@ -1,7 +1,7 @@
 class_name PlayerController
 extends CharacterBody3D
 ## Personagem do jogador em terceira pessoa: anda relativo à câmera, corpo gira para a direção.
-## Em build de debug, dois toques no pulo ligam o voo livre (atravessa paredes) para explorar a cidade.
+## Em build de debug, dois toques no pulo ligam o voo livre (atravessa paredes).
 
 enum Stance { IDLE, WALK, RUN, SPRINT, AIRBORNE, HOVER, FLY }
 

@@ -26,6 +26,7 @@ from build_cathedral import (  # noqa: E402
     make_box,
     make_cone,
     make_span,
+    make_stair_ramp,
     make_cylinder,
     make_material,
     make_plain_material,
@@ -204,7 +205,8 @@ def build_small_fountain(materials: dict) -> None:
     make_frustum("Bowl", 1.35, 0.22, 0.8, 0.3, 16, materials["trim"])
     make_cylinder("Water", (0, 0, 1.55), 0.72, 0.08, 16, materials["water"])
     make_cone("Finial", (0, 0, 1.65), 0.12, 0.45, 10, materials["trim"])
-    make_cylinder("Fountain-colonly", (0, 0, 0), 2.1, 1.0, 8, None).rotation_euler.z = math.pi / 8.0
+    # Taller than a jump so nobody ends up standing in the jets.
+    make_cylinder("Fountain-colonly", (0, 0, 0), 2.1, 2.6, 8, None).rotation_euler.z = math.pi / 8.0
 
 
 def build_lamp_post(materials: dict) -> None:
@@ -316,9 +318,8 @@ def build_coreto_stairs(platform_height: float, apothem: float, materials: dict)
         make_sphere(f"CheekFinial{side_sign:+d}", (cheek_x, -apothem - run + 0.05, platform_height * 0.55 + 0.26), 0.2, materials["trim"])
         make_span(f"Cheek{side_sign:+d}-colonly", (cheek_x - 0.26, -apothem - run - 0.3, 0.0), (cheek_x + 0.26, -apothem + 0.2, platform_height + 0.1), None)
 
-    stairs = make_box("Stairs-colonly", (0, 0, 0), (stair_width, math.hypot(run, platform_height), 0.1), None)
-    stairs.location = (0, -apothem - run / 2.0, platform_height / 2.0 - 0.05)
-    stairs.rotation_euler.x = math.atan2(platform_height, run)
+    # Landing runs past the platform collider's edge so the top step joins the floor without a lip.
+    make_stair_ramp("Stairs", stair_width, -apothem - run, step_count, step_tread, step_rise, 0.0, landing_length=step_tread + 0.5)
 
 
 def build_coreto(materials: dict) -> None:

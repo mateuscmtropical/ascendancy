@@ -31,7 +31,8 @@
 				20,
 				21,
 				22,
-				23
+				23,
+				24
 			]
 		}
 	],
@@ -233,9 +234,13 @@
 			],
 			"translation":[
 				0,
-				0.550000011920929,
-				4.608354091644287
+				0.5553539395332336,
+				4.925843715667725
 			]
+		},
+		{
+			"mesh":24,
+			"name":"StairsLanding-colonly"
 		}
 	],
 	"materials":[
@@ -604,6 +609,18 @@
 					"attributes":{
 						"POSITION":59,
 						"NORMAL":60
+					},
+					"indices":2
+				}
+			]
+		},
+		{
+			"name":"StairsLanding-colonly",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":61,
+						"NORMAL":62
 					},
 					"indices":2
 				}
@@ -1274,6 +1291,28 @@
 			"componentType":5126,
 			"count":24,
 			"type":"VEC3"
+		},
+		{
+			"bufferView":61,
+			"componentType":5126,
+			"count":24,
+			"max":[
+				1.149999976158142,
+				1.1999999284744263,
+				3.758354425430298
+			],
+			"min":[
+				-1.149999976158142,
+				1.100000023841858,
+				2.9183542728424072
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":62,
+			"componentType":5126,
+			"count":24,
+			"type":"VEC3"
 		}
 	],
 	"bufferViews":[
@@ -1642,6 +1681,18 @@
 			"byteLength":288,
 			"byteOffset":657344,
 			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":288,
+			"byteOffset":657632,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":288,
+			"byteOffset":657920,
+			"target":34962
 		}
 	],
 	"samplers":[
@@ -1652,7 +1703,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":657632,
+			"byteLength":658208,
 			"uri":"coreto.bin"
 		}
 	]
