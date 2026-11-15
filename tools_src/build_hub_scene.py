@@ -285,7 +285,7 @@ BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
     (4, 64, -96, -66, "S"),
     (72, 102, -96, -66, "S"),
     (-102, -72, -48, 48, "E"),  # quadra oeste = biblioteca, escola e seminário, de frente para a catedral
-    (72, 102, -48, 48, "WNS"),
+    (72, 102, -48, 48, ""),  # quadra leste, atrás da abside = fazenda (FARM_*): sem fileira de casas
     (-102, -72, 58, 88, "NE"),
     (-64, -4, 58, 88, "NWE"),  # fileira sul = residencial
     (4, 64, 58, 88, "NWE"),
@@ -457,14 +457,16 @@ def grounded(x: float, z: float) -> tuple:
 
 
 def add_town_wall(scene: SceneWriter) -> None:
-    """Stone wall around the city: closes the street ends and keeps the player inside."""
-    thickness = 1.2
+    """Stone wall around the city: closes the street ends and keeps the player inside; the farm lane leaves through
+    a gap in the east wall into the fenced fields."""
+    thickness = TOWN_WALL_THICKNESS
     height = 4.5
     walls = [
         ("North", ((CITY_MIN[0] + CITY_MAX[0]) / 2.0, CITY_MIN[1] - thickness / 2.0), (CITY_MAX[0] - CITY_MIN[0] + 2 * thickness, thickness)),
         ("South", ((CITY_MIN[0] + CITY_MAX[0]) / 2.0, CITY_MAX[1] + thickness / 2.0), (CITY_MAX[0] - CITY_MIN[0] + 2 * thickness, thickness)),
         ("West", (CITY_MIN[0] - thickness / 2.0, (CITY_MIN[1] + CITY_MAX[1]) / 2.0), (thickness, CITY_MAX[1] - CITY_MIN[1])),
-        ("East", (CITY_MAX[0] + thickness / 2.0, (CITY_MIN[1] + CITY_MAX[1]) / 2.0), (thickness, CITY_MAX[1] - CITY_MIN[1])),
+        ("EastNorth", (CITY_MAX[0] + thickness / 2.0, (CITY_MIN[1] + FARM_GATE_Z[0]) / 2.0), (thickness, FARM_GATE_Z[0] - CITY_MIN[1])),
+        ("EastSouth", (CITY_MAX[0] + thickness / 2.0, (FARM_GATE_Z[1] + CITY_MAX[1]) / 2.0), (thickness, CITY_MAX[1] - FARM_GATE_Z[1])),
     ]
 
     scene.add_node("TownWall", ".", "StaticBody3D", groups=[NAVIGATION_SOURCE_GROUP])
@@ -522,6 +524,37 @@ def add_buildings(scene: SceneWriter) -> None:
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     add_town_lots(scene, lots)
+
+
+# ---------- farm: block 5 behind the apse and the fields beyond the east wall ----------
+
+FARM_BLOCK = 5
+FARM_YARD = (75.0, CITY_MAX[0], -45.0, 45.0)  # x e z: a quadra menos as calçadas oeste, norte e sul
+TOWN_WALL_THICKNESS = 1.2
+FARM_FIELDS = (CITY_MAX[0] + TOWN_WALL_THICKNESS, 150.0, -46.0, 46.0)  # campo aberto além do muro leste
+FARM_GATE_Z = (-3.0, 3.0)  # vão no muro leste por onde a estradinha da fazenda sai para o campo
+FARM_LANE_HALF_WIDTH = 2.0
+FARMHOUSE = {"position": (FARM_YARD[0] + 1.5, 0.0, -37.0), "rotation": SIDE_ROTATION["W"], "width": 12.0, "depth": 10.0}  # de frente para a abside
+BARN = {"position": (94.5, 0.0, -27.0), "rotation": 0.0, "width": 13.0, "depth": 15.0}  # portões para o terreiro (+z)
+FARM_PENS = {  # cercado -> (min x, max x, min z, max z) por dentro da cerca
+    "cows": (77.0, 100.5, 4.0, 28.0),
+    "pigs": (85.0, 100.5, 31.0, 43.5),
+}
+FARM_ANIMAL_MARGIN = 1.5  # bicho anda num retângulo afastado da cerca
+FARM_ANIMALS = {  # cercado -> (modelo convertido por convert_farm_animals.py, quantos, velocidade em m/s)
+    "cows": ("res://art/town/farm/animals/cow.gltf", 4, 0.55),
+    "pigs": ("res://art/town/farm/animals/pig.gltf", 5, 0.5),
+}
+FARM_ANIMAL_SEED = 5150
+FARM_FIELD_PLOTS = {  # canteiro -> (cultura, min x, max x, min z, max z): fileiras correm ao longo de x
+    "WheatNorth": ("wheat", 106.0, 146.0, -44.0, -26.0),
+    "Corn": ("corn", 106.0, 126.0, -22.0, -4.0),
+    "CabbageNorth": ("cabbage", 129.0, 146.0, -22.0, -4.0),
+    "Carrot": ("carrot", 106.0, 124.0, 4.0, 20.0),
+    "WheatSouth": ("wheat", 127.0, 146.0, 4.0, 20.0),
+    "Meadow": ("meadow", 106.0, 146.0, 24.0, 44.0),
+}
+KITCHEN_GARDEN = ("garden", 77.0, 86.0, -28.5, -20.0)  # horta ao lado da casa do fazendeiro
 
 
 # ---------- town plan: lots, archetypes and shops (seções C e D) ----------
@@ -664,12 +697,12 @@ def lot_frame(facade: float, along: float, axis: str, side: str) -> tuple:
 
 def town_lots() -> list:
     """Every lot of the town rows: dicts with model, kind, width, depth, position, rotation, side and corner flag."""
-    generator = random.Random(TOWN_SEED)
     usage = {}
     lots = []
 
     for block_index, block in enumerate(BLOCKS):
         street_sides = block[4]
+        generator = random.Random(TOWN_SEED * 100 + block_index)  # sub-seed por quadra: mudar uma não embaralha as outras
 
         for side_index, side in enumerate(street_sides):
             facade, run_start, run_end, axis = trimmed_run(block, side, street_sides[:side_index])
@@ -1249,6 +1282,11 @@ def place_plants(scene: SceneWriter, kind: str, spots: list, name: str) -> None:
 BACKYARD_SHIFT = 4.5  # do centro da quadra para longe da fileira principal (lotes de 12 m chegam ao centro)
 
 
+def house_blocks() -> list:
+    """Blocks with rows of buildings (the farm block has none)."""
+    return [block for block in BLOCKS if block[4]]
+
+
 def backyard_spot(block: tuple) -> tuple:
     """Old tree in the middle of a block's back yards, clear of the 12 m lots: pushed away from the main row,
     and on corner blocks (two rows) away from both."""
@@ -1267,7 +1305,7 @@ def add_trees(scene: SceneWriter) -> None:
     palms = palm_spots(old_trees)
     median = [(x, MEDIAN_BEDS[0][0][1] + 1.5) for x in range(-88, 89, 16) if abs(x) > MEDIAN_NOSE_X + 2.0]
     shop_rectangles = [lot_rectangle(lot) for lot in town_lots() if lot.get("shop")]
-    backyards = [spot for spot in map(backyard_spot, BLOCKS) if all(rectangle_distance(rectangle, spot) > 5.0 for rectangle in shop_rectangles)]
+    backyards = [spot for spot in map(backyard_spot, house_blocks()) if all(rectangle_distance(rectangle, spot) > 5.0 for rectangle in shop_rectangles)]
 
     assert all(bed_field(spot) >= PLANT_CLEARANCE for spot in old_trees + bloom_trees + palms), "tronco fora do canteiro"
 
@@ -1361,16 +1399,140 @@ def add_market(scene: SceneWriter) -> None:
 
 
 def add_backdrop(scene: SceneWriter) -> None:
+    """Pine belt around the town wall and around the farm fields beyond it."""
     margin = 14.0
-    north_south = [(x, z) for x in range(int(CITY_MIN[0]) - 10, int(CITY_MAX[0]) + 11, 14) for z in (CITY_MIN[1] - margin, CITY_MAX[1] + margin)]
-    west_east = [(x, z) for z in range(int(CITY_MIN[1]), int(CITY_MAX[1]) + 1, 14) for x in (CITY_MIN[0] - margin, CITY_MAX[0] + margin)]
+    far_east = FARM_FIELDS[1] + margin - 2.0
+    north_south = [(x, z) for x in range(int(CITY_MIN[0]) - 10, int(far_east) + 1, 14) for z in (CITY_MIN[1] - margin, CITY_MAX[1] + margin)]
+    west_east = [(x, z) for z in range(int(CITY_MIN[1]), int(CITY_MAX[1]) + 1, 14) for x in (CITY_MIN[0] - margin, CITY_MAX[0] + margin, far_east)]
+    fields_clearance = (FARM_FIELDS[0] - 4.0, FARM_FIELDS[1] + 6.0, FARM_FIELDS[2] - 6.0, FARM_FIELDS[3] + 6.0)
+    pines = [spot for spot in north_south + west_east if rectangle_distance(fields_clearance, spot) > 0.0]
 
     shadowless_script = scene.external_id("Script", "res://features/hub/shadowless_group.gd")
 
     scene.add_node("Backdrop", ".", "Node3D", properties={"script": f'ExtResource("{shadowless_script}")'})
 
-    for index, (x, z) in enumerate(north_south + west_east):
+    for index, (x, z) in enumerate(pines):
         place(scene, f"Pine{index:02d}", "Backdrop", f"res://art/nature/Pine_{index % 3 + 1}.gltf", (x, 0, z), rotation_y=index * 0.5, scale=1.6 + 0.2 * (index % 3))
+
+
+# ---------- farm ----------
+
+FARM_MODELS = ("farm_yard", "farm_fields")
+FARMHANDS = {  # nome -> (corpo, cabelo, posição, para onde olha, animação)
+    "Farmer": ("villager_male", "brown", (86.4, -15.0), (88.0, -15.0), "ual1/Idle"),
+    "Milkmaid": ("villager_female", "blond", (88.0, 3.2), (88.0, 8.0), "ual1/Idle_Talking"),
+    "Swineherd": ("villager_male", "grey", (90.0, 30.2), (93.0, 36.0), "ual2/Idle_FoldArms"),
+}
+FARM_ANIMAL_BODY = {"cows": (0.9, 1.4, 2.2), "pigs": (0.6, 0.8, 1.2)}
+CARRIAGE_HORSE = "res://art/town/farm/animals/horse.gltf"
+CARRIAGE_WAGONS = ("res://art/town/farm/farm_wagon.gltf", "res://art/town/farm/hay_cart.gltf")
+CARRIAGE_SPEED = 1.3
+CARRIAGE_CORNER_RADIUS = 6.0
+STREET_LOOP = [  # pista das carroças pelas ruas rebaixadas: mão direita, contorna a rotatória pelo norte
+    (-68.0, 53.0), (68.0, 53.0), (68.0, -63.0), (12.0, -63.0), (6.0, -64.6), (0.0, -65.2), (-6.0, -64.6), (-12.0, -63.0), (-68.0, -63.0),
+]
+
+
+def model_exists(model: str) -> bool:
+    return (PROJECT_DIR / model.removeprefix("res://")).exists()
+
+
+def add_farm(scene: SceneWriter) -> None:
+    """Farmhouse, barn, the yard and the fields (build_farm.py), the people who work there and, once
+    convert_farm_animals.py has run, the cows and pigs wandering in their pens."""
+    scene.add_node("Farm", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
+    place(scene, "Farmhouse", "Farm", "res://art/town/farm/farmhouse.gltf", FARMHOUSE["position"], FARMHOUSE["rotation"])
+    place(scene, "Barn", "Farm", "res://art/town/farm/barn.gltf", BARN["position"], BARN["rotation"])
+
+    for model in FARM_MODELS:
+        place(scene, model.title().replace("_", ""), "Farm", f"res://art/town/farm/{model}.gltf", (0.0, 0.0, 0.0))
+
+    for name, (body, hair, position, target, animation) in FARMHANDS.items():
+        npc(scene, name, body, hair, stand(position, facing_yaw(position, target), animation, 0.0, height=0.03))
+
+    add_farm_animals(scene)
+
+
+def add_farm_animals(scene: SceneWriter) -> None:
+    script = scene.external_id("Script", "res://features/hub/farm_animal.gd")
+    generator = random.Random(FARM_ANIMAL_SEED)
+    herds = [(pen, model, count, speed) for pen, (model, count, speed) in FARM_ANIMALS.items() if model_exists(model)]
+
+    if len(herds) < len(FARM_ANIMALS):
+        print("AVISO: bichos da fazenda ausentes; rode tools_src/convert_farm_animals.py no Blender")
+
+    for pen, model, count, speed in herds:
+        min_x, max_x, min_z, max_z = FARM_PENS[pen]
+        area = (min_x + FARM_ANIMAL_MARGIN, min_z + FARM_ANIMAL_MARGIN, max_x - min_x - 2.0 * FARM_ANIMAL_MARGIN, max_z - min_z - 2.0 * FARM_ANIMAL_MARGIN)
+        model_id = scene.external_id("PackedScene", model)
+
+        for index in range(count):
+            x, z = generator.uniform(area[0], area[0] + area[2]), generator.uniform(area[1], area[1] + area[3])
+            scene.add_node(f"{pen.title()}{index}", "Farm", "AnimatableBody3D", properties={
+                "position": vector(x, 0.03, z),
+                "rotation": vector(0.0, generator.uniform(-math.pi, math.pi), 0.0),
+                "collision_layer": "4",
+                "collision_mask": "0",
+                "script": f'ExtResource("{script}")',
+                "model_scene": f'ExtResource("{model_id}")',
+                "pen": f"Rect2({area[0]:.2f}, {area[1]:.2f}, {area[2]:.2f}, {area[3]:.2f})",
+                "walk_speed": f"{speed}",
+                "wander_seed": f"{generator.randrange(1, 1 << 30)}",
+                "body_size": vector(*FARM_ANIMAL_BODY[pen]),
+            })
+
+
+def rounded_loop(corners: list, radius: float, steps: int = 4) -> list:
+    """Closed polyline with every corner replaced by a short arc (quadratic curve between the two tangent points)."""
+    points = []
+
+    for index, corner in enumerate(corners):
+        before, after = corners[index - 1], corners[(index + 1) % len(corners)]
+        reach = min(radius, distance(before, corner) / 2.0, distance(corner, after) / 2.0)
+        entry = toward(corner, before, reach)
+        leave = toward(corner, after, reach)
+        points += [quadratic_point(entry, corner, leave, step / steps) for step in range(steps + 1)]
+
+    return points
+
+
+def toward(origin: tuple, target: tuple, reach: float) -> tuple:
+    length = max(distance(origin, target), 1e-6)
+
+    return origin[0] + (target[0] - origin[0]) * reach / length, origin[1] + (target[1] - origin[1]) * reach / length
+
+
+def quadratic_point(start: tuple, control: tuple, end: tuple, amount: float) -> tuple:
+    rest = 1.0 - amount
+
+    return tuple(rest * rest * start[axis] + 2.0 * rest * amount * control[axis] + amount * amount * end[axis] for axis in range(2))
+
+
+def add_carriages(scene: SceneWriter) -> None:
+    """Horse-drawn wagons rolling slowly round the street loop, half a lap apart."""
+    script = scene.external_id("Script", "res://features/hub/carriage.gd")
+    route = rounded_loop(STREET_LOOP, CARRIAGE_CORNER_RADIUS)
+    route_text = ", ".join(f"{x:.2f}, {-STREET_DROP}, {z:.2f}" for x, z in route)
+    lap = sum(distance(route[index - 1], route[index]) for index in range(len(route)))
+    models = [CARRIAGE_HORSE, *CARRIAGE_WAGONS]
+
+    if not all(model_exists(model) for model in models):
+        print("AVISO: carroças fora da cena até existirem o cavalo (convert_farm_animals.py) e as carroças (build_farm.py)")
+        return
+
+    scene.add_node("Carriages", ".", "Node3D")
+
+    for index, wagon in enumerate(CARRIAGE_WAGONS):
+        scene.add_node(f"Carriage{index}", "Carriages", "AnimatableBody3D", properties={
+            "collision_layer": "4",
+            "collision_mask": "0",
+            "script": f'ExtResource("{script}")',
+            "wagon_scene": f'ExtResource("{scene.external_id("PackedScene", wagon)}")',
+            "horse_scene": f'ExtResource("{scene.external_id("PackedScene", CARRIAGE_HORSE)}")',
+            "route": f"PackedVector3Array({route_text})",
+            "speed": f"{CARRIAGE_SPEED}",
+            "start_distance": f"{lap * index / len(CARRIAGE_WAGONS):.2f}",
+        })
 
 
 # ---------- townsfolk ----------
@@ -1541,6 +1703,8 @@ def build_hub_scene() -> str:
     add_market(scene)
     add_backdrop(scene)
     add_townsfolk(scene, benches)
+    add_farm(scene)
+    add_carriages(scene)
     add_player_and_cameras(scene)
 
     return scene.render()
