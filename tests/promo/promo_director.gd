@@ -114,11 +114,11 @@ const SHOTS: Array[Dictionary] = [
 	{
 		"kind": ShotKind.FLY,
 		"seconds": 4.5,
-		"caption": "Quarteirões de casarões ao redor",
-		"eye_from": Vector3(60, 24, 80),
-		"eye_to": Vector3(92, 18, 22),
-		"look_from": Vector3(40, 0, 30),
-		"look_to": Vector3(30, 2, 0),
+		"caption": "Ferreiro, armeiro, magia e taverna ao redor da praça",
+		"eye_from": Vector3(-68, 2.2, 22),
+		"eye_to": Vector3(-68, 1.9, -10),
+		"look_from": Vector3(-75, 2.2, 15),
+		"look_to": Vector3(-75, 2.0, -17),
 	},
 	{
 		"kind": ShotKind.CHARACTER_SELECT,

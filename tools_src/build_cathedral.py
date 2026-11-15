@@ -230,7 +230,7 @@ def make_glow(name: str, color: tuple, strength: float):
 def build_materials() -> dict:
     # Stone and trim textures are also loaded by build_plaza_props.py.
     stone_image = make_tinted_image("T_Brick_BaseColor.png", "T_CathedralStone_BaseColor", (1.08, 1.06, 1.0), (0.09, 0.08, 0.06))
-    trim_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralTrim_BaseColor", (1.0, 1.0, 1.0), (0.08, 0.08, 0.08))
+    trim_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralTrim_BaseColor", (1.04, 1.0, 0.9), (0.1, 0.09, 0.06))
     wall_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralWall_BaseColor", (1.0, 0.97, 0.9), (0.17, 0.16, 0.14))
     roof_image = make_tinted_image("T_RoundTiles_BaseColor.png", "T_CathedralRoof_BaseColor", (1.15, 0.62, 0.48), (0.08, 0.02, 0.0))
     plaster_normal = load_kit_image("T_Plaster_Normal.png", False)
@@ -249,8 +249,8 @@ def build_materials() -> dict:
         "roof": make_material("M_CathedralRoof", roof_image, load_kit_image("T_RoundTiles_Normal.png", False)),
         "floor": make_material("M_CathedralFloor", make_floor_image()),
         "glass": make_material("M_StainedGlass", make_stained_glass_image(), emission=1.2),
-        "gold": make_plain_material("M_Gold", (0.95, 0.72, 0.28), 0.55, 0.35),
-        "marble": make_plain_material("M_Marble", (0.93, 0.91, 0.88), 0.0, 0.35),
+        "gold": make_plain_material("M_Gold", (0.92, 0.68, 0.26), 0.3, 0.4),
+        "marble": make_plain_material("M_Marble", (0.66, 0.62, 0.55), 0.0, 0.6),
         "paint_red": make_plain_material("M_PaintRed", (0.6, 0.18, 0.14), 0.0, 0.8),
         "paint_ochre": make_plain_material("M_PaintOchre", (0.82, 0.6, 0.28), 0.0, 0.8),
         "slit_glass": make_plain_material("M_SlitGlass", (0.08, 0.12, 0.25), 0.2, 0.15),
