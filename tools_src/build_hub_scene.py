@@ -937,7 +937,8 @@ SHOPKEEPERS = {  # loja -> (corpo, cabelo, animação) do lojista atrás do balc
     "bookshop": ("villager_female", "dark", "ual1/Idle"),
     "herbalist": ("villager_female", "auburn", "ual1/Idle"),
 }
-SHOP_SIGN_OFFSET = 1.4  # da borda da porta até o braço da placa, na fachada
+SHOP_SIGN_SCALE = 1.6  # as placas foram feitas para fachadas de 8 m
+SHOP_SIGN_OFFSET = 0.45  # da borda da porta até o braço da placa, no pilar entre a porta e a primeira vitrine
 
 
 def lot_to_world(lot: dict, point: tuple) -> tuple:
@@ -984,7 +985,7 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
     place(scene, "Building", f"Shops/{shop_name}", lot["model"], (0.0, 0.0, 0.0))
 
     if (PROJECT_DIR / sign_model.removeprefix("res://")).exists():
-        place(scene, "Sign", f"Shops/{shop_name}", sign_model, (sign_x, 0.0, 0.0))
+        place(scene, "Sign", f"Shops/{shop_name}", sign_model, (sign_x, 0.0, 0.0), scale=SHOP_SIGN_SCALE)
 
     if interior_sidecar:
         scene.add_node("Interior", f"Shops/{shop_name}", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
@@ -1664,7 +1665,40 @@ def build_hub_scene() -> str:
     return scene.render()
 
 
+SHOP_SHOTS_PATH = PROJECT_DIR / "tests" / "shots" / "shop_shots.tscn"
+SHOP_SHOT_VIEWS = {  # sufixo -> (olho, alvo) em coordenadas do lote: x ao longo da fachada, z > 0 = rua, z < 0 = dentro
+    "Front": ((6.0, 1.6, 16.0), (0.0, 4.0, 0.0)),
+    "Door": ((0.0, 1.6, 4.0), (0.0, 1.8, -10.0)),
+    "Inside": ((0.0, 1.6, -1.2), (0.0, 1.4, -12.0)),
+    "Left": ((2.0, 1.6, -9.0), (-12.0, 1.4, -11.0)),
+    "Right": ((-2.0, 1.6, -9.0), (12.0, 1.4, -11.0)),
+    "Back": ((0.0, 1.6, -9.0), (0.0, 1.5, -19.0)),
+    "Out": ((0.0, 1.6, -15.0), (0.0, 1.6, 0.0)),
+    "Top": ((0.0, 30.0, -9.5), (0.0, 0.0, -9.6)),
+}
+
+
+def build_shop_shots() -> str:
+    """Shot scene with the same views of every shop, at the player's eye height (tools_src/shot.sh <Type><View>)."""
+    scene = SceneWriter()
+    capture = scene.external_id("Script", "res://tests/shots/shot_capture.gd")
+    shops = [lot for lot in town_lots() if lot.get("shop")]
+
+    scene.add_node("ShopShots", None, "Node3D")
+    scene.add_node("Hub", ".", instance=scene.external_id("PackedScene", "res://features/hub/hub.tscn"))
+    scene.add_node("ShotCapture", ".", "Node", properties={"script": f'ExtResource("{capture}")', "seconds_before_capture": "3.0"})
+
+    for lot, (view, (eye, target)) in itertools.product(shops, SHOP_SHOT_VIEWS.items()):
+        door_x = model_sidecar(lot["model"]).get("doors", [{"x": 0.0}])[0]["x"] if view in ("Door", "Inside") else 0.0
+        world_eye = lot_to_world(lot, (eye[0] + door_x, eye[1], eye[2]))
+        world_target = lot_to_world(lot, (target[0] + door_x, target[1], target[2]))
+        scene.add_node(f"{lot['shop'].title()}{view}", ".", "Camera3D", properties={"position": vector(*world_eye), "rotation": look_rotation(world_eye, world_target), "fov": "75.0", "far": "400.0"})
+
+    return scene.render()
+
+
 if __name__ == "__main__":
+    SHOP_SHOTS_PATH.write_text(build_shop_shots(), encoding="utf-8", newline="\n")
     if not NAVMESH_PATH.exists():  # placeholder until tools_src/bake_hub_navmesh.gd bakes the real one
         NAVMESH_PATH.write_text('[gd_resource type="NavigationMesh" format=3]\n\n[resource]\n', encoding="utf-8", newline="\n")
 
