@@ -18,11 +18,14 @@ const HAIR_BY_CHOICE: Dictionary[CharacterSelect.Choice, Color] = {
 	CharacterSelect.Choice.FEMALE: Color(0.62, 0.36, 0.2),
 }
 
+var _shader_sun_direction: Vector3 = Vector3.ZERO
+
 @onready var _player: PlayerController = $Player
 @onready var _character_select: CharacterSelect = $CharacterSelect
 @onready var _select_camera: Camera3D = $SelectCamera
 @onready var _cinematic_tour: CinematicTour = $CinematicTour
 @onready var _fps_counter: FpsCounter = $FpsCounter
+@onready var _sun: DirectionalLight3D = $Sun
 
 
 func _ready() -> void:
@@ -44,6 +47,17 @@ func _ready() -> void:
 		return
 
 	open_character_select()
+
+
+## Feixes dos vitrais (art/shaders/light_shaft.gdshader) seguem o sol: o shader lê a direção dele.
+func _process(_delta: float) -> void:
+	var sun_direction: Vector3 = -_sun.global_basis.z
+
+	if sun_direction.is_equal_approx(_shader_sun_direction):
+		return
+
+	_shader_sun_direction = sun_direction
+	RenderingServer.global_shader_parameter_set(&"sun_direction", sun_direction)
 
 
 func open_character_select() -> void:

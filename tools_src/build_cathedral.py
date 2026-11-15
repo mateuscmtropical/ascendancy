@@ -2082,9 +2082,7 @@ SHAFT_COLORS = {  # material dos vitrais -> cor do feixe de luz que ele joga na 
     "M_OculusGlass": (1.0, 0.86, 0.5),
     "M_StainedGlass": (1.0, 0.7, 0.45),
 }
-SHAFT_ELEVATION = math.radians(38.0)  # feixe desce como o sol da praça
-SHAFT_MAX_LENGTH = 18.0
-SHAFT_APSE_MAX_LENGTH = 6.5  # os vitrais da abside miram todos o altar: curtos, para não somarem uma névoa branca nele
+SHAFT_REFERENCE_LENGTH = 12.0  # ponta provisória; o shader refaz o feixe na direção do sol (igual a reference_length)
 SHAFT_SHRINK = 0.85  # o feixe sai um pouco menor que a janela (borda de chumbo e moldura)
 
 
@@ -2094,8 +2092,11 @@ def shaft_color(material_name: str) -> tuple:
     return SHAFT_COLORS[prefixes[0]] if prefixes else None
 
 
-def add_light_shaft(shaft_bmesh, color_layer, uv_layer, glass) -> None:
-    """Slanted prism from the glass pane into the church, down toward the floor; UV u across each side, v along the beam."""
+def add_light_shaft(shaft_bmesh, color_layer, uv_layer, vertex_normals: list, glass) -> None:
+    """Prism from the glass pane straight into the church; UV u across each side, v along the beam.
+
+    Every vertex carries the pane's inward normal: art/shaders/light_shaft.gdshader turns the prism
+    toward the scene's sun, down to the floor, and lights only panes facing the sun."""
     corners_world = [glass.matrix_world @ vertex.co for vertex in glass.data.vertices]
     center = sum(corners_world, Vector()) / len(corners_world)
     widest_face = max(glass.data.polygons, key=lambda polygon: polygon.area)
@@ -2105,21 +2106,20 @@ def add_light_shaft(shaft_bmesh, color_layer, uv_layer, glass) -> None:
     tangent = inward.cross(Vector((0.0, 0.0, 1.0))).normalized()
     half_width = SHAFT_SHRINK * max(abs((corner - center).dot(tangent)) for corner in corners_world)
     half_height = SHAFT_SHRINK * max(abs(corner.z - center.z) for corner in corners_world)
-    direction = (inward * math.cos(SHAFT_ELEVATION) - Vector((0.0, 0.0, 1.0)) * math.sin(SHAFT_ELEVATION)).normalized()
-    max_length = SHAFT_APSE_MAX_LENGTH if center.y > BODY_LENGTH else SHAFT_MAX_LENGTH
-    length = min(max_length, (center.z - BASE) / math.sin(SHAFT_ELEVATION))
     start = center + inward * 0.08
     near = [start + tangent * side_u * half_width + Vector((0.0, 0.0, side_z * half_height)) for side_u, side_z in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-    far = [corner + direction * length for corner in near]
+    far = [corner + inward * SHAFT_REFERENCE_LENGTH for corner in near]
     color = (*shaft_color(glass.data.materials[0].name), 1.0)
     near_verts = [shaft_bmesh.verts.new(corner) for corner in near]
     far_verts = [shaft_bmesh.verts.new(corner) for corner in far]
+    vertex_normals.extend([tuple(inward)] * (len(near_verts) + len(far_verts)))
 
     for side in range(4):
         following = (side + 1) % 4
         face = shaft_bmesh.faces.new([near_verts[side], near_verts[following], far_verts[following], far_verts[side]])
 
-        for loop, uv in zip(face.loops, ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0))):
+        # glTF vira o V: v = 1 no vidro aqui chega no Godot como UV.y = 0 (boca do feixe).
+        for loop, uv in zip(face.loops, ((0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0))):
             loop[uv_layer].uv = uv
             loop[color_layer] = color
 
@@ -2135,11 +2135,13 @@ def build_light_shafts() -> None:
     uv_layer = shaft_bmesh.loops.layers.uv.verify()
     color_layer = shaft_bmesh.loops.layers.color.new("Color")
     glass_panes = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and scene_object.data.materials and shaft_color(scene_object.data.materials[0].name)]
+    vertex_normals = []
 
     for glass in glass_panes:
-        add_light_shaft(shaft_bmesh, color_layer, uv_layer, glass)
+        add_light_shaft(shaft_bmesh, color_layer, uv_layer, vertex_normals, glass)
 
     shafts = object_from_bmesh("LightShafts", shaft_bmesh, material)
+    shafts.data.normals_split_custom_set_from_vertices(vertex_normals)
     shafts["keep_uvs"] = True
 
 
