@@ -776,7 +776,7 @@ def add_townsfolk(scene: SceneWriter, benches: list) -> None:
 
 def add_player_and_cameras(scene: SceneWriter) -> None:
     spawn_x, spawn_z = PLAYER_SPAWN
-    select_eye = (spawn_x + 4.4, 1.35, spawn_z + 0.8)
+    select_eye = (spawn_x + 4.4, 1.35, spawn_z - 1.2)
     tour = [
         ((-90, 28, -30), (18, 8, 0)),
         ((-24, 2.6, 9), (-34, 2.2, 0)),

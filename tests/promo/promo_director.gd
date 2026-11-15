@@ -130,7 +130,7 @@ const SHOTS: Array[Dictionary] = [
 		"seconds": 8.0,
 		"caption": "Explore a cidade em terceira pessoa",
 		"jog_seconds": 3.0,
-		"sprint_seconds": 3.5,
+		"sprint_seconds": 3.0,
 	},
 	{
 		"kind": ShotKind.ORBIT,
@@ -235,10 +235,9 @@ func _show_character_select(shot: Dictionary) -> void:
 func _play_as_adventuress(shot: Dictionary) -> void:
 	var standing_seconds: float = shot.seconds - shot.jog_seconds - shot.sprint_seconds
 
-	# Diagonal pelo gramado: caminho livre de arbustos e árvores a partir do coreto.
+	# Reto do pé da escada do coreto rumo à catedral: caminho livre de arbustos e árvores.
 	hub.start_playing(CharacterSelect.Choice.FEMALE)
 	Input.action_press(&"move_forward")
-	Input.action_press(&"move_left")
 	await get_tree().create_timer(shot.jog_seconds).timeout
 
 	Input.action_press(&"sprint")
@@ -246,7 +245,6 @@ func _play_as_adventuress(shot: Dictionary) -> void:
 
 	Input.action_release(&"sprint")
 	Input.action_release(&"move_forward")
-	Input.action_release(&"move_left")
 	await get_tree().create_timer(standing_seconds).timeout
 
 

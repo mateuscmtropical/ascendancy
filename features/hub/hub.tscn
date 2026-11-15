@@ -4824,8 +4824,8 @@ position = Vector3(-42.400, 0.000, -12.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
 [node name="SelectCamera" type="Camera3D" parent="."]
-position = Vector3(-38.000, 1.350, -11.200)
-rotation = Vector3(-0.122, 1.391, 0.000)
+position = Vector3(-38.000, 1.350, -13.200)
+rotation = Vector3(-0.120, 1.837, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
