@@ -4,8 +4,9 @@ name on the floor and a 1.7 m human ruler per row, seen in 3/4 from the customer
 Usage:
   blender -b --factory-startup -P tools_src/build_prop_sheet.py -- <module> [<module> ...] --out <sheet.png>
       [--only name,name] [--columns 6] [--size 2400x1600]
-Props that declare "variants" get one copy per variant. Also prints each prop's triangle count and whether
-it stays inside its declared size (OVER means some geometry pokes out of the box).
+Props that declare "variants" get one copy per variant. Ceiling props ("hang": True, z = 0 at the ceiling
+mount, growing down) are lifted so they hang above the floor. Also prints each prop's triangle count and
+whether it stays inside its declared size (OVER means some geometry pokes out of the box).
 """
 
 import importlib
@@ -23,6 +24,7 @@ from build_town_houses import Builder, map_uvs, paint_vertex_colors, srgb  # noq
 CELL_MARGIN = 1.2
 SIZE_TOLERANCE = 0.03
 RULER_HEIGHT = 1.7
+HANG_GAP = 0.3  # ceiling props hang this far above the sheet floor
 
 
 def parse_arguments() -> dict:
@@ -49,13 +51,13 @@ def parse_arguments() -> dict:
 
 
 def sheet_entries(modules: list, only: set) -> list:
-    """(label, build, size, options) for every prop (and variant) of the modules."""
+    """(label, build, size, options, is_hanging) for every prop (and variant) of the modules."""
     entries = []
 
     for module_name in modules:
         props = importlib.import_module(module_name).PROPS
         selected = [(name, spec) for name, spec in props.items() if only is None or name in only]
-        entries += [(f"{name}:{variant}" if variant else name, spec["build"], spec["size"], {"variant": variant} if variant else {}) for name, spec in selected for variant in spec.get("variants", [None])]
+        entries += [(f"{name}:{variant}" if variant else name, spec["build"], spec["size"], {"variant": variant} if variant else {}, spec.get("hang", False)) for name, spec in selected for variant in spec.get("variants", [None])]
 
     return entries
 
@@ -102,12 +104,14 @@ def ruler(b: Builder, x: float, y: float) -> None:
 
 def place_entries(b: Builder, entries: list, columns: int) -> tuple:
     """Builds each entry in its grid cell; returns the sheet extent and the report lines."""
-    cell = max(max(size[0], size[1]) for _, _, size, _ in entries) + CELL_MARGIN
+    cell = max(max(size[0], size[1]) for _, _, size, _, _ in entries) + CELL_MARGIN
     report = []
 
-    for index, (text, build, size, options) in enumerate(entries):
+    for index, (text, build, size, options, is_hanging) in enumerate(entries):
         column, row = index % columns, index // columns
-        origin = (column * cell, -row * cell, 0.0)
+        mount = size[2] + HANG_GAP if is_hanging else 0.0
+        bottom, top = (-size[2], 0.0) if is_hanging else (0.0, size[2])
+        origin = (column * cell, -row * cell, mount)
         before = scene_objects()
         build(b, Matrix.Translation(origin), seed=index + 1, **options)
         added = scene_objects() - before
@@ -121,8 +125,8 @@ def place_entries(b: Builder, entries: list, columns: int) -> tuple:
                 local_maximum[0] <= half[0] + SIZE_TOLERANCE,
                 local_minimum[1] >= -half[1] - SIZE_TOLERANCE,
                 local_maximum[1] <= half[1] + SIZE_TOLERANCE,
-                local_minimum[2] >= -SIZE_TOLERANCE,
-                local_maximum[2] <= size[2] + SIZE_TOLERANCE,
+                local_minimum[2] >= bottom - SIZE_TOLERANCE,
+                local_maximum[2] <= top + SIZE_TOLERANCE,
             ]
         )
         extent = tuple(round(local_maximum[axis] - local_minimum[axis], 2) for axis in range(3))
