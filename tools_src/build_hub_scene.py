@@ -871,10 +871,13 @@ def check_town_plan(lots: list) -> None:
     in_roundabout = [index for index, rectangle in enumerate(rectangles) if rectangle_distance(rectangle, ROUNDABOUT) < ROUNDABOUT_OUTER_RADIUS + 0.5]
     sidecars = [(lot, model_sidecar(lot["model"])) for lot in lots]
     outside_lot = [lot["model"] for lot, sidecar in sidecars if sidecar and not rectangle_inside(model_rectangle(lot, sidecar), lot_rectangle(lot, LOT_FRONT_OVERHANG), 0.01)]
+    models = [model_rectangle(lot, sidecar) for lot, sidecar in sidecars if sidecar]
+    touching_models = [(first, second) for first, second in itertools.combinations(range(len(models)), 2) if rectangles_overlap(models[first], models[second])]
 
     assert not overlapping, f"lotes sobrepostos: {overlapping[:4]}"
     assert not in_roundabout, f"lote dentro da rotatória: {in_roundabout}"
     assert not outside_lot, f"modelo maior que o lote: {outside_lot[:4]}"
+    assert not touching_models, f"prédios se atravessam: {touching_models[:4]}"
 
 
 def rectangle_distance(rectangle: tuple, point: tuple) -> float:
