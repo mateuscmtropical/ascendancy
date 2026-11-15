@@ -166,6 +166,7 @@ def build_materials() -> dict:
         "slate": textured_material("M_TownSlate", TEXTURE_DIR / "T_SlateTiles_BaseColor.png", TEXTURE_DIR / "T_RoundTiles_Normal.png", 0.7),
         "glass": plain_material("M_TownGlass", srgb("3A4E66"), 0.12, 0.4),
         "vitrine": plain_material("M_TownVitrine", srgb("BFD8E8"), 0.05, 0.0, alpha=0.25),
+        "shopfront": plain_material("M_TownShopfront", srgb("BFD8E8"), 0.05, 0.0, alpha=0.25),  # vitrine da loja: acende à noite (features/sky/window_glass.gd)
         "paint": plain_material("M_TownPaint", WHITE, 0.75),
         "metal": plain_material("M_TownMetal", WHITE, 0.45, 0.7),
         "water": plain_material("M_Water", srgb("3C7FA0"), 0.1),
@@ -177,7 +178,7 @@ def build_materials() -> dict:
     return materials
 
 
-WORLD_TILE = {"plaster": 3.0, "stone": 2.4, "brick": 1.6, "tiles": 1.8, "slate": 1.8, "glass": 2.0, "vitrine": 2.0, "paint": 1.0, "metal": 1.0, "water": 2.0}
+WORLD_TILE = {"plaster": 3.0, "stone": 2.4, "brick": 1.6, "tiles": 1.8, "slate": 1.8, "glass": 2.0, "vitrine": 2.0, "shopfront": 2.0, "paint": 1.0, "metal": 1.0, "water": 2.0}
 
 
 # ---------- geometry ----------

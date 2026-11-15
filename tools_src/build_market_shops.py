@@ -150,7 +150,7 @@ def dress_vitrine(b: Builder, room: Room, frame: Matrix, opening: Opening) -> No
     bar_tint = srgb(WOOD["escura"])
 
     town.wall_piece(b, (opening.u - half, 0.0, 0.0), (opening.u + half, WALL, opening.bottom), house.wall_material, house.wall_tint, frame)
-    b.prism(opening.outline(), 0.12, 0.14, "vitrine", frame=frame)
+    b.prism(opening.outline(), 0.12, 0.14, "shopfront", frame=frame)
     b.collider((opening.u - half, 0.08, opening.bottom), (opening.u + half, 0.2, opening.apex), frame)
     town.open_frame(b, opening, 0.12, -0.05, 0.0, house.trim_tint, town.TRIM_SMOOTH_BAND, frame)
     b.box((opening.u - half - 0.1, -0.12, opening.bottom - 0.08), (opening.u + half + 0.1, WALL + 0.12, opening.bottom), "trim", house.trim_tint, frame=frame)
