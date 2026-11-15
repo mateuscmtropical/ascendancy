@@ -16,6 +16,10 @@ const LAWN_POINT: Vector2 = Vector2(-20, -30)
 ## Na rua a oeste da Getúlio Vargas, entre dois postes da borda da praça.
 const STREET_START: Vector3 = Vector3(-68, 0, 9)
 const CURB_DISTANCE: float = 4.0
+## Na frente da escadaria da catedral, de frente para a porta (+X).
+const CATHEDRAL_STAIRS_START: Vector3 = Vector3(11, 0.1, -1.5)
+const NAVE_FLOOR_HEIGHT: float = 1.05
+const NAVE_ENTRANCE_X: float = 21.0
 
 var _hub: Node3D
 
@@ -123,6 +127,23 @@ func test_player_walks_up_the_curb_from_the_street() -> void:
 
 	assert_gt(travelled, CURB_DISTANCE + 1.0, "player crossed the curb instead of stopping at it")
 	assert_almost_eq(player.global_position.y, 0.0, 0.06, "player stands on the pavement")
+
+
+func test_player_climbs_the_cathedral_stairs_into_the_nave() -> void:
+	var player: PlayerController = _hub.get_node("Player")
+
+	player.global_position = CATHEDRAL_STAIRS_START
+	player.velocity = Vector3.ZERO
+	player.is_input_enabled = true
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(150)
+	Input.action_release(&"move_forward")
+	player.is_input_enabled = false
+
+	assert_gt(player.global_position.x, NAVE_ENTRANCE_X, "player walked through the portal")
+	assert_almost_eq(
+		player.global_position.y, NAVE_FLOOR_HEIGHT, 0.05, "player stands on the nave floor"
+	)
 
 
 func _ground_height_at(ground_point: Vector2) -> float:

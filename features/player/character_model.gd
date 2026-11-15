@@ -8,6 +8,8 @@ const HAIR_ROUGHNESS: float = 1.0
 const SKELETON_PATH: NodePath = ^"Armature/Skeleton3D"
 const BODY_NODE_NAME: StringName = &"Body"
 const ANIMATION_BLEND_SECONDS: float = 0.2
+## As poses UAL deixam a sola ~5 cm abaixo da origem; o corpo sobe para o pé pisar no chão.
+const SOLE_LIFT: float = 0.05
 
 @export var body_scene: PackedScene
 @export var hair_color: Color = Color("4a3426")
@@ -39,15 +41,23 @@ func set_body(new_body_scene: PackedScene, new_hair_color: Color) -> void:
 	_build_body()
 
 
-func play_animation(animation_name: StringName) -> void:
+func play_animation(animation_name: StringName, speed: float = 1.0) -> void:
 	_current_animation = animation_name
-	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS)
+	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS, speed)
+
+
+## Toca um trecho único (impulso, aterrissagem) e emenda no ciclo seguinte.
+func play_animation_then(first_animation: StringName, next_animation: StringName) -> void:
+	_current_animation = next_animation
+	_animation_player.play(first_animation, ANIMATION_BLEND_SECONDS)
+	_animation_player.queue(next_animation)
 
 
 func _build_body() -> void:
 	var body: Node3D = body_scene.instantiate()
 
 	body.name = BODY_NODE_NAME
+	body.position.y = SOLE_LIFT
 	add_child(body)
 
 	_tint_hair(body.get_node(SKELETON_PATH))

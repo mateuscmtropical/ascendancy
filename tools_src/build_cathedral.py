@@ -1116,13 +1116,26 @@ def build_statues(materials: dict) -> None:
 
 # ---------- collision ----------
 
+def make_stair_ramp(name: str, width: float, first_step_front: float, step_count: int, tread: float, rise: float, bottom: float) -> None:
+    """Ramp collider touching every step nosing (feet never sink into a tread), from the floor one tread
+    before the first step up to the last nosing, plus a flat landing over the top tread. The box is built
+    at the origin and then placed, so its rotation turns about its own center."""
+    ramp_start = first_step_front - tread
+    ramp_end = first_step_front + (step_count - 1) * tread
+    ramp_top = bottom + step_count * rise
+    slope = math.atan2(ramp_top - bottom, ramp_end - ramp_start)
+    thickness = 0.1
+    ramp = make_box(f"{name}-colonly", (0, 0, 0), (width, math.hypot(ramp_end - ramp_start, ramp_top - bottom), thickness), None)
+
+    ramp.location = (0, (ramp_start + ramp_end) / 2.0 + math.sin(slope) * thickness / 2.0, (bottom + ramp_top) / 2.0 - math.cos(slope) * thickness / 2.0)
+    ramp.rotation_euler.x = slope
+    make_span(f"{name}Landing-colonly", (-width / 2.0, ramp_end, ramp_top - thickness), (width / 2.0, ramp_end + tread, ramp_top), None)
+
+
 def build_colliders() -> None:
     """Simple boxes for the player and the navmesh; names ending in -colonly become static bodies in Godot."""
-    stairs_length = math.hypot(STEP_COUNT * STEP_TREAD, BASE)
-    stairs = make_box("Stairs-colonly", (0, -STEP_COUNT * STEP_TREAD / 2.0, BASE / 2.0 - 0.06), (18.0, stairs_length, 0.1), None)
-    stairs.rotation_euler.x = math.atan2(BASE, STEP_COUNT * STEP_TREAD)
-    chancel_steps = make_box("ChancelSteps-colonly", (0, CHANCEL_FRONT - 1.0, BASE + CHANCEL_HEIGHT / 2.0 - 0.06), (7.2, math.hypot(2.0, CHANCEL_HEIGHT), 0.1), None)
-    chancel_steps.rotation_euler.x = math.atan2(CHANCEL_HEIGHT, 2.0)
+    make_stair_ramp("Stairs", 18.0, -STEP_COUNT * STEP_TREAD, STEP_COUNT, STEP_TREAD, STEP_RISE, 0.0)
+    make_stair_ramp("ChancelSteps", 7.2, CHANCEL_FRONT - 5 * 0.4, 5, 0.4, CHANCEL_HEIGHT / 5, BASE)
 
     make_span("Plinth-colonly", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), None)
     make_span("ApsePlinth-colonly", (-APSE_RADIUS - WALL, BODY_LENGTH, 0.0), (APSE_RADIUS + WALL, BODY_LENGTH + APSE_RADIUS + WALL, BASE), None)
