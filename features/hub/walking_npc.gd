@@ -9,6 +9,8 @@ enum PatrolState { WALKING, PAUSED }
 const CHARACTER_MODEL_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const WALK_ANIMATION: StringName = &"ual1/Walk"
 const TURN_SPEED: float = 6.0
+## Folga de 2,5 m em volta do corpo: cobre a sombra (sol a 45°), que entra na tela antes dele.
+const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5.0, 3.5, 5.0))
 
 @export var body_scene: PackedScene
 @export var hair_color: Color = Color("4a3426")
@@ -43,6 +45,7 @@ func _ready() -> void:
 	_model.start_animation = WALK_ANIMATION if is_walking else idle_animation
 	_model.start_offset_seconds = animation_offset_seconds
 	add_child(_model)
+	_stop_animating_off_screen()
 
 	_navigation_agent.avoidance_enabled = is_walking
 	_obstacle.avoidance_enabled = not is_walking
@@ -66,6 +69,15 @@ func _physics_process(delta: float) -> void:
 
 static func next_route_index(current_index: int, route_size: int) -> int:
 	return (current_index + 1) % route_size
+
+
+## Animação e skinning são o maior custo de CPU da praça; fora da câmera o modelo para de
+## processar (o NPC segue andando) e retoma do mesmo ponto do ciclo ao voltar para a tela.
+func _stop_animating_off_screen() -> void:
+	var animation_culling: VisibleOnScreenEnabler3D = VisibleOnScreenEnabler3D.new()
+
+	animation_culling.aabb = ANIMATION_CULLING_BOUNDS
+	_model.add_child(animation_culling)
 
 
 func _walk_toward_target(_delta: float) -> void:
