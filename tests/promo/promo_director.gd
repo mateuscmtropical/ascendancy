@@ -1,7 +1,7 @@
 class_name PromoDirector
 extends Node
-## Roteiros dos vídeos: o promocional (voos, órbitas, escolha de personagem e jogo) e o voo de drone
-## pela cidade inteira, escolhido pelo export reel. Gravar com tools_src/record.sh (Movie Maker,
+## Diretor dos vídeos: toca o roteiro escolhido pelo export reel (tests/promo/promo_shots.gd) com
+## voos, órbitas, escolha de personagem e jogo. Gravar com tools_src/record.sh (Movie Maker,
 ## tempo fixo); fecha o jogo ao terminar.
 
 enum ShotKind { FLY, ORBIT, CHARACTER_SELECT, GAMEPLAY }
@@ -10,275 +10,9 @@ enum Reel { PROMO, DRONE }
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const FADE_SECONDS: float = 0.3
 const TEXT_FADE_SECONDS: float = 0.5
-const PROMO_SHOTS: Array[Dictionary] = [
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 7.0,
-		"title": "ASCENDANCY",
-		"subtitle": "Uma aventura de fantasia em terceira pessoa",
-		"center": Vector3(0, 0, -4),
-		"angle_from": 200.0,
-		"angle_to": 245.0,
-		"radius_from": 150.0,
-		"radius_to": 135.0,
-		"height_from": 70.0,
-		"height_to": 52.0,
-		"look_height": 0.0,
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 4.5,
-		"caption": "Uma cidade inteira para explorar",
-		"eye_from": Vector3(-80, 30, 40),
-		"eye_to": Vector3(-47, 6, 12),
-		"look_from": Vector3(-34, 1, 0),
-		"look_to": Vector3(-34, 2, 0),
-	},
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 5.0,
-		"caption": "Chafariz no coração da praça",
-		"center": Vector3(-34, 0, 0),
-		"angle_from": 290.0,
-		"angle_to": 375.0,
-		"radius_from": 13.5,
-		"radius_to": 12.5,
-		"height_from": 3.6,
-		"height_to": 2.6,
-		"look_height": 2.0,
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 4.5,
-		"caption": "Coreto com música ao vivo",
-		"eye_from": Vector3(-39, 1.6, -21),
-		"eye_to": Vector3(-39, 7.5, -23),
-		"look_from": Vector3(-50, 2.4, -12),
-		"look_to": Vector3(-50, 3.2, -12),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 4.5,
-		"caption": "Feira no calçadão entre as duas praças",
-		"eye_from": Vector3(0.4, 3.4, 46),
-		"eye_to": Vector3(0.4, 3.0, 10),
-		"look_from": Vector3(0, 2, 0),
-		"look_to": Vector3(18, 9, 0),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 5.0,
-		"caption": "A catedral no alto da praça",
-		"eye_from": Vector3(-6, 1.2, -14),
-		"eye_to": Vector3(2, 10, -10),
-		"look_from": Vector3(18, 8, 0),
-		"look_to": Vector3(18, 20, 0),
-	},
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 5.0,
-		"center": Vector3(18, 0, 0),
-		"angle_from": 145.0,
-		"angle_to": 215.0,
-		"radius_from": 30.0,
-		"radius_to": 27.0,
-		"height_from": 24.0,
-		"height_to": 33.0,
-		"look_height": 22.0,
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 5.5,
-		"caption": "Portas abertas: entre e explore",
-		"eye_from": Vector3(6, 2.6, -1.3),
-		"eye_to": Vector3(32, 2.6, -1.3),
-		"look_from": Vector3(50, 3.5, -1),
-		"look_to": Vector3(54, 4, 0),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 4.5,
-		"caption": "Arcos, vitrais e colunas douradas",
-		"eye_from": Vector3(40, 4.5, 2.5),
-		"eye_to": Vector3(44, 3.2, -2.5),
-		"look_from": Vector3(55, 5, 0),
-		"look_to": Vector3(55, 5, 0),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 4.5,
-		"caption": "Avenida arborizada com rotatória",
-		"eye_from": Vector3(-95, 4, -50),
-		"eye_to": Vector3(-40, 3, -50),
-		"look_from": Vector3(-20, 3, -57),
-		"look_to": Vector3(10, 3, -57),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 4.5,
-		"caption": "Ferreiro, armeiro, magia e taverna ao redor da praça",
-		"eye_from": Vector3(-68, 2.2, 22),
-		"eye_to": Vector3(-68, 1.9, -10),
-		"look_from": Vector3(-75, 2.2, 15),
-		"look_to": Vector3(-75, 2.0, -17),
-	},
-	{
-		"kind": ShotKind.CHARACTER_SELECT,
-		"seconds": 5.0,
-		"caption": "Aventureiro ou aventureira",
-	},
-	{
-		"kind": ShotKind.GAMEPLAY,
-		"seconds": 8.0,
-		"caption": "Explore a cidade em terceira pessoa",
-		"jog_seconds": 3.0,
-		"sprint_seconds": 3.0,
-	},
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 7.0,
-		"title": "ASCENDANCY",
-		"subtitle": "Em desenvolvimento · feito em Godot 4",
-		"center": Vector3(0, 0, 0),
-		"angle_from": 160.0,
-		"angle_to": 200.0,
-		"radius_from": 60.0,
-		"radius_to": 125.0,
-		"height_from": 15.0,
-		"height_to": 60.0,
-		"look_height": 5.0,
-	},
-]
-
-## Voo de drone pela cidade como ela está: praças, catedral, fileira de comércio, lojas por dentro,
-## quadra das letras e bairros.
-const DRONE_SHOTS: Array[Dictionary] = [
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 8.0,
-		"title": "ASCENDANCY",
-		"subtitle": "Voo de drone pela cidade · em desenvolvimento",
-		"center": Vector3(0, 0, -10),
-		"angle_from": 200.0,
-		"angle_to": 250.0,
-		"radius_from": 150.0,
-		"radius_to": 128.0,
-		"height_from": 78.0,
-		"height_to": 56.0,
-		"look_height": 0.0,
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 6.0,
-		"caption": "A praça do chafariz",
-		"eye_from": Vector3(-78, 36, 46),
-		"eye_to": Vector3(-47, 9, 14),
-		"look_from": Vector3(-34, 0, 0),
-		"look_to": Vector3(-34, 2, 0),
-	},
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 7.0,
-		"caption": "A catedral",
-		"center": Vector3(36, 0, 0),
-		"angle_from": 120.0,
-		"angle_to": 200.0,
-		"radius_from": 58.0,
-		"radius_to": 48.0,
-		"height_from": 32.0,
-		"height_to": 22.0,
-		"look_height": 14.0,
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 7.0,
-		"caption": "Ferreiro, armeiro, magia e alfaiate",
-		"eye_from": Vector3(-95, 9, -50),
-		"eye_to": Vector3(-8, 9, -50),
-		"look_from": Vector3(-82, 5, -70),
-		"look_to": Vector3(-4, 5, -70),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 7.0,
-		"caption": "Taverna, alquimia, armazém e guilda",
-		"eye_from": Vector3(8, 9, -50),
-		"eye_to": Vector3(92, 9, -50),
-		"look_from": Vector3(12, 5, -70),
-		"look_to": Vector3(96, 5, -70),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 6.0,
-		"caption": "Lojas de verdade, cheias por dentro",
-		"eye_from": Vector3(-34, 2.2, -61),
-		"eye_to": Vector3(-34, 2.4, -76),
-		"look_from": Vector3(-34, 2.0, -86),
-		"look_to": Vector3(-34, 1.8, -88),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 6.0,
-		"caption": "A guilda dos aventureiros",
-		"eye_from": Vector3(87, 2.4, -61),
-		"eye_to": Vector3(87, 3.0, -79),
-		"look_from": Vector3(87, 2.6, -92),
-		"look_to": Vector3(87, 3.0, -92),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 7.0,
-		"caption": "Biblioteca, escola e seminário",
-		"eye_from": Vector3(-52, 14, -52),
-		"eye_to": Vector3(-52, 12, 46),
-		"look_from": Vector3(-75, 5, -30),
-		"look_to": Vector3(-75, 5, 30),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 6.0,
-		"caption": "Estantes até o teto",
-		"eye_from": Vector3(-62, 2.4, -30),
-		"eye_to": Vector3(-79, 2.8, -30),
-		"look_from": Vector3(-95, 2.4, -30),
-		"look_to": Vector3(-95, 3.0, -30),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 6.0,
-		"caption": "Portas abertas: entre e explore",
-		"eye_from": Vector3(6, 2.6, -1.3),
-		"eye_to": Vector3(32, 2.6, -1.3),
-		"look_from": Vector3(50, 3.5, -1),
-		"look_to": Vector3(54, 4, 0),
-	},
-	{
-		"kind": ShotKind.FLY,
-		"seconds": 7.0,
-		"caption": "Bairros residenciais",
-		"eye_from": Vector3(-70, 28, 100),
-		"eye_to": Vector3(45, 24, 100),
-		"look_from": Vector3(-40, 0, 60),
-		"look_to": Vector3(55, 0, 60),
-	},
-	{
-		"kind": ShotKind.ORBIT,
-		"seconds": 8.0,
-		"title": "ASCENDANCY",
-		"subtitle": "Em desenvolvimento · feito em Godot 4",
-		"center": Vector3(0, 0, 0),
-		"angle_from": 160.0,
-		"angle_to": 210.0,
-		"radius_from": 70.0,
-		"radius_to": 140.0,
-		"height_from": 20.0,
-		"height_to": 70.0,
-		"look_height": 5.0,
-	},
-]
 const SHOTS_BY_REEL: Dictionary[Reel, Array] = {
-	Reel.PROMO: PROMO_SHOTS,
-	Reel.DRONE: DRONE_SHOTS,
+	Reel.PROMO: PromoShots.PROMO,
+	Reel.DRONE: PromoShots.DRONE,
 }
 
 @export var reel: Reel = Reel.PROMO
@@ -309,11 +43,21 @@ func _play_reel() -> void:
 	for shot in SHOTS_BY_REEL[reel]:
 		var shot_player: Callable = _shot_players[shot.kind]
 
+		_set_the_sky(shot)
 		_fade_through_black(shot.seconds)
 		_show_texts(shot)
 		await shot_player.call(shot)
 
 	get_tree().quit()
+
+
+## Hora do dia e chuva de meteoros pedidas pela tomada (o relógio segue andando depois).
+func _set_the_sky(shot: Dictionary) -> void:
+	if shot.has("time_of_day"):
+		hub.set_time_of_day(shot.time_of_day)
+
+	if shot.get("meteor_shower", false):
+		hub.start_meteor_shower()
 
 
 func _fly_camera(shot: Dictionary) -> void:

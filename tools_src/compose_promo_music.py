@@ -1,6 +1,8 @@
-"""Compose the promo reel soundtrack: original ambient pad in D major + bell arpeggio + reverb.
+"""Compose the promo reel soundtrack: original ambient pad in D major + bell arpeggio + soft beat + reverb.
 
-Cues match tests/promo/promo_director.gd: arpeggio and beat enter at the first cut (7 s), final chord under the end title (67.5 s).
+Cues match the PROMO reel of tests/promo/promo_shots.gd (77.5 s): arpeggio and beat enter at the first cut (7 s);
+the night shot (51.5 to 57.5 s) drops the beat for slow high bells and a falling chime under the meteor shower;
+the beat comes back with the character select and the final chord sits under the end title (70.5 s).
 Usage: python tools_src/compose_promo_music.py <output.wav> [duration_seconds]
 """
 
@@ -11,12 +13,17 @@ import numpy as np
 
 RATE = 48000
 ARPEGGIO_START = 7.0
-END_TITLE_START = 67.5
+NIGHT_START = 51.5
+NIGHT_END = 57.5
+END_TITLE_START = 70.5
 BEAT_SECONDS = 0.5
 CHORD_SECONDS = 4.0
 D_MAJOR, A_MAJOR, B_MINOR, G_MAJOR = [50, 54, 57, 62], [45, 52, 57, 61], [47, 50, 54, 59], [43, 50, 55, 59]
-PROGRESSION = [D_MAJOR, A_MAJOR, B_MINOR, G_MAJOR, D_MAJOR, A_MAJOR, G_MAJOR, A_MAJOR, D_MAJOR, B_MINOR, G_MAJOR, A_MAJOR]
-ARPEGGIO_PATTERN = [0, 1, 2, 3, 2, 3, 1, 2]
+F_SHARP_MINOR, E_MINOR = [42, 49, 54, 57], [40, 47, 52, 55]
+PROGRESSION = [D_MAJOR, F_SHARP_MINOR, G_MAJOR, A_MAJOR, B_MINOR, G_MAJOR, D_MAJOR, A_MAJOR, E_MINOR, G_MAJOR, A_MAJOR, D_MAJOR]
+ARPEGGIO_PATTERN = [0, 2, 1, 3, 2, 1, 3, 2]
+NIGHT_BELLS = [(0.0, 86), (1.3, 81), (2.2, 85), (3.4, 78), (4.6, 83)]  # (segundos depois de NIGHT_START, nota MIDI)
+SHOOTING_STAR_NOTES = [93, 90, 88, 86, 83, 81]  # glissando de sininhos caindo, como o risco no céu
 
 
 def frequency(midi_note: float) -> float:
@@ -78,6 +85,10 @@ def reverb(signal: np.ndarray, seed: int) -> np.ndarray:
     return signal * 0.75 + wet * 0.45
 
 
+def is_night(moment: float) -> bool:
+    return NIGHT_START <= moment < NIGHT_END
+
+
 def compose(duration: float) -> np.ndarray:
     total = int(duration * RATE)
     channels = np.zeros((2, total))
@@ -95,6 +106,10 @@ def compose(duration: float) -> np.ndarray:
 
     for beat_index in range(beat_count):
         beat_time = ARPEGGIO_START + beat_index * BEAT_SECONDS
+
+        if is_night(beat_time):
+            continue
+
         add(kick() * (1.0 if beat_index % 2 == 0 else 0.6), beat_time)
         add(hat(beat_index), beat_time + BEAT_SECONDS / 2, pan=0.6)
 
@@ -115,8 +130,14 @@ def compose(duration: float) -> np.ndarray:
         for step, tone_index in enumerate(ARPEGGIO_PATTERN):
             note_time = start + step * 0.5
 
-            if ARPEGGIO_START <= note_time < END_TITLE_START:
+            if ARPEGGIO_START <= note_time < END_TITLE_START and not is_night(note_time):
                 add(bell(chord[tone_index] + 12), note_time, pan=0.3 + 0.4 * (step % 2))
+
+    for offset, note in NIGHT_BELLS:
+        add(bell(note, 3.5) * 0.8, NIGHT_START + offset, pan=0.2 + 0.6 * rng.random())
+
+    for step, note in enumerate(SHOOTING_STAR_NOTES):
+        add(bell(note, 1.6) * 0.5, NIGHT_START + 2.6 + step * 0.07, pan=0.8 - 0.1 * step)
 
     for offset, note in enumerate([74, 78, 81, 86]):
         add(bell(note, 4.0), END_TITLE_START + offset * 0.18, pan=0.3 + 0.13 * offset)
@@ -130,7 +151,7 @@ def compose(duration: float) -> np.ndarray:
 
 if __name__ == "__main__":
     output_path = sys.argv[1]
-    duration_seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 56.0
+    duration_seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 77.5
     pcm = (compose(duration_seconds) * 32767).astype(np.int16)
 
     with wave.open(output_path, "wb") as wav_file:
