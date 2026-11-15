@@ -292,15 +292,15 @@ SHOP_HOUSES = {  # casa da fileira -> variantes de loja com a mesma planta (buil
 HOUSES_BY_WIDTH = {6: ["house_stone_tall", "house_narrow_three", "house_cottage"], 8: ["house_plaster_wide", "house_shop"]}
 SIDE_ROTATION = {"N": math.pi, "S": 0.0, "W": -math.pi / 2.0, "E": math.pi / 2.0}  # house front faces the street
 BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
-    (-102, -72, -96, -66, "SE"),
-    (-64, -4, -96, -66, "S"),  # quadras da praça comercial: as lojas ocupam a quadra de ponta a ponta
+    (-102, -72, -96, -66, "S"),  # fileira norte = comércio e ofícios: as lojas grandes ocupam a quadra de ponta a ponta
+    (-64, -4, -96, -66, "S"),
     (4, 64, -96, -66, "S"),
-    (72, 102, -96, -66, "SW"),
-    (-102, -72, -48, 48, "E"),
+    (72, 102, -96, -66, "S"),
+    (-102, -72, -48, 48, "E"),  # quadra oeste = biblioteca, escola e seminário, de frente para a catedral
     (72, 102, -48, 48, "WNS"),
     (-102, -72, 58, 88, "NE"),
-    (-64, -4, 58, 88, "N"),
-    (4, 64, 58, 88, "N"),
+    (-64, -4, 58, 88, "NWE"),  # fileira sul = residencial
+    (4, 64, 58, 88, "NWE"),
     (72, 102, 58, 88, "NW"),
 ]
 SHOP_FRONTAGES = {(1, "S"), (2, "S"), (4, "E"), (5, "W"), (7, "N"), (8, "N")}  # (bloco, lado) virados para as praças e a avenida
@@ -684,28 +684,29 @@ LOT_WIDTHS = (6, 8, 10, 12)
 LOT_FRONT_OVERHANG = 1.2  # beiral, sacada e placa podem avançar sobre a calçada
 LOT_EDGE_CLEARANCE = 0.02
 TOWN_SEED = 4421
-SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio da loja: 1/3 a 1/2 da quadra (docs/research/shops.md)
-    "smith": (30, 20.0),
-    "guild": (30, 20.0),
-    "tavern": (30, 20.0),
+SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio: 1/3 de quadra ou mais (docs/research/shops.md)
+    "smith": (24, 20.0),
     "armor": (18, 20.0),
-    "general": (18, 20.0),
-    "bakery": (18, 20.0),
-    "inn": (27, 20.0),
-    "bank": (27, 20.0),
     "magic": (18, 20.0),
-    "alchemy": (18, 20.0),
-    "jeweler": (18, 20.0),
     "tailor": (18, 20.0),
-    "bookshop": (18, 20.0),
-    "herbalist": (18, 20.0),
+    "tavern": (18, 20.0),
+    "alchemy": (18, 20.0),
+    "general": (18, 20.0),
+    "guild": (24, 20.0),
+    "library": (30, 20.0),
+    "school": (30, 20.0),
+    "seminary": (30, 20.0),
 }
-FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, loja ou None)] ao longo da fileira; trechos sem lote fixo são preenchidos
-    (4, "E"): [(-45.0, -15.0, "smith"), (-15.0, 15.0, "guild"), (15.0, 45.0, "tavern")],
-    (1, "S"): [(-61.0, -43.0, "armor"), (-43.0, -25.0, "general"), (-25.0, -7.0, "bakery")],
-    (2, "S"): [(7.0, 34.0, "inn"), (34.0, 61.0, "bank")],
-    (7, "N"): [(-61.0, -43.0, "magic"), (-43.0, -25.0, "alchemy"), (-25.0, -7.0, "jeweler")],
-    (8, "N"): [(7.0, 25.0, "tailor"), (25.0, 43.0, "bookshop"), (43.0, 61.0, "herbalist")],
+FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da fileira; trechos sem lote fixo são preenchidos
+    (0, "S"): [(-99.0, -75.0, "smith")],
+    (1, "S"): [(-61.0, -43.0, "armor"), (-43.0, -25.0, "magic"), (-25.0, -7.0, "tailor")],
+    (2, "S"): [(7.0, 25.0, "tavern"), (25.0, 43.0, "alchemy"), (43.0, 61.0, "general")],
+    (3, "S"): [(75.0, 99.0, "guild")],
+    (4, "E"): [(-45.0, -15.0, "library"), (-15.0, 15.0, "school"), (15.0, 45.0, "seminary")],
+}
+SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
+    "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
+    "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"), "library": ("bookshop",),
 }
 SHOP_FRONT_OVERHANG = 2.6  # toldos e mercadoria na calçada
 ROW_START_SIDE = {"S": "left", "N": "right", "E": "right", "W": "left"}  # lado do modelo (u < 0 = left) na ponta inicial da fileira
@@ -921,21 +922,18 @@ def town_models_ready(lots: list) -> bool:
     return all((PROJECT_DIR / lot["model"].removeprefix("res://")).exists() for lot in lots)
 
 
-SHOPKEEPERS = {  # loja -> (corpo, cabelo, animação) do lojista atrás do balcão
+SHOPKEEPERS = {  # prédio -> (corpo, cabelo, animação) de quem atende atrás do balcão
     "smith": ("villager_male", "black", "ual2/Idle_FoldArms"),
     "armor": ("adventurer_male", "brown", "ual1/Idle"),
     "magic": ("villager_female", "grey", "ual1/Idle_Talking"),
-    "alchemy": ("villager_male", "auburn", "ual1/Idle"),
-    "tavern": ("villager_female", "auburn", "ual1/Idle_Talking"),
-    "inn": ("villager_female", "blond", "ual1/Idle"),
-    "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
-    "bakery": ("villager_female", "brown", "ual1/Idle"),
     "tailor": ("villager_male", "grey", "ual1/Idle"),
-    "jeweler": ("villager_male", "dark", "ual1/Idle"),
+    "tavern": ("villager_female", "auburn", "ual1/Idle_Talking"),
+    "alchemy": ("villager_male", "auburn", "ual1/Idle"),
     "general": ("villager_female", "brown", "ual1/Idle_Talking"),
-    "bank": ("villager_male", "grey", "ual2/Idle_FoldArms"),
-    "bookshop": ("villager_female", "dark", "ual1/Idle"),
-    "herbalist": ("villager_female", "auburn", "ual1/Idle"),
+    "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
+    "library": ("villager_female", "dark", "ual1/Idle"),
+    "school": ("villager_male", "brown", "ual1/Idle_Talking"),
+    "seminary": ("villager_male", "grey", "ual1/Idle"),
 }
 SHOP_SIGN_SCALE = 1.6  # as placas foram feitas para fachadas de 8 m
 SHOP_SIGN_OFFSET = 0.45  # da borda da porta até o braço da placa, no pilar entre a porta e a primeira vitrine
@@ -977,15 +975,15 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
     interior_sidecar = model_sidecar(interior_model)
     shop_name = f"Shop{index:02d}{shop_type.title()}"
     door = sidecar["doors"][0]
-    sign_x = door["x"] + door["width"] / 2.0 + SHOP_SIGN_OFFSET
-    sign_model = f"res://art/town/shops/shop_{shop_type}_sign.gltf"
+    sign_reach = door["width"] / 2.0 + SHOP_SIGN_OFFSET
     interior_script = scene.external_id("Script", "res://features/hub/shop_interior.gd")
 
     scene.add_node(shop_name, "Shops", "Node3D", properties={"position": vector(*lot["position"]), "rotation": vector(0.0, lot["rotation"], 0.0)}, groups=[f"shop_{shop_type}"])
     place(scene, "Building", f"Shops/{shop_name}", lot["model"], (0.0, 0.0, 0.0))
 
-    if (PROJECT_DIR / sign_model.removeprefix("res://")).exists():
-        place(scene, "Sign", f"Shops/{shop_name}", sign_model, (sign_x, 0.0, 0.0), scale=SHOP_SIGN_SCALE)
+    for sign_index, sign in enumerate(SHOP_SIGNS.get(shop_type, ())):
+        sign_x = door["x"] + (1.0 - 2.0 * sign_index) * sign_reach
+        place(scene, f"Sign{sign_index}", f"Shops/{shop_name}", f"res://art/town/shops/shop_{sign}_sign.gltf", (sign_x, 0.0, 0.0), scale=SHOP_SIGN_SCALE)
 
     if interior_sidecar:
         scene.add_node("Interior", f"Shops/{shop_name}", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})

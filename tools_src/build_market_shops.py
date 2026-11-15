@@ -45,20 +45,17 @@ COLLIDER_MAX_HEIGHT = 2.4
 PLINTH_HEIGHT = 0.5
 
 SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como ARCHETYPE_SPECS; awning = (cor, cor)
-    "smith": dict(archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(5.2,), roof_shape=("gable_parallel", dict(pitch=30.0, eave_front=0.5, eave_back=0.4)), features=("dormers",), floor="stone", awning=("B5533F", "F2E6CF"), door=(-6.0, 2.6, 3.2, "segment"), open_bays=((10.1, 7.8),), chimney=dict(u=11.8, d=18.3, extra=1.5, pots=0, material="stone"), light="FFC890"),
+    "smith": dict(archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(5.2,), roof_shape=("gable_parallel", dict(pitch=30.0, eave_front=0.5, eave_back=0.4)), features=("dormers",), floor="stone", awning=("B5533F", "F2E6CF"), door=(-5.0, 2.6, 3.2, "segment"), open_bays=((7.4, 7.2),), chimney=dict(u=8.2, d=18.3, extra=1.5, pots=0, material="stone"), light="FFC890"),
     "guild": dict(archetype="palacete", wall="clara", roof="ardosia", accent="vinho", storeys=(7.4, 3.4), roof_shape=("hip", dict(pitch=24.0, eave_front=0.9, eave_back=0.5)), floor="stone", awning=("7A2F3A", "D9A441"), door=(0.0, 3.2, 4.2, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFD9A0"),
-    "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(5.0, 3.0), roof_shape=("gable_parallel", dict(pitch=38.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("7A2F3A", "F2E6CF"), door=(0.0, 2.6, 3.0, "pointed"), features=("half_timber",), jetty=0.35, chimney=dict(u=-13.4, d=9.0, extra=1.2, pots=2), light="FFC27A"),
+    "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(5.0, 3.0), roof_shape=("gable_parallel", dict(pitch=38.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("7A2F3A", "F2E6CF"), door=(0.0, 2.6, 3.0, "pointed"), features=("half_timber",), jetty=0.35, chimney=dict(u=-7.4, d=9.7, extra=1.2, pots=2), light="FFC27A"),
     "armor": dict(archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=("7A2F3A", "D8DCE4"), door=(0.0, 2.4, 3.0, "round"), features=("stone_bands",), light="FFD9A0"),
     "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=("B5533F", "F4EFE6"), door=(0.0, 2.4, 2.9, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
-    "bakery": dict(archetype="terrea", wall="ocre", roof="clara", accent="oxido", storeys=(4.4,), roof_shape=("gable_parallel", dict(pitch=28.0, eave_front=0.4, eave_back=0.4)), floor="wood", awning=("E9A6C0", "F4EFE6"), door=(-3.0, 2.2, 2.8, "round"), chimney=dict(u=6.5, d=16.5, extra=1.0, pots=1), light="FFD08A"),
-    "inn": dict(archetype="sobrado", wall="cal", roof="terracota", accent="azul", storeys=(4.4, 3.3, 3.0), roof_shape=("hip", dict(pitch=27.0, eave_front=0.7, eave_back=0.5)), floor="wood", awning=("3E6A9A", "F4EFE6"), door=(0.0, 2.4, 3.0, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
-    "bank": dict(archetype="palacete", wall="dourada", roof="cobre", accent="azul", storeys=(6.0, 3.0), roof_shape=("hip", dict(pitch=20.0, eave_front=0.8, eave_back=0.5)), floor="stone", awning=("2F4A7A", "D9A441"), door=(0.0, 2.8, 3.8, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFE2B0"),
     "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
     "alchemy": dict(archetype="fachwerk", wall="salvia", roof="velha", accent="verde", storeys=(4.6, 2.9), roof_shape=("gable_street", dict(pitch=40.0, gable="half_hip")), floor="wood", awning=("2F6B4F", "D9E8B0"), door=(0.0, 2.2, 2.9, "round"), features=("half_timber",), jetty=0.3, chimney=dict(u=-6.0, d=15.0, extra=1.2, pots=2), light="C8F0B0"),
-    "jeweler": dict(archetype="artdeco", wall="azul", roof="terracota", accent="amarelo", storeys=(4.4, 3.2), roof_shape=("flat_parapet", dict(pitch=0.0, steps=3)), floor="stone", awning=("24365E", "D9A441"), door=(0.0, 2.2, 3.0, "flat"), features=("deco_fins",), light="FFE8C0"),
     "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_parallel", dict(pitch=18.0, eave_front=0.4, eave_back=0.3)), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
-    "bookshop": dict(archetype="holandesa", wall="tijolo_claro", roof="velha", accent="verde", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=40.0, gable="scroll")), floor="wood", awning=("2F6B4F", "F2E6CF"), door=(0.0, 2.2, 3.0, "round"), features=("stone_bands",), light="FFDFA8"),
-    "herbalist": dict(archetype="chale", wall="caiada", roof="madeira", accent="verde", storeys=(4.4,), roof_shape=("gable_parallel", dict(pitch=24.0, eave_front=1.0, eave_back=0.5)), floor="wood", awning=("3F8A50", "F2E6CF"), door=(2.5, 2.2, 2.8, "segment"), features=("flower_boxes",), light="E8F5C8"),
+    "library": dict(archetype="palacete", wall="dourada", roof="cobre", accent="azul", storeys=(7.4, 3.2), roof_shape=("hip", dict(pitch=22.0, eave_front=0.8, eave_back=0.5)), floor="wood", awning=None, sill=1.1, vitrine_top="round", door=(0.0, 3.2, 4.2, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFDFA8"),
+    "school": dict(archetype="sobrado", wall="amarelo", roof="terracota", accent="verde", storeys=(4.6, 3.6), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=None, sill=1.1, door=(0.0, 2.6, 3.2, "segment"), features=("finials",), quoins=True, cornice=True, light="FFE2B0"),
+    "seminary": dict(archetype="pedra", wall="caiada", roof="velha", accent="vinho", storeys=(5.2, 3.2), roof_shape=("gable_parallel", dict(pitch=36.0, eave_front=0.4, eave_back=0.4)), floor="stone", awning=None, sill=1.3, vitrine_top="pointed", door=(0.0, 2.6, 3.6, "pointed"), features=("dormers",), light="FFDCB0"),
 }
 
 
@@ -200,7 +197,8 @@ def front_openings(room: Room) -> list:
     free_from = [-room.half] + [right for _, right in taken]
     free_to = [left for left, _ in taken] + [room.half]
     spots = [spot for span_from, span_to in zip(free_from, free_to) for spot in evenly(span_from + PIER, span_to - PIER, VITRINE_PITCH)]
-    vitrines = [Opening(u + room.half, space - 0.9, VITRINE_SILL, vitrine_top - VITRINE_SILL, room.spec.get("vitrine_top", "segment"), kind="vitrine") for u, space in spots]
+    sill = room.spec.get("sill", VITRINE_SILL)
+    vitrines = [Opening(u + room.half, space - 0.9, sill, vitrine_top - sill, room.spec.get("vitrine_top", "segment"), kind="vitrine") for u, space in spots]
     door = Opening(door_u + room.half, door_width, 0.0, door_height, door_top, kind="door")
     open_bays = [Opening(u + room.half, width, 0.0, min(room.ceiling - 0.5, 3.8), "flat", kind="open") for u, width, _ in bays]
 
@@ -281,7 +279,7 @@ def build_walls(b: Builder, room: Room) -> list:
 def build_floor(b: Builder, room: Room) -> None:
     """Planked or flagged floor flush with the pavement."""
     if room.spec["floor"] == "stone":
-        b.box((room.left, room.front, 0.0), (room.right, room.back, 0.02), "stone", srgb(STONE["media"]))
+        b.box((room.left, room.front, 0.0), (room.right, room.back, 0.02), "stone", srgb(STONE["dourada"]), uv=("world", 1.2))
         return
 
     board_count = round((room.right - room.left) / BOARD_WIDTH)
@@ -328,8 +326,8 @@ def partition_box(room: Room, partition: tuple) -> tuple:
 
 def build_awnings(b: Builder, room: Room, front: list) -> None:
     """Striped cloth awning over every shop window of the facade."""
-    colors = [srgb(hex_value) for hex_value in room.spec["awning"]]
-    vitrines = [opening for opening in front if opening.kind == "vitrine"]
+    colors = [srgb(hex_value) for hex_value in room.spec["awning"] or ()]
+    vitrines = [opening for opening in front if opening.kind == "vitrine" and colors]
 
     for opening in vitrines:
         left = opening.u - room.half - opening.width / 2.0 - 0.25
