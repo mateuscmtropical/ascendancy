@@ -5,13 +5,13 @@ README (numbers measured from the exported glTF accessors; "canopy_r" = horizont
 planted model a cylinder through KIT_COLLIDERS, like every other kit prop, so the navmesh bake sees it.
 
   model (art/town/trees/)   trunk_r  root_r  canopy_r  canopy base y  height  tris   note
-  old_tree_1.gltf           0.78     2.7     8.5       4.5            13.4    5140   broad umbrella
-  old_tree_2.gltf           0.62     2.4     8.3       5.0            15.2    4310   taller, narrower
-  old_tree_3.gltf           0.72     2.8     8.7       4.1            12.8    4120   asymmetric, leaning
-  old_tree_4.gltf           0.84     3.0     9.5       4.0            12.6    4930   widest
-  old_tree_5.gltf           0.70     2.7     8.1       2.8 (vines)    14.3    5460   hanging vines
-  old_tree_6.gltf           0.66     2.8     8.2       4.5            13.8    4310   asymmetric, twisted trunk
-  tree_bloom_1/2.gltf       0.22     0       ~3.5      ~2.4           ~6      -      ipê pink / yellow (not generated yet)
+  old_tree_1.gltf           0.78     2.7     8.5       4.5            13.5    6440   broad umbrella
+  old_tree_2.gltf           0.62     2.4     8.3       4.9            15.2    5400   taller, narrower
+  old_tree_3.gltf           0.72     2.8     8.7       3.8            12.9    5140   asymmetric, leaning
+  old_tree_4.gltf           0.84     3.0     9.6       3.8            12.6    6160   widest
+  old_tree_5.gltf           0.70     2.6     8.2       3.0 (vines)    14.3    6760   hanging vines
+  old_tree_6.gltf           0.66     2.8     8.2       4.2            13.9    5400   asymmetric, twisted trunk
+  tree_bloom_1/2.gltf       0.22     0       5.3-5.8   2.2-2.3        7.2-7.4 3670-3980 ipê pink / yellow
 
   palm (art/town/)          trunk_r  height  crown reach
   palm_9.gltf               0.36     9.0     4.5
@@ -78,6 +78,8 @@ PALM_VARIANTS = {
 CANOPY_BASE_MIN = 4.6
 CLUMP_ICOSPHERE_SUBDIVISIONS = 2
 CARDS_PER_CLUMP = 72
+UNDERSIDE_CARDS_PER_CLUMP = 34  # tufos sob a massa: de baixo a copa não pode parecer uma esfera lisa
+UNDERSIDE_SQUASH = 0.55
 
 
 # ---------------------------------------------------------------- colors
@@ -421,7 +423,8 @@ def add_clump(leaf_part: Part, card_part: Part, rng: random.Random, center: Vect
     for vertex in verts:
         unit = vertex.co.copy()
         lump = 1.0 + 0.1 * math.sin(unit.x * 4.1 + phase[0]) + 0.1 * math.sin(unit.y * 4.7 + phase[1]) + 0.08 * math.sin(unit.z * 5.3 + phase[2]) + rng.uniform(-0.04, 0.04)
-        squash = 1.0 if unit.z > 0 else 0.55
+        lump += underside_dent(unit, phase, rng)
+        squash = 1.0 if unit.z > 0 else UNDERSIDE_SQUASH
         vertex.co = center + Vector((unit.x * radius * lump, unit.y * radius * lump, unit.z * radius_z * lump * squash))
         vertex.normal_update()
 
@@ -437,20 +440,44 @@ def add_clump(leaf_part: Part, card_part: Part, rng: random.Random, center: Vect
             height_fraction = (loop.vert.co.z - bottom) / max(top - bottom, 1.0)
             loop[leaf_part.color_layer] = clump_color(unit, height_fraction, jitter, stops=stops)
 
-    for _ in range(CARDS_PER_CLUMP):
-        unit = Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.15, 1.0))).normalized()
-        surface = center + Vector((unit.x * radius, unit.y * radius, unit.z * radius_z * (1.0 if unit.z > 0 else 0.55)))
-        surface += unit * radius * 0.08
-        first, second = radial_basis(unit)
-        roll = rng.uniform(0, math.pi)
-        axis_a = first * math.cos(roll) + second * math.sin(roll)
-        axis_b = unit.cross(axis_a)
-        half = rng.uniform(0.7, 1.1)
-        corners = [surface + axis_a * (-half) + axis_b * (-half), surface + axis_a * half + axis_b * (-half), surface + axis_a * half + axis_b * half, surface + axis_a * (-half) + axis_b * half]
-        verts_card = [card_part.mesh.verts.new(corner) for corner in corners]
-        height_fraction = (surface.z - bottom) / max(top - bottom, 1.0)
-        color = clump_color(unit, height_fraction, jitter, brighten=0.16, stops=stops)
-        card_part.add_face(verts_card, [color] * 4, [(0, 0), (1, 0), (1, 1), (0, 1)], smooth=False)
+    card_directions = [Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.15, 1.0))).normalized() for _ in range(CARDS_PER_CLUMP)]
+    card_directions += [Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1.0, -0.15))).normalized() for _ in range(UNDERSIDE_CARDS_PER_CLUMP)]
+
+    for unit in card_directions:
+        add_leaf_card(card_part, rng, center, unit, (radius, radius_z), (bottom, top), jitter, stops)
+
+
+def underside_dent(unit: Vector, phase: list, rng: random.Random) -> float:
+    """Extra ripple on the lower half of a leaf mass: hollows and drooping lobes instead of a smooth bowl."""
+    if unit.z >= 0.0:
+        return 0.0
+
+    depth = -unit.z
+    ripple = 0.16 * math.sin(unit.x * 9.3 + phase[1]) * math.sin(unit.y * 8.1 + phase[2])
+
+    return depth * (ripple + rng.uniform(-0.07, 0.07))
+
+
+def add_leaf_card(card_part: Part, rng: random.Random, center: Vector, unit: Vector, radii: tuple, height_range: tuple, jitter: float, stops: tuple) -> None:
+    """One alpha-cut leaf card on the skin of a leaf mass, facing out; cards under the mass hang a little lower
+    and are lit a bit less, so the underside reads as layered leaves from the ground."""
+    radius, radius_z = radii
+    bottom, top = height_range
+    is_under = unit.z < -0.15
+    squash = 1.0 if unit.z > 0 else UNDERSIDE_SQUASH
+    surface = center + Vector((unit.x * radius, unit.y * radius, unit.z * radius_z * squash))
+    surface += unit * radius * (0.14 if is_under else 0.08)
+    first, second = radial_basis(unit)
+    roll = rng.uniform(0, math.pi)
+    axis_a = first * math.cos(roll) + second * math.sin(roll)
+    axis_b = unit.cross(axis_a)
+    half = rng.uniform(0.6, 0.95) if is_under else rng.uniform(0.7, 1.1)
+    corners = [surface + axis_a * (-half) + axis_b * (-half), surface + axis_a * half + axis_b * (-half), surface + axis_a * half + axis_b * half, surface + axis_a * (-half) + axis_b * half]
+    verts_card = [card_part.mesh.verts.new(corner) for corner in corners]
+    height_fraction = (surface.z - bottom) / max(top - bottom, 1.0)
+    color = clump_color(unit, height_fraction, jitter, brighten=0.1 if is_under else 0.16, stops=stops)
+
+    card_part.add_face(verts_card, [color] * 4, [(0, 0), (1, 0), (1, 1), (0, 1)], smooth=False)
 
 
 def build_vines(part: Part, rng: random.Random, anchors: list, count: int) -> None:
