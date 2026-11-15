@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="1_hub"]
+[ext_resource type="Script" path="res://tests/promo/trailer_director.gd" id="2_director"]
+
+[node name="Trailer" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("1_hub")]
+
+[node name="TrailerCamera" type="Camera3D" parent="."]
+fov = 50.0
+
+[node name="TrailerDirector" type="Node" parent="." node_paths=PackedStringArray("hub", "camera", "sun")]
+script = ExtResource("2_director")
+hub = NodePath("../Hub")
+camera = NodePath("../TrailerCamera")
+sun = NodePath("../Hub/Sun")
