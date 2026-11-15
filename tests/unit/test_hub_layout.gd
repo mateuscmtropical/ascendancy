@@ -8,10 +8,20 @@ const NAVMESH_TOLERANCE: float = 0.3
 const CATHEDRAL_FORECOURT: Vector3 = Vector3(8, 0, 4)
 const CATHEDRAL_NAVE: Vector3 = Vector3(40, 1.05, 0)
 const SHOP_TYPES: Array[String] = [
-	"smith", "armor", "magic", "alchemy", "tavern", "inn", "guild", "bakery", "tailor", "jeweler"
+	"smith",
+	"armor",
+	"magic",
+	"tailor",
+	"tavern",
+	"alchemy",
+	"general",
+	"guild",
+	"library",
+	"school",
+	"seminary",
 ]
-## Placa existe nas duas montagens: casa do kit com barraca ou loja de build_town_houses.py.
-const SHOP_PIECES: Array[String] = ["Sign"]
+## Todo prédio da praça comercial tem casca e salão mobiliado (placa não: o seminário não tem).
+const SHOP_PIECES: Array[String] = ["Building", "Interior"]
 const STREET_POINT: Vector2 = Vector2(-68, 0)
 const LAWN_POINT: Vector2 = Vector2(-20, -30)
 ## Na rua a oeste da praça oeste, entre dois postes da borda da praça.
