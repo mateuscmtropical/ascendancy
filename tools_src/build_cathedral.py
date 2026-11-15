@@ -32,34 +32,48 @@ STEP_COUNT = 7
 STEP_RISE = 0.15
 STEP_TREAD = 0.45
 BASE = STEP_COUNT * STEP_RISE
-HALF_WIDTH = 10.0
-CENTER_HALF = 2.8
-TOWER_OUTER = 7.0
-NAVE_HALF = 4.5
+HALF_WIDTH = 13.0
+CENTER_HALF = 3.6
+TOWER_OUTER = 9.1
+NAVE_HALF = 7.0
 WALL = 0.6
 FACADE_DEPTH = 1.0
 NARTHEX_DEPTH = 5.0
-BODY_LENGTH = 34.0
+BODY_LENGTH = 40.0
 APSE_RADIUS = NAVE_HALF
-AISLE_TOP = 11.4
-ARCADE_TOP = 9.0
-NAVE_CEILING = 14.0
-NAVE_WALL_TOP = 15.5
-TOWER_BASE_TOP = 17.0
-PIER_Y = [10.4, 15.8, 21.2, 26.6]
-ARCH_WIDTH = 4.4
-ARCH_SPRING = 6.0
-BAY_CENTERS = [7.7, 13.1, 18.5, 23.9, 29.3]
-CHANCEL_FRONT = 29.0
+AISLE_TOP = 13.5
+ARCADE_TOP = 11.2
+NAVE_CEILING = 17.5
+NAVE_WALL_TOP = 19.5
+TOWER_BASE_TOP = 22.0
+PIER_Y = [10.6, 16.2, 21.8, 27.4, 33.0]
+ARCH_WIDTH = 4.6
+ARCH_SPRING = 7.6
+BAY_CENTERS = [7.8, 13.4, 19.0, 24.6, 30.2]
+CHANCEL_BAY = 36.5
+CHANCEL_FRONT = 33.0
 CHANCEL_HEIGHT = 0.9
-PORTAL_WIDTH = 4.0
-PORTAL_SPRING = 4.0
-AISLE_WINDOW = (1.5, 6.6)  # vitral alto em arco de cada tramo (largura, altura)
-CHANDELIER_Y = [6.0, 14.0, 22.0]
+CHANCEL_FLOOR = BASE + CHANCEL_HEIGHT
+PORTAL_WIDTH = 4.6
+PORTAL_SPRING = 4.8
+AISLE_WINDOW = (1.7, 7.6)  # vitral alto em arco de cada tramo (largura, altura)
+LOW_WINDOW = (1.4, 2.2)  # janela baixa, sob a faixa ocre
+OCHRE_BAND = (4.8, 5.6)  # altura absoluta da faixa ocre (multiplo de 0,8: a textura repete a cada 0,8 m)
+NAVE_FRIEZE = (12.0, 12.8)
+CHANDELIER_Y = [8.0, 14.0, 20.0, 26.0]
 CAPITAL_LEAVES = 8
 CAPITAL_LEAF_ROWS = [(0.0, 0.4, 0.34), (0.24, 0.47, 0.36)]  # (altura, raio, tamanho) de cada fileira de folhas do capitel
+COLUMN_SCALE = 1.2
 SCONCE_HEIGHT = 3.4
-PEW_ROWS = (8.0, 26.0)  # primeira e última fileira de bancos ao longo da nave
+PEW_ROWS = (8.0, 31.0)  # primeira e ultima fileira de bancos ao longo da nave
+PEW_PITCH = 1.15
+PEW_GAP_ROW = 10  # fileira omitida: corredor transversal entre as portas laterais
+PEW_BLOCKS = ((1.3, 3.6), (4.6, 6.3), (8.8, 11.2))  # x (do eixo para fora) de cada bloco: nave interna, nave externa, nave lateral
+SIDE_DOOR_Y = 19.0
+LOFT_HEIGHT = 7.4  # laje do coro alto sobre o nartex
+RETABLE_Y = BODY_LENGTH + APSE_RADIUS - 1.3
+LANCET_ANGLES = (30.0, 55.0, 78.0)  # graus do eixo da abside, de cada lado
+LANCET_SIZE = (1.5, 8.5)
 
 GLASS_COLORS = numpy.array([
     [0.12, 0.25, 0.75], [0.10, 0.20, 0.60], [0.95, 0.62, 0.15], [0.98, 0.78, 0.30],
@@ -157,19 +171,327 @@ def make_figure_glass_image():
     return image
 
 
+def save_rgb_image(name: str, rgb) -> bpy.types.Image:
+    """Save a (height, width, 3) float array (row 0 = bottom, as Blender stores pixels) as a PNG texture."""
+    height, width = rgb.shape[:2]
+    rgba = numpy.concatenate([numpy.clip(rgb, 0.0, 1.0), numpy.ones((height, width, 1))], axis=2)
+    image = bpy.data.images.new(name, width, height, alpha=False)
+
+    image.pixels.foreach_set(rgba.astype(numpy.float32).ravel())
+    image.filepath_raw = str(GENERATED_TEXTURES / f"{name}.png")
+    image.file_format = "PNG"
+    GENERATED_TEXTURES.mkdir(parents=True, exist_ok=True)
+    image.save()
+
+    return image
+
+
+def voronoi_cells(width: int, height: int, cell_count: int, seed: int) -> tuple:
+    """Cell centers, owner cell of every pixel (height, width) and the gap between the two nearest centers (lead line where small)."""
+    generator = numpy.random.default_rng(seed)
+    points = (generator.random((cell_count, 2)) * (width, height)).astype(numpy.float32)
+    grid_y, grid_x = numpy.meshgrid(numpy.arange(height), numpy.arange(width), indexing="ij")
+    pixels = numpy.stack([grid_x, grid_y], axis=-1).reshape(-1, 2).astype(numpy.float32)
+    owner = numpy.empty(len(pixels), dtype=numpy.int32)
+    gap = numpy.empty(len(pixels), dtype=numpy.float32)
+
+    for start in range(0, len(pixels), 8192):
+        block = pixels[start:start + 8192]
+        distances = numpy.sqrt(((block[:, None, :] - points[None, :, :]) ** 2).sum(axis=2))
+        nearest = numpy.partition(distances, 1, axis=1)[:, :2]
+        owner[start:start + 8192] = distances.argmin(axis=1)
+        gap[start:start + 8192] = nearest.max(axis=1) - nearest.min(axis=1)
+
+    return points, owner.reshape(height, width), gap.reshape(height, width)
+
+
+def ellipse_mask(x, y, center_x: float, center_y: float, semi_major: float, semi_minor: float, degrees: float):
+    angle = math.radians(degrees)
+    along = (x - center_x) * math.cos(angle) + (y - center_y) * math.sin(angle)
+    across = -(x - center_x) * math.sin(angle) + (y - center_y) * math.cos(angle)
+
+    return (along / semi_major) ** 2 + (across / semi_minor) ** 2 <= 1.0
+
+
+def feather_fan(label, color, x, y, shoulder: tuple, angles: list, lengths: list, width: float, first_id: int, tint) -> None:
+    """Dove wing or tail: overlapping elliptical feathers fanning out of one shoulder, drawn from the last to the first."""
+    for feather_index in reversed(range(len(angles))):
+        direction = (math.cos(math.radians(angles[feather_index])), math.sin(math.radians(angles[feather_index])))
+        center = (shoulder[0] + direction[0] * lengths[feather_index] / 2.0, shoulder[1] + direction[1] * lengths[feather_index] / 2.0)
+        mask = ellipse_mask(x, y, center[0], center[1], lengths[feather_index] / 2.0, width, angles[feather_index])
+        label[mask] = first_id + feather_index
+        color[mask] = tint * (0.93 + 0.07 * (feather_index % 2))
+
+
+def make_leaded_glass(name: str, width: int, height: int, window_size: tuple, painter, cell_count: int, seed: int):
+    """Stained glass: painter(x_m, y_m, cell_x_m, cell_y_m, cell_random) -> (shape label, rgb); lead where cells or shapes meet."""
+    points, owner, gap = voronoi_cells(width, height, cell_count, seed)
+    grid_y, grid_x = numpy.meshgrid(numpy.arange(height), numpy.arange(width), indexing="ij")
+    meters_x = (grid_x + 0.5) / width * window_size[0] - window_size[0] / 2.0
+    meters_y = (grid_y + 0.5) / height * window_size[1]
+    cell_x = points[:, 0][owner] / width * window_size[0] - window_size[0] / 2.0
+    cell_y = points[:, 1][owner] / height * window_size[1]
+    generator = numpy.random.default_rng(seed + 1)
+    cell_random = generator.random(cell_count)
+    label, color = painter(meters_x, meters_y, cell_x, cell_y, cell_random[owner])
+    shade = (0.9 + 0.16 * generator.random(cell_count))[owner][..., None]
+    rgb = color * shade
+    edge = (label != numpy.roll(label, 1, axis=0)) | (label != numpy.roll(label, 1, axis=1))
+    edge |= numpy.roll(edge, 1, axis=0) | numpy.roll(edge, 1, axis=1)
+    rgb[(gap < 1.5) | edge] = [0.04, 0.04, 0.06]
+
+    return save_rgb_image(name, rgb)
+
+
+DOVE_RAY_PALETTES = [
+    (numpy.array([0.95, 0.77, 0.27]), numpy.array([0.91, 0.59, 0.18])),
+    (numpy.array([0.97, 0.82, 0.35]), numpy.array([0.88, 0.40, 0.28])),
+    (numpy.array([1.00, 0.90, 0.55]), numpy.array([0.93, 0.62, 0.20])),
+]
+WHITE_PEARL = numpy.array([0.97, 0.96, 0.92])
+RUBY = numpy.array([0.66, 0.14, 0.17])
+GOLD = numpy.array([0.95, 0.77, 0.26])
+LEAF_GREEN = numpy.array([0.25, 0.54, 0.31])
+COBALT = numpy.array([0.12, 0.25, 0.66])
+SKY_BLUE = numpy.array([0.44, 0.70, 0.95])
+TURQUOISE = numpy.array([0.10, 0.62, 0.72])
+
+
+def sky_gradient(vertical):
+    """Cobalt at the base of the window to sky blue at the top (vertical 0..1)."""
+    amount = numpy.clip(vertical, 0.0, 1.0)[..., None]
+
+    return COBALT + (SKY_BLUE - COBALT) * amount
+
+
+def paint_dove_window(variant: int, mirror: bool, dove_height: float):
+    """Painter for one apse lancet (1.5 x 9 m): white dove with an olive branch under golden rays, lilies and a medallion below."""
+    ray_colors = DOVE_RAY_PALETTES[variant]
+    scale = 0.72
+
+    def painter(x, y, cell_x, cell_y, cell_random):
+        x_flipped = -x if mirror else x
+        label = numpy.zeros(x.shape, dtype=numpy.int32)
+        color = sky_gradient(cell_y / 9.0)
+        turquoise = (cell_random < 0.15)[..., None]
+        color = numpy.where(turquoise, TURQUOISE, color)
+        dove_x, dove_y = -0.05, dove_height
+        angle = numpy.degrees(numpy.arctan2(y - dove_y, x_flipped - dove_x))
+        wedge = numpy.floor((angle + 160.0) / (140.0 / 18.0)).astype(numpy.int32)
+        in_rays = (angle > -160.0) & (angle < -20.0) & (wedge % 2 == 0) & (y > 4.05)
+        label[in_rays] = 10 + wedge[in_rays]
+        color[in_rays] = numpy.where(((wedge // 2) % 2 == 0)[in_rays][:, None], ray_colors[0], ray_colors[1])
+        halo_distance = numpy.hypot(x_flipped - dove_x, y - dove_y)
+        label[halo_distance < 0.72] = 3
+        color[halo_distance < 0.72] = GOLD
+        label[halo_distance < 0.68] = 4
+        color[halo_distance < 0.68] = [0.10, 0.20, 0.56]
+
+        local_x = (x_flipped - dove_x) / scale
+        local_y = (y - dove_y) / scale
+        feather_fan(label, color, local_x, local_y, (0.0, 0.02), [215.0, 228.0, 242.0, 256.0], [0.55, 0.58, 0.55, 0.48], 0.075, 70, WHITE_PEARL * 0.94)
+        feather_fan(label, color, local_x, local_y, (0.02, 0.10), [48.0, 64.0, 80.0, 96.0, 112.0], [0.80, 0.82, 0.78, 0.70, 0.60], 0.085, 60, WHITE_PEARL)
+        feather_fan(label, color, local_x, local_y, (-0.30, 0.0), [186.0, 172.0, 160.0], [0.30, 0.32, 0.28], 0.06, 54, WHITE_PEARL * 0.96)
+        body = ellipse_mask(local_x, local_y, 0.0, 0.0, 0.36, 0.14, -8.0)
+        label[body] = 50
+        color[body] = WHITE_PEARL
+        head = numpy.hypot(local_x - 0.42, local_y - 0.11) < 0.095
+        label[head] = 51
+        color[head] = WHITE_PEARL
+        beak = ellipse_mask(local_x, local_y, 0.55, 0.10, 0.07, 0.028, 0.0)
+        label[beak] = 52
+        color[beak] = GOLD
+        eye = numpy.hypot(local_x - 0.44, local_y - 0.13) < 0.016
+        label[eye] = 53
+        color[eye] = [0.05, 0.05, 0.08]
+
+        for sample in numpy.linspace(0.0, 1.0, 40):
+            stem_x, stem_y = 0.62 + 0.30 * sample, 0.09 - 0.07 * sample - 0.15 * sample * sample
+            stem = numpy.hypot(local_x - stem_x, local_y - stem_y) < 0.018
+            label[stem] = 90
+            color[stem] = LEAF_GREEN * 0.8
+
+        for leaf_index, sample in enumerate(numpy.linspace(0.18, 1.0, 5)):
+            side = 1.0 if leaf_index % 2 == 0 else -1.0
+            stem_x, stem_y = 0.62 + 0.30 * sample, 0.09 - 0.07 * sample - 0.15 * sample * sample
+            leaf = ellipse_mask(local_x, local_y, stem_x + 0.03, stem_y + side * 0.06, 0.09, 0.035, -25.0 + side * 40.0)
+            label[leaf] = 91 + leaf_index
+            color[leaf] = LEAF_GREEN
+
+        lower = y < 2.7
+        label[lower] = 70
+        color[lower] = RUBY
+
+        for lily_x, lily_y in ((-0.38, 1.95), (0.38, 2.05), (0.0, 2.3)):
+            lily_id = 120 + int(lily_x * 10 + 5)
+            stem = (numpy.abs(x - lily_x) < 0.018) & (y < lily_y) & (y > 1.55)
+            label[stem] = lily_id
+            color[stem] = LEAF_GREEN
+            leaf = ellipse_mask(x, y, lily_x + 0.11, lily_y - 0.28, 0.14, 0.04, 35.0) | ellipse_mask(x, y, lily_x - 0.11, lily_y - 0.28, 0.14, 0.04, 145.0)
+            label[leaf] = lily_id + 1
+            color[leaf] = LEAF_GREEN
+
+            for petal_index, petal_angle in enumerate((90.0, 52.0, 128.0)):
+                direction = (math.cos(math.radians(petal_angle)), math.sin(math.radians(petal_angle)))
+                petal = ellipse_mask(x, y, lily_x + direction[0] * 0.12, lily_y + direction[1] * 0.12, 0.15, 0.055, petal_angle)
+                label[petal] = lily_id + 2 + petal_index
+                color[petal] = WHITE_PEARL
+
+        medallion_distance = numpy.hypot(x, y - 1.0)
+        ring = (medallion_distance < 0.5) & (medallion_distance > 0.4)
+        inside = medallion_distance <= 0.4
+        label[ring] = 130
+        color[ring] = GOLD
+        label[inside] = 131
+        color[inside] = [0.96, 0.9, 0.78]
+        cross = inside & (((numpy.abs(x) < 0.05) & (numpy.abs(y - 1.0) < 0.3)) | ((numpy.abs(y - 1.05) < 0.05) & (numpy.abs(x) < 0.2)))
+        label[cross] = 132
+        color[cross] = GOLD
+
+        side_border = numpy.abs(x) > 0.63
+        end_border = (y < 0.27) | (y > 8.73)
+        border = side_border | end_border
+        side_patch = 200 + numpy.floor(y / 0.3).astype(numpy.int32) * 2 + (x > 0)
+        end_patch = 400 + numpy.floor((x + 0.75) / 0.3).astype(numpy.int32) + 10 * (y > 4.0)
+        patch = numpy.where(side_border, side_patch, end_patch)
+        diamond_gold = (numpy.floor(y / 0.3).astype(numpy.int32) + (x > 0)) % 2 == 0
+        end_gold = numpy.floor((x + 0.75) / 0.3).astype(numpy.int32) % 2 == 0
+        label[border] = patch[border]
+        color[border] = numpy.where(numpy.where(side_border, diamond_gold, end_gold)[border][:, None], GOLD, RUBY)
+
+        return label, color
+
+    return painter
+
+
+def make_dove_glass_images() -> list:
+    """Three apse lancets: doves flying toward the centre (mirrored on the other side), higher near the axis, three ray palettes."""
+    specs = [(0, False, 6.9), (1, True, 6.5), (2, False, 6.1)]
+
+    return [make_leaded_glass(f"T_DoveGlass{index}", 256, 1536, (1.5, 9.0), paint_dove_window(variant, mirror, dove_height), 1300, 41 + index) for index, (variant, mirror, dove_height) in enumerate(specs)]
+
+
+def paint_oculus(x, y, cell_x, cell_y, cell_random):
+    """Holy Spirit: a white dove seen from the front, wings spread, head down, inside golden rays in twelve gores."""
+    radius = numpy.hypot(x, y)
+    angle = numpy.degrees(numpy.arctan2(y, x)) % 360.0
+    sector = numpy.floor(angle / 30.0).astype(numpy.int32)
+    label = numpy.zeros(x.shape, dtype=numpy.int32)
+    color = numpy.where((cell_random < 0.2)[..., None], TURQUOISE, SKY_BLUE * 0.85)
+    in_rays = (radius < 1.0) & (sector % 2 == 0)
+    label[in_rays] = 10 + sector[in_rays]
+    color[in_rays] = numpy.where(((sector // 2) % 2 == 0)[in_rays][:, None], DOVE_RAY_PALETTES[0][0], DOVE_RAY_PALETTES[0][1])
+    label[radius < 0.72] = 3
+    color[radius < 0.72] = GOLD
+    label[radius < 0.68] = 4
+    color[radius < 0.68] = [0.10, 0.20, 0.56]
+
+    for side in (-1.0, 1.0):
+        angles = [180.0 - 62.0, 180.0 - 44.0, 180.0 - 28.0, 180.0 - 12.0, 180.0 + 4.0, 180.0 + 18.0] if side < 0 else [62.0, 44.0, 28.0, 12.0, -4.0, -18.0]
+        feather_fan(label, color, x, y, (side * 0.08, 0.15), angles, [0.55, 0.62, 0.66, 0.64, 0.58, 0.5], 0.085, 60 if side < 0 else 80, WHITE_PEARL)
+
+    feather_fan(label, color, x, y, (0.0, 0.30), [90.0, 76.0, 104.0], [0.32, 0.28, 0.28], 0.06, 100, WHITE_PEARL * 0.96)
+    body = ellipse_mask(x, y, 0.0, 0.02, 0.30, 0.13, 90.0)
+    label[body] = 50
+    color[body] = WHITE_PEARL
+    head = numpy.hypot(x, y + 0.30) < 0.10
+    label[head] = 51
+    color[head] = WHITE_PEARL
+    beak = ellipse_mask(x, y, 0.0, -0.43, 0.07, 0.035, 90.0)
+    label[beak] = 52
+    color[beak] = GOLD
+
+    for eye_x in (-0.04, 0.04):
+        eye = numpy.hypot(x - eye_x, y + 0.28) < 0.014
+        label[eye] = 53
+        color[eye] = [0.05, 0.05, 0.08]
+
+    ring = (radius > 1.0) & (radius < 1.08)
+    label[ring] = 130
+    color[ring] = GOLD
+    outer = radius >= 1.08
+    outer_patch = 300 + numpy.floor(angle / 15.0).astype(numpy.int32)
+    label[outer] = outer_patch[outer]
+    color[outer] = numpy.where((numpy.floor(angle / 15.0).astype(numpy.int32) % 2 == 0)[outer][:, None], RUBY, GOLD)
+
+    return label, color
+
+
+def make_oculus_glass_image():
+    return make_leaded_glass("T_OculusGlass", 512, 512, (2.4, 2.4), lambda x, y, cx, cy, cr: paint_oculus(x, y - 1.2, cx, cy - 1.2, cr), 420, 77)
+
+
+def make_ochre_band_image():
+    """Ochre frieze (3.2 x 0.8 m per tile): a row of small brown arches between pinstripes, as on the aisle walls of the real cathedral."""
+    width, height = 512, 128
+    grid_y, grid_x = numpy.meshgrid(numpy.arange(height), numpy.arange(width), indexing="ij")
+    x = (grid_x + 0.5) / width * 3.2
+    y = (grid_y + 0.5) / height * 0.8
+    rgb = numpy.broadcast_to(numpy.array([0.84, 0.62, 0.24]), (height, width, 3)).copy()
+    stripe = (y < 0.05) | (y > 0.75) | ((y > 0.08) & (y < 0.1)) | ((y > 0.70) & (y < 0.72))
+    rgb[stripe] = [0.52, 0.30, 0.13]
+    local_x = (x % 0.4) - 0.2
+    arch_height = 0.34
+    in_arch = (numpy.abs(local_x) < 0.1) & (y > 0.18) & ((y < 0.18 + arch_height - 0.1) | (numpy.hypot(local_x, y - (0.18 + arch_height - 0.1)) < 0.1))
+    rgb[in_arch] = [0.46, 0.27, 0.12]
+    inner = (numpy.abs(local_x) < 0.07) & (y > 0.2) & ((y < 0.18 + arch_height - 0.1) | (numpy.hypot(local_x, y - (0.18 + arch_height - 0.1)) < 0.07))
+    rgb[inner] = [0.93, 0.78, 0.45]
+    rgb[(numpy.abs(local_x) < 0.012) & (y > 0.24) & (y < 0.40)] = [0.46, 0.27, 0.12]
+    rgb[(numpy.abs(local_x + 0.2) < 0.012) | (numpy.abs(local_x - 0.2) < 0.012)] *= 0.9
+
+    return save_rgb_image("T_OchreBand", rgb)
+
+
+def make_starry_image(name: str, top_color: tuple, base_color: tuple, star_count: int, seed: int, rib_period: int = 0):
+    """Blue vault or niche back with scattered gold stars; with rib_period, gold ribs every that many pixels (apse dome gores)."""
+    width, height = (768, 256) if rib_period else (256, 256)
+    generator = numpy.random.default_rng(seed)
+    grid_y = numpy.arange(height)[:, None] * numpy.ones((1, width))
+    blend = (grid_y / height)[..., None]
+    rgb = numpy.array(base_color) + (numpy.array(top_color) - numpy.array(base_color)) * blend
+
+    for star_index in range(star_count):
+        star_x, star_y = int(generator.integers(4, width - 4)), int(generator.integers(8, height - 4))
+        size = int(generator.integers(2, 5))
+        rows, columns = numpy.ogrid[:height, :width]
+        diamond = (numpy.abs(rows - star_y) + numpy.abs(columns - star_x) <= size) | ((numpy.abs(rows - star_y) <= 0) & (numpy.abs(columns - star_x) <= size + 2)) | ((numpy.abs(columns - star_x) <= 0) & (numpy.abs(rows - star_y) <= size + 2))
+        rgb[diamond] = [0.98, 0.84, 0.38]
+
+    if rib_period:
+        columns = numpy.arange(width)[None, :] * numpy.ones((height, 1))
+        rib = (columns % rib_period < 3) | (columns % rib_period > rib_period - 2)
+        rgb[rib] = [0.93, 0.72, 0.28]
+        rgb[:6, :, :] = [0.93, 0.72, 0.28]
+
+    return save_rgb_image(name, rgb)
+
+
+def make_colored_plaster(name: str, color: tuple):
+    """Kit plaster re-colored: its brightness pattern around the given average color."""
+    source = load_kit_image("T_Plaster_BaseColor.png", True)
+    size = source.size[0]
+    pixels = numpy.array(source.pixels[:]).reshape(size, size, 4)
+    luminance = pixels[..., :3] @ numpy.array([0.3, 0.59, 0.11])
+    relative = (luminance / luminance.mean())[..., None] ** 0.8
+    rgba = numpy.concatenate([numpy.clip(numpy.array(color) * relative, 0.0, 1.0), numpy.ones((size, size, 1))], axis=2)
+
+    return save_generated_image(name, rgba, size)
+
+
 def make_floor_image():
-    """Two-tone stone checker (one 2x2 tile per texture), slight per-tile shade noise."""
+    """Polished granite laid on the diagonal: cream and grey diamonds, thin grout, slight per-tile shade noise."""
     size = 256
     generator = numpy.random.default_rng(11)
-    cream = numpy.array([0.9, 0.87, 0.81])
-    slate = numpy.array([0.7, 0.69, 0.68])
+    cream = numpy.array([0.92, 0.88, 0.80])
+    grey = numpy.array([0.62, 0.62, 0.63])
     coordinates = numpy.arange(size)
-    tile_x, tile_y = numpy.meshgrid(coordinates // (size // 2), coordinates // (size // 2))
-    is_cream = ((tile_x + tile_y) % 2 == 0)[..., None]
-    rgb = numpy.where(is_cream, cream, slate) * (0.96 + 0.04 * generator.random((size, size, 1)))
-    grout = (coordinates % (size // 2) < 2)
-    rgb[grout, :] = 0.55
-    rgb[:, grout] = 0.55
+    grid_y, grid_x = numpy.meshgrid(coordinates, coordinates, indexing="ij")
+    diagonal_a = (grid_x + grid_y) // (size // 2)
+    diagonal_b = (grid_x - grid_y + size) // (size // 2)
+    is_cream = ((diagonal_a + diagonal_b) % 2 == 0)[..., None]
+    rgb = numpy.where(is_cream, cream, grey) * (0.96 + 0.04 * generator.random((size, size, 1)))
+    grout = ((grid_x + grid_y) % (size // 2) < 2) | ((grid_x - grid_y + size) % (size // 2) < 2)
+    rgb[grout] = 0.5
     rgba = numpy.concatenate([rgb, numpy.ones((size, size, 1))], axis=2)
 
     return save_generated_image("T_CathedralFloor_BaseColor", rgba, size)
@@ -232,29 +554,59 @@ def build_materials() -> dict:
     stone_image = make_tinted_image("T_Brick_BaseColor.png", "T_CathedralStone_BaseColor", (1.08, 1.06, 1.0), (0.09, 0.08, 0.06))
     trim_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralTrim_BaseColor", (1.04, 1.0, 0.9), (0.1, 0.09, 0.06))
     wall_image = make_tinted_image("T_Plaster_BaseColor.png", "T_CathedralWall_BaseColor", (1.0, 0.97, 0.9), (0.17, 0.16, 0.14))
+    salmon_image = make_colored_plaster("T_CathedralSalmon_BaseColor", (0.93, 0.66, 0.55))
     roof_image = make_tinted_image("T_RoundTiles_BaseColor.png", "T_CathedralRoof_BaseColor", (1.15, 0.62, 0.48), (0.08, 0.02, 0.0))
     plaster_normal = load_kit_image("T_Plaster_Normal.png", False)
     figure_image = make_figure_glass_image()
     figure_glass = make_material("M_FigureGlass", figure_image, emission=1.1)
-    figure_glass.use_backface_culling = False
+    dove_glass = [make_material(f"M_DoveGlass{index}", image, emission=1.8) for index, image in enumerate(make_dove_glass_images())]
+    oculus_glass = make_material("M_OculusGlass", make_oculus_glass_image(), emission=2.4)
+    ochre_band = make_material("M_OchreBand", make_ochre_band_image())
+    dome_sky = make_material("M_DomeSky", make_starry_image("T_DomeSky", (0.72, 0.84, 0.95), (0.45, 0.62, 0.84), 80, 5, rib_period=64), emission=0.25)
+    retable_blue = make_material("M_RetableBlue", make_starry_image("T_RetableBlue", (0.16, 0.30, 0.55), (0.10, 0.20, 0.42), 40, 6), emission=0.35)
+    floor = make_material("M_CathedralFloor", make_floor_image())
+
+    floor.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.28
 
     return {
         "figure_glass": figure_glass,
         "figure_painting": make_material("M_SaintPainting", figure_image),
+        "dove_glass": dove_glass,
+        "oculus_glass": oculus_glass,
+        "ochre_band": ochre_band,
+        "dome_sky": dome_sky,
+        "retable_blue": retable_blue,
         "lamp_glow": make_glow("M_ChandelierGlow", (1.0, 0.86, 0.6), 2.5),
+        "flame": make_glow("M_CandleFlame", (1.0, 0.7, 0.3), 4.0),
+        "ruby_glow": make_glow("M_SanctuaryLamp", (1.0, 0.18, 0.12), 3.5),
         "pew_wood": make_plain_material("M_PewWood", (0.3, 0.16, 0.08), 0.0, 0.55),
         "stone": make_material("M_CathedralStone", stone_image, load_kit_image("T_Brick_Normal.png", False), load_kit_image("T_Brick_Roughness.png", False)),
         "wall": make_material("M_CathedralWall", wall_image, plaster_normal),
+        "salmon": make_material("M_CathedralSalmon", salmon_image, plaster_normal),
         "trim": make_material("M_CathedralTrim", trim_image, plaster_normal),
         "roof": make_material("M_CathedralRoof", roof_image, load_kit_image("T_RoundTiles_Normal.png", False)),
-        "floor": make_material("M_CathedralFloor", make_floor_image()),
+        "floor": floor,
         "glass": make_material("M_StainedGlass", make_stained_glass_image(), emission=1.2),
         "gold": make_plain_material("M_Gold", (0.92, 0.68, 0.26), 0.3, 0.4),
         "marble": make_plain_material("M_Marble", (0.66, 0.62, 0.55), 0.0, 0.6),
+        "marble_white": make_plain_material("M_MarbleWhite", (0.86, 0.83, 0.78), 0.0, 0.35),
+        "marble_pink": make_plain_material("M_MarblePink", (0.89, 0.72, 0.66), 0.0, 0.4),
+        "marble_grey": make_plain_material("M_MarbleGrey", (0.55, 0.56, 0.58), 0.0, 0.4),
+        "marble_green": make_plain_material("M_MarbleGreen", (0.12, 0.27, 0.2), 0.0, 0.35),
+        "carpet": make_plain_material("M_Carpet", (0.6, 0.17, 0.17), 0.0, 0.95),
+        "blue_robe": make_plain_material("M_MaryRobe", (0.62, 0.76, 0.91), 0.0, 0.7),
+        "brown_robe": make_plain_material("M_JosephRobe", (0.55, 0.35, 0.24), 0.0, 0.7),
         "paint_red": make_plain_material("M_PaintRed", (0.6, 0.18, 0.14), 0.0, 0.8),
         "paint_ochre": make_plain_material("M_PaintOchre", (0.82, 0.6, 0.28), 0.0, 0.8),
         "slit_glass": make_plain_material("M_SlitGlass", (0.08, 0.12, 0.25), 0.2, 0.15),
         "wood": make_plain_material("M_DoorWood", (0.26, 0.14, 0.08), 0.0, 0.6),
+        "wood_dark": make_plain_material("M_CrossWood", (0.29, 0.18, 0.13), 0.0, 0.55),
+        "iron": make_plain_material("M_WroughtIron", (0.07, 0.07, 0.09), 0.8, 0.45),
+        "copper": make_plain_material("M_Verdigris", (0.37, 0.63, 0.54), 0.4, 0.5),
+        "ivory": make_plain_material("M_CarvedIvory", (0.91, 0.82, 0.69), 0.0, 0.6),
+        "linen": make_plain_material("M_Linen", (0.94, 0.91, 0.85), 0.0, 0.85),
+        "thorn": make_plain_material("M_Thorns", (0.35, 0.23, 0.16), 0.0, 0.8),
+        "candle": make_plain_material("M_Candle", (0.95, 0.9, 0.78), 0.0, 0.6),
         "dark": make_plain_material("M_RecessShadow", (0.06, 0.05, 0.07), 0.0, 1.0),
     }
 
@@ -391,24 +743,28 @@ def facing_transform(position: tuple, facing: str) -> Matrix:
     return Matrix.Translation(position) @ Matrix.Rotation(rotations[facing], 4, "Z")
 
 
-def carve(target: bpy.types.Object, cutters: list) -> None:
-    for cutter in cutters:
-        modifier = target.modifiers.new(cutter.name, "BOOLEAN")
-        modifier.operation = "DIFFERENCE"
-        modifier.solver = "EXACT"
-        modifier.object = cutter
+def carve(targets, cutters: list) -> None:
+    """Subtract the cutters from one object or a list of objects (a wall and its skins), then delete the cutters."""
+    for target in targets if isinstance(targets, list) else [targets]:
+        for cutter in cutters:
+            modifier = target.modifiers.new(cutter.name, "BOOLEAN")
+            modifier.operation = "DIFFERENCE"
+            modifier.solver = "EXACT"
+            modifier.object = cutter
 
-    bpy.context.view_layer.objects.active = target
+        bpy.context.view_layer.objects.active = target
 
-    for modifier in list(target.modifiers):
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        for modifier in list(target.modifiers):
+            bpy.ops.object.modifier_apply(modifier=modifier.name)
 
     for cutter in cutters:
         bpy.data.objects.remove(cutter, do_unlink=True)
 
 
-def map_uvs_per_face(mesh_object: bpy.types.Object, meters_per_tile: float) -> None:
-    """Planar UVs in each face's own frame: U horizontal, V up the face (walls) or down the slope (roofs)."""
+def map_uvs_per_face(mesh_object: bpy.types.Object, meters_per_tile) -> None:
+    """Planar UVs in each face's own frame: U horizontal, V up the face (walls) or down the slope (roofs).
+    meters_per_tile is one size or a (horizontal, vertical) pair for textures that are not square."""
+    tile_u, tile_v = meters_per_tile if isinstance(meters_per_tile, tuple) else (meters_per_tile, meters_per_tile)
     uv_bmesh = bmesh.new()
     uv_bmesh.from_mesh(mesh_object.data)
     uv_layer = uv_bmesh.loops.layers.uv.verify()
@@ -420,7 +776,7 @@ def map_uvs_per_face(mesh_object: bpy.types.Object, meters_per_tile: float) -> N
 
         for loop in face.loops:
             world = mesh_object.matrix_world @ loop.vert.co
-            loop[uv_layer].uv = (world.dot(u_axis) / meters_per_tile, world.dot(v_axis) / meters_per_tile)
+            loop[uv_layer].uv = (world.dot(u_axis) / tile_u, world.dot(v_axis) / tile_v)
 
     uv_bmesh.to_mesh(mesh_object.data)
     uv_bmesh.free()
@@ -440,6 +796,128 @@ def make_image_panel(name: str, profile: list, size: tuple, transform: Matrix, m
     panel["keep_uvs"] = True
 
     return panel
+
+
+# ---------- aggregated meshes and curved parts ----------
+
+def bm_box(mesh_bmesh, center: tuple, size: tuple) -> None:
+    """Add an axis-aligned box to a bmesh (many small parts of one material become one object)."""
+    made = bmesh.ops.create_cube(mesh_bmesh, size=1.0)
+
+    bmesh.ops.scale(mesh_bmesh, vec=size, verts=made["verts"])
+    bmesh.ops.translate(mesh_bmesh, vec=center, verts=made["verts"])
+
+
+def bm_cylinder(mesh_bmesh, base_center: tuple, radius: float, height: float, sides: int, top_radius: float = None) -> None:
+    made = bmesh.ops.create_cone(mesh_bmesh, cap_ends=True, segments=sides, radius1=radius, radius2=radius if top_radius is None else top_radius, depth=height)
+
+    bmesh.ops.translate(mesh_bmesh, vec=(base_center[0], base_center[1], base_center[2] + height / 2.0), verts=made["verts"])
+
+
+def bm_prism_yz(mesh_bmesh, x_center: float, thickness: float, points_yz: list) -> None:
+    """Add a prism whose outline is drawn in the YZ plane, extruded along X by thickness."""
+    face_vertices = [mesh_bmesh.verts.new((x_center - thickness / 2.0, y, z)) for y, z in points_yz]
+    face = mesh_bmesh.faces.new(face_vertices)
+    extruded = bmesh.ops.extrude_face_region(mesh_bmesh, geom=[face])
+    moved = [element for element in extruded["geom"] if isinstance(element, bmesh.types.BMVert)]
+
+    bmesh.ops.translate(mesh_bmesh, vec=(thickness, 0.0, 0.0), verts=moved)
+    bmesh.ops.recalc_face_normals(mesh_bmesh, faces=mesh_bmesh.faces)
+
+
+def make_lathe(name: str, center: tuple, profile_rz: list, sides: int, material, smooth: bool = True) -> bpy.types.Object:
+    """Solid of revolution about a vertical axis from a (radius, height) profile listed bottom to top; the ends are capped."""
+    lathe_bmesh = bmesh.new()
+    rings = []
+
+    for radius, height in profile_rz:
+        rings.append([lathe_bmesh.verts.new((center[0] + radius * math.cos(2.0 * math.pi * segment / sides), center[1] + radius * math.sin(2.0 * math.pi * segment / sides), center[2] + height)) for segment in range(sides)])
+
+    for lower, upper in zip(rings, rings[1:]):
+        for segment in range(sides):
+            following = (segment + 1) % sides
+            lathe_bmesh.faces.new([lower[segment], lower[following], upper[following], upper[segment]])
+
+    lathe_bmesh.faces.new(list(reversed(rings[0])))
+    lathe_bmesh.faces.new(rings[-1])
+    bmesh.ops.recalc_face_normals(lathe_bmesh, faces=lathe_bmesh.faces)
+
+    for face in lathe_bmesh.faces:
+        face.smooth = smooth
+
+    return object_from_bmesh(name, lathe_bmesh, material)
+
+
+def apse_point(radius: float, angle: float) -> tuple:
+    """Plan point on the apse semicircle: angle 0 = +X side, pi/2 = on the axis (toward the apse back), pi = -X side."""
+    return (radius * math.cos(angle), BODY_LENGTH + radius * math.sin(angle))
+
+
+def make_arc_band(name: str, inner_radius: float, outer_radius: float, bottom: float, top: float, material, segments: int = 24) -> bpy.types.Object:
+    """Half-ring wall band around the apse (a moulding, a painted frieze or a skin over the wall)."""
+    angles = [math.pi * step / segments for step in range(segments + 1)]
+    outline = [apse_point(outer_radius, angle) for angle in angles] + [apse_point(inner_radius, angle) for angle in reversed(angles)]
+
+    return make_vertical_prism(name, outline, bottom, top - bottom, material)
+
+
+def make_dome_shell(name: str, radius: float, bottom: float, rise: float, material, rings: int = 8, segments: int = 24) -> bpy.types.Object:
+    """Half dome (flattened) over the apse; UV u runs across the half circle, v from the springing to the crown."""
+    dome_bmesh = bmesh.new()
+    uv_layer = dome_bmesh.loops.layers.uv.verify()
+    grid = []
+    vertex_uv = {}
+
+    for ring_index in range(rings):
+        elevation = (math.pi / 2.0) * ring_index / rings
+        ring = []
+
+        for segment in range(segments + 1):
+            vertex = dome_bmesh.verts.new((*apse_point(radius * math.cos(elevation), math.pi * segment / segments), bottom + rise * math.sin(elevation)))
+            vertex_uv[vertex] = (segment / segments, ring_index / rings)
+            ring.append(vertex)
+
+        grid.append(ring)
+
+    crown = dome_bmesh.verts.new((0.0, BODY_LENGTH, bottom + rise))
+    faces = []
+
+    for ring_index in range(rings - 1):
+        for segment in range(segments):
+            faces.append(dome_bmesh.faces.new([grid[ring_index][segment], grid[ring_index][segment + 1], grid[ring_index + 1][segment + 1], grid[ring_index + 1][segment]]))
+
+    for segment in range(segments):
+        faces.append(dome_bmesh.faces.new([grid[-1][segment], grid[-1][segment + 1], crown]))
+        vertex_uv[crown] = ((segment + 0.5) / segments, 1.0)
+
+        for loop in faces[-1].loops:
+            loop[uv_layer].uv = vertex_uv[loop.vert] if loop.vert is not crown else ((segment + 0.5) / segments, 1.0)
+
+    for face in faces[: (rings - 1) * segments]:
+        for loop in face.loops:
+            loop[uv_layer].uv = vertex_uv[loop.vert]
+
+    for face in dome_bmesh.faces:
+        face.smooth = True
+
+    bmesh.ops.recalc_face_normals(dome_bmesh, faces=dome_bmesh.faces)
+    dome = object_from_bmesh(name, dome_bmesh, material)
+    dome["keep_uvs"] = True
+
+    return dome
+
+
+def make_slope(name: str, start: tuple, end: tuple, width: float, thickness: float, material) -> bpy.types.Object:
+    """Inclined slab between two (x, y, z) points on its top surface; the slab hangs below that line."""
+    direction = Vector(end) - Vector(start)
+    horizontal = math.hypot(direction.x, direction.y)
+    pitch = math.atan2(direction.z, horizontal)
+    yaw = math.atan2(direction.y, direction.x)
+    slab = make_box(name, (0, 0, 0), (direction.length, width, thickness), material)
+
+    slab.matrix_world = Matrix.Translation((Vector(start) + Vector(end)) / 2.0) @ Matrix.Rotation(yaw, 4, "Z") @ Matrix.Rotation(-pitch, 4, "Y") @ Matrix.Translation((0, 0, -thickness / 2.0))
+
+    return slab
 
 
 # ---------- reusable pieces ----------
@@ -950,9 +1428,14 @@ def build_pews(materials: dict) -> None:
 
 STATUE_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_male.gltf"  # CC0, montado por build_characters.py
 STATUE_PARTS = ("Head", "Hair_Beard", "Hair_Buzzed", "Eyebrows", "Male_Peasant_Arms", "Male_Peasant_Body", "Male_Peasant_Feet")
-STATUE_SCALE = 1.25
-STATUE_SPOTS = [(-9.6, -2.0), (9.6, -2.0)]
-PEDESTAL_HEIGHT = 2.35
+MARY_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_female.gltf"
+MARY_PARTS = ("Head", "Eyebrows", "Female_Peasant_Arms", "Female_Peasant_Body", "Female_Peasant_Feet")
+CHRIST_SOURCE = PROJECT_DIR / "tools" / "vendor" / "ubc" / "Universal Base Characters[Standard]" / "Base Characters" / "Godot - UE" / "Superhero_Male_FullBody.gltf"
+CHRIST_HAIR_DIR = PROJECT_DIR / "tools" / "vendor" / "ubc" / "Universal Base Characters[Standard]" / "Hairstyles" / "Rigged to Head Bone" / "glTF (Godot -Unreal)"
+CHRIST_HAIR = ("Hair_Long", "Hair_Beard", "Eyebrows_Regular")
+STATUE_SCALE = 1.45
+STATUE_SPOTS = [(-12.2, -2.4), (12.2, -2.4)]
+PEDESTAL_HEIGHT = 2.8
 STATUE_POSE = [  # (bone, world axis, degrees), applied in order: arms lowered, right hand to the chest, left hand forward on the staff
     ("upperarm_l", "Y", 74.0),
     ("upperarm_r", "Y", -70.0),
@@ -960,6 +1443,27 @@ STATUE_POSE = [  # (bone, world axis, degrees), applied in order: arms lowered, 
     ("lowerarm_r", "Z", 38.0),
     ("lowerarm_l", "X", -52.0),
     ("Head", "X", 9.0),
+]
+PRAYER_POSE = [  # hands joined at the chest, head slightly bowed
+    ("upperarm_l", "Y", 74.0),
+    ("upperarm_r", "Y", -70.0),
+    ("lowerarm_r", "X", -118.0),
+    ("lowerarm_r", "Z", 38.0),
+    ("lowerarm_l", "X", -118.0),
+    ("lowerarm_l", "Z", -38.0),
+    ("Head", "X", 10.0),
+]
+CHRIST_POSE = [  # arms open a little above the horizontal, head fallen to the right shoulder, knees slightly bent
+    ("upperarm_l", "Y", 14.0),
+    ("upperarm_r", "Y", -14.0),
+    ("lowerarm_l", "X", -8.0),
+    ("lowerarm_r", "X", -8.0),
+    ("thigh_l", "X", -10.0),
+    ("thigh_r", "X", -10.0),
+    ("calf_l", "X", 20.0),
+    ("calf_r", "X", 20.0),
+    ("Head", "X", 22.0),
+    ("Head", "Z", 14.0),
 ]
 
 
@@ -1005,15 +1509,16 @@ def make_draped_cone(name: str, bottom: float, top: float, bottom_radius: float,
     return object_from_bmesh(name, drape_bmesh, material)
 
 
-def build_robed_figure(name: str, source: Path, part_names: tuple, pose: list, material) -> tuple:
-    """Stone figure from a CC0 character: fixed pose, carved in one material and dressed in a fluted tunic.
-    Returns (meshes standing at the origin facing -Y, {bone name: posed world position})."""
+def import_posed_meshes(source: Path, part_names: tuple, pose: list, name: str, material) -> tuple:
+    """Import a rigged CC0 character, bend it into the pose, and return (carved copies of the named parts in one material,
+    {bone name: posed world position}, {bone name: posed bone matrix (world)}, rest bone matrices (world))."""
     objects_before = set(bpy.data.objects)
 
     bpy.ops.import_scene.gltf(filepath=str(source))
 
     imported = list(set(bpy.data.objects) - objects_before)
     armature = next(scene_object for scene_object in imported if scene_object.type == "ARMATURE")
+    rest_matrices = {bone.name: armature.matrix_world @ bone.matrix_local for bone in armature.data.bones}
 
     bpy.context.view_layer.update()
 
@@ -1021,8 +1526,9 @@ def build_robed_figure(name: str, source: Path, part_names: tuple, pose: list, m
         pose_bone_about_world_axis(armature, bone_name, axis, degrees)
 
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    bone_positions = {pose_bone.name: (armature.matrix_world @ pose_bone.matrix).to_translation() for pose_bone in armature.pose.bones}
-    figure = []
+    posed_matrices = {pose_bone.name: armature.matrix_world @ pose_bone.matrix for pose_bone in armature.pose.bones}
+    bone_positions = {bone_name: matrix.to_translation() for bone_name, matrix in posed_matrices.items()}
+    parts = []
 
     for part_name in part_names:
         posed = bpy.data.objects[part_name].evaluated_get(depsgraph)
@@ -1032,39 +1538,178 @@ def build_robed_figure(name: str, source: Path, part_names: tuple, pose: list, m
         carved_mesh.materials.append(material)
         carved = bpy.data.objects.new(f"{name}{part_name}", carved_mesh)
         bpy.context.scene.collection.objects.link(carved)
-        figure.append(carved)
+        parts.append(carved)
 
     for scene_object in imported:
         bpy.data.objects.remove(scene_object, do_unlink=True)
 
-    figure.append(make_draped_cone(f"{name}Tunic", 0.03, 1.4, 0.36, 0.17, 9, 0.035, material))
+    return parts, bone_positions, posed_matrices, rest_matrices
+
+
+def build_robed_figure(name: str, source: Path, part_names: tuple, pose: list, material, tunic: bool = True, tunic_material=None) -> tuple:
+    """Stone figure from a CC0 character: fixed pose, carved in one material and dressed in a fluted tunic.
+    Returns (meshes standing at the origin facing -Y, {bone name: posed world position})."""
+    figure, bone_positions, _, _ = import_posed_meshes(source, part_names, pose, name, material)
+
+    if tunic:
+        figure.append(make_draped_cone(f"{name}Tunic", 0.03, 1.4, 0.36, 0.17, 9, 0.035, tunic_material or material))
 
     return figure, bone_positions
 
 
-def build_saint_figure(materials: dict) -> list:
-    """Robed saint carved in marble, with mantle, staff and halo. Meshes stand at the origin facing -Y, scaled to STATUE_SCALE."""
-    figure, bones = build_robed_figure("Saint", STATUE_SOURCE, STATUE_PARTS, STATUE_POSE, materials["marble"])
+def build_saint_figure(materials: dict, robe_key: str = "marble", staff: bool = True) -> list:
+    """Robed saint carved in marble, with mantle, staff and halo. Meshes stand at the origin facing -Y, unscaled (1.8 m)."""
+    figure, bones = build_robed_figure("Saint", STATUE_SOURCE, STATUE_PARTS, STATUE_POSE, materials["marble"], tunic_material=materials[robe_key])
     staff_hand = bones["hand_l"]
     head_top = bones["Head"]
-    mantle = make_draped_cone("SaintMantle", 0.55, 1.52, 0.34, 0.19, 7, 0.03, materials["marble"])
+    mantle = make_draped_cone("SaintMantle", 0.55, 1.52, 0.34, 0.19, 7, 0.03, materials[robe_key])
 
     mantle.data.transform(Matrix.Translation((0.0, 0.035, 0.0)))
     figure.append(mantle)
-    figure.append(make_cylinder("SaintStaff", (staff_hand.x, staff_hand.y - 0.02, 0.0), 0.022, 1.95, 8, materials["marble"]))
-    figure.append(make_sphere("SaintStaffBloom", (staff_hand.x, staff_hand.y - 0.02, 2.0), 0.075, materials["marble"]))
+
+    if staff:
+        figure.append(make_cylinder("SaintStaff", (staff_hand.x, staff_hand.y - 0.02, 0.0), 0.022, 1.95, 8, materials["marble"]))
+        figure.append(make_sphere("SaintStaffBloom", (staff_hand.x, staff_hand.y - 0.02, 2.0), 0.075, materials["marble"]))
+
     figure.append(make_cylinder("SaintBase", (0, 0, -0.14), 0.5, 0.16, 20, materials["marble"]))
-
-    halo_bmesh = bmesh.new()
-    bmesh.ops.create_cone(halo_bmesh, cap_ends=False, segments=24, radius1=0.19, radius2=0.19, depth=0.02)
-    halo = object_from_bmesh("SaintHalo", halo_bmesh, materials["gold"])
-    halo.data.transform(Matrix.Translation((0.0, head_top.y + 0.1, head_top.z + 0.14)) @ Matrix.Rotation(math.radians(80.0), 4, "X"))
-    figure.append(halo)
-
-    for part in figure:
-        part.data.transform(Matrix.Scale(STATUE_SCALE, 4))
+    figure.append(make_halo("SaintHalo", (0.0, head_top.y + 0.1, head_top.z + 0.14), 0.19, materials["gold"]))
 
     return figure
+
+
+def build_mary_figure(materials: dict) -> list:
+    """Our Lady: veiled head, blue mantle, hands joined at the chest. Meshes at the origin facing -Y, unscaled."""
+    figure, bones = build_robed_figure("Mary", MARY_SOURCE, MARY_PARTS, PRAYER_POSE, materials["marble_white"], tunic_material=materials["marble_white"])
+    head_top = bones["Head"]
+    mantle = make_draped_cone("MaryMantle", 0.05, 1.5, 0.38, 0.2, 8, 0.035, materials["blue_robe"])
+    veil = make_draped_cone("MaryVeil", 1.18, 1.76, 0.2, 0.125, 6, 0.012, materials["blue_robe"])
+
+    mantle.data.transform(Matrix.Translation((0.0, 0.04, 0.0)))
+    veil.data.transform(Matrix.Translation((0.0, 0.055, 0.0)))
+    figure += [mantle, veil, make_cylinder("MaryBase", (0, 0, -0.14), 0.5, 0.16, 20, materials["marble_white"])]
+    figure.append(make_halo("MaryHalo", (0.0, head_top.y + 0.1, head_top.z + 0.12), 0.19, materials["gold"]))
+
+    return figure
+
+
+def make_halo(name: str, center: tuple, radius: float, material) -> bpy.types.Object:
+    """Thin golden ring tilted back like a halo."""
+    halo_bmesh = bmesh.new()
+
+    bmesh.ops.create_cone(halo_bmesh, cap_ends=False, segments=24, radius1=radius, radius2=radius, depth=0.02)
+    halo = object_from_bmesh(name, halo_bmesh, material)
+    halo.data.transform(Matrix.Translation(center) @ Matrix.Rotation(math.radians(80.0), 4, "X"))
+
+    return halo
+
+
+def make_torus(name: str, center: tuple, major_radius: float, minor_radius: float, material, major_segments: int = 24, minor_segments: int = 6) -> bpy.types.Object:
+    """Horizontal torus (ring) around the given center."""
+    torus_bmesh = bmesh.new()
+    rings = []
+
+    for major in range(major_segments):
+        major_angle = 2.0 * math.pi * major / major_segments
+        ring = []
+
+        for minor in range(minor_segments):
+            minor_angle = 2.0 * math.pi * minor / minor_segments
+            radius = major_radius + minor_radius * math.cos(minor_angle)
+            ring.append(torus_bmesh.verts.new((center[0] + radius * math.cos(major_angle), center[1] + radius * math.sin(major_angle), center[2] + minor_radius * math.sin(minor_angle))))
+
+        rings.append(ring)
+
+    for major in range(major_segments):
+        following = (major + 1) % major_segments
+
+        for minor in range(minor_segments):
+            next_minor = (minor + 1) % minor_segments
+            torus_bmesh.faces.new([rings[major][minor], rings[following][minor], rings[following][next_minor], rings[major][next_minor]])
+
+    bmesh.ops.recalc_face_normals(torus_bmesh, faces=torus_bmesh.faces)
+
+    return object_from_bmesh(name, torus_bmesh, material)
+
+
+def build_christ_figure(materials: dict) -> tuple:
+    """The crucified Christ carved in painted ivory: the base body of the CC0 characters posed with open arms, long hair and beard,
+    loincloth, crown of thorns and halo. Meshes stand at the origin (soles at z = 0) facing -Y, unscaled (1.8 m).
+    Returns (meshes, {bone name: posed world position})."""
+    ivory = materials["ivory"]
+    figure, bones, posed_matrices, rest_matrices = import_posed_meshes(CHRIST_SOURCE, ("SuperHero_Male",), CHRIST_POSE, "Christ", ivory)
+    head_delta = posed_matrices["Head"] @ rest_matrices["Head"].inverted()
+
+    for hair_name in CHRIST_HAIR:
+        objects_before = set(bpy.data.objects)
+
+        bpy.ops.import_scene.gltf(filepath=str(CHRIST_HAIR_DIR / f"{hair_name}.gltf"))
+
+        imported = list(set(bpy.data.objects) - objects_before)
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+
+        for hair_source in [scene_object for scene_object in imported if scene_object.type == "MESH" and scene_object.name.startswith(hair_name.split("_")[0])]:
+            posed = hair_source.evaluated_get(depsgraph)
+            hair_mesh = bpy.data.meshes.new_from_object(posed)
+
+            hair_mesh.transform(head_delta @ posed.matrix_world)
+            hair_mesh.materials.clear()
+            hair_mesh.materials.append(materials["thorn"] if hair_name != "Eyebrows_Regular" else ivory)
+            hair_object = bpy.data.objects.new(f"Christ{hair_name}", hair_mesh)
+            bpy.context.scene.collection.objects.link(hair_object)
+            figure.append(hair_object)
+
+        for scene_object in imported:
+            bpy.data.objects.remove(scene_object, do_unlink=True)
+
+    head = bones["Head"]
+    loincloth = make_draped_cone("ChristLoincloth", 0.80, 1.08, 0.235, 0.19, 9, 0.03, materials["linen"])
+    knot = make_box("ChristLoinKnot", (0.2, -0.17, 0.99), (0.1, 0.07, 0.3), materials["linen"])
+    crown = make_torus("ChristCrown", (head.x, head.y - 0.015, head.z + 0.17), 0.1, 0.014, materials["thorn"], 16, 5)
+    aureole = make_halo("ChristAureole", (head.x, head.y + 0.13, head.z + 0.13), 0.21, materials["gold"])
+
+    knot.rotation_euler.y = math.radians(-12.0)
+    figure += [loincloth, knot, crown, aureole]
+
+    for ray_index in range(3):
+        ray = make_box(f"ChristRay{ray_index}", (0, 0, 0), (0.035, 0.012, 0.19), materials["gold"])
+        ray.matrix_world = Matrix.Translation((head.x, head.y + 0.115, head.z + 0.13)) @ Matrix.Rotation(math.radians(ray_index * 120.0), 4, "Y") @ Matrix.Translation((0, 0, 0.09))
+        figure.append(ray)
+
+    for thorn_index in range(10):
+        angle = 2.0 * math.pi * thorn_index / 10.0
+        thorn = make_cone(f"ChristThorn{thorn_index}", (0, 0, 0), 0.012, 0.04, 5, materials["thorn"])
+        thorn.matrix_world = Matrix.Translation((head.x + 0.105 * math.cos(angle), head.y - 0.015 + 0.105 * math.sin(angle), head.z + 0.17)) @ Matrix.Rotation(math.radians(55.0), 4, "Y") @ Matrix.Rotation(angle, 4, "Z")
+        figure.append(thorn)
+
+    for hand_name in ("hand_l", "hand_r"):
+        nail = make_cylinder(f"ChristNail{hand_name}", (bones[hand_name].x, bones[hand_name].y + 0.0, bones[hand_name].z - 0.015), 0.012, 0.05, 6, materials["iron"])
+        nail.data.transform(Matrix.Translation((0, 0, 0)))
+        figure.append(nail)
+
+    return figure, bones
+
+
+def place_figure(parts: list, placement: Matrix, tag: str) -> list:
+    """Copy the figure meshes to a place in the scene (placement may mirror: normals are flipped back)."""
+    copies = []
+
+    for part in parts:
+        copy = bpy.data.objects.new(f"{part.name}{tag}", part.data.copy())
+
+        copy.data.transform(placement)
+
+        if placement.determinant() < 0.0:
+            copy.data.flip_normals()
+
+        bpy.context.scene.collection.objects.link(copy)
+        copies.append(copy)
+
+    return copies
+
+
+def discard_figure(parts: list) -> None:
+    for part in parts:
+        bpy.data.objects.remove(part, do_unlink=True)
 
 
 def build_pedestal(tag: str, center: tuple, materials: dict) -> None:
@@ -1074,7 +1719,7 @@ def build_pedestal(tag: str, center: tuple, materials: dict) -> None:
     courses = [
         ("Step", 1.9, 0.0, 0.22, "stone"),
         ("Plinth", 1.55, 0.22, 0.5, "trim"),
-        ("Dado", 1.2, dado_bottom, dado_top, "wall"),
+        ("Dado", 1.2, dado_bottom, dado_top, "salmon"),
         ("Necking", 1.3, dado_top, dado_top + 0.08, "trim"),
         ("Cornice", 1.55, dado_top + 0.08, dado_top + 0.22, "trim"),
         ("Cap", 1.3, dado_top + 0.22, PEDESTAL_HEIGHT, "stone"),
@@ -1090,28 +1735,15 @@ def build_pedestal(tag: str, center: tuple, materials: dict) -> None:
     make_box(f"PedestalPlaque{tag}", (x, y - 0.61, (dado_bottom + dado_top) / 2.0 + 0.1), (0.52, 0.03, 0.36), materials["gold"])
 
 
-def build_statues(materials: dict) -> None:
+def build_statues(materials: dict, saint: list) -> None:
     """Two robed saints on tall pedestals flanking the stairs, facing the forecourt."""
-    figure = build_saint_figure(materials)
-
     for spot_index, (statue_x, statue_y) in enumerate(STATUE_SPOTS):
         tag = "LR"[spot_index]
         mirror = Matrix.Scale(-1.0 if spot_index else 1.0, 4, (1, 0, 0))
-        placement = Matrix.Translation((statue_x, statue_y, PEDESTAL_HEIGHT + 0.14 * STATUE_SCALE)) @ mirror
+        placement = Matrix.Translation((statue_x, statue_y, PEDESTAL_HEIGHT + 0.14 * STATUE_SCALE)) @ mirror @ Matrix.Scale(STATUE_SCALE, 4)
 
         build_pedestal(tag, (statue_x, statue_y), materials)
-
-        for part in figure:
-            copy = bpy.data.objects.new(f"{part.name}{tag}", part.data.copy())
-            copy.data.transform(placement)
-
-            if spot_index:
-                copy.data.flip_normals()
-
-            bpy.context.scene.collection.objects.link(copy)
-
-    for part in figure:
-        bpy.data.objects.remove(part, do_unlink=True)
+        place_figure(saint, placement, f"Facade{tag}")
 
 
 # ---------- collision ----------
