@@ -34,6 +34,9 @@ import/fbx2gltf/enabled=false
 
 [importer_defaults]
 
+scene={
+"import_script/path": "res://features/audio/tag_ground_surfaces.gd"
+}
 texture={
 "mipmaps/generate": true
 }

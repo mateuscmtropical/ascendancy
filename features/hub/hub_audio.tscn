@@ -8,7 +8,7 @@
 
 [node name="TownAmbience" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("1_ambience")
-volume_db = -10.0
+volume_db = -14.0
 autoplay = true
 bus = &"Ambient"
 

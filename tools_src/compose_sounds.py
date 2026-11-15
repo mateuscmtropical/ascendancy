@@ -1,5 +1,6 @@
-"""Synthesise the game's sound effects and ambience loops (all original, no recordings): footsteps on stone, the
-fountain's water, the town's wind and birdsong, the cathedral bell and the menu sounds.
+"""Synthesise the game's sound effects and ambience loops (all original, no recordings): footsteps, jump take-offs and
+landings on stone, grass and wood (with a Godot AudioStreamRandomizer .tres per set), the fountain's water, the
+town's breeze and birdsong, the cathedral bell and the menu sounds.
 
 Noise is shaped in the frequency domain (FFT of white noise times a spectral envelope), which makes every loop
 periodic: the end flows into the start with no seam. Events (droplets, chirps) are placed modulo the loop length.
@@ -19,7 +20,7 @@ OUTPUT_DIR = Path(__file__).resolve().parent.parent / "art" / "audio"
 
 
 def timeline(seconds: float) -> np.ndarray:
-    return np.arange(int(seconds * RATE)) / RATE
+    return np.arange(round(seconds * RATE)) / RATE
 
 
 def shaped_noise(length: int, envelope, generator: np.random.Generator) -> np.ndarray:
@@ -84,22 +85,121 @@ def normalized(sound: np.ndarray, peak: float = PEAK) -> np.ndarray:
 
 # ---------- one-shots ----------
 
-def footstep(variant: int) -> np.ndarray:
-    """Leather sole on stone: heel thump, a short gritty body and a fine scuff, each variant a little different."""
-    generator = np.random.default_rng(100 + variant)
-    seconds = 0.24
-    length = int(seconds * RATE)
-    heel_hz = generator.uniform(70.0, 95.0)
-    body_low, body_high = generator.uniform(450.0, 700.0), generator.uniform(1800.0, 2600.0)
-    heel = np.sin(2.0 * np.pi * heel_hz * timeline(seconds)) * decay(seconds, 0.018)
-    body = shaped_noise(length, band(body_low, body_high, 3.0), generator) * decay(seconds, 0.022)
-    grit = shaped_noise(length, band(3500.0, 9000.0, 2.0), generator) * decay(seconds, 0.006)
-    scuff_start = int(generator.uniform(0.03, 0.05) * RATE)
-    scuff = np.zeros(length)
-    scuff_length = length - scuff_start
-    scuff[scuff_start:] = shaped_noise(scuff_length, band(1500.0, 6000.0, 2.0), generator) * decay(scuff_length / RATE, 0.025)
+def thud(seconds: float, hz: float, time_constant: float) -> np.ndarray:
+    """Low body thump of a foot landing: a sine dropping a little in pitch as it dies."""
+    return sweep(hz * 1.3, hz, seconds) * decay(seconds, time_constant)
 
-    return normalized(fade_edges(0.9 * heel + 0.8 * body + 0.35 * grit + 0.25 * scuff, 0.001, 0.03), 0.7)
+
+def burst(length: int, low: float, high: float, time_constant: float, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Band of noise starting at delay with an exponential decay."""
+    sound = np.zeros(length)
+    sound[delay:] = shaped_noise(length - delay, band(low, high, 2.0), generator) * decay((length - delay) / RATE, time_constant)
+
+    return sound
+
+
+def delayed(length: int, sound: np.ndarray, delay: int) -> np.ndarray:
+    placed = np.zeros(length)
+    placed[delay:] = sound[:length - delay]
+
+    return placed
+
+
+def crackle(length: int, density: float, time_constant: float, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Many tiny bright ticks thinning out over time: blades of grass and twigs bending under the sole."""
+    ticks = np.zeros(length)
+    count = int(density * time_constant * 4.0)
+    positions = delay + (generator.exponential(time_constant, count) * RATE).astype(int)
+    positions = positions[positions < length]
+    ticks[positions] = generator.uniform(-1.0, 1.0, len(positions))
+
+    return np.convolve(ticks, np.hanning(9), mode="same")
+
+
+def wood_knock(length: int, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Hollow board: a few resonant modes of a plank over a joist, each with its own short decay."""
+    time = timeline(length / RATE)
+    base_hz = generator.uniform(105.0, 165.0)
+    modes = ((1.0, 1.0, 0.07), (2.32, 0.55, 0.045), (3.9, 0.3, 0.03), (6.1, 0.15, 0.02))
+    tone = sum(amplitude * np.sin(2.0 * np.pi * base_hz * ratio * generator.uniform(0.97, 1.03) * time) * np.exp(-time / time_constant) for ratio, amplitude, time_constant in modes)
+
+    return delayed(length, tone, delay)
+
+
+def creak(length: int, generator: np.random.Generator) -> np.ndarray:
+    """Short creak of a loose board: a narrow tone gliding down, rough with fast amplitude flutter."""
+    seconds = generator.uniform(0.12, 0.2)
+    time = timeline(seconds)
+    flutter = 0.6 + 0.4 * np.sin(2.0 * np.pi * generator.uniform(35.0, 60.0) * time)
+    tone = sweep(generator.uniform(500.0, 800.0), generator.uniform(380.0, 520.0), seconds) * flutter * np.hanning(len(time))
+
+    return delayed(length, np.pad(tone, (0, length)), int(generator.uniform(0.04, 0.08) * RATE))
+
+
+def stone_contact(length: int, weight: float, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Leather sole on stone: a soft muffled knock and a short gritty scrape."""
+    knock = delayed(length, thud(length / RATE, generator.uniform(80.0, 120.0), 0.02), delay)
+    body = burst(length, generator.uniform(250.0, 450.0), generator.uniform(1400.0, 2200.0), generator.uniform(0.012, 0.022), generator, delay)
+    grit = burst(length, 2500.0, 7000.0, generator.uniform(0.004, 0.008), generator, delay)
+
+    return weight * (0.8 * knock + 0.9 * body + generator.uniform(0.1, 0.3) * grit)
+
+
+def grass_contact(length: int, weight: float, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Sole pressing into lawn: a dull soft thump under a swish of leaves and fine crackle."""
+    knock = delayed(length, thud(length / RATE, generator.uniform(60.0, 85.0), 0.03), delay)
+    swish = burst(length, generator.uniform(900.0, 1500.0), generator.uniform(4500.0, 7000.0), generator.uniform(0.04, 0.07), generator, delay)
+    ticks = crackle(length, generator.uniform(2500.0, 4500.0), generator.uniform(0.03, 0.06), generator, delay)
+
+    return weight * (0.35 * knock + 0.55 * swish + 0.45 * normalized(ticks, 1.0))
+
+
+def wood_contact(length: int, weight: float, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Boot on floorboards: the board's hollow knock plus a dry click of the heel."""
+    click = burst(length, 1200.0, 5000.0, generator.uniform(0.003, 0.006), generator, delay)
+
+    return weight * (0.9 * wood_knock(length, generator, delay) + 0.35 * click)
+
+
+CONTACT_BY_SURFACE = {"stone": stone_contact, "grass": grass_contact, "wood": wood_contact}
+SEED_BY_SURFACE = {"stone": 100, "grass": 200, "wood": 300}
+
+
+def footstep(surface: str, variant: int) -> np.ndarray:
+    """One step: heel strike then the roll onto the toe; gap, weights and tone change from variant to variant."""
+    generator = np.random.default_rng(SEED_BY_SURFACE[surface] + variant)
+    contact = CONTACT_BY_SURFACE[surface]
+    length = int(0.32 * RATE)
+    toe_delay = int(generator.uniform(0.045, 0.09) * RATE)
+    heel = contact(length, 1.0, generator)
+    toe = contact(length, generator.uniform(0.3, 0.6), generator, toe_delay)
+    board_creak = creak(length, generator) * 0.25 if surface == "wood" and variant % 3 == 0 else np.zeros(length)
+
+    return normalized(fade_edges(heel + toe + board_creak, 0.001, 0.04), generator.uniform(0.5, 0.75))
+
+
+def jump_takeoff(surface: str, variant: int) -> np.ndarray:
+    """Push-off of a jump: both soles scuff as the weight leaves the ground, lighter than a step."""
+    generator = np.random.default_rng(SEED_BY_SURFACE[surface] + 50 + variant)
+    contact = CONTACT_BY_SURFACE[surface]
+    length = int(0.3 * RATE)
+    scuff = burst(length, 900.0, 5000.0, 0.05, generator, int(0.01 * RATE))
+    push = contact(length, 0.6, generator) + contact(length, 0.5, generator, int(generator.uniform(0.015, 0.03) * RATE))
+
+    return normalized(fade_edges(push + 0.25 * scuff, 0.002, 0.05), 0.45)
+
+
+def jump_landing(surface: str, variant: int) -> np.ndarray:
+    """Both feet land a few hundredths apart: heavier, with a deep body thump and a longer settle."""
+    generator = np.random.default_rng(SEED_BY_SURFACE[surface] + 80 + variant)
+    contact = CONTACT_BY_SURFACE[surface]
+    length = int(0.5 * RATE)
+    second_foot = int(generator.uniform(0.02, 0.045) * RATE)
+    body = thud(length / RATE, generator.uniform(50.0, 65.0), 0.06)
+    feet = contact(length, 1.0, generator) + contact(length, generator.uniform(0.7, 0.9), generator, second_foot)
+    settle = contact(length, 0.25, generator, int(generator.uniform(0.12, 0.18) * RATE))
+
+    return normalized(fade_edges(feet + 0.7 * body + settle, 0.001, 0.08), 0.85)
 
 
 def church_bell() -> np.ndarray:
@@ -148,15 +248,15 @@ def fountain_loop() -> np.ndarray:
     generator = np.random.default_rng(11)
     seconds = 12.0
     length = int(seconds * RATE)
-    splash = shaped_noise(length, band(350.0, 3000.0, 2.0), generator) * slow_swell(length, (3, 7, 13), 0.35, generator)
+    splash = shaped_noise(length, band(300.0, 1800.0, 3.0), generator) * slow_swell(length, (3, 7, 13), 0.35, generator)
     churn = shaped_noise(length, band(80.0, 400.0, 2.0), generator) * slow_swell(length, (2, 5), 0.4, generator)
-    water = 0.7 * splash + 0.45 * churn
+    water = 0.45 * splash + 0.45 * churn
 
-    for _ in range(260):
+    for _ in range(420):
         droplet_seconds = generator.uniform(0.02, 0.06)
         start_hz = generator.uniform(500.0, 1400.0)
         droplet = sweep(start_hz, start_hz * generator.uniform(1.6, 2.6), droplet_seconds) * decay(droplet_seconds, droplet_seconds / 3.0)
-        add_wrapped(water, droplet * generator.uniform(0.08, 0.3), int(generator.uniform(0.0, length)))
+        add_wrapped(water, droplet * generator.uniform(0.05, 0.22), int(generator.uniform(0.0, length)))
 
     return normalized(water, 0.8)
 
@@ -168,7 +268,7 @@ def chirp_call(generator: np.random.Generator) -> np.ndarray:
     for _ in range(int(generator.integers(3, 7))):
         note_seconds = generator.uniform(0.05, 0.09)
         low = generator.uniform(2800.0, 3800.0)
-        notes.append(sweep(low, low * generator.uniform(1.25, 1.6), note_seconds) * np.hanning(int(note_seconds * RATE)))
+        notes.append(sweep(low, low * generator.uniform(1.25, 1.6), note_seconds) * np.hanning(round(note_seconds * RATE)))
         notes.append(np.zeros(int(generator.uniform(0.04, 0.09) * RATE)))
 
     return np.concatenate(notes)
@@ -177,8 +277,8 @@ def chirp_call(generator: np.random.Generator) -> np.ndarray:
 def whistle_call(generator: np.random.Generator) -> np.ndarray:
     """Two-tone falling whistle, 'fee-bee'."""
     high = generator.uniform(3000.0, 3600.0)
-    first = sweep(high, high * 0.98, 0.28) * np.hanning(int(0.28 * RATE))
-    second = sweep(high * 0.8, high * 0.76, 0.32) * np.hanning(int(0.32 * RATE))
+    first = sweep(high, high * 0.98, 0.28) * np.hanning(round(0.28 * RATE))
+    second = sweep(high * 0.8, high * 0.76, 0.32) * np.hanning(round(0.32 * RATE))
 
     return np.concatenate([first, np.zeros(int(0.06 * RATE)), second])
 
@@ -194,19 +294,19 @@ def trill_call(generator: np.random.Generator) -> np.ndarray:
 
 
 def town_ambience_loop() -> np.ndarray:
-    """Daytime town square: soft wind with gusts, leaves rustling with the gusts, and distant birds of three kinds."""
+    """Daytime town square: a faint breeze, leaves stirring now and then, and distant birds of three kinds."""
     generator = np.random.default_rng(23)
     seconds = 48.0
     length = int(seconds * RATE)
-    gusts = slow_swell(length, (2, 5, 9), 0.75, generator)
-    wind = shaped_noise(length, band(60.0, 450.0, 2.0), generator) * gusts
-    leaves = shaped_noise(length, band(1800.0, 7000.0, 2.0), generator) * gusts ** 2
-    ambience = 0.45 * wind + 0.15 * leaves
+    gusts = slow_swell(length, (2, 5, 9), 0.5, generator)
+    breeze = shaped_noise(length, band(250.0, 900.0, 2.0), generator) * gusts
+    leaves = shaped_noise(length, band(2500.0, 6000.0, 2.0), generator) * gusts ** 3
+    ambience = 0.1 * breeze + 0.05 * leaves
     calls = (chirp_call, whistle_call, trill_call)
 
     for index in range(26):
         call = calls[index % len(calls)](generator)
-        add_wrapped(ambience, call * generator.uniform(0.05, 0.16), int(generator.uniform(0.0, length)))
+        add_wrapped(ambience, call * generator.uniform(0.06, 0.18), int(generator.uniform(0.0, length)))
 
     return normalized(ambience, 0.75)
 
@@ -221,8 +321,14 @@ def write_wav(path: Path, sound: np.ndarray) -> None:
         wav_file.writeframes(samples.tobytes())
 
 
+SURFACES = tuple(CONTACT_BY_SURFACE)
+STEP_VARIANTS = 10
+JUMP_VARIANTS = 3
+
 SOUNDS = {
-    **{f"footstep_stone_{variant}": (lambda variant=variant: footstep(variant)) for variant in range(1, 6)},
+    **{f"step_{surface}_{variant}": (lambda surface=surface, variant=variant: footstep(surface, variant)) for surface in SURFACES for variant in range(1, STEP_VARIANTS + 1)},
+    **{f"jump_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_takeoff(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
+    **{f"land_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_landing(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
     "church_bell": church_bell,
     "ui_click": interface_click,
     "ui_open": lambda: interface_tone((660.0, 990.0), 0.07, 0.15),
@@ -230,6 +336,24 @@ SOUNDS = {
     "fountain_loop": fountain_loop,
     "town_ambience_loop": town_ambience_loop,
 }
+
+
+# Godot AudioStreamRandomizer per sound set: (variants, pitch spread, volume spread in dB)
+RANDOMIZERS = {
+    **{f"step_{surface}": (STEP_VARIANTS, 1.08, 3.0) for surface in SURFACES},
+    **{f"jump_{surface}": (JUMP_VARIANTS, 1.06, 2.0) for surface in SURFACES},
+    **{f"land_{surface}": (JUMP_VARIANTS, 1.05, 2.0) for surface in SURFACES},
+}
+
+
+def write_randomizer(path: Path, name: str, variants: int, pitch_spread: float, volume_spread: float) -> None:
+    """Godot resource that plays one of the set's wavs at random (never the same twice), with pitch and volume jitter."""
+    resources = [f'[ext_resource type="AudioStream" path="res://art/audio/{name}_{variant}.wav" id="{variant}"]' for variant in range(1, variants + 1)]
+    streams = [f'stream_{variant - 1}/stream = ExtResource("{variant}")' for variant in range(1, variants + 1)]
+    header = [f"[gd_resource type=\"AudioStreamRandomizer\" load_steps={variants + 1} format=3]", ""]
+    body = ["", "[resource]", f"random_pitch = {pitch_spread}", f"random_volume_offset_db = {volume_spread}", f"streams_count = {variants}"]
+
+    path.write_text("\n".join(header + resources + body + streams) + "\n", encoding="utf-8", newline="\n")
 
 
 def main() -> None:
@@ -240,6 +364,9 @@ def main() -> None:
         sound = make()
         write_wav(output_dir / f"{name}.wav", sound)
         print(f"SOUND {name}: {len(sound) / RATE:.2f} s")
+
+    for name, settings in RANDOMIZERS.items():
+        write_randomizer(output_dir / f"{name}.tres", name, *settings)
 
 
 if __name__ == "__main__":

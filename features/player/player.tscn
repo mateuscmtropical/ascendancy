@@ -1,24 +1,9 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://features/player/player_controller.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://features/player/character_model.tscn" id="2_model"]
 [ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="3_body"]
 [ext_resource type="Script" path="res://features/audio/footstep_player.gd" id="4_footsteps"]
-[ext_resource type="AudioStream" path="res://art/audio/footstep_stone_1.wav" id="5_step_1"]
-[ext_resource type="AudioStream" path="res://art/audio/footstep_stone_2.wav" id="5_step_2"]
-[ext_resource type="AudioStream" path="res://art/audio/footstep_stone_3.wav" id="5_step_3"]
-[ext_resource type="AudioStream" path="res://art/audio/footstep_stone_4.wav" id="5_step_4"]
-[ext_resource type="AudioStream" path="res://art/audio/footstep_stone_5.wav" id="5_step_5"]
-
-[sub_resource type="AudioStreamRandomizer" id="footsteps_stone"]
-random_pitch = 1.12
-random_volume_offset_db = 2.0
-streams_count = 5
-stream_0/stream = ExtResource("5_step_1")
-stream_1/stream = ExtResource("5_step_2")
-stream_2/stream = ExtResource("5_step_3")
-stream_3/stream = ExtResource("5_step_4")
-stream_4/stream = ExtResource("5_step_5")
 
 [sub_resource type="CapsuleShape3D" id="capsule"]
 radius = 0.32
@@ -54,8 +39,11 @@ fov = 60.0
 radius = 0.5
 
 [node name="Footsteps" type="AudioStreamPlayer3D" parent="."]
-stream = SubResource("footsteps_stone")
 volume_db = -6.0
 max_polyphony = 2
 bus = &"Effects"
 script = ExtResource("4_footsteps")
+
+[node name="GroundProbe" type="RayCast3D" parent="Footsteps"]
+position = Vector3(0, 0.3, 0)
+target_position = Vector3(0, -0.9, 0)
