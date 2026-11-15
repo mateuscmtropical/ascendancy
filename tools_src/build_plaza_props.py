@@ -11,9 +11,10 @@ import math
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
 import numpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -33,6 +34,7 @@ from build_cathedral import (  # noqa: E402
     make_sphere,
     map_uvs_per_face,
     merge_meshes_by_material,
+    object_from_bmesh,
     save_generated_image,
 )
 
@@ -45,6 +47,12 @@ def build_prop_materials() -> dict:
         "stone": make_material("M_CathedralStone", stone_image, load_kit_image("T_Brick_Normal.png", False)),
         "trim": make_material("M_CathedralTrim", trim_image, load_kit_image("T_Plaster_Normal.png", False)),
         "water": make_plain_material("M_Water", (0.25, 0.55, 0.65), 0.0, 0.05),
+        "water_basin": make_plain_material("M_WaterBasin", (0.25, 0.55, 0.65), 0.0, 0.05),
+        "water_lower": make_plain_material("M_WaterLower", (0.25, 0.55, 0.65), 0.0, 0.05),
+        "water_middle": make_plain_material("M_WaterMiddle", (0.25, 0.55, 0.65), 0.0, 0.05),
+        "water_upper": make_plain_material("M_WaterUpper", (0.25, 0.55, 0.65), 0.0, 0.05),
+        "water_jet": make_plain_material("M_WaterJet", (0.6, 0.85, 0.95), 0.0, 0.05),
+        "water_curtain": make_plain_material("M_WaterCurtain", (0.6, 0.85, 0.95), 0.0, 0.05),
         "metal": make_plain_material("M_LampMetal", (0.08, 0.17, 0.13), 0.7, 0.45),
         "roof": make_material("M_CathedralRoof", bpy.data.images.load(str(GENERATED_TEXTURES / "T_CathedralRoof_BaseColor.png")), load_kit_image("T_RoundTiles_Normal.png", False)),
         "lamp_glass": make_lamp_glass_material(),
@@ -123,13 +131,143 @@ def make_round_ring(name: str, outer_radius: float, inner_radius: float, base_z:
     return object_from_bmesh(name, ring_bmesh, material)
 
 
-def build_fountain_bowl(name: str, base_z: float, radius: float, materials: dict, lobes: int) -> None:
+GRAVITY = 9.8
+JET_TUBE_SIDES = 6
+JET_PATH_STEPS = 22
+CURTAIN_SEGMENTS = 72
+CURTAIN_ROWS = 14
+TANK_WATER_TOP = 0.42
+# Os mesmos pontos de impacto vao para os shaders das superficies (art/materials/water_fountain_*.tres:
+# curtain_ring_radius, jet_landing_*); se mudar um numero aqui, atualizar o material correspondente.
+CROWN_JETS = {"count": 8, "start": (0.05, 5.62), "horizontal_speed": 0.91, "vertical_speed": 2.5, "land_z": 4.91, "radius": 0.028}
+BOWL_JETS = {"count": 12, "start": (1.95, 3.29), "horizontal_speed": 1.965, "vertical_speed": 3.5, "land_z": TANK_WATER_TOP + 0.02, "radius": 0.05}
+CENTER_JET = {"base": (0.0, 0.0, 5.6), "height": 0.95, "radius": 0.04}
+# Cada cortina nasce na borda externa (1.03 * raio) da bacia e cai na superficie da de baixo.
+UPPER_CURTAIN = {"radius": 0.9, "top_z": 4.91, "outward_speed": 0.3, "bottom_z": 4.3}
+MIDDLE_CURTAIN = {"radius": 1.51, "top_z": 4.31, "outward_speed": 0.4, "bottom_z": 3.27}
+LOWER_CURTAIN = {"radius": 2.39, "top_z": 3.28, "outward_speed": 0.45, "bottom_z": TANK_WATER_TOP + 0.02}
+
+
+def ballistic_path(azimuth: float, jet: dict) -> list:
+    """Points of a thrown-water arc (gravity only) from the nozzle until it reaches land_z."""
+    start_radius, start_z = jet["start"]
+    drop = start_z - jet["land_z"]
+    flight_time = (jet["vertical_speed"] + math.sqrt(jet["vertical_speed"] ** 2 + 2.0 * GRAVITY * drop)) / GRAVITY
+    times = [flight_time * step / JET_PATH_STEPS for step in range(JET_PATH_STEPS + 1)]
+    direction = Vector((math.cos(azimuth), math.sin(azimuth), 0.0))
+    origin = direction * start_radius + Vector((0.0, 0.0, start_z))
+
+    return [
+        origin + direction * jet["horizontal_speed"] * time + Vector((0.0, 0.0, jet["vertical_speed"] * time - 0.5 * GRAVITY * time * time))
+        for time in times
+    ]
+
+
+def jet_azimuths(jet: dict) -> list:
+    return [math.tau * index / jet["count"] for index in range(jet["count"])]
+
+
+def tube_ring(path: list, point_index: int, radius: float) -> list:
+    """Hexagon of vertex positions around one path point, tapering toward the tail."""
+    last = len(path) - 1
+    tangent = (path[min(point_index + 1, last)] - path[max(point_index - 1, 0)]).normalized()
+    side = tangent.cross(Vector((0.0, 0.0, 1.0)))
+    side = side.normalized() if side.length > 1e-4 else Vector((1.0, 0.0, 0.0))
+    lift = side.cross(tangent)
+    ring_radius = radius * (1.0 - 0.45 * point_index / last)
+
+    return [
+        path[point_index] + ring_radius * (math.cos(math.tau * corner / JET_TUBE_SIDES) * side + math.sin(math.tau * corner / JET_TUBE_SIDES) * lift)
+        for corner in range(JET_TUBE_SIDES)
+    ]
+
+
+def add_quad(target_bmesh, corners: tuple, uvs: tuple, uv_layer) -> None:
+    face = target_bmesh.faces.new(corners)
+
+    for loop, uv in zip(face.loops, uvs):
+        loop[uv_layer].uv = uv
+    face.smooth = True
+
+
+def add_tube(stream_bmesh, path: list, stream_index: int, radius: float, uv_layer) -> None:
+    """Hexagonal tube along path. UV.x = stream_index * 2 + around (0..1); UV.y = 0..1 along the stream."""
+    last = len(path) - 1
+    rings = [[stream_bmesh.verts.new(position) for position in tube_ring(path, point_index, radius)] for point_index in range(last + 1)]
+
+    for ring_index, side_index in [(ring, side) for ring in range(last) for side in range(JET_TUBE_SIDES)]:
+        next_side = (side_index + 1) % JET_TUBE_SIDES
+        corners = (rings[ring_index][side_index], rings[ring_index][next_side], rings[ring_index + 1][next_side], rings[ring_index + 1][side_index])
+        left = stream_index * 2.0 + side_index / JET_TUBE_SIDES
+        right = stream_index * 2.0 + (side_index + 1) / JET_TUBE_SIDES
+        uvs = ((left, ring_index / last), (right, ring_index / last), (right, (ring_index + 1) / last), (left, (ring_index + 1) / last))
+        add_quad(stream_bmesh, corners, uvs, uv_layer)
+
+
+def make_jet_mesh(material):
+    stream_bmesh = bmesh.new()
+    uv_layer = stream_bmesh.loops.layers.uv.new("UVMap")
+    base = Vector(CENTER_JET["base"])
+    center_path = [base + Vector((0.0, 0.0, CENTER_JET["height"] * step / JET_PATH_STEPS)) for step in range(JET_PATH_STEPS + 1)]
+    arc_paths = [(ballistic_path(azimuth, jet), jet["radius"]) for jet in (CROWN_JETS, BOWL_JETS) for azimuth in jet_azimuths(jet)]
+
+    for stream_index, (path, radius) in enumerate([(center_path, CENTER_JET["radius"])] + arc_paths):
+        add_tube(stream_bmesh, path, stream_index, radius, uv_layer)
+
+    jet_object = object_from_bmesh("WaterJets", stream_bmesh, material)
+    jet_object["keep_uvs"] = True
+
+    return jet_object
+
+
+def curtain_rows(curtain: dict) -> list:
+    """Rim-to-pool vertex rings of a falling sheet: slow outward drift plus gravity."""
+    fall_time = math.sqrt(2.0 * (curtain["top_z"] - curtain["bottom_z"]) / GRAVITY)
+    rows = []
+
+    for row in range(CURTAIN_ROWS + 1):
+        time = fall_time * row / CURTAIN_ROWS
+        row_radius = curtain["radius"] + curtain["outward_speed"] * time
+        row_height = curtain["top_z"] - 0.5 * GRAVITY * time * time
+        angles = [math.tau * column / CURTAIN_SEGMENTS for column in range(CURTAIN_SEGMENTS)]
+        rows.append([(row_radius * math.cos(angle), row_radius * math.sin(angle), row_height) for angle in angles])
+
+    return rows
+
+
+def add_curtain(curtain_bmesh, curtain: dict, uv_layer) -> None:
+    """Thin falling sheet around a rim. UV.x = around (0..1); UV.y = 0..1 down the fall."""
+    rows = [[curtain_bmesh.verts.new(position) for position in row] for row in curtain_rows(curtain)]
+
+    for row, column in [(row, column) for row in range(CURTAIN_ROWS) for column in range(CURTAIN_SEGMENTS)]:
+        next_column = (column + 1) % CURTAIN_SEGMENTS
+        corners = (rows[row][column], rows[row][next_column], rows[row + 1][next_column], rows[row + 1][column])
+        left = column / CURTAIN_SEGMENTS
+        right = (column + 1) / CURTAIN_SEGMENTS
+        uvs = ((left, row / CURTAIN_ROWS), (right, row / CURTAIN_ROWS), (right, (row + 1) / CURTAIN_ROWS), (left, (row + 1) / CURTAIN_ROWS))
+        add_quad(curtain_bmesh, corners, uvs, uv_layer)
+
+
+def make_curtain_mesh(material):
+    curtain_bmesh = bmesh.new()
+    uv_layer = curtain_bmesh.loops.layers.uv.new("UVMap")
+
+    for curtain in (UPPER_CURTAIN, MIDDLE_CURTAIN, LOWER_CURTAIN):
+        add_curtain(curtain_bmesh, curtain, uv_layer)
+
+    curtain_object = object_from_bmesh("WaterCurtains", curtain_bmesh, material)
+    curtain_object["keep_uvs"] = True
+
+    return curtain_object
+
+
+def build_fountain_bowl(name: str, base_z: float, radius: float, materials: dict, lobes: int, water_key: str) -> None:
     """Shallow bowl on a baluster stem, with a rolled rim, a ring of lobes under it and water inside."""
     make_frustum(f"{name}Stem", base_z, radius * 0.2, radius * 0.13, radius * 0.3, 12, materials["trim"])
     make_sphere(f"{name}Knop", (0, 0, base_z + radius * 0.32), radius * 0.17, materials["trim"])
     make_frustum(f"{name}Cup", base_z + radius * 0.4, radius * 0.22, radius, radius * 0.28, 28, materials["trim"])
     make_round_ring(f"{name}Rim", radius * 1.03, radius * 0.92, base_z + radius * 0.68, radius * 0.06 + 0.03, materials["trim"], 28)
-    make_cylinder("Water", (0, 0, base_z + radius * 0.6), radius * 0.94, radius * 0.08, 28, materials["water"])
+    make_cylinder("Water", (0, 0, base_z + radius * 0.6), radius * 0.94, radius * 0.14 + 0.02, 28, materials[water_key])
 
     for lobe_index in range(lobes):
         angle = 2.0 * math.pi * lobe_index / lobes
@@ -171,7 +309,7 @@ def build_large_fountain(materials: dict) -> None:
     make_round_ring("TankWall", tank_radius, tank_radius - 0.42, 0.0, 0.52, materials["stone"])
     make_round_ring("TankRim", tank_radius + 0.08, tank_radius - 0.52, 0.52, 0.1, materials["trim"])
     make_cylinder("TankFloor", (0, 0, 0), tank_radius - 0.4, 0.12, 40, materials["stone"])
-    make_cylinder("Water", (0, 0, 0.12), tank_radius - 0.42, 0.3, 40, materials["water"])
+    make_cylinder("Water", (0, 0, 0.12), tank_radius - 0.42, 0.3, 40, materials["water_basin"])
 
     make_cylinder("DrumBase", (0, 0, 0.1), 1.55, 0.45, 8, materials["trim"]).rotation_euler.z = math.pi / 8.0
     make_cylinder("Drum", (0, 0, 0.55), 1.15, 0.85, 8, materials["stone"]).rotation_euler.z = math.pi / 8.0
@@ -186,14 +324,16 @@ def build_large_fountain(materials: dict) -> None:
         boss = make_sphere(f"DrumBoss{panel_index}", ((apothem + 0.04) * math.cos(angle), (apothem + 0.04) * math.sin(angle), 0.98), 0.12, materials["trim"])
         boss.scale = (1.0, 1.0, 1.0)
 
-    build_fountain_bowl("LowerBowl", 1.54, 2.3, materials, 12)
-    build_fountain_bowl("MiddleBowl", 3.2, 1.45, materials, 10)
-    build_fountain_bowl("UpperBowl", 4.25, 0.85, materials, 8)
+    build_fountain_bowl("LowerBowl", 1.54, 2.3, materials, 12, "water_lower")
+    build_fountain_bowl("MiddleBowl", 3.2, 1.45, materials, 10, "water_middle")
+    build_fountain_bowl("UpperBowl", 4.25, 0.85, materials, 8, "water_upper")
     make_frustum("FinialUrn", 4.85, 0.1, 0.2, 0.25, 12, materials["trim"])
     make_sphere("FinialBud", (0, 0, 5.22), 0.16, materials["trim"])
     make_cone("FinialSpout", (0, 0, 5.3), 0.07, 0.3, 10, materials["trim"])
     build_fountain_statues(materials)
-    make_cylinder("Fountain-colonly", (0, 0, 0), tank_radius + 0.1, 1.2, 16, None)
+    make_jet_mesh(materials["water_jet"])
+    make_curtain_mesh(materials["water_curtain"])
+    make_cylinder("Fountain-colonly", (0, 0, 0), tank_radius + 0.5, 3.0, 24, None)
 
 
 def build_small_fountain(materials: dict) -> None:
@@ -466,7 +606,7 @@ def build_prop(prop_name: str) -> Path:
     PROPS[prop_name](materials)
     bpy.context.view_layer.update()
 
-    for mesh_object in [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and scene_object.data.materials]:
+    for mesh_object in [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and scene_object.data.materials and not scene_object.get("keep_uvs")]:
         map_uvs_per_face(mesh_object, tile_sizes.get(mesh_object.data.materials[0].name, 2.0))
 
     merge_meshes_by_material(prop_name.title().replace("_", ""))
