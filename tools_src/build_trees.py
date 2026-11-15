@@ -1,20 +1,22 @@
 """Old square trees and royal palms for the plazas (Blender bmesh -> glTF).
 
-README (numbers are measured from the generated meshes; "canopy_r" is the horizontal reach of the leaf mass,
-"root_r" the horizontal reach of the buttress roots, trunk collider = `Trunk-colonly`, 3 m tall cylinder at the trunk radius):
+README (numbers measured from the exported glTF accessors; "canopy_r" = horizontal reach of the leaf mass,
+"root_r" = horizontal reach of the buttress roots). Trunk collision is NOT exported: build_hub_scene.py gives each
+planted model a cylinder through KIT_COLLIDERS, like every other kit prop, so the navmesh bake sees it.
 
-  model (art/town/trees/)   trunk_r  root_r  canopy_r  canopy base z  height   note
-  old_tree_1.gltf           @T1      @R1     @C1       @B1            @H1      broad umbrella
-  old_tree_2.gltf           @T2      @R2     @C2       @B2            @H2      taller, narrower
-  old_tree_3.gltf           @T3      @R3     @C3       @B3            @H3      asymmetric, leaning
-  old_tree_4.gltf           @T4      @R4     @C4       @B4            @H4      widest
-  old_tree_5.gltf           @T5      @R5     @C5       @B5            @H5      hanging vines
-  old_tree_6.gltf           @T6      @R6     @C6       @B6            @H6      asymmetric, twisted trunk
+  model (art/town/trees/)   trunk_r  root_r  canopy_r  canopy base y  height  tris   note
+  old_tree_1.gltf           0.78     2.7     8.5       4.5            13.4    5140   broad umbrella
+  old_tree_2.gltf           0.62     2.4     8.3       5.0            15.2    4310   taller, narrower
+  old_tree_3.gltf           0.72     2.8     8.7       4.1            12.8    4120   asymmetric, leaning
+  old_tree_4.gltf           0.84     3.0     9.5       4.0            12.6    4930   widest
+  old_tree_5.gltf           0.70     2.7     8.1       2.8 (vines)    14.3    5460   hanging vines
+  old_tree_6.gltf           0.66     2.8     8.2       4.5            13.8    4310   asymmetric, twisted trunk
+  tree_bloom_1/2.gltf       0.22     0       ~3.5      ~2.4           ~6      -      ipê pink / yellow (not generated yet)
 
-  palm (art/town/)          trunk_r  height   fronds reach
-  palm_9.gltf               0.36     @P9      ~4 m radius crown
-  palm_11.gltf              0.36     @P11
-  palm_14.gltf              0.36     @P14
+  palm (art/town/)          trunk_r  height  crown reach
+  palm_9.gltf               0.36     9.0     4.5
+  palm_11.gltf              0.36     11.5    4.2
+  palm_14.gltf              0.36     13.9    4.2
 
 Placement: keep the trunk >= root_r + 0.3 m from any path edge; the canopy may overhang paths (leaf mass starts
 above "canopy base z"). Origin = trunk base center, +Y up in Godot. 3 materials per tree (bark, leaf mass, leaf cards),
@@ -58,6 +60,15 @@ TREE_VARIANTS = {
     "old_tree_5": dict(seed=59, trunk_r=0.7, fork=3.6, lean=0.45, primaries=4, secondaries=2, leader=7.2, tops=1, length=(4.8, 5.6), elevation=(36, 50), bend=0.3, clump=(2.5, 3.1), flatten=0.82, roots=6, vines=8),
     "old_tree_6": dict(seed=67, trunk_r=0.66, fork=3.2, lean=0.55, primaries=3, secondaries=2, leader=7.0, tops=2, length=(4.6, 5.8), elevation=(30, 50), bend=0.25, clump=(2.4, 3.0), flatten=0.87, roots=5, one_sided=True, twist=0.5),
 }
+BLOOM_STOPS = {  # flowering crowns: ipê-rosa and ipê-amarelo, dark inside -> sunlit petals
+    "pink": ("#8E3E63", "#D97FA6", "#F6C6D8"),
+    "yellow": ("#A8761E", "#F2C544", "#FBE7A0"),
+}
+BLOOM_VARIANTS = {
+    "tree_bloom_1": dict(seed=71, trunk_r=0.22, fork=2.0, lean=0.25, primaries=3, secondaries=1, leader=2.2, tops=1, length=(2.0, 2.6), elevation=(38, 54), bend=0.2, clump=(1.4, 1.8), flatten=0.8, roots=0, canopy_base=2.4, palette="pink"),
+    "tree_bloom_2": dict(seed=83, trunk_r=0.22, fork=2.1, lean=0.2, primaries=4, secondaries=0, leader=2.4, tops=1, length=(1.9, 2.4), elevation=(34, 50), bend=0.2, clump=(1.5, 1.9), flatten=0.78, roots=0, canopy_base=2.5, palette="yellow"),
+}
+
 PALM_VARIANTS = {
     "palm_9": dict(seed=3, height=9.0),
     "palm_11": dict(seed=5, height=11.5),
@@ -388,15 +399,18 @@ def build_branch(part: Part, rng: random.Random, start: Vector, azimuth: float, 
     return points
 
 
-def clump_color(unit: Vector, height_fraction: float, jitter: float, brighten: float = 0.0) -> tuple:
+def clump_color(unit: Vector, height_fraction: float, jitter: float, brighten: float = 0.0, stops: tuple = FOLIAGE_STOPS) -> tuple:
     """Foliage ramp: dark underneath/inside, light on top (painted shading; Godot adds the real light)."""
     amount = 0.0 + 0.34 * (unit.z * 0.5 + 0.5) + 0.3 * height_fraction + jitter + brighten
-    color = ramp_color(FOLIAGE_STOPS, amount)
+    color = ramp_color(stops, amount)
+
+    if stops is not FOLIAGE_STOPS:
+        return color
 
     return mix_colors(color, hex_color(SUNLIT_LEAF, 0.6), max(0.0, amount - 0.75) * 0.9)
 
 
-def add_clump(leaf_part: Part, card_part: Part, rng: random.Random, center: Vector, radius: float, flatten: float, height_range: tuple) -> None:
+def add_clump(leaf_part: Part, card_part: Part, rng: random.Random, center: Vector, radius: float, flatten: float, height_range: tuple, stops: tuple = FOLIAGE_STOPS) -> None:
     """Leaf mass: a flattened, lumpy icosphere with a flat-ish underside, plus leaf cards on its skin for a ragged silhouette."""
     result = bmesh.ops.create_icosphere(leaf_part.mesh, subdivisions=CLUMP_ICOSPHERE_SUBDIVISIONS, radius=1.0)
     verts = result["verts"]
@@ -421,7 +435,7 @@ def add_clump(leaf_part: Part, card_part: Part, rng: random.Random, center: Vect
             unit = (loop.vert.co - center)
             unit = Vector((unit.x / radius, unit.y / radius, unit.z / radius_z)).normalized()
             height_fraction = (loop.vert.co.z - bottom) / max(top - bottom, 1.0)
-            loop[leaf_part.color_layer] = clump_color(unit, height_fraction, jitter)
+            loop[leaf_part.color_layer] = clump_color(unit, height_fraction, jitter, stops=stops)
 
     for _ in range(CARDS_PER_CLUMP):
         unit = Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.15, 1.0))).normalized()
@@ -435,7 +449,7 @@ def add_clump(leaf_part: Part, card_part: Part, rng: random.Random, center: Vect
         corners = [surface + axis_a * (-half) + axis_b * (-half), surface + axis_a * half + axis_b * (-half), surface + axis_a * half + axis_b * half, surface + axis_a * (-half) + axis_b * half]
         verts_card = [card_part.mesh.verts.new(corner) for corner in corners]
         height_fraction = (surface.z - bottom) / max(top - bottom, 1.0)
-        color = clump_color(unit, height_fraction, jitter, brighten=0.16)
+        color = clump_color(unit, height_fraction, jitter, brighten=0.16, stops=stops)
         card_part.add_face(verts_card, [color] * 4, [(0, 0), (1, 0), (1, 1), (0, 1)], smooth=False)
 
 
@@ -506,36 +520,23 @@ def build_old_tree(name: str, params: dict) -> dict:
         clump_specs.append((leader_points[-1] + offset + Vector((0, 0, rng.uniform(-0.2, 0.9))), rng.uniform(*params["clump"]) * 0.85))
 
     lowest = []
+    canopy_base = params.get("canopy_base", CANOPY_BASE_MIN)
+    stops = BLOOM_STOPS.get(params.get("palette"), FOLIAGE_STOPS)
 
     for center, radius in clump_specs:
-        center.z = max(center.z, CANOPY_BASE_MIN + radius * params["flatten"] * 0.55)
+        center.z = max(center.z, canopy_base + radius * params["flatten"] * 0.55)
         lowest.append(center.z - radius * params["flatten"] * 0.55)
 
     top_of_canopy = max(center.z + radius * params["flatten"] for center, radius in clump_specs)
     bottom_of_canopy = min(lowest)
 
     for center, radius in clump_specs:
-        add_clump(leaf, cards, rng, center, radius, params["flatten"], (bottom_of_canopy, top_of_canopy))
+        add_clump(leaf, cards, rng, center, radius, params["flatten"], (bottom_of_canopy, top_of_canopy), stops)
 
     if params.get("vines"):
         build_vines(leaf, rng, [anchor for anchor in branch_anchors if Vector((anchor.x, anchor.y, 0)).length > 1.5], params["vines"])
 
-    collider = add_trunk_collider(params["trunk_r"] * 1.02)
-
-    return {"objects": [bark.to_object(), leaf.to_object(), cards.to_object(), collider], "trunk_r": params["trunk_r"], "root_r": root_reach}
-
-
-def add_trunk_collider(radius: float) -> bpy.types.Object:
-    collider_mesh = bmesh.new()
-
-    bmesh.ops.create_cone(collider_mesh, cap_ends=True, segments=10, radius1=radius, radius2=radius, depth=3.0)
-    bmesh.ops.translate(collider_mesh, vec=(0, 0, 1.5), verts=collider_mesh.verts)
-    mesh_data = bpy.data.meshes.new("Trunk-colonly")
-    collider_mesh.to_mesh(mesh_data)
-    collider = bpy.data.objects.new("Trunk-colonly", mesh_data)
-    bpy.context.scene.collection.objects.link(collider)
-
-    return collider
+    return {"objects": [bark.to_object(), leaf.to_object(), cards.to_object()], "trunk_r": params["trunk_r"], "root_r": root_reach}
 
 
 # ---------------------------------------------------------------- royal palm
@@ -609,9 +610,7 @@ def build_palm(name: str, params: dict) -> dict:
             attach = crown + Vector((0, 0, 1.15 - 0.22 * layer_index))
             build_frond(fronds, yaw, math.radians(pitch + rng.uniform(-5, 5)), length * rng.uniform(0.92, 1.08), droop, tint * rng.uniform(0.85, 1.0), attach)
 
-    collider = add_trunk_collider(0.36)
-
-    return {"objects": [trunk.to_object(), fronds.to_object(), collider], "trunk_r": 0.36, "root_r": 0.0}
+    return {"objects": [trunk.to_object(), fronds.to_object()], "trunk_r": 0.36, "root_r": 0.0}
 
 
 # ---------------------------------------------------------------- export
@@ -738,7 +737,7 @@ def build_model(name: str) -> Path:
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
     is_palm = name in PALM_VARIANTS
-    result = build_palm(name, PALM_VARIANTS[name]) if is_palm else build_old_tree(name, TREE_VARIANTS[name])
+    result = build_palm(name, PALM_VARIANTS[name]) if is_palm else build_old_tree(name, {**TREE_VARIANTS, **BLOOM_VARIANTS}[name])
     output_dir = TOWN_DIR if is_palm else TREE_DIR
     texture_dir = "textures"
     output_path = output_dir / f"{name}.gltf"
@@ -756,5 +755,5 @@ def build_model(name: str) -> Path:
 if __name__ == "__main__":
     script_arguments = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
-    for requested_model in script_arguments or [*TREE_VARIANTS, *PALM_VARIANTS]:
+    for requested_model in script_arguments or [*TREE_VARIANTS, *BLOOM_VARIANTS, *PALM_VARIANTS]:
         build_model(requested_model)

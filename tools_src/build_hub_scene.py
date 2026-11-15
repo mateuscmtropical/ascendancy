@@ -187,9 +187,9 @@ def on_lawn(point: tuple, margin: float = 0.0) -> bool:
     return bed_field(point) > margin
 
 
-TRUNK_RADIUS = {"tree_old": 0.75, "tree_bloom": 0.3, "palm": 0.36, "bush": 0.5, "flowers": 0.0}
+TRUNK_RADIUS = {"tree_old": 0.85, "tree_bloom": 0.3, "palm": 0.36, "bush": 0.5, "flowers": 0.0}
 PLANT_CLEARANCE = 1.2  # do meio-fio do canteiro até a casca: tronco fica por dentro da sebe
-ROOT_CLEARANCE = {"tree_old": 2.4}  # raízes tabulares chegam a 2 m do eixo
+ROOT_CLEARANCE = {"tree_old": 3.0}  # raízes tabulares medidas em old_tree_*.gltf chegam a 3,0 m do eixo
 PAVED_CLEARANCE = 0.4  # postes e bancos ficam no piso, longe da grama
 
 
@@ -297,7 +297,9 @@ SHOP_SEED = 2207
 SHOP_WALL_GAP = 0.06
 KIT_COLLIDERS = {  # kit model name prefix -> simple solid in model space: ("cylinder", radius, height) or ("box", size, center)
     "CommonTree": ("cylinder", 0.35, 3.0),
-    "palm": ("cylinder", 0.32, 3.0),
+    "old_tree": ("cylinder", 0.85, 3.0),
+    "tree_bloom": ("cylinder", 0.3, 3.0),
+    "palm_": ("cylinder", 0.36, 3.0),
     "Bush_Common": ("cylinder", 0.8, 1.2),
     "Flower_3_Group": ("cylinder", 0.5, 1.6),
     "Flower_4_Group": ("cylinder", 0.5, 1.6),
@@ -660,12 +662,14 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
 
 # ---------- squares ----------
 
-PLANT_MODELS = {  # tipo -> modelos (variados pelo índice)
-    "tree_old": [f"res://art/nature/CommonTree_{index}.gltf" for index in range(1, 6)],
-    "tree_bloom": [f"res://art/nature/CommonTree_{index}.gltf" for index in range(1, 6)],
-    "palm": ["res://art/town/palm.gltf"],
+PLANT_MODELS = {  # tipo -> modelos de build_trees.py
+    "tree_old": [f"res://art/town/trees/old_tree_{index}.gltf" for index in range(1, 7)],
+    "tree_bloom": [f"res://art/town/trees/tree_bloom_{index}.gltf" for index in range(1, 3)],
+    "palm": ["res://art/town/palm_9.gltf", "res://art/town/palm_11.gltf", "res://art/town/palm_14.gltf"],
 }
-PLANT_SCALES = {"tree_old": (1.3, 1.5), "tree_bloom": (0.8, 0.95), "palm": (0.9, 1.05)}
+PLANT_FALLBACK_MODELS = {"tree_bloom": [f"res://art/nature/CommonTree_{index}.gltf" for index in range(1, 6)]}  # até rodar build_trees.py
+PLANT_SCALES = {"tree_old": (0.92, 1.08), "tree_bloom": (0.85, 1.0), "palm": (0.94, 1.06)}
+PALM_WEIGHTS = (0.2, 0.5, 0.3)  # palm_9, palm_11, palm_14 (seção B)
 PALM_SEED = 311
 PALM_LIMIT = 52
 PALM_SPACING = 6.0
@@ -674,11 +678,11 @@ GROVE_SEED = 907
 GROVE_SPACING = 8.5
 GROVE_ATTEMPTS = 3000
 OLD_TREES_GETULIO_VARGAS = [  # metade norte, espelhada em z: faixa da avenida e o "V" que se fecha na direção da catedral
-    (-57.0, -41.0), (-48.0, -41.0), (-39.0, -41.0), (-30.0, -41.0),
-    (-33.0, -40.0), (-27.0, -33.0), (-20.0, -27.0), (-14.0, -21.0),
+    (-48.0, -41.0), (-39.0, -41.0), (-30.0, -41.0),
+    (-28.5, -30.5), (-18.5, -27.0), (-12.0, -18.5),
     (-18.0, -38.0), (-11.0, -32.0),
-    (-9.5, -40.0), (-9.5, -12.0),
-]
+    (-11.5, -40.0), (-11.5, -12.0),
+]  # todos com bed_field >= ROOT_CLEARANCE (pontos medidos nos gramados do traçado A.4)
 BLOOM_TREES_WEST_EDGE = [(-58.5, -38.0), (-58.5, -30.0), (-58.5, -10.0)]
 GROVE_FORCED = [(13.5, -19.5), (13.5, -24.5), (20.0, -21.0), (16.0, -40.0)]  # as gigantes que emolduram a fachada
 FOUNTAIN_BENCH_ANGLES = (33.0, 85.0, 140.0)  # graus, espelhados em z: fora das bocas dos caminhos e dos postes
@@ -820,13 +824,45 @@ def grass_tuft_spots() -> list:
     return spots
 
 
-def place_plants(scene: SceneWriter, kind: str, spots: list, name: str) -> None:
+def plant_models(kind: str) -> list:
+    """Models of a plant kind; the fallback only while the generated glTFs are missing."""
     models = PLANT_MODELS[kind]
+    is_generated = all((PROJECT_DIR / model.removeprefix("res://")).exists() for model in models)
+
+    return models if is_generated else PLANT_FALLBACK_MODELS[kind]
+
+
+def spot_variant(spot: tuple, count: int) -> int:
+    """Stable variant index from the position, so moving one tree does not reshuffle the others."""
+    return int(abs(spot[0] * 31.0 + spot[1] * 17.0)) % count
+
+
+def palm_variants(spots: list) -> list:
+    """Palm heights by PALM_WEIGHTS, never the same height twice in a row (rows are listed in order)."""
+    generator = random.Random(PALM_SEED)
+    choices = []
+
+    for _ in spots:
+        options = [index for index in range(len(PALM_WEIGHTS)) if not choices or index != choices[-1]]
+        weights = [PALM_WEIGHTS[index] for index in options]
+        choices.append(generator.choices(options, weights)[0])
+
+    return choices
+
+
+def place_plants(scene: SceneWriter, kind: str, spots: list, name: str) -> None:
+    models = plant_models(kind)
     smallest, largest = PLANT_SCALES[kind]
+    variant_by_kind = {
+        "palm": lambda: palm_variants(spots),
+        "tree_old": lambda: [spot_variant(spot, len(models)) for spot in spots],
+        "tree_bloom": lambda: [spot_variant(spot, len(models)) for spot in spots],
+    }
+    variants = variant_by_kind[kind]()
 
     for index, (x, z) in enumerate(spots):
         scale = smallest + (largest - smallest) * (index * 0.618 % 1.0)
-        place(scene, f"{name}{index:03d}", "Trees", models[index % len(models)], grounded(x, z), rotation_y=index * 1.3, scale=scale)
+        place(scene, f"{name}{index:03d}", "Trees", models[variants[index]], grounded(x, z), rotation_y=index * 1.3, scale=scale)
 
 
 def add_trees(scene: SceneWriter) -> None:
