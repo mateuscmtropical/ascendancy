@@ -1,6 +1,6 @@
 """Download the CC0 source packs into tools/vendor/ (gitignored).
 
-Every pack is CC0 (License.txt inside each zip, checked 2026-11-14).
+Every pack is CC0 (License.txt inside each zip, checked 2026-11-14; the animals pack has none, its itch page states CC0, checked 2026-11-15).
 Usage: python tools_src/fetch_assets.py [pack_name ...]
 """
 
@@ -24,6 +24,7 @@ PACKS = {
     "nature": ("quaternius", "stylized-nature-megakit", "Stylized Nature MegaKit[Standard].zip"),
     "village": ("quaternius", "medieval-village-megakit", "Medieval Village MegaKit[Standard].zip"),
     "props": ("quaternius", "fantasy-props-megakit", "Fantasy Props MegaKit[Standard].zip"),
+    "animals": ("quaternius", "lowpoly-animated-animals", "Farm Animals Animated  by Quaternius.zip"),
     "kaykit": ("kaylousberg", "kaykit-character-animations", "Free 1.1"),
 }
 
