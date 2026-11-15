@@ -19,6 +19,7 @@ const HAIR_BY_CHOICE: Dictionary[CharacterSelect.Choice, Color] = {
 }
 
 var _shader_sun_direction: Vector3 = Vector3.ZERO
+var _is_playing: bool = false
 
 @onready var _player: PlayerController = $Player
 @onready var _character_select: CharacterSelect = $CharacterSelect
@@ -26,6 +27,7 @@ var _shader_sun_direction: Vector3 = Vector3.ZERO
 @onready var _cinematic_tour: CinematicTour = $CinematicTour
 @onready var _fps_counter: FpsCounter = $FpsCounter
 @onready var _sun: DirectionalLight3D = $Sun
+@onready var _settings_menu: SettingsMenu = $SettingsMenu
 
 
 func _ready() -> void:
@@ -34,6 +36,7 @@ func _ready() -> void:
 
 	_character_select.choice_previewed.connect(preview_choice)
 	_character_select.choice_confirmed.connect(start_playing)
+	_settings_menu.visibility_changed.connect(_follow_settings_menu)
 
 	if CINEMATIC_ARGUMENT in arguments:
 		show_scenery()
@@ -75,6 +78,7 @@ func start_playing(choice: CharacterSelect.Choice) -> void:
 	preview_choice(choice)
 	_player.is_input_enabled = true
 	_player.make_camera_current()
+	_is_playing = true
 
 
 ## Esconde a interface e trava o jogador; a câmera fica com quem chamou (tour, vídeo).
@@ -82,6 +86,18 @@ func show_scenery() -> void:
 	_character_select.hide()
 	_fps_counter.hide()
 	_player.is_input_enabled = false
+
+
+## Menu aberto trava o personagem; ao fechar, quem estava jogando volta com o mouse preso.
+func _follow_settings_menu() -> void:
+	var is_menu_open: bool = _settings_menu.visible
+
+	_player.is_input_enabled = _is_playing and not is_menu_open
+
+	if is_menu_open or not _is_playing:
+		return
+
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _read_character_name(arguments: PackedStringArray) -> String:

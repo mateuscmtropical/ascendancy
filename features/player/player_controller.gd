@@ -77,11 +77,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 		return
 
-	if event.is_action_pressed(&"release_mouse"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-
-		return
-
 	if event.is_action_pressed(&"jump") and not event.is_echo():
 		_detect_double_jump_tap()
 
