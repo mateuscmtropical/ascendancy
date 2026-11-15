@@ -5183,6 +5183,30 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
+[node name="WindowShopperWest" parent="Townsfolk" instance=ExtResource("109_ext")]
+body_scene = ExtResource("110_ext")
+hair_color = Color(0.550, 0.270, 0.150, 1)
+route = PackedVector3Array(-92.00, 0, -67.40, -52.00, 0, -67.40, -34.00, 0, -67.40, -16.00, 0, -67.40)
+walk_speed = 1.1
+pause_seconds = 5.0
+idle_animation = &"ual1/Idle"
+
+[node name="WindowShopperEast" parent="Townsfolk" instance=ExtResource("109_ext")]
+body_scene = ExtResource("108_ext")
+hair_color = Color(0.850, 0.700, 0.450, 1)
+route = PackedVector3Array(16.00, 0, -67.40, 34.00, 0, -67.40, 52.00, 0, -67.40, 87.00, 0, -67.40)
+walk_speed = 1.2
+pause_seconds = 4.0
+idle_animation = &"ual1/Idle"
+
+[node name="Scholar" parent="Townsfolk" instance=ExtResource("109_ext")]
+body_scene = ExtResource("108_ext")
+hair_color = Color(0.620, 0.600, 0.580, 1)
+route = PackedVector3Array(-73.40, 0, -30.00, -73.40, 0, 0.00, -73.40, 0, 30.00)
+walk_speed = 1.0
+pause_seconds = 6.0
+idle_animation = &"ual1/Idle"
+
 [node name="Priest" parent="Townsfolk" instance=ExtResource("109_ext")]
 body_scene = ExtResource("108_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)

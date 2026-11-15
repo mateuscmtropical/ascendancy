@@ -872,6 +872,30 @@ def add_shopkeepers(scene: SceneWriter, lots: list) -> None:
         npc(scene, f"Shopkeeper{index:02d}", keeper_body, keeper_hair, stand((keeper[0], keeper[2]), facing, keeper_animation, 0.0))
 
 
+SIDEWALK_DOOR_REACH = 1.6  # do pé da fachada até onde quem olha a vitrine para, no meio da calçada de 3 m
+WINDOW_SHOPPERS = {  # nome -> (lado da fileira, faixa de x ou z das portas, corpo, cabelo, velocidade, pausa)
+    "WindowShopperWest": ("S", (-102.0, -4.0), "villager_female", "auburn", 1.1, 5.0),
+    "WindowShopperEast": ("S", (4.0, 102.0), "villager_male", "blond", 1.2, 4.0),
+    "Scholar": ("E", (-48.0, 48.0), "villager_male", "grey", 1.0, 6.0),
+}
+
+
+def shop_door_fronts(lots: list, side: str, span: tuple) -> list:
+    """Sidewalk spots in front of each shop door of a row, in walking order along the row."""
+    shops = [lot for lot in lots if lot.get("shop") and lot["side"] == side]
+    fronts = [lot_to_world(lot, (model_sidecar(lot["model"])["doors"][0]["x"], 0.0, SIDEWALK_DOOR_REACH)) for lot in shops]
+    along_axis = 0 if side in ("N", "S") else 2
+    inside = [front for front in fronts if span[0] <= front[along_axis] <= span[1]]
+
+    return sorted(((front[0], front[2]) for front in inside), key=lambda front: front[0 if along_axis == 0 else 1])
+
+
+def add_window_shoppers(scene: SceneWriter, lots: list) -> None:
+    """Townsfolk who stroll a shop row and stop at every door (sidewalk north of the avenue, civic block)."""
+    for name, (side, span, body, hair, speed, pause) in WINDOW_SHOPPERS.items():
+        npc(scene, name, body, hair, patrol(shop_door_fronts(lots, side, span), speed, pause, "ual1/Idle"))
+
+
 def hex_color(text: str) -> str:
     """'FFD9A0' (sRGB) -> Godot Color literal."""
     return color(tuple(int(text[offset:offset + 2], 16) / 255.0 for offset in (0, 2, 4)))
@@ -1418,6 +1442,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "Bard", "adventurer_female", "auburn", stand((COREO_POSITION[0], COREO_POSITION[1]), math.pi / 2.0, "ual1/Idle_Talking", 0.2, height=1.2))
     npc(scene, "Guard", "adventurer_female", "dark", stand((CATHEDRAL_FACADE_X - 4.2, -6.5), -math.pi / 2.0, "ual2/Idle_FoldArms", 0.0))
     add_shopkeepers(scene, town_lots())
+    add_window_shoppers(scene, town_lots())
     npc(scene, "Priest", "villager_male", "grey", stand((CATHEDRAL_FACADE_X + 40.4, 0.0), -math.pi / 2.0, "ual1/Idle", 0.0, height=CHANCEL_FLOOR + 0.3))
 
 
