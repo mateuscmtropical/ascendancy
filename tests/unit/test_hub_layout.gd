@@ -14,7 +14,7 @@ const SHOP_TYPES: Array[String] = [
 const SHOP_PIECES: Array[String] = ["Sign"]
 const STREET_POINT: Vector2 = Vector2(-68, 0)
 const LAWN_POINT: Vector2 = Vector2(-20, -30)
-## Na rua a oeste da Getúlio Vargas, entre dois postes da borda da praça.
+## Na rua a oeste da praça oeste, entre dois postes da borda da praça.
 const STREET_START: Vector3 = Vector3(-68, 0, 9)
 const CURB_DISTANCE: float = 4.0
 ## Na frente da escadaria da catedral, de frente para a porta (+X).

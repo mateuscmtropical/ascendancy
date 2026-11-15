@@ -1,12 +1,11 @@
-"""Write features/hub/hub.tscn: the starting city, laid out after downtown Campo Mourão (PR).
+"""Write features/hub/hub.tscn: the starting city.
 
-Two squares side by side, separated by Rua Brasil (a market street here):
-  - Praça Getúlio Vargas (west): union-jack paths, tiered chafariz in the middle, octagonal coreto.
-  - Praça São José (east): the cathedral in the middle, facade toward Rua Brasil, dense shade trees.
-Main avenue (Av. Capitão Índio Bandeira) with a tree-lined median and a roundabout runs along the north
-side; Av. Irmãos Pereira along the south. A ring of ten half-blocks of row houses closes the city,
-inside a town wall. Real grid scaled ~0.6 and built axis-aligned (Fable advisor): X runs along the
-avenues (real NE), Z across them (real SE). Map data: OpenStreetMap contributors (ODbL).
+Two squares side by side, separated by the market promenade:
+  - West square: union-jack paths, tiered chafariz in the middle, octagonal coreto.
+  - East square: the cathedral in the middle, facade toward the promenade, dense shade trees.
+The main avenue, with a tree-lined median and a roundabout, runs along the north side; a second avenue
+runs along the south. A ring of ten half-blocks of row houses closes the city, inside a town wall.
+X runs along the avenues, Z across them.
 
 Godot coordinates, Y up. Every model's front faces +Z locally, so rotation_y turns it toward the street.
 
@@ -29,8 +28,8 @@ CITY_MAX = (102.0, 88.0)
 SIDEWALK = 3.0
 HOUSE_ROW_DEPTH = 12.5  # recorte de esquina: lotes têm até 12 m de fundo
 SQUARE_HALF = (30.0, 48.0)
-GETULIO_VARGAS = (-34.0, 0.0)
-SAO_JOSE = (34.0, 0.0)
+WEST_SQUARE = (-34.0, 0.0)
+EAST_SQUARE = (34.0, 0.0)
 AVENUE_Z = (-66.0, -48.0)
 MEDIAN_Z = (-60.0, -54.0)
 ROUNDABOUT = (0.0, -57.0)
@@ -39,7 +38,7 @@ CATHEDRAL_FLOOR = 1.05
 CHANCEL_FLOOR = CATHEDRAL_FLOOR + 0.9
 CATHEDRAL_CRUCIFIX = (CATHEDRAL_FACADE_X + 45.4, CHANCEL_FLOOR + 5.6, 0.0)  # peito do Cristo no retábulo
 ADRO_WIDTH = 30.0  # cobre as estátuas da escadaria (z = ±12,2)
-COREO_POSITION = (-46.0, -13.0)  # no gramado a noroeste do chafariz, como na foto aérea
+COREO_POSITION = (-46.0, -13.0)  # no gramado a noroeste do chafariz
 COREO_APRON_RADIUS = 4.6
 COREO_ACCESS_END = (-38.2, -13.0)  # o caminho do coreto encosta na diagonal do largo noroeste
 COREO_ACCESS_WIDTH = 3.4  # cabe a escada com as muretas
@@ -49,7 +48,7 @@ PLANTER_SOIL_HEIGHT = 0.42
 GRASS_SEED = 77
 GRASS_TUFTS_PER_SQUARE = 110
 
-ESPLANADE_WIDTH = 8.0  # eixo oeste-leste que cruza a Getúlio Vargas e aponta para a fachada
+ESPLANADE_WIDTH = 8.0  # eixo oeste-leste que cruza a praça oeste e aponta para a fachada
 PLAZA_RADIUS = 10.0
 WEST_NODES = [(-43.0, -28.0), (-43.0, 28.0)]  # largos maiores a oeste, três ramos cada
 EAST_RONDELS = [(-24.0, -16.0), (-24.0, 16.0)]  # rondéis do lado da catedral
@@ -70,31 +69,31 @@ MEDIAN_NOSE_X = 14.5  # o canteiro central termina com nariz redondo antes da ro
 MEDIAN_HALF_WIDTH = (MEDIAN_Z[1] - MEDIAN_Z[0]) / 2.0
 MEDIAN_BEDS = [((CITY_MIN[0] + 4.0, MEDIAN_Z[0] + 0.7), (-MEDIAN_NOSE_X - 1.0, MEDIAN_Z[1] - 2.3)), ((MEDIAN_NOSE_X + 1.0, MEDIAN_Z[0] + 0.7), (CITY_MAX[0] - 4.0, MEDIAN_Z[1] - 2.3))]
 LAWN_RECTS = {  # canteiros = retângulo menos os caminhos de SQUARE_PATHS
-    "GetulioVargas": ((GETULIO_VARGAS[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (GETULIO_VARGAS[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
-    "SaoJose": ((SAO_JOSE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (SAO_JOSE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
+    "WestSquare": ((WEST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (WEST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
+    "SaoJose": ((EAST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (EAST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
 }
 
 
-def getulio_vargas_branches(sign: float) -> list:
-    """Diagonals of one half of Getúlio Vargas (sign -1 = north, +1 = south): chafariz to the secondary plazas and their branches."""
+def west_square_branches(sign: float) -> list:
+    """Diagonals of one half of the west square (sign -1 = north, +1 = south): chafariz to the secondary plazas and their branches."""
     node = (WEST_NODES[0][0], sign * abs(WEST_NODES[0][1]))
     rondel = (EAST_RONDELS[0][0], sign * abs(EAST_RONDELS[0][1]))
 
     return [
-        ("strip", GETULIO_VARGAS, node, 3.5),
+        ("strip", WEST_SQUARE, node, 3.5),
         ("strip", node, (-60.0, sign * 44.0), 3.5),  # largo -> canto da praça
         ("strip", node, (-60.0, sign * 21.0), 3.0),  # largo -> borda oeste
         ("strip", node, (-23.0, sign * 39.5), 3.0),  # largo -> ramo norte/sul
-        ("strip", GETULIO_VARGAS, rondel, 3.5),
+        ("strip", WEST_SQUARE, rondel, 3.5),
         ("strip", rondel, (-23.0, sign * 44.0), 3.0),  # rondel -> borda norte/sul
         ("strip", rondel, (-8.0, sign * 27.0), 3.0),  # rondel -> borda leste
     ]
 
 
-def sao_jose_walks(sign: float) -> list:
-    """Walks of one half of São José: the cross walk, the one along Rua Brasil and the one along the back street."""
+def east_square_walks(sign: float) -> list:
+    """Walks of one half of the east square: the cross walk, the one along the promenade and the one along the back street."""
     half_x, half_z = SQUARE_HALF
-    west, east = SAO_JOSE[0] - half_x, SAO_JOSE[0] + half_x
+    west, east = EAST_SQUARE[0] - half_x, EAST_SQUARE[0] + half_x
 
     return [
         ("strip", (west, sign * 30.0), (east, sign * 30.0), 3.0),
@@ -106,18 +105,18 @@ def sao_jose_walks(sign: float) -> list:
 def square_paths() -> list:
     """Paved shapes cut out of the lawns, Godot (x, z): ("disc", center, radius) or ("strip", start, end, width)."""
     half_x = SQUARE_HALF[0]
-    sao_jose_west, sao_jose_east = SAO_JOSE[0] - half_x, SAO_JOSE[0] + half_x
+    east_square_west, east_square_east = EAST_SQUARE[0] - half_x, EAST_SQUARE[0] + half_x
     plazas = [
-        ("disc", GETULIO_VARGAS, PLAZA_RADIUS),
-        ("strip", (GETULIO_VARGAS[0] - half_x, 0.0), (GETULIO_VARGAS[0] + half_x, 0.0), ESPLANADE_WIDTH),
+        ("disc", WEST_SQUARE, PLAZA_RADIUS),
+        ("strip", (WEST_SQUARE[0] - half_x, 0.0), (WEST_SQUARE[0] + half_x, 0.0), ESPLANADE_WIDTH),
         ("disc", COREO_POSITION, COREO_APRON_RADIUS),
         ("strip", COREO_POSITION, COREO_ACCESS_END, COREO_ACCESS_WIDTH),
         *[("disc", node, NODE_RADIUS) for node in WEST_NODES],
         *[("disc", rondel, RONDEL_RADIUS) for rondel in EAST_RONDELS],
-        ("strip", (sao_jose_west, 0.0), (CATHEDRAL_FACADE_X, 0.0), ADRO_WIDTH),  # adro
-        ("strip", (CATHEDRAL_FACADE_X, 0.0), (sao_jose_east, 0.0), 32.0),  # passeio em volta da catedral
+        ("strip", (east_square_west, 0.0), (CATHEDRAL_FACADE_X, 0.0), ADRO_WIDTH),  # adro
+        ("strip", (CATHEDRAL_FACADE_X, 0.0), (east_square_east, 0.0), 32.0),  # passeio em volta da catedral
     ]
-    branches = [path for sign in (-1.0, 1.0) for path in getulio_vargas_branches(sign) + sao_jose_walks(sign)]
+    branches = [path for sign in (-1.0, 1.0) for path in west_square_branches(sign) + east_square_walks(sign)]
 
     return plazas + branches
 
@@ -583,7 +582,7 @@ def add_buildings(scene: SceneWriter) -> None:
 
     check_town_plan(lots)
     scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
-    place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, SAO_JOSE[1]), -math.pi / 2.0)
+    place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), -math.pi / 2.0)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     if town_models_ready(lots):
@@ -1051,7 +1050,7 @@ PALM_ROW_OFFSET = 2.0  # do eixo do caminho: largura/2 + isto, por dentro da seb
 GROVE_SEED = 907
 GROVE_SPACING = 8.5
 GROVE_ATTEMPTS = 3000
-OLD_TREES_GETULIO_VARGAS = [  # metade norte, espelhada em z: faixa da avenida e o "V" que se fecha na direção da catedral
+OLD_TREES_WEST_SQUARE = [  # metade norte, espelhada em z: faixa da avenida e o "V" que se fecha na direção da catedral
     (-48.0, -41.0), (-39.0, -41.0), (-30.0, -41.0),
     (-28.5, -30.5), (-18.5, -27.0), (-12.0, -18.5),
     (-18.0, -38.0), (-11.0, -32.0),
@@ -1115,16 +1114,16 @@ def plaza_lamp_directions() -> list:
 
 
 def add_lamps(scene: SceneWriter) -> list:
-    center_x, center_z = GETULIO_VARGAS
+    center_x, center_z = WEST_SQUARE
     perimeter_offsets = [-36.0, -18.0, 0.0, 18.0, 36.0]
-    fountain_ring = ring_points(GETULIO_VARGAS, 9.0, 8, 22.5)
+    fountain_ring = ring_points(WEST_SQUARE, 9.0, 8, 22.5)
     esplanade = mirrored_in_z([(x, -ESPLANADE_WIDTH / 2.0 + 0.4) for x in ESPLANADE_STATIONS])
     plazas = [point_at(center, radius - 0.8, angle) for center, radius, angle in plaza_lamp_directions()]
-    getulio_vargas_edges = [(center_x + side * (SQUARE_HALF[0] - 0.6), center_z + offset) for side in (-1, 1) for offset in perimeter_offsets]
-    getulio_vargas_ends = [(center_x + offset, center_z + side * (SQUARE_HALF[1] - 0.6)) for side in (-1, 1) for offset in (-18.0, 0.0, 18.0)]
+    west_square_edges = [(center_x + side * (SQUARE_HALF[0] - 0.6), center_z + offset) for side in (-1, 1) for offset in perimeter_offsets]
+    west_square_ends = [(center_x + offset, center_z + side * (SQUARE_HALF[1] - 0.6)) for side in (-1, 1) for offset in (-18.0, 0.0, 18.0)]
     forecourt = [(6.0, -15.0), (6.0, 15.0), (CATHEDRAL_FACADE_X - 4.5, -9.0), (CATHEDRAL_FACADE_X - 4.5, 9.0)]
-    sao_jose_ring = [(x, side * 14.0) for side in (-1, 1) for x in (26.0, 38.0, 50.0, 62.0)]
-    square_candidates = fountain_ring + esplanade + plazas + getulio_vargas_edges + getulio_vargas_ends + forecourt + sao_jose_ring
+    east_square_ring = [(x, side * 14.0) for side in (-1, 1) for x in (26.0, 38.0, 50.0, 62.0)]
+    square_candidates = fountain_ring + esplanade + plazas + west_square_edges + west_square_ends + forecourt + east_square_ring
     median = [(x, sum(MEDIAN_Z) / 2.0) for x in range(-96, 97, 16) if abs(x) > MEDIAN_NOSE_X + 2.0]
     roundabout = [point_at(ROUNDABOUT, ROUNDABOUT_OUTER_RADIUS + 0.8, angle) for angle in ROUNDABOUT_LAMP_ANGLES]
     positions = [spot for spot in square_candidates if is_paved(spot)] + median + roundabout
@@ -1149,8 +1148,8 @@ def strip_side_rows(path: tuple, generator: random.Random) -> list:
 
 
 def old_tree_spots() -> list:
-    """Big old trees: the explicit Getúlio Vargas bands plus a seeded Poisson grove that fills São José."""
-    getulio_vargas = [spot for spot in mirrored_in_z(OLD_TREES_GETULIO_VARGAS) if can_plant(spot, "tree_old")]
+    """Big old trees: the explicit west square bands plus a seeded Poisson grove that fills the east square."""
+    west_square = [spot for spot in mirrored_in_z(OLD_TREES_WEST_SQUARE) if can_plant(spot, "tree_old")]
     grove = [spot for spot in mirrored_in_z(GROVE_FORCED) if can_plant(spot, "tree_old")]
     generator = random.Random(GROVE_SEED)
     minimum, maximum = LAWN_RECTS["SaoJose"]
@@ -1161,7 +1160,7 @@ def old_tree_spots() -> list:
         if can_plant(spot, "tree_old") and far_from_all(spot, grove, GROVE_SPACING):
             grove.append(spot)
 
-    return getulio_vargas + grove
+    return west_square + grove
 
 
 def palm_spots(old_trees: list) -> list:
@@ -1214,8 +1213,8 @@ def around(center: tuple, reach: float) -> tuple:
 
 
 def round_bed_centers(trunks: list) -> list:
-    """Centres of the round flower beds: deepest lawn points of the Getúlio Vargas, far from trunks and from each other."""
-    minimum, maximum = LAWN_RECTS["GetulioVargas"]
+    """Centres of the round flower beds: deepest lawn points of the west square, far from trunks and from each other."""
+    minimum, maximum = LAWN_RECTS["WestSquare"]
     grid = itertools.product(range(int(minimum[0]), int(maximum[0]) + 1), range(int(minimum[1]), int(maximum[1]) + 1))
     candidates = sorted(((bed_field((x, z)), (float(x), float(z))) for x, z in grid), reverse=True)
     centers = []
@@ -1230,7 +1229,7 @@ def round_bed_centers(trunks: list) -> list:
 def flower_zones(trunks: list, palms: list) -> list:
     """The patches of L.2: esplanade border, fountain crown, half-moons of the plazas, round beds, coreto ring, palm
     feet, forecourt strips, roundabout and marco rings, median patches."""
-    gv_min, gv_max = LAWN_RECTS["GetulioVargas"]
+    gv_min, gv_max = LAWN_RECTS["WestSquare"]
     esplanade_edge = ESPLANADE_WIDTH / 2.0
     coreto_mouth = math.degrees(math.atan2(COREO_ACCESS_END[1] - COREO_POSITION[1], COREO_ACCESS_END[0] - COREO_POSITION[0]))
     round_beds = round_bed_centers(trunks)
@@ -1238,8 +1237,8 @@ def flower_zones(trunks: list, palms: list) -> list:
     median_z = (MEDIAN_BEDS[0][0][1] + MEDIAN_BEDS[0][1][1]) / 2.0
     zones = [
         FlowerZone("esplanada", (gv_min[0], -esplanade_edge - 3.0, gv_max[0], esplanade_edge + 3.0), lambda p: (-60.0 <= p[0] <= -46.0 or -22.0 <= p[0] <= -8.0) and abs(p[1]) <= esplanade_edge + 2.5, lambda p: ("vermelho", "branco") if int((p[0] + 100.0) / 6.0) % 2 else ("amarelo", "branco"), (FLOWER_BED_MIN, 1.8)),
-        FlowerZone("coroa", around(GETULIO_VARGAS, 13.5), lambda p: 11.0 <= distance(p, GETULIO_VARGAS) <= 13.5, lambda p: ("vermelho", "branco"), (FLOWER_BED_MIN, 2.0)),
-        *[FlowerZone(f"meia_lua{index}", around(center, radius + 2.0), lambda p, center=center, radius=radius: radius + 1.0 <= distance(p, center) <= radius + 1.9, lambda p, center=center: ("rosa", "branco") if center[0] < GETULIO_VARGAS[0] else ("lilas", "branco")) for index, (center, radius) in enumerate(secondary_plazas())],
+        FlowerZone("coroa", around(WEST_SQUARE, 13.5), lambda p: 11.0 <= distance(p, WEST_SQUARE) <= 13.5, lambda p: ("vermelho", "branco"), (FLOWER_BED_MIN, 2.0)),
+        *[FlowerZone(f"meia_lua{index}", around(center, radius + 2.0), lambda p, center=center, radius=radius: radius + 1.0 <= distance(p, center) <= radius + 1.9, lambda p, center=center: ("rosa", "branco") if center[0] < WEST_SQUARE[0] else ("lilas", "branco")) for index, (center, radius) in enumerate(secondary_plazas())],
         *[FlowerZone(f"redondo{index}", around(center, 2.4), lambda p, center=center, index=index: distance(p, center) <= 1.8 + 0.2 * (index % 4), lambda p: ("laranja", "amarelo")) for index, center in enumerate(round_beds)],
         FlowerZone("coreto", around(COREO_POSITION, 6.5), lambda p: 5.6 <= distance(p, COREO_POSITION) <= 6.4 and angle_gap(math.degrees(math.atan2(p[1] - COREO_POSITION[1], p[0] - COREO_POSITION[0])), coreto_mouth) > 30.0, lambda p: ("branco", "rosa")),
         *[FlowerZone(f"palmeira{index}", around(palm, 0.7), lambda p, palm=palm: TRUNK_RADIUS["palm"] + 0.15 <= distance(p, palm) <= 0.7, lambda p: ("amarelo", "branco"), (FLOWER_BED_MIN, math.inf), 0.0) for index, palm in enumerate(palms[::3]) if palm[0] < 0.0],
@@ -1347,7 +1346,7 @@ def backyard_spot(block: tuple) -> tuple:
 
 
 def add_trees(scene: SceneWriter) -> None:
-    """Old trees in bands and the São José grove, blooming trees on the west edge and the median, royal palms in rows."""
+    """Old trees in bands and the east square grove, blooming trees on the west edge and the median, royal palms in rows."""
     old_trees = old_tree_spots()
     bloom_trees = [spot for spot in mirrored_in_z(BLOOM_TREES_WEST_EDGE) if can_plant(spot, "tree_bloom")]
     palms = palm_spots(old_trees)
@@ -1382,12 +1381,12 @@ def plaza_benches() -> list:
 
 def bench_layout() -> dict:
     """Benches by group, each (spot, yaw): around the chafariz, along the esplanade, in the plazas and beside the cathedral."""
-    fountain_spots = [point_at(GETULIO_VARGAS, 8.6, angle) for angle in FOUNTAIN_BENCH_ANGLES + tuple(-angle for angle in FOUNTAIN_BENCH_ANGLES)]
+    fountain_spots = [point_at(WEST_SQUARE, 8.6, angle) for angle in FOUNTAIN_BENCH_ANGLES + tuple(-angle for angle in FOUNTAIN_BENCH_ANGLES)]
     esplanade = [((x, side * (ESPLANADE_WIDTH / 2.0 - 0.6)), math.pi if side > 0 else 0.0) for side in (-1, 1) for x in (-56.0, -50.0, -18.0, -12.0)]
     cathedral = [((x, side * 15.4), 0.0 if side < 0 else math.pi) for side in (-1, 1) for x in (32.0, 44.0)]
 
     return {
-        "fountain": [(spot, facing_yaw(spot, GETULIO_VARGAS)) for spot in fountain_spots],
+        "fountain": [(spot, facing_yaw(spot, WEST_SQUARE)) for spot in fountain_spots],
         "esplanade": esplanade,
         "plazas": plaza_benches(),
         "cathedral": cathedral,
@@ -1400,10 +1399,10 @@ def add_square_props(scene: SceneWriter) -> dict:
     all_benches = [bench for group in benches.values() for bench in group]
     forecourt_planters = [(10.5, -12.0), (10.5, 12.0), (10.5, -6.0), (10.5, 6.0)]
     plaza_bush_spots = [point_at(center, radius + 2.2, angle) for center, radius in secondary_plazas() for angle in free_angles(center, 2, [])]
-    bushes = [spot for spot in ring_points(GETULIO_VARGAS, 12.4, 8, 22.5) + plaza_bush_spots if can_plant(spot, "bush")]
+    bushes = [spot for spot in ring_points(WEST_SQUARE, 12.4, 8, 22.5) + plaza_bush_spots if can_plant(spot, "bush")]
 
     scene.add_node("SquareProps", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
-    place(scene, "Chafariz", "SquareProps", "res://features/hub/props/fountain_large.tscn", (GETULIO_VARGAS[0], 0, GETULIO_VARGAS[1]))
+    place(scene, "Chafariz", "SquareProps", "res://features/hub/props/fountain_large.tscn", (WEST_SQUARE[0], 0, WEST_SQUARE[1]))
     place(scene, "RoundaboutFountain", "SquareProps", "res://features/hub/props/fountain_small.tscn", (ROUNDABOUT[0], 0, ROUNDABOUT[1]))
 
     for index, ((x, z), rotation_y) in enumerate(all_benches):
@@ -1420,7 +1419,7 @@ def add_square_props(scene: SceneWriter) -> dict:
 
 
 def add_market(scene: SceneWriter) -> None:
-    """Calçadão market on Rua Brasil between the squares; the middle stays open toward the cathedral."""
+    """Calçadão market on the promenade between the squares; the middle stays open toward the cathedral."""
     market_items = [
         ("Stall_Empty", (-2.4, 0, -38.0), math.pi / 2.0),
         ("Stall_Empty", (-2.4, 0, -33.6), math.pi / 2.0),
@@ -1489,12 +1488,12 @@ def sitter(bench: tuple) -> tuple:
 
 
 def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
-    center_x, center_z = GETULIO_VARGAS
+    center_x, center_z = WEST_SQUARE
     half_x, half_z = SQUARE_HALF
     # Entre o chafariz (colisão r=5.1) e o anel de postes (r=9).
-    fountain_loop = ring_points(GETULIO_VARGAS, 7.2, 12)
+    fountain_loop = ring_points(WEST_SQUARE, 7.2, 12)
     perimeter_loop = [(center_x - half_x + 2.6, center_z - half_z + 2.6), (center_x + half_x - 2.6, center_z - half_z + 2.6), (center_x + half_x - 2.6, center_z + half_z - 2.6), (center_x - half_x + 2.6, center_z + half_z - 2.6)]
-    sao_jose_loop = [(8.0, -16.5), (63.0, -16.5), (63.0, 16.5), (8.0, 16.5)]
+    east_square_loop = [(8.0, -16.5), (63.0, -16.5), (63.0, 16.5), (8.0, 16.5)]
     worshipper_route = [(8.0, 5.0), (CATHEDRAL_FACADE_X - 4.0, 0.0), (CATHEDRAL_FACADE_X + 26.0, 0.0)]
     west_bench_seat, west_bench_facing = sitter(benches["fountain"][3])
     east_bench_seat, east_bench_facing = sitter(benches["esplanade"][3])
@@ -1511,7 +1510,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "SquareWalkerReverse", "villager_male", "grey", patrol(list(reversed(perimeter_loop[2:] + perimeter_loop[:2])), 1.2, 0.0, "ual1/Idle"))
     npc(scene, "CalcadaoWalker", "villager_female", "brown", patrol([(0.8, -22.0), (0.8, 22.0)], 1.1, 4.0, "ual1/Idle_Talking"))
     npc(scene, "Worshipper", "villager_female", "black", patrol(worshipper_route, 1.0, 6.0, "ual1/Idle"))
-    npc(scene, "CathedralStroller", "villager_male", "brown", patrol(sao_jose_loop, 1.2, 2.0, "ual2/Idle_FoldArms"))
+    npc(scene, "CathedralStroller", "villager_male", "brown", patrol(east_square_loop, 1.2, 2.0, "ual2/Idle_FoldArms"))
     npc(scene, "MedianWalkerWest", "adventurer_male", "black", patrol([(-92.0, median_z + 2.0), (-MEDIAN_NOSE_X - 1.5, median_z + 2.0)], 1.4, 3.0, "ual2/Idle_FoldArms"))
     npc(scene, "MedianWalkerEast", "villager_female", "grey", patrol([(MEDIAN_NOSE_X + 1.5, median_z + 2.0), (92.0, median_z + 2.0)], 1.2, 3.0, "ual1/Idle"))
     npc(scene, "SidewalkWalker", "villager_male", "auburn", patrol([(-60.0, -67.5), (60.0, -67.5)], 1.3, 5.0, "ual1/Idle"))

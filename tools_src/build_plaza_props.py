@@ -358,7 +358,7 @@ def build_small_fountain(materials: dict) -> None:
 
 
 def build_lamp_post(materials: dict) -> None:
-    """Cast-iron post with four curled arms and a crown globe: five white globes, as in the Campo Mourão squares."""
+    """Cast-iron post with four curled arms and a crown globe: five white globes."""
     arm_height = 3.3
     arm_reach = 0.55
 

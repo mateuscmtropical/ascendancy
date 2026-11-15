@@ -15,4 +15,4 @@ CC0 verified from the License.txt inside each downloaded zip (2026-11-14). Chara
 
 ## Reference data
 
-The city layout (two squares, Rua Brasil promenade, avenue with roundabout) is loosely based on the street plan of Campo Mourão (PR, Brazil) from OpenStreetMap. Map data © OpenStreetMap contributors, available under the Open Database License (ODbL 1.0): https://www.openstreetmap.org/copyright. No map data is shipped; the layout is hand-built in `tools_src/build_hub_scene.py`.
+Map data © OpenStreetMap contributors, available under the Open Database License (ODbL 1.0): https://www.openstreetmap.org/copyright. No map data is shipped; the layout is hand-built in `tools_src/build_hub_scene.py`.

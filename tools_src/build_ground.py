@@ -390,9 +390,9 @@ def make_slab_collider(name: str, minimum: tuple, maximum: tuple) -> None:
 def slab_rectangles() -> list:
     """(name, min, max, [(surface min, surface max, material key)]) for every raised pavement, Godot (x, z)."""
     half_x, half_z = layout.SQUARE_HALF
-    west = layout.GETULIO_VARGAS[0] - half_x
-    east = layout.SAO_JOSE[0] + half_x
-    calcadao = (layout.GETULIO_VARGAS[0] + half_x, layout.SAO_JOSE[0] - half_x)
+    west = layout.WEST_SQUARE[0] - half_x
+    east = layout.EAST_SQUARE[0] + half_x
+    calcadao = (layout.WEST_SQUARE[0] + half_x, layout.EAST_SQUARE[0] - half_x)
     squares = [
         ((west, -half_z), (calcadao[0], half_z), "brick"),
         ((calcadao[0], -half_z), (calcadao[1], half_z), "stone"),
@@ -565,7 +565,7 @@ def build_marco(materials: dict) -> None:
 
 def build_inlays(materials: dict) -> None:
     """Stone inlays that break up the brick: the chafariz plaza, the coreto apron and the secondary plazas."""
-    discs = [("ChafarizPlaza", layout.GETULIO_VARGAS, layout.PLAZA_RADIUS - 0.6), ("CoretoPlaza", layout.COREO_POSITION, layout.COREO_APRON_RADIUS - 0.4)]
+    discs = [("ChafarizPlaza", layout.WEST_SQUARE, layout.PLAZA_RADIUS - 0.6), ("CoretoPlaza", layout.COREO_POSITION, layout.COREO_APRON_RADIUS - 0.4)]
     discs += [(f"Plaza{index}", center, radius - 0.5) for index, (center, radius) in enumerate(layout.secondary_plazas())]
 
     for name, center, radius in discs:

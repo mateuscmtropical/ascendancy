@@ -1,6 +1,6 @@
 """Model the hub cathedral and export it as art/town/cathedral.gltf.
 
-Art Deco church inspired by the Catedral São José of Campo Mourão (PR): twin stepped towers with
+Art Deco church: twin stepped towers with
 white fins and slit windows, stepped central gable, twin segmental arches over stained glass, round
 portal with voussoirs, low aisles with balustrades and rounded front corners. Scaled ~0.8 (20 x 40 m).
 The interior is open and walkable: narthex, nave on finned piers, aisles, pews, raised chancel and apse.
