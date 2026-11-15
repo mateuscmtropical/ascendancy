@@ -167,3 +167,25 @@ fov = 60.0
 position = Vector3(58.000, 40.000, 30.000)
 rotation = Vector3(-0.622, -1.003, 0.000)
 fov = 60.0
+
+[node name="SkyEye" type="Camera3D" parent="."]
+position = Vector3(-30.000, 1.700, -6.000)
+rotation = Vector3(0.233, -1.844, 0.000)
+fov = 70.0
+
+[node name="SkyWest" type="Camera3D" parent="."]
+position = Vector3(40.000, 1.700, -20.000)
+rotation = Vector3(0.152, 2.034, 0.000)
+fov = 70.0
+
+[node name="SkyOpen" type="Camera3D" parent="."]
+position = Vector3(125.000, 1.700, -30.000)
+rotation = Vector3(0.429, -3.142, 0.000)
+fov = 70.0
+far = 2000.0
+
+[node name="SkySunset" type="Camera3D" parent="."]
+position = Vector3(140.000, 2.000, 0.000)
+rotation = Vector3(0.062, 1.571, 0.000)
+fov = 70.0
+far = 2000.0

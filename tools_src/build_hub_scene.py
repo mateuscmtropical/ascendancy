@@ -346,6 +346,8 @@ class SceneWriter:
         header += f' parent="{parent}"' if parent is not None else ""
         header += f' instance=ExtResource("{instance}")' if instance else ""
         header += " groups=[" + ", ".join(f'"{group}"' for group in groups) + "]" if groups else ""
+        node_paths = [key for key, value in (properties or {}).items() if value.startswith("NodePath(")]
+        header += " node_paths=PackedStringArray(" + ", ".join(f'"{key}"' for key in node_paths) + ")" if node_paths else ""  # exports de nó: o Godot só resolve os listados
         lines = [header + "]"] + [f"{key} = {value}" for key, value in (properties or {}).items()]
         self.nodes.append("\n".join(lines) + "\n")
 
@@ -1636,18 +1638,23 @@ def add_player_and_cameras(scene: SceneWriter) -> None:
     scene.add_node("HubAudio", ".", instance=scene.external_id("PackedScene", "res://features/hub/hub_audio.tscn"))
 
 
+DAY_NIGHT_CYCLE_MINUTES = 24.0  # 12 min de dia claro + 12 de noite
+START_TIME_OF_DAY = 0.18  # manhã: o sol a uns 40° a leste-sudeste, a luz dos prints de antes
+WORLD_SEED = 1  # semente do mundo da cidade inicial (eventos do céu); o servidor mandará a dele
+
+
 def add_environment(scene: SceneWriter) -> None:
-    scene.add_sub_resource('''
-[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
-sky_top_color = Color(0.361, 0.561, 0.82, 1)
-sky_horizon_color = Color(0.78, 0.89, 0.95, 1)
-sky_curve = 0.12
-ground_horizon_color = Color(0.78, 0.89, 0.95, 1)
-ground_bottom_color = Color(0.35, 0.42, 0.33, 1)
-sun_angle_max = 20.0''')
+    sky_shader = scene.external_id("Shader", "res://art/shaders/sky.gdshader")
+    day_night_script = scene.external_id("Script", "res://features/sky/day_night_cycle.gd")
+
+    scene.add_sub_resource(f'''
+[sub_resource type="ShaderMaterial" id="sky_material"]
+shader = ExtResource("{sky_shader}")''')
     scene.add_sub_resource('''
 [sub_resource type="Sky" id="sky"]
-sky_material = SubResource("sky_material")''')
+sky_material = SubResource("sky_material")
+process_mode = 2
+radiance_size = 2''')
     scene.add_sub_resource('''
 [sub_resource type="Environment" id="environment"]
 background_mode = 2
@@ -1672,6 +1679,7 @@ fog_light_color = Color(0.78, 0.87, 0.95, 1)
 fog_density = 0.0016
 fog_sun_scatter = 0.25
 fog_aerial_perspective = 0.35
+fog_sky_affect = 0.2
 adjustment_enabled = true
 adjustment_saturation = 1.08''')
     scene.add_node("WorldEnvironment", ".", "WorldEnvironment", properties={"environment": 'SubResource("environment")'})
@@ -1683,6 +1691,14 @@ adjustment_saturation = 1.08''')
         "shadow_blur": "1.5",
         "directional_shadow_mode": "1",
         "directional_shadow_max_distance": "110.0",
+    })
+    scene.add_node("DayNight", ".", "Node", properties={
+        "script": f'ExtResource("{day_night_script}")',
+        "sun": 'NodePath("../Sun")',
+        "world_environment": 'NodePath("../WorldEnvironment")',
+        "cycle_minutes": f"{DAY_NIGHT_CYCLE_MINUTES}",
+        "start_time_of_day": f"{START_TIME_OF_DAY}",
+        "world_seed": f"{WORLD_SEED}",
     })
 
 

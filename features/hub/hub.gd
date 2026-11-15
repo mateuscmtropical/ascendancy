@@ -28,6 +28,7 @@ var _is_playing: bool = false
 @onready var _fps_counter: FpsCounter = $FpsCounter
 @onready var _sun: DirectionalLight3D = $Sun
 @onready var _settings_menu: SettingsMenu = $SettingsMenu
+@onready var _day_night: DayNightCycle = $DayNight
 
 
 func _ready() -> void:
@@ -86,6 +87,15 @@ func show_scenery() -> void:
 	_character_select.hide()
 	_fps_counter.hide()
 	_player.is_input_enabled = false
+
+
+## Pula o céu para uma hora do dia (vídeo, tour); o relógio continua andando dali.
+func set_time_of_day(day_time: float) -> void:
+	_day_night.set_time_of_day(day_time)
+
+
+func start_meteor_shower() -> void:
+	_day_night.start_meteor_shower()
 
 
 ## Menu aberto trava o personagem; ao fechar, quem estava jogando volta com o mouse preso.

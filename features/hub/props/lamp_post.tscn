@@ -6,7 +6,7 @@
 
 [node name="Model" parent="." instance=ExtResource("1_model")]
 
-[node name="Light" type="OmniLight3D" parent="."]
+[node name="Light" type="OmniLight3D" parent="." groups=["night_lights"]]
 position = Vector3(0, 3.55, 0)
 light_color = Color(1, 0.78, 0.5, 1)
 light_energy = 0.8
