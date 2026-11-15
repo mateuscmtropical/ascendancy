@@ -1,14 +1,16 @@
 class_name PromoDirector
 extends Node
-## Roteiro do vídeo promocional: voos de drone, órbitas e gruas pela cidade, escolha de personagem
-## e jogo. Gravar com tools_src/record.sh (Movie Maker, tempo fixo); fecha o jogo ao terminar.
+## Roteiros dos vídeos: o promocional (voos, órbitas, escolha de personagem e jogo) e o voo de drone
+## pela cidade inteira, escolhido pelo export reel. Gravar com tools_src/record.sh (Movie Maker,
+## tempo fixo); fecha o jogo ao terminar.
 
 enum ShotKind { FLY, ORBIT, CHARACTER_SELECT, GAMEPLAY }
+enum Reel { PROMO, DRONE }
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const FADE_SECONDS: float = 0.3
 const TEXT_FADE_SECONDS: float = 0.5
-const SHOTS: Array[Dictionary] = [
+const PROMO_SHOTS: Array[Dictionary] = [
 	{
 		"kind": ShotKind.ORBIT,
 		"seconds": 7.0,
@@ -148,6 +150,138 @@ const SHOTS: Array[Dictionary] = [
 	},
 ]
 
+## Voo de drone pela cidade como ela está: praças, catedral, fileira de comércio, lojas por dentro,
+## quadra das letras e bairros.
+const DRONE_SHOTS: Array[Dictionary] = [
+	{
+		"kind": ShotKind.ORBIT,
+		"seconds": 8.0,
+		"title": "ASCENDANCY",
+		"subtitle": "Voo de drone pela cidade · em desenvolvimento",
+		"center": Vector3(0, 0, -10),
+		"angle_from": 200.0,
+		"angle_to": 250.0,
+		"radius_from": 150.0,
+		"radius_to": 128.0,
+		"height_from": 78.0,
+		"height_to": 56.0,
+		"look_height": 0.0,
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 6.0,
+		"caption": "A praça do chafariz",
+		"eye_from": Vector3(-78, 36, 46),
+		"eye_to": Vector3(-47, 9, 14),
+		"look_from": Vector3(-34, 0, 0),
+		"look_to": Vector3(-34, 2, 0),
+	},
+	{
+		"kind": ShotKind.ORBIT,
+		"seconds": 7.0,
+		"caption": "A catedral",
+		"center": Vector3(36, 0, 0),
+		"angle_from": 120.0,
+		"angle_to": 200.0,
+		"radius_from": 58.0,
+		"radius_to": 48.0,
+		"height_from": 32.0,
+		"height_to": 22.0,
+		"look_height": 14.0,
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 7.0,
+		"caption": "Ferreiro, armeiro, magia e alfaiate",
+		"eye_from": Vector3(-95, 9, -50),
+		"eye_to": Vector3(-8, 9, -50),
+		"look_from": Vector3(-82, 5, -70),
+		"look_to": Vector3(-4, 5, -70),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 7.0,
+		"caption": "Taverna, alquimia, armazém e guilda",
+		"eye_from": Vector3(8, 9, -50),
+		"eye_to": Vector3(92, 9, -50),
+		"look_from": Vector3(12, 5, -70),
+		"look_to": Vector3(96, 5, -70),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 6.0,
+		"caption": "Lojas de verdade, cheias por dentro",
+		"eye_from": Vector3(-34, 2.2, -61),
+		"eye_to": Vector3(-34, 2.4, -76),
+		"look_from": Vector3(-34, 2.0, -86),
+		"look_to": Vector3(-34, 1.8, -88),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 6.0,
+		"caption": "A guilda dos aventureiros",
+		"eye_from": Vector3(87, 2.4, -61),
+		"eye_to": Vector3(87, 3.0, -79),
+		"look_from": Vector3(87, 2.6, -92),
+		"look_to": Vector3(87, 3.0, -92),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 7.0,
+		"caption": "Biblioteca, escola e seminário",
+		"eye_from": Vector3(-52, 14, -52),
+		"eye_to": Vector3(-52, 12, 46),
+		"look_from": Vector3(-75, 5, -30),
+		"look_to": Vector3(-75, 5, 30),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 6.0,
+		"caption": "Estantes até o teto",
+		"eye_from": Vector3(-62, 2.4, -30),
+		"eye_to": Vector3(-79, 2.8, -30),
+		"look_from": Vector3(-95, 2.4, -30),
+		"look_to": Vector3(-95, 3.0, -30),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 6.0,
+		"caption": "Portas abertas: entre e explore",
+		"eye_from": Vector3(6, 2.6, -1.3),
+		"eye_to": Vector3(32, 2.6, -1.3),
+		"look_from": Vector3(50, 3.5, -1),
+		"look_to": Vector3(54, 4, 0),
+	},
+	{
+		"kind": ShotKind.FLY,
+		"seconds": 7.0,
+		"caption": "Bairros residenciais",
+		"eye_from": Vector3(-70, 28, 100),
+		"eye_to": Vector3(45, 24, 100),
+		"look_from": Vector3(-40, 0, 60),
+		"look_to": Vector3(55, 0, 60),
+	},
+	{
+		"kind": ShotKind.ORBIT,
+		"seconds": 8.0,
+		"title": "ASCENDANCY",
+		"subtitle": "Em desenvolvimento · feito em Godot 4",
+		"center": Vector3(0, 0, 0),
+		"angle_from": 160.0,
+		"angle_to": 210.0,
+		"radius_from": 70.0,
+		"radius_to": 140.0,
+		"height_from": 20.0,
+		"height_to": 70.0,
+		"look_height": 5.0,
+	},
+]
+const SHOTS_BY_REEL: Dictionary[Reel, Array] = {
+	Reel.PROMO: PROMO_SHOTS,
+	Reel.DRONE: DRONE_SHOTS,
+}
+
+@export var reel: Reel = Reel.PROMO
 @export var hub: Hub
 @export var camera: Camera3D
 @export var title_label: Label
@@ -172,7 +306,7 @@ func _ready() -> void:
 func _play_reel() -> void:
 	hub.show_scenery()
 
-	for shot in SHOTS:
+	for shot in SHOTS_BY_REEL[reel]:
 		var shot_player: Callable = _shot_players[shot.kind]
 
 		_fade_through_black(shot.seconds)
