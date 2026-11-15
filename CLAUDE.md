@@ -84,6 +84,7 @@ Resumo em `.claude/skills/style-bible/SKILL.md`; pesquisa completa em `docs/rese
 - Personagens: base Quaternius Universal Base Characters + Modular Character Outfits (CC0), montados por `tools_src/build_characters.py` no Blender → `art/characters/*.glb`. Mesmo esqueleto de 65 ossos das animações UAL1/UAL2 (CC0), sem retarget. Addon godot-vrm fica só como opção futura.
 - Pacotes fonte: `python tools_src/fetch_assets.py` baixa para `tools/vendor/` (fora do git).
 - Meta: 60 fps em 1080p num i7-11800H + RTX 3060 Laptop.
+- Texturas: mipmap ligado nas opacas (padrão em `[importer_defaults]`; sem mip, textura 2K distante estoura o cache da GPU). Textura de folhagem com alpha scissor fica sem mipmap (o mip afina as folhas): desligar no `.import` dela. `texture_mipmap_bias=-4` mantém a nitidez distante que a cena tinha sem mip.
 
 ## Pesquisa
 - `docs/research/architecture.md` — estrutura, rede, seed, projetos OSS de referência, testes.
