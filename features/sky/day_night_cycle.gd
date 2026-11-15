@@ -81,9 +81,8 @@ func _ready() -> void:
 	if world_environment and world_environment.environment.sky:
 		_sky_material = world_environment.environment.sky.sky_material as ShaderMaterial
 
-	# Adiado: a câmera do print ou do vídeo só fica atual depois do _ready da cena toda.
 	if forced_event == ForcedEvent.METEOR_SHOWER:
-		start_meteor_shower.call_deferred()
+		_start_shower_next_frame()
 
 	apply_sky()
 
@@ -310,6 +309,13 @@ func _meteor_vector(meteor: SkyMeteor, is_head: bool) -> Vector4:
 	direction = meteor.head_at(game_seconds) if is_head else meteor.tail_at(game_seconds)
 
 	return Vector4(direction.x, direction.y, direction.z, meteor.glow_at(game_seconds))
+
+
+## A câmera do print ou do vídeo só fica atual depois do primeiro quadro da cena.
+func _start_shower_next_frame() -> void:
+	await get_tree().process_frame
+
+	start_meteor_shower()
 
 
 func _read_arguments(arguments: PackedStringArray) -> void:
