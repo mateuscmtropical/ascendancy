@@ -1430,8 +1430,13 @@ CARRIAGE_HORSE = "res://art/town/farm/animals/horse.gltf"
 CARRIAGE_WAGONS = ("res://art/town/farm/farm_wagon.gltf", "res://art/town/farm/hay_cart.gltf")
 CARRIAGE_SPEED = 1.3
 CARRIAGE_CORNER_RADIUS = 6.0
-STREET_LOOP = [  # pista das carroças pelas ruas rebaixadas: mão direita, contorna a rotatória pelo norte
-    (-68.0, 53.0), (68.0, 53.0), (68.0, -63.0), (12.0, -63.0), (6.0, -64.6), (0.0, -65.2), (-6.0, -64.6), (-12.0, -63.0), (-68.0, -63.0),
+# Pista das carroças pelas ruas rebaixadas, mão direita: oeste pela rua sul, norte pela rua x = -68, leste
+# pela pista sul da avenida (o canteiro central não tem vão nas ruas transversais, então o laço nunca troca
+# de pista), anti-horário pelo sul da ilha da rotatória e sul pela rua x = 68. Conferido com a caixa da
+# carroça (2 x 7,6 m, Carriage.body_size) varrendo a rota: folga mínima 0,74 m na rotatória e 0,44 m na
+# curva da esquina noroeste.
+STREET_LOOP = [
+    (68.0, 53.0), (-68.0, 53.0), (-68.0, -51.0), (-16.0, -51.0), (-8.0, -50.2), (0.0, -49.5), (8.0, -50.2), (16.0, -51.0), (68.0, -51.0),
 ]
 
 
