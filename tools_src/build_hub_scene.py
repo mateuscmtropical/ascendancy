@@ -44,6 +44,7 @@ COREO_ACCESS_END = (-38.2, -13.0)  # o caminho do coreto encosta na diagonal do 
 COREO_ACCESS_WIDTH = 3.4  # cabe a escada com as muretas
 PLAYER_SPAWN = (-38.4, -13.0)  # pé da escada do coreto, olhando para a catedral (+X)
 PATH_WIDTH = 4.0
+BRANCH_OVERRUN = 4.0  # ramo que chega na borda do gramado passa reto até a calçada (sem quina de grama)
 PLANTER_SOIL_HEIGHT = 0.42
 GRASS_SEED = 77
 GRASS_TUFTS_PER_SQUARE = 110
@@ -74,6 +75,13 @@ LAWN_RECTS = {  # canteiros = retângulo menos os caminhos de SQUARE_PATHS
 }
 
 
+def run_past(start: tuple, end: tuple, extra: float) -> tuple:
+    """End point pushed further along the strip, so its square end lands on paving instead of leaving a lawn notch."""
+    length = math.hypot(end[0] - start[0], end[1] - start[1])
+
+    return (end[0] + (end[0] - start[0]) / length * extra, end[1] + (end[1] - start[1]) / length * extra)
+
+
 def west_square_branches(sign: float) -> list:
     """Diagonals of one half of the west square (sign -1 = north, +1 = south): chafariz to the secondary plazas and their branches."""
     node = (WEST_NODES[0][0], sign * abs(WEST_NODES[0][1]))
@@ -81,12 +89,12 @@ def west_square_branches(sign: float) -> list:
 
     return [
         ("strip", WEST_SQUARE, node, 3.5),
-        ("strip", node, (-60.0, sign * 44.0), 3.5),  # largo -> canto da praça
-        ("strip", node, (-60.0, sign * 21.0), 3.0),  # largo -> borda oeste
-        ("strip", node, (-23.0, sign * 39.5), 3.0),  # largo -> ramo norte/sul
+        ("strip", node, run_past(node, (-60.0, sign * 44.0), BRANCH_OVERRUN), 3.5),  # largo -> canto da praça
+        ("strip", node, run_past(node, (-60.0, sign * 21.0), BRANCH_OVERRUN), 3.0),  # largo -> borda oeste
+        ("strip", node, run_past(node, (-23.0, sign * 39.5), 1.5), 3.0),  # largo -> ramo norte/sul (entra até o meio dele)
         ("strip", WEST_SQUARE, rondel, 3.5),
-        ("strip", rondel, (-23.0, sign * 44.0), 3.0),  # rondel -> borda norte/sul
-        ("strip", rondel, (-8.0, sign * 27.0), 3.0),  # rondel -> borda leste
+        ("strip", rondel, run_past(rondel, (-23.0, sign * 44.0), BRANCH_OVERRUN), 3.0),  # rondel -> borda norte/sul
+        ("strip", rondel, run_past(rondel, (-8.0, sign * 27.0), BRANCH_OVERRUN), 3.0),  # rondel -> borda leste
     ]
 
 

@@ -79,6 +79,7 @@ CHANCEL_TREAD = 0.4
 CHANCEL_STAIR_HALF = 5.5
 ALTAR_PLATFORM = (4.4, 3.0)  # supedâneo (largura, fundo), centro em y = BODY_LENGTH - 0,5
 CHRIST_SCALE = 1.6
+CHRIST_ANKLE_HEIGHT = 0.09  # osso do pé fica no tornozelo; a sola está essa altura abaixo (escala do modelo base)
 CHRIST_CHEST_HEIGHT = 5.6  # acima do piso do presbitério; abaixo da spec (6,3) para o frontão não encostar no óculo
 WING_FIGURE_SCALE = 0.85
 RETABLE_PEDIMENT_RISE = 0.9
@@ -1545,7 +1546,8 @@ def build_retable(materials: dict, christ: tuple, wing_figures: dict) -> None:
     for end_index, (end_center, end_radius) in enumerate(cross_ends):
         make_sphere(f"CrossFinial{end_index}", end_center, end_radius, materials["gold"])
 
-    make_slope("CrossFootrest", (-0.16, cross_y - 0.11, soles_height - 0.02), (-0.16, cross_y - 0.3, soles_height - 0.08), 0.3, 0.08, materials["wood_dark"])
+    footrest_height = soles_height + CHRIST_SCALE * (min(christ_bones["foot_l"].z, christ_bones["foot_r"].z) - CHRIST_ANKLE_HEIGHT)
+    make_slope("CrossFootrest", (-0.16, cross_y - 0.11, footrest_height - 0.02), (-0.16, cross_y - 0.3, footrest_height - 0.08), 0.3, 0.08, materials["wood_dark"])
     place_figure(christ_parts, Matrix.Translation((0, cross_y - 0.2, soles_height)) @ Matrix.Scale(CHRIST_SCALE, 4), "Retable")
 
     for figure_name, niche_x in wing_niches.items():
@@ -1681,15 +1683,19 @@ PRAYER_POSE = [  # hands joined at the chest, head slightly bowed
     ("lowerarm_l", "Z", -38.0),
     ("Head", "X", 10.0),
 ]
-CHRIST_POSE = [  # arms open a little above the horizontal, head fallen to the right shoulder, knees slightly bent
+CHRIST_POSE = [  # arms open a little above the horizontal, head fallen to the right shoulder, knees bent and turned, right foot over the left
     ("upperarm_l", "Y", 14.0),
     ("upperarm_r", "Y", -14.0),
     ("lowerarm_l", "X", -8.0),
     ("lowerarm_r", "X", -8.0),
-    ("thigh_l", "X", -10.0),
-    ("thigh_r", "X", -10.0),
-    ("calf_l", "X", 20.0),
-    ("calf_r", "X", 20.0),
+    ("thigh_l", "X", -18.0),
+    ("thigh_r", "X", -24.0),
+    ("thigh_l", "Y", 15.0),
+    ("thigh_r", "Y", 11.0),
+    ("calf_l", "X", 40.0),
+    ("calf_r", "X", 32.0),
+    ("calf_l", "Y", -4.0),
+    ("calf_r", "Y", -26.0),
     ("Head", "X", 22.0),
     ("Head", "Z", 14.0),
 ]
@@ -2070,6 +2076,71 @@ def finalize_objects(materials: dict) -> None:
     merge_meshes_by_material("Cathedral")
 
 
+SHAFT_COLORS = {  # material dos vitrais -> cor do feixe de luz que ele joga na nave
+    "M_FigureGlass": (1.0, 0.78, 0.42),
+    "M_DoveGlass": (0.62, 0.78, 1.0),
+    "M_OculusGlass": (1.0, 0.86, 0.5),
+    "M_StainedGlass": (1.0, 0.7, 0.45),
+}
+SHAFT_ELEVATION = math.radians(38.0)  # feixe desce como o sol da praça
+SHAFT_MAX_LENGTH = 18.0
+SHAFT_SHRINK = 0.85  # o feixe sai um pouco menor que a janela (borda de chumbo e moldura)
+
+
+def shaft_color(material_name: str) -> tuple:
+    prefixes = [prefix for prefix in SHAFT_COLORS if material_name.startswith(prefix)]
+
+    return SHAFT_COLORS[prefixes[0]] if prefixes else None
+
+
+def add_light_shaft(shaft_bmesh, color_layer, uv_layer, glass) -> None:
+    """Slanted prism from the glass pane into the church, down toward the floor; UV u across each side, v along the beam."""
+    corners_world = [glass.matrix_world @ vertex.co for vertex in glass.data.vertices]
+    center = sum(corners_world, Vector()) / len(corners_world)
+    widest_face = max(glass.data.polygons, key=lambda polygon: polygon.area)
+    normal = (glass.matrix_world.to_3x3() @ widest_face.normal).normalized()
+    interior = Vector((0.0, min(max(center.y, 2.0), BODY_LENGTH), center.z))
+    inward = normal if normal.dot(interior - center) > 0.0 else -normal
+    tangent = inward.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    half_width = SHAFT_SHRINK * max(abs((corner - center).dot(tangent)) for corner in corners_world)
+    half_height = SHAFT_SHRINK * max(abs(corner.z - center.z) for corner in corners_world)
+    direction = (inward * math.cos(SHAFT_ELEVATION) - Vector((0.0, 0.0, 1.0)) * math.sin(SHAFT_ELEVATION)).normalized()
+    length = min(SHAFT_MAX_LENGTH, (center.z - BASE) / math.sin(SHAFT_ELEVATION))
+    start = center + inward * 0.08
+    near = [start + tangent * side_u * half_width + Vector((0.0, 0.0, side_z * half_height)) for side_u, side_z in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    far = [corner + direction * length for corner in near]
+    color = (*shaft_color(glass.data.materials[0].name), 1.0)
+    near_verts = [shaft_bmesh.verts.new(corner) for corner in near]
+    far_verts = [shaft_bmesh.verts.new(corner) for corner in far]
+
+    for side in range(4):
+        following = (side + 1) % 4
+        face = shaft_bmesh.faces.new([near_verts[side], near_verts[following], far_verts[following], far_verts[side]])
+
+        for loop, uv in zip(face.loops, ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0))):
+            loop[uv_layer].uv = uv
+            loop[color_layer] = color
+
+
+def build_light_shafts() -> None:
+    """God rays: one soft beam per stained-glass window, coloured like its glass (shader art/shaders/light_shaft.gdshader)."""
+    material = bpy.data.materials.new("M_LightShaft")
+    material.use_nodes = True
+    color_node = material.node_tree.nodes.new("ShaderNodeVertexColor")
+    color_node.layer_name = "Color"
+    material.node_tree.links.new(color_node.outputs["Color"], material.node_tree.nodes["Principled BSDF"].inputs["Base Color"])
+    shaft_bmesh = bmesh.new()
+    uv_layer = shaft_bmesh.loops.layers.uv.verify()
+    color_layer = shaft_bmesh.loops.layers.color.new("Color")
+    glass_panes = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and scene_object.data.materials and shaft_color(scene_object.data.materials[0].name)]
+
+    for glass in glass_panes:
+        add_light_shaft(shaft_bmesh, color_layer, uv_layer, glass)
+
+    shafts = object_from_bmesh("LightShafts", shaft_bmesh, material)
+    shafts["keep_uvs"] = True
+
+
 def build_cathedral() -> Path:
     output_path = OUTPUT_DIR / "cathedral.gltf"
 
@@ -2105,6 +2176,7 @@ def build_cathedral() -> Path:
     for template in (saint, joseph, john, mary, christ[0]):
         discard_figure(template)
 
+    build_light_shafts()
     build_colliders()
     finalize_objects(materials)
 
