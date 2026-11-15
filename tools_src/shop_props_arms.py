@@ -771,13 +771,23 @@ def armor_stand_row(b: Builder, frame: Matrix, **options) -> None:
 # ---------- forge stock ----------
 
 def coal_pile(b: Builder, frame: Matrix, **options) -> None:
-    """Heap of coal 1.2 x 1.0 x 0.6 with loose lumps and a shovel."""
+    """Heap of coal 1.2 x 1.0 x 0.6 in a three-sided plank bin, loose lumps spilling out the front and a shovel;
+    the warm bin walls frame the dark heap so it reads against the floor."""
     generator = random.Random(options.get("seed", 1))
     profile = [(0.48, 0.0), (0.42, 0.18), (0.31, 0.36), (0.15, 0.5), (0.0, 0.56)]
     stretch = (1.05, 0.85)
     radius_at = lambda z: next(r0 + (r1 - r0) * (z - z0) / (z1 - z0) for (r0, z0), (r1, z1) in zip(profile, profile[1:]) if z <= z1)  # noqa: E731
 
     lathe(b, profile, 8, "paint", COAL, place(frame, scale=(*stretch, 1.0)))
+
+    plank(b, frame, (-0.6, 0.44, 0.0), (0.6, 0.5, 0.44), WOOD["media"], True)
+    plank(b, frame, (-0.6, -0.34, 0.0), (-0.54, 0.44, 0.38), WOOD["media"], True)
+    plank(b, frame, (0.54, -0.34, 0.0), (0.6, 0.44, 0.38), WOOD["media"], True)
+    plank(b, frame, (-0.54, -0.34, 0.0), (0.54, -0.3, 0.1), WOOD["escura"])
+
+    for x in (-0.6, 0.54):
+        plank(b, frame, (x - 0.01, 0.42, 0.0), (x + 0.07, 0.52, 0.5), WOOD["escura"])
+        plank(b, frame, (x - 0.01, -0.36, 0.0), (x + 0.07, -0.28, 0.42), WOOD["escura"])
 
     for index in range(16):
         z = generator.uniform(0.04, 0.5)
@@ -1020,18 +1030,54 @@ def gauntlet_basket(b: Builder, frame: Matrix, **options) -> None:
 
 
 def plate_pile(b: Builder, frame: Matrix, **options) -> None:
-    """Stack of steel sheets with a breastplate and a pauldron waiting to be fitted."""
+    """Armour goods on a low oak trestle: a stack of steel sheets, a breastplate standing on a T-rack and a
+    pauldron, so the plates read as wares on display and not as something dropped on the floor."""
     generator = random.Random(options.get("seed", 1))
+    trestle_top = 0.42
+    sheet_tones = ("C8D2E0", STEEL, "BCC8D8", STEEL_BRIGHT)
 
-    for index in range(4):
-        sheet = place(frame, (generator.uniform(-0.04, 0.04), generator.uniform(-0.03, 0.03), index * 0.025), (0.0, 0.0, generator.uniform(-10.0, 10.0)))
-        hull(b, [(sx * 0.3, sy * 0.2, dz) for sx, sy, dz in itertools.product((-1, 1), (-1, 1), (0.0, 0.02))] + [(sx * 0.33, 0.0, 0.01) for sx in (-1, 1)], "metal", srgb(("B4C2D6", STEEL, "A9B8CC", STEEL_BRIGHT)[index]), frame=sheet)
+    plank(b, frame, (-0.44, -0.29, trestle_top - 0.05), (0.44, 0.29, trestle_top), WOOD["mel"], True)
 
-    lathe(b, [(0.165, 0.0), (0.19, 0.16), (0.17, 0.3), (0.06, 0.37)], 8, "metal", STEEL_BRIGHT, place(frame, (-0.05, -0.2, 0.11), (-90.0, 0.0, 0.0), (1.0, 0.55, 1.0)))
-    lathe(b, [(0.11, 0.0), (0.085, 0.06), (0.0, 0.09)], 6, "metal", GOLD, place(frame, (0.24, -0.05, 0.1)))
+    for x in (-0.36, 0.36):
+        plank(b, frame, (x - 0.04, -0.25, 0.0), (x + 0.04, 0.25, 0.06), WOOD["escura"])
+        plank(b, frame, (x - 0.035, -0.035, 0.06), (x + 0.035, 0.035, trestle_top - 0.05), WOOD["escura"])
 
-    for x in (-0.2, -0.16, -0.12):
-        gem(b, frame, (x, -0.24, 0.11), 0.012, "metal", BRASS)
+    plank(b, frame, (-0.36, -0.02, 0.16), (0.36, 0.02, 0.22), WOOD["media"])
+
+    for index, tone in enumerate(sheet_tones):
+        sheet = place(frame, (-0.17 + generator.uniform(-0.03, 0.03), generator.uniform(-0.03, 0.03), trestle_top + index * 0.022), (0.0, 0.0, generator.uniform(-8.0, 8.0)))
+        hull(b, [(sx * 0.2, sy * 0.17, dz) for sx, sy, dz in itertools.product((-1, 1), (-1, 1), (0.0, 0.018))], "metal", srgb(tone), frame=sheet)
+        gem(b, sheet, (0.16, -0.13, 0.02), 0.01, "metal", BRASS)
+
+    plank(b, frame, (0.2, 0.0, trestle_top), (0.24, 0.04, trestle_top + 0.38), WOOD["escura"])
+    plank(b, frame, (0.08, 0.0, trestle_top + 0.32), (0.36, 0.04, trestle_top + 0.36), WOOD["escura"])
+    lathe(b, [(0.15, 0.0), (0.17, 0.12), (0.155, 0.24), (0.07, 0.3)], 8, "metal", STEEL_BRIGHT, place(frame, (0.22, -0.03, trestle_top + 0.06), (0.0, 0.0, 0.0), (1.0, 0.55, 1.0)))
+    b.cylinder((0.0, 0.0, 0.0), 0.162, 0.025, 8, "metal", srgb(GOLD), frame=place(frame, (0.22, -0.03, trestle_top + 0.05), scale=(1.0, 0.55, 1.0)))
+    lathe(b, [(0.09, 0.0), (0.07, 0.05), (0.0, 0.075)], 6, "metal", GOLD, place(frame, (-0.3, 0.14, trestle_top + 0.09)))
+
+    for x in (0.16, 0.22, 0.28):
+        gem(b, frame, (x, -0.115, trestle_top + 0.22), 0.012, "metal", BRASS)
+
+
+def weapon_barrel(b: Builder, frame: Matrix, **options) -> None:
+    """Open oak barrel (Ø0.7) of swords hilt-up and spears for sale, the cheap end of the smithy's stock."""
+    generator = random.Random(options.get("seed", 1))
+    profile = [(0.29, 0.0), (0.33, 0.2), (0.345, 0.38), (0.33, 0.56), (0.3, 0.72), (0.27, 0.72), (0.27, 0.64)]
+    swords = [(0.1, 0.08, STEEL_BRIGHT, GOLD), (-0.12, 0.05, STEEL, BRASS), (0.02, -0.13, STEEL_BRIGHT, STEEL_DARK), (-0.06, -0.02, STEEL, COPPER), (0.15, -0.08, STEEL_BRIGHT, BRONZE)]
+    spears = [(-0.14, 0.13, CLOTH_RED), (0.12, 0.15, CLOTH_BLUE)]
+
+    lathe(b, profile, 10, "wood", WOOD["media"], frame, uv=LIGHT_GRAIN)
+    b.cylinder((0.0, 0.0, 0.5), 0.265, 0.012, 10, "paint", srgb(COAL), frame=frame)
+
+    for z, radius in ((0.1, 0.326), (0.62, 0.322)):
+        b.cylinder((0.0, 0.0, z), radius, 0.05, 10, "metal", srgb(IRON_DARK), frame=frame)
+
+    for x, y, blade, hilt in swords:
+        tilt = (generator.uniform(-6.0, 6.0), generator.uniform(-6.0, 6.0))
+        sword(b, place(frame, (x * 0.8, y * 0.8, 1.32), (180.0 + tilt[0], tilt[1], generator.uniform(0.0, 180.0))), 1.18, blade=blade, hilt=hilt, width=0.075)
+
+    for x, y, tassel in spears:
+        spear(b, place(frame, (x, y, 0.06), (generator.uniform(-5.0, 5.0), generator.uniform(-5.0, 5.0), generator.uniform(0.0, 180.0))), 2.0, tassel=tassel)
 
 
 # ---------- guild hall ----------
@@ -1546,7 +1592,8 @@ PROPS = {
     "standing_mirror": {"build": standing_mirror, "size": (0.8, 0.5, 1.9), "solid": True},
     "boots_rack": {"build": boots_rack, "size": (1.24, 0.4, 0.96), "solid": True},
     "gauntlet_basket": {"build": gauntlet_basket, "size": (0.6, 0.6, 0.6), "solid": True},
-    "plate_pile": {"build": plate_pile, "size": (0.8, 0.6, 0.4), "solid": True},
+    "plate_pile": {"build": plate_pile, "size": (0.9, 0.6, 0.85), "solid": True},
+    "weapon_barrel": {"build": weapon_barrel, "size": (0.7, 0.7, 2.1), "solid": True},
     "quest_board": {"build": quest_board, "size": (3.2, 0.4, 3.2), "solid": True, "clearance": 1.8},
     "guild_counter": {"build": guild_counter, "size": (6.0, 0.9, 2.5), "solid": True, "clearance": 2.0},
     "world_map_wall": {"build": world_map_wall, "size": (2.5, 0.2, 3.0), "solid": False},

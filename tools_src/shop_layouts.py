@@ -459,7 +459,7 @@ PLANS = {
     "library": dict(keeper=(0.0, 16.0), furnish=furnish_library),
 }
 FILL = {  # prédio -> ilhas soltas que enchem o chão livre dos dois lados do corredor da porta (fill_floor)
-    "smith": [("armor_stand", 0.0, {"variant": "plate"}), ("crate_open", 0.0, {"variant": "ingots"}), ("quench_barrel", 0.0, {}), ("plate_pile", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("coal_pile", 0.0, {}), ("barrel_group", 0.0, {})],
+    "smith": [("armor_stand", 0.0, {"variant": "plate"}), ("crate_open", 0.0, {"variant": "ingots"}), ("weapon_barrel", 0.0, {}), ("plate_pile", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("weapon_barrel", 0.0, {"seed": 2}), ("barrel_group", 0.0, {})],
     "armor": [("armor_stand", 0.0, {"variant": "plate"}), ("plate_pile", 0.0, {}), ("chainmail_stand", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("boots_rack", 90.0, {}), ("standing_mirror", 0.0, {})],
     "magic": [("mana_crystal_crate", 0.0, {}), ("rune_pillar", 0.0, {}), ("wand_case", 90.0, {}), ("giant_hourglass", 0.0, {}), ("mage_hat_stand", 0.0, {}), ("celestial_globe", 0.0, {}), ("crystal_ball_pedestal", 0.0, {})],
     "alchemy": [("planter_box", 90.0, {}), ("glowing_jar", 0.0, {}), ("drying_rack_herbs", 90.0, {}), ("mortar_table", 90.0, {}), ("flower_steps", 0.0, {}), ("crate_open", 0.0, {"variant": "roots"}), ("skeleton_stand", 0.0, {}), ("barrel_group", 0.0, {})],
