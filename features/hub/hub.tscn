@@ -1,4 +1,4 @@
-[gd_scene load_steps=132 format=3]
+[gd_scene load_steps=133 format=3]
 
 [ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
 [ext_resource type="Texture2D" path="res://art/town/textures/T_RockTrim_BaseColor.png" id="2_ext"]
@@ -90,19 +90,20 @@
 [ext_resource type="PackedScene" path="res://art/props/Bucket_Wooden_1.gltf" id="88_ext"]
 [ext_resource type="PackedScene" path="res://art/props/Table_Large.gltf" id="89_ext"]
 [ext_resource type="PackedScene" path="res://art/props/Stool.gltf" id="90_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Pine_1.gltf" id="91_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Pine_2.gltf" id="92_ext"]
-[ext_resource type="PackedScene" path="res://art/nature/Pine_3.gltf" id="93_ext"]
-[ext_resource type="NavigationMesh" path="res://features/hub/hub_navmesh.tres" id="94_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/villager_male.gltf" id="95_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/walking_npc.tscn" id="96_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/villager_female.gltf" id="97_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/adventurer_female.gltf" id="98_ext"]
-[ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="99_ext"]
-[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="100_ext"]
-[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="101_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="102_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="103_ext"]
+[ext_resource type="Script" path="res://features/hub/shadowless_group.gd" id="91_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_1.gltf" id="92_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_2.gltf" id="93_ext"]
+[ext_resource type="PackedScene" path="res://art/nature/Pine_3.gltf" id="94_ext"]
+[ext_resource type="NavigationMesh" path="res://features/hub/hub_navmesh.tres" id="95_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/villager_male.gltf" id="96_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/walking_npc.tscn" id="97_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/villager_female.gltf" id="98_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_female.gltf" id="99_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="100_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="101_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="102_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="103_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="104_ext"]
 
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -4097,403 +4098,404 @@ position = Vector3(0.000, 0.290, 0.000)
 shape = SubResource("collider_Stool")
 
 [node name="Backdrop" type="Node3D" parent="."]
+script = ExtResource("91_ext")
 
-[node name="Pine00" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine00" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-112.000, 0.000, -110.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine01" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine01" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-112.000, 0.000, 102.000)
 rotation = Vector3(0.000, 0.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine02" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine02" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-98.000, 0.000, -110.000)
 rotation = Vector3(0.000, 1.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine03" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine03" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-98.000, 0.000, 102.000)
 rotation = Vector3(0.000, 1.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine04" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine04" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-84.000, 0.000, -110.000)
 rotation = Vector3(0.000, 2.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine05" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine05" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-84.000, 0.000, 102.000)
 rotation = Vector3(0.000, 2.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine06" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine06" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-70.000, 0.000, -110.000)
 rotation = Vector3(0.000, 3.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine07" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine07" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-70.000, 0.000, 102.000)
 rotation = Vector3(0.000, 3.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine08" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine08" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-56.000, 0.000, -110.000)
 rotation = Vector3(0.000, 4.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine09" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine09" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-56.000, 0.000, 102.000)
 rotation = Vector3(0.000, 4.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine10" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine10" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-42.000, 0.000, -110.000)
 rotation = Vector3(0.000, 5.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine11" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine11" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-42.000, 0.000, 102.000)
 rotation = Vector3(0.000, 5.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine12" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine12" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-28.000, 0.000, -110.000)
 rotation = Vector3(0.000, 6.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine13" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine13" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-28.000, 0.000, 102.000)
 rotation = Vector3(0.000, 6.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine14" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine14" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-14.000, 0.000, -110.000)
 rotation = Vector3(0.000, 7.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine15" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine15" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-14.000, 0.000, 102.000)
 rotation = Vector3(0.000, 7.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine16" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine16" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(0.000, 0.000, -110.000)
 rotation = Vector3(0.000, 8.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine17" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine17" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(0.000, 0.000, 102.000)
 rotation = Vector3(0.000, 8.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine18" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine18" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(14.000, 0.000, -110.000)
 rotation = Vector3(0.000, 9.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine19" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine19" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(14.000, 0.000, 102.000)
 rotation = Vector3(0.000, 9.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine20" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine20" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(28.000, 0.000, -110.000)
 rotation = Vector3(0.000, 10.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine21" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine21" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(28.000, 0.000, 102.000)
 rotation = Vector3(0.000, 10.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine22" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine22" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(42.000, 0.000, -110.000)
 rotation = Vector3(0.000, 11.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine23" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine23" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(42.000, 0.000, 102.000)
 rotation = Vector3(0.000, 11.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine24" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine24" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(56.000, 0.000, -110.000)
 rotation = Vector3(0.000, 12.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine25" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine25" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(56.000, 0.000, 102.000)
 rotation = Vector3(0.000, 12.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine26" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine26" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(70.000, 0.000, -110.000)
 rotation = Vector3(0.000, 13.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine27" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine27" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(70.000, 0.000, 102.000)
 rotation = Vector3(0.000, 13.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine28" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine28" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(84.000, 0.000, -110.000)
 rotation = Vector3(0.000, 14.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine29" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine29" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(84.000, 0.000, 102.000)
 rotation = Vector3(0.000, 14.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine30" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine30" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(98.000, 0.000, -110.000)
 rotation = Vector3(0.000, 15.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine31" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine31" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(98.000, 0.000, 102.000)
 rotation = Vector3(0.000, 15.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine32" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine32" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(112.000, 0.000, -110.000)
 rotation = Vector3(0.000, 16.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine33" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine33" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(112.000, 0.000, 102.000)
 rotation = Vector3(0.000, 16.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine34" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine34" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-116.000, 0.000, -96.000)
 rotation = Vector3(0.000, 17.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine35" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine35" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(116.000, 0.000, -96.000)
 rotation = Vector3(0.000, 17.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine36" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine36" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-116.000, 0.000, -82.000)
 rotation = Vector3(0.000, 18.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine37" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine37" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(116.000, 0.000, -82.000)
 rotation = Vector3(0.000, 18.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine38" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine38" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-116.000, 0.000, -68.000)
 rotation = Vector3(0.000, 19.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine39" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine39" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(116.000, 0.000, -68.000)
 rotation = Vector3(0.000, 19.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine40" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine40" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-116.000, 0.000, -54.000)
 rotation = Vector3(0.000, 20.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine41" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine41" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(116.000, 0.000, -54.000)
 rotation = Vector3(0.000, 20.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine42" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine42" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-116.000, 0.000, -40.000)
 rotation = Vector3(0.000, 21.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine43" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine43" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(116.000, 0.000, -40.000)
 rotation = Vector3(0.000, 21.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine44" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine44" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-116.000, 0.000, -26.000)
 rotation = Vector3(0.000, 22.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine45" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine45" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(116.000, 0.000, -26.000)
 rotation = Vector3(0.000, 22.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine46" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine46" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-116.000, 0.000, -12.000)
 rotation = Vector3(0.000, 23.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine47" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine47" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(116.000, 0.000, -12.000)
 rotation = Vector3(0.000, 23.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine48" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine48" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-116.000, 0.000, 2.000)
 rotation = Vector3(0.000, 24.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine49" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine49" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(116.000, 0.000, 2.000)
 rotation = Vector3(0.000, 24.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine50" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine50" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-116.000, 0.000, 16.000)
 rotation = Vector3(0.000, 25.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine51" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine51" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(116.000, 0.000, 16.000)
 rotation = Vector3(0.000, 25.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine52" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine52" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-116.000, 0.000, 30.000)
 rotation = Vector3(0.000, 26.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine53" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine53" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(116.000, 0.000, 30.000)
 rotation = Vector3(0.000, 26.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine54" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine54" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-116.000, 0.000, 44.000)
 rotation = Vector3(0.000, 27.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine55" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine55" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(116.000, 0.000, 44.000)
 rotation = Vector3(0.000, 27.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine56" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine56" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(-116.000, 0.000, 58.000)
 rotation = Vector3(0.000, 28.000, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine57" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine57" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(116.000, 0.000, 58.000)
 rotation = Vector3(0.000, 28.500, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine58" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine58" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(-116.000, 0.000, 72.000)
 rotation = Vector3(0.000, 29.000, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
-[node name="Pine59" parent="Backdrop" instance=ExtResource("93_ext")]
+[node name="Pine59" parent="Backdrop" instance=ExtResource("94_ext")]
 position = Vector3(116.000, 0.000, 72.000)
 rotation = Vector3(0.000, 29.500, 0.000)
 scale = Vector3(2.000, 2.000, 2.000)
 
-[node name="Pine60" parent="Backdrop" instance=ExtResource("91_ext")]
+[node name="Pine60" parent="Backdrop" instance=ExtResource("92_ext")]
 position = Vector3(-116.000, 0.000, 86.000)
 rotation = Vector3(0.000, 30.000, 0.000)
 scale = Vector3(1.600, 1.600, 1.600)
 
-[node name="Pine61" parent="Backdrop" instance=ExtResource("92_ext")]
+[node name="Pine61" parent="Backdrop" instance=ExtResource("93_ext")]
 position = Vector3(116.000, 0.000, 86.000)
 rotation = Vector3(0.000, 30.500, 0.000)
 scale = Vector3(1.800, 1.800, 1.800)
 
 [node name="Navigation" type="NavigationRegion3D" parent="."]
-navigation_mesh = ExtResource("94_ext")
+navigation_mesh = ExtResource("95_ext")
 
 [node name="Townsfolk" type="Node3D" parent="."]
 
-[node name="FountainWalker" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="FountainWalker" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.160, 0.120, 0.100, 1)
 route = PackedVector3Array(-26.80, 0, 0.00, -27.76, 0, 3.60, -30.40, 0, 6.24, -34.00, 0, 7.20, -37.60, 0, 6.24, -40.24, 0, 3.60, -41.20, 0, 0.00, -40.24, 0, -3.60, -37.60, 0, -6.24, -34.00, 0, -7.20, -30.40, 0, -6.24, -27.76, 0, -3.60)
 walk_speed = 1.2
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="FountainWalkerReverse" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="FountainWalkerReverse" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 route = PackedVector3Array(-40.24, 0, 3.60, -37.60, 0, 6.24, -34.00, 0, 7.20, -30.40, 0, 6.24, -27.76, 0, 3.60, -26.80, 0, 0.00, -27.76, 0, -3.60, -30.40, 0, -6.24, -34.00, 0, -7.20, -37.60, 0, -6.24, -40.24, 0, -3.60, -41.20, 0, 0.00)
 walk_speed = 1.1
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="SquareWalker" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("98_ext")
+[node name="SquareWalker" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("99_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 route = PackedVector3Array(-61.40, 0, -45.40, -6.60, 0, -45.40, -6.60, 0, 45.40, -61.40, 0, 45.40)
 walk_speed = 1.4
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="SquareWalkerReverse" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="SquareWalkerReverse" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 route = PackedVector3Array(-6.60, 0, -45.40, -61.40, 0, -45.40, -61.40, 0, 45.40, -6.60, 0, 45.40)
 walk_speed = 1.2
 pause_seconds = 0.0
 idle_animation = &"ual1/Idle"
 
-[node name="CalcadaoWalker" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="CalcadaoWalker" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 route = PackedVector3Array(0.80, 0, -22.00, 0.80, 0, 22.00)
 walk_speed = 1.1
 pause_seconds = 4.0
 idle_animation = &"ual1/Idle_Talking"
 
-[node name="Worshipper" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="Worshipper" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 route = PackedVector3Array(8.00, 0, 5.00, 9.00, 0, 0.00, 39.00, 0, 0.00)
 walk_speed = 1.0
 pause_seconds = 6.0
 idle_animation = &"ual1/Idle"
 
-[node name="CathedralStroller" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="CathedralStroller" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 route = PackedVector3Array(8.00, 0, -16.50, 63.00, 0, -16.50, 63.00, 0, 16.50, 8.00, 0, 16.50)
 walk_speed = 1.2
 pause_seconds = 2.0
 idle_animation = &"ual2/Idle_FoldArms"
 
-[node name="MedianWalkerWest" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("99_ext")
+[node name="MedianWalkerWest" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("100_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 route = PackedVector3Array(-92.00, 0, -55.00, -16.00, 0, -55.00)
 walk_speed = 1.4
 pause_seconds = 3.0
 idle_animation = &"ual2/Idle_FoldArms"
 
-[node name="MedianWalkerEast" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="MedianWalkerEast" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 route = PackedVector3Array(16.00, 0, -55.00, 92.00, 0, -55.00)
 walk_speed = 1.2
 pause_seconds = 3.0
 idle_animation = &"ual1/Idle"
 
-[node name="SidewalkWalker" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="SidewalkWalker" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 route = PackedVector3Array(-60.00, 0, -67.50, 60.00, 0, -67.50)
 walk_speed = 1.3
 pause_seconds = 5.0
 idle_animation = &"ual1/Idle"
 
-[node name="Merchant" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="Merchant" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 position = Vector3(-1.100, 0.000, -36.000)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -4501,8 +4503,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 1.1
 
-[node name="Shopper" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="Shopper" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 position = Vector3(0.400, 0.000, -35.400)
 rotation = Vector3(0.000, -1.871, 0.000)
@@ -4510,8 +4512,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.4
 
-[node name="TalkerA" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="TalkerA" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 position = Vector3(-24.900, 0.000, 15.600)
 rotation = Vector3(0.000, 0.999, 0.000)
@@ -4519,8 +4521,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 0.0
 
-[node name="TalkerB" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="TalkerB" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 position = Vector3(-23.500, 0.000, 16.500)
 rotation = Vector3(0.000, -2.142, 0.000)
@@ -4528,8 +4530,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.7
 
-[node name="SittingWest" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="SittingWest" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 position = Vector3(-26.913, 0.000, -4.602)
 rotation = Vector3(0.000, -0.995, 0.000)
@@ -4537,8 +4539,8 @@ activity = 1
 idle_animation = &"ual1/Sitting_Idle"
 animation_offset_seconds = 0.3
 
-[node name="SittingEast" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="SittingEast" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 position = Vector3(-12.000, 0.000, -3.250)
 rotation = Vector3(0.000, 0.000, 0.000)
@@ -4546,8 +4548,8 @@ activity = 1
 idle_animation = &"ual1/Sitting_Talking"
 animation_offset_seconds = 0.0
 
-[node name="SittingCathedral" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("99_ext")
+[node name="SittingCathedral" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("100_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 position = Vector3(32.000, 0.000, -15.250)
 rotation = Vector3(0.000, 0.000, 0.000)
@@ -4555,8 +4557,8 @@ activity = 1
 idle_animation = &"ual1/Sitting_Talking"
 animation_offset_seconds = 0.5
 
-[node name="Bard" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("98_ext")
+[node name="Bard" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("99_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 position = Vector3(-46.000, 1.200, -13.000)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -4564,8 +4566,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 0.2
 
-[node name="Guard" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("98_ext")
+[node name="Guard" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("99_ext")
 hair_color = Color(0.160, 0.120, 0.100, 1)
 position = Vector3(8.800, 0.000, -6.500)
 rotation = Vector3(0.000, -1.571, 0.000)
@@ -4573,8 +4575,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper00" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="Shopkeeper00" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 position = Vector3(-45.000, 0.000, -73.600)
 rotation = Vector3(0.000, -0.245, 0.000)
@@ -4582,8 +4584,8 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper01" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="Shopkeeper01" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 position = Vector3(-25.850, 0.000, -75.000)
 rotation = Vector3(0.000, -0.670, 0.000)
@@ -4591,8 +4593,8 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper02" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="Shopkeeper02" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.160, 0.120, 0.100, 1)
 position = Vector3(-16.000, 0.000, -74.000)
 rotation = Vector3(0.000, -0.197, 0.000)
@@ -4600,8 +4602,8 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper03" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("99_ext")
+[node name="Shopkeeper03" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("100_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
 position = Vector3(-83.600, 0.000, -32.000)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -4609,8 +4611,8 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper04" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="Shopkeeper04" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
 position = Vector3(-82.600, 0.000, -18.400)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -4618,8 +4620,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper05" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("98_ext")
+[node name="Shopkeeper05" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("99_ext")
 hair_color = Color(0.160, 0.120, 0.100, 1)
 position = Vector3(-85.300, 0.000, 0.800)
 rotation = Vector3(0.000, 1.641, 0.000)
@@ -4627,8 +4629,8 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper06" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="Shopkeeper06" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 position = Vector3(-85.100, 0.000, 15.450)
 rotation = Vector3(0.000, 1.261, 0.000)
@@ -4636,8 +4638,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper07" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="Shopkeeper07" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.850, 0.700, 0.450, 1)
 position = Vector3(-79.800, 0.000, 32.600)
 rotation = Vector3(0.000, 1.571, 0.000)
@@ -4645,8 +4647,8 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper08" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("97_ext")
+[node name="Shopkeeper08" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("98_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 position = Vector3(-52.400, 0.000, 69.200)
 rotation = Vector3(0.000, 2.661, 0.000)
@@ -4654,8 +4656,8 @@ activity = 1
 idle_animation = &"ual1/Idle_Talking"
 animation_offset_seconds = 0.0
 
-[node name="Shopkeeper09" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="Shopkeeper09" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.550, 0.270, 0.150, 1)
 position = Vector3(-30.100, 0.000, 66.600)
 rotation = Vector3(0.000, 2.586, 0.000)
@@ -4663,8 +4665,8 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Priest" parent="Townsfolk" instance=ExtResource("96_ext")]
-body_scene = ExtResource("95_ext")
+[node name="Priest" parent="Townsfolk" instance=ExtResource("97_ext")]
+body_scene = ExtResource("96_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
 position = Vector3(53.400, 2.250, 0.000)
 rotation = Vector3(0.000, -1.571, 0.000)
@@ -4672,7 +4674,7 @@ activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
 
-[node name="Player" parent="." instance=ExtResource("100_ext")]
+[node name="Player" parent="." instance=ExtResource("101_ext")]
 position = Vector3(-38.400, 0.000, -13.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -4682,7 +4684,7 @@ rotation = Vector3(-0.120, 1.837, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
-script = ExtResource("101_ext")
+script = ExtResource("102_ext")
 
 [node name="Key0" type="Marker3D" parent="CinematicTour"]
 position = Vector3(-90.000, 28.000, -30.000)
@@ -4712,6 +4714,6 @@ rotation = Vector3(0.114, -1.571, 0.000)
 position = Vector3(-90.000, 4.000, -57.000)
 rotation = Vector3(-0.011, -1.571, 0.000)
 
-[node name="CharacterSelect" parent="." instance=ExtResource("102_ext")]
+[node name="CharacterSelect" parent="." instance=ExtResource("103_ext")]
 
-[node name="FpsCounter" parent="." instance=ExtResource("103_ext")]
+[node name="FpsCounter" parent="." instance=ExtResource("104_ext")]

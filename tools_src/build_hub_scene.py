@@ -1457,7 +1457,9 @@ def add_backdrop(scene: SceneWriter) -> None:
     north_south = [(x, z) for x in range(int(CITY_MIN[0]) - 10, int(CITY_MAX[0]) + 11, 14) for z in (CITY_MIN[1] - margin, CITY_MAX[1] + margin)]
     west_east = [(x, z) for z in range(int(CITY_MIN[1]), int(CITY_MAX[1]) + 1, 14) for x in (CITY_MIN[0] - margin, CITY_MAX[0] + margin)]
 
-    scene.add_node("Backdrop", ".", "Node3D")
+    shadowless_script = scene.external_id("Script", "res://features/hub/shadowless_group.gd")
+
+    scene.add_node("Backdrop", ".", "Node3D", properties={"script": f'ExtResource("{shadowless_script}")'})
 
     for index, (x, z) in enumerate(north_south + west_east):
         place(scene, f"Pine{index:02d}", "Backdrop", f"res://art/nature/Pine_{index % 3 + 1}.gltf", (x, 0, z), rotation_y=index * 0.5, scale=1.6 + 0.2 * (index % 3))
