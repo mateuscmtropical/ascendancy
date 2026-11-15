@@ -1463,6 +1463,9 @@ def add_farm_animals(scene: SceneWriter) -> None:
     if len(herds) < len(FARM_ANIMALS):
         print("AVISO: bichos da fazenda ausentes; rode tools_src/convert_farm_animals.py no Blender")
 
+    if herds:
+        scene.add_node("FarmAnimals", ".", "Node3D")  # fora do grupo da navmesh: bicho anda, não é obstáculo fixo
+
     for pen, model, count, speed in herds:
         min_x, max_x, min_z, max_z = FARM_PENS[pen]
         area = (min_x + FARM_ANIMAL_MARGIN, min_z + FARM_ANIMAL_MARGIN, max_x - min_x - 2.0 * FARM_ANIMAL_MARGIN, max_z - min_z - 2.0 * FARM_ANIMAL_MARGIN)
@@ -1470,11 +1473,12 @@ def add_farm_animals(scene: SceneWriter) -> None:
 
         for index in range(count):
             x, z = generator.uniform(area[0], area[0] + area[2]), generator.uniform(area[1], area[1] + area[3])
-            scene.add_node(f"{pen.title()}{index}", "Farm", "AnimatableBody3D", properties={
+            scene.add_node(f"{pen.title()}{index}", "FarmAnimals", "AnimatableBody3D", properties={
                 "position": vector(x, 0.03, z),
                 "rotation": vector(0.0, generator.uniform(-math.pi, math.pi), 0.0),
                 "collision_layer": "4",
                 "collision_mask": "0",
+                "sync_to_physics": "false",  # o script move o corpo direto a cada quadro de física
                 "script": f'ExtResource("{script}")',
                 "model_scene": f'ExtResource("{model_id}")',
                 "pen": f"Rect2({area[0]:.2f}, {area[1]:.2f}, {area[2]:.2f}, {area[3]:.2f})",
@@ -1528,6 +1532,7 @@ def add_carriages(scene: SceneWriter) -> None:
         scene.add_node(f"Carriage{index}", "Carriages", "AnimatableBody3D", properties={
             "collision_layer": "4",
             "collision_mask": "0",
+            "sync_to_physics": "false",  # o script move o corpo direto a cada quadro de física
             "script": f'ExtResource("{script}")',
             "wagon_scene": f'ExtResource("{scene.external_id("PackedScene", wagon)}")',
             "horse_scene": f'ExtResource("{scene.external_id("PackedScene", CARRIAGE_HORSE)}")',
