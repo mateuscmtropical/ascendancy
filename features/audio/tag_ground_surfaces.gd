@@ -1,7 +1,8 @@
 @tool
 extends EditorScenePostImport
 ## Script de import dos modelos da cidade: marca o piso de cada corpo estático pelo nome que o
-## gerador do Blender deu ao colisor (Bed3-colonly vira o corpo Bed3, piso de grama).
+## gerador do Blender deu ao colisor (Bed3-colonly vira o corpo Bed3, piso de grama) e troca o
+## vidro das janelas pelo que acende à noite (WindowGlass).
 
 const SURFACE_BY_COLLIDER_NAME: Dictionary[String, GroundSurface.Kind] = {
 	"Bed": GroundSurface.Kind.GRASS,
@@ -23,5 +24,7 @@ func _post_import(scene: Node) -> Object:
 			continue
 
 		body.set_meta(GroundSurface.META_NAME, SURFACE_BY_COLLIDER_NAME[collider_name])
+
+	WindowGlass.light_up_windows(scene)
 
 	return scene

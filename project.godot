@@ -101,6 +101,11 @@ textures/default_filters/texture_mipmap_bias=-4.0
 
 [shader_globals]
 
+night_glow={
+"type": "float",
+"value": 0.0
+}
+
 sun_direction={
 "type": "vec3",
 "value": Vector3(-0.674, -0.703, -0.226)
