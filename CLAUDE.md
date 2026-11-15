@@ -1,4 +1,4 @@
-# Ascendancy (pasta local: projeto-torre)
+# Ascendancy
 
 Action RPG em terceira pessoa, fantasia estilizada (referências de clima: anime Sword Art Online + Monster Hunter). Personagens no design Quaternius Universal Base Characters, aprovado pelo usuário. Single-player e online no mesmo código. Repositório público (código MIT).
 
