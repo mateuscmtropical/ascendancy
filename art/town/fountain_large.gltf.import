@@ -41,10 +41,35 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
-"M_Water": {
+"M_WaterBasin": {
 "use_external/enabled": true,
-"use_external/fallback_path": "res://art/materials/water.tres",
-"use_external/path": "res://art/materials/water.tres"
+"use_external/fallback_path": "res://art/materials/water_fountain_basin.tres",
+"use_external/path": "res://art/materials/water_fountain_basin.tres"
+},
+"M_WaterCurtain": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/water_curtain.tres",
+"use_external/path": "res://art/materials/water_curtain.tres"
+},
+"M_WaterJet": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/water_jet.tres",
+"use_external/path": "res://art/materials/water_jet.tres"
+},
+"M_WaterLower": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/water_fountain_lower.tres",
+"use_external/path": "res://art/materials/water_fountain_lower.tres"
+},
+"M_WaterMiddle": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/water_fountain_middle.tres",
+"use_external/path": "res://art/materials/water_fountain_middle.tres"
+},
+"M_WaterUpper": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/water_fountain_upper.tres",
+"use_external/path": "res://art/materials/water_fountain_upper.tres"
 }
 }
 }

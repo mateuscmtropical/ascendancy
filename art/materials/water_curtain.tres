@@ -1,0 +1,17 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/water_stream.gdshader" id="1_shader"]
+
+[resource]
+render_priority = 2
+shader = ExtResource("1_shader")
+shader_parameter/stream_length_meters = 1.4
+shader_parameter/streaks_around = 64.0
+shader_parameter/streak_stretch = 1.1
+shader_parameter/view_edge_fade = 0.0
+shader_parameter/base_opacity = 0.7
+shader_parameter/foam_length = 0.12
+shader_parameter/wobble_amount = 0.02
+shader_parameter/scroll_speed = 2.2
+shader_parameter/streak_contrast = 0.7
+shader_parameter/streak_highlight = 0.55
