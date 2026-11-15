@@ -1,61 +1,71 @@
 {
  "aabb_min": [
-  -4.98,
+  -8.98,
   0.0,
-  -9.7
+  -19.7
  ],
  "aabb_max": [
-  4.98,
-  9.82,
-  1.0
+  8.98,
+  16.585,
+  1.702
  ],
- "lot_width": 10,
- "lot_depth": 10.0,
+ "lot_width": 18,
+ "lot_depth": 20.0,
  "shop": "alchemy",
  "doors": [
   {
    "x": 0.0,
-   "width": 1.6,
+   "width": 2.2,
    "enterable": true
   }
  ],
  "lights": [
   {
    "position": [
-    -3.55,
-    1.0,
-    -8.3
+    -4.275,
+    3.3,
+    -5.564
    ],
-   "color": "7FE08A",
-   "energy": 1.0,
-   "range": 4.0
+   "color": "C8F0B0",
+   "energy": 1.3,
+   "range": 10.0
   },
   {
    "position": [
-    0.0,
-    3.0,
-    -2.94
+    -4.275,
+    3.3,
+    -13.836
    ],
-   "color": "FFD9A0",
-   "energy": 1.4,
-   "range": 7.0
+   "color": "C8F0B0",
+   "energy": 1.3,
+   "range": 10.0
   },
   {
    "position": [
-    0.0,
-    3.0,
-    -6.636
+    4.275,
+    3.3,
+    -5.564
    ],
-   "color": "FFD9A0",
-   "energy": 1.4,
-   "range": 7.0
+   "color": "C8F0B0",
+   "energy": 1.3,
+   "range": 10.0
+  },
+  {
+   "position": [
+    4.275,
+    3.3,
+    -13.836
+   ],
+   "color": "C8F0B0",
+   "energy": 1.3,
+   "range": 10.0
   }
  ],
  "markers": {
   "shopkeeper": [
-   4.1,
    0.0,
-   -5.6
+   0.0,
+   -15.6
   ]
  }
 }

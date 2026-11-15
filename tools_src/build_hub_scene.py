@@ -71,7 +71,7 @@ MEDIAN_HALF_WIDTH = (MEDIAN_Z[1] - MEDIAN_Z[0]) / 2.0
 MEDIAN_BEDS = [((CITY_MIN[0] + 4.0, MEDIAN_Z[0] + 0.7), (-MEDIAN_NOSE_X - 1.0, MEDIAN_Z[1] - 2.3)), ((MEDIAN_NOSE_X + 1.0, MEDIAN_Z[0] + 0.7), (CITY_MAX[0] - 4.0, MEDIAN_Z[1] - 2.3))]
 LAWN_RECTS = {  # canteiros = retângulo menos os caminhos de SQUARE_PATHS
     "WestSquare": ((WEST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (WEST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
-    "SaoJose": ((EAST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (EAST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
+    "EastSquare": ((EAST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (EAST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
 }
 
 
@@ -292,14 +292,14 @@ SHOP_HOUSES = {  # casa da fileira -> variantes de loja com a mesma planta (buil
 HOUSES_BY_WIDTH = {6: ["house_stone_tall", "house_narrow_three", "house_cottage"], 8: ["house_plaster_wide", "house_shop"]}
 SIDE_ROTATION = {"N": math.pi, "S": 0.0, "W": -math.pi / 2.0, "E": math.pi / 2.0}  # house front faces the street
 BLOCKS = [  # (min x, max x, min z, max z, street sides by priority)
-    (-102, -72, -96, -66, "SE"),
-    (-64, -4, -96, -66, "SWE"),
-    (4, 64, -96, -66, "SWE"),
-    (72, 102, -96, -66, "SW"),
-    (-102, -72, -48, 48, "ENS"),
+    (-102, -72, -96, -66, "S"),  # fileira norte = comércio e ofícios: as lojas grandes ocupam a quadra de ponta a ponta
+    (-64, -4, -96, -66, "S"),
+    (4, 64, -96, -66, "S"),
+    (72, 102, -96, -66, "S"),
+    (-102, -72, -48, 48, "E"),  # quadra oeste = biblioteca, escola e seminário, de frente para a catedral
     (72, 102, -48, 48, "WNS"),
     (-102, -72, 58, 88, "NE"),
-    (-64, -4, 58, 88, "NWE"),
+    (-64, -4, 58, 88, "NWE"),  # fileira sul = residencial
     (4, 64, 58, 88, "NWE"),
     (72, 102, 58, 88, "NW"),
 ]
@@ -684,23 +684,33 @@ LOT_WIDTHS = (6, 8, 10, 12)
 LOT_FRONT_OVERHANG = 1.2  # beiral, sacada e placa podem avançar sobre a calçada
 LOT_EDGE_CLEARANCE = 0.02
 TOWN_SEED = 4421
-SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio da loja (D.2)
-    "smith": (12, 12.0),
-    "armor": (10, 10.0),
-    "magic": (10, 10.0),
-    "alchemy": (10, 10.0),
-    "tavern": (12, 12.0),
-    "inn": (12, 12.0),
-    "guild": (14, 12.0),
-    "bakery": (8, 9.0),
-    "tailor": (8, 9.0),
-    "jeweler": (6, 9.0),
+SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio: 1/3 de quadra ou mais (docs/research/shops.md)
+    "smith": (24, 20.0),
+    "armor": (18, 20.0),
+    "magic": (18, 20.0),
+    "tailor": (18, 20.0),
+    "tavern": (18, 20.0),
+    "alchemy": (18, 20.0),
+    "general": (18, 20.0),
+    "guild": (24, 20.0),
+    "library": (30, 20.0),
+    "school": (30, 20.0),
+    "seminary": (30, 20.0),
 }
-FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, loja ou None)] ao longo da fileira (D.1); trechos sem lote fixo são preenchidos
-    (4, "E"): [(-45.0, -37.0, None), (-37.0, -27.0, "armor"), (-27.0, -15.0, "smith"), (-15.0, -7.0, None), (-7.0, 7.0, "guild"), (7.0, 13.0, None), (13.0, 25.0, "tavern"), (25.0, 37.0, "inn"), (37.0, 45.0, None)],
-    (7, "N"): [(-61.0, -55.0, None), (-55.0, -45.0, "magic"), (-45.0, -37.0, None), (-37.0, -31.0, None), (-31.0, -21.0, "alchemy"), (-21.0, -13.0, None), (-13.0, -7.0, None)],
-    (1, "S"): [(-49.0, -41.0, "bakery"), (-33.0, -25.0, "tailor"), (-19.0, -13.0, "jeweler")],
+FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da fileira; trechos sem lote fixo são preenchidos
+    (0, "S"): [(-99.0, -75.0, "smith")],
+    (1, "S"): [(-61.0, -43.0, "armor"), (-43.0, -25.0, "magic"), (-25.0, -7.0, "tailor")],
+    (2, "S"): [(7.0, 25.0, "tavern"), (25.0, 43.0, "alchemy"), (43.0, 61.0, "general")],
+    (3, "S"): [(75.0, 99.0, "guild")],
+    (4, "E"): [(-45.0, -15.0, "library"), (-15.0, 15.0, "school"), (15.0, 45.0, "seminary")],
 }
+SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
+    "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
+    "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"), "library": ("bookshop",),
+}
+SHOP_FRONT_OVERHANG = 2.6  # toldos e mercadoria na calçada
+ROW_START_SIDE = {"S": "left", "N": "right", "E": "right", "W": "left"}  # lado do modelo (u < 0 = left) na ponta inicial da fileira
+INTERIOR_VISIBLE_DISTANCE = 60.0  # o recheio das lojas some além disto (features/hub/shop_interior.gd)
 ALLEY_WALL_HEIGHT = 2.2
 
 
@@ -821,7 +831,9 @@ def dress_row(row: list, facade: float, axis: str, side: str, is_main: bool, usa
         if kind == "alley":
             lot.update(model="res://art/town/houses/alley_gate.gltf", depth=0.4)
         elif kind:
-            lot.update(model=f"res://art/town/shops/shop_{kind}.gltf", depth=SHOP_LOTS[kind][1], shop=kind)
+            row_ends = [(building_indices[0], ROW_START_SIDE[side]), (building_indices[-1], {"left": "right", "right": "left"}[ROW_START_SIDE[side]])]
+            exposed = tuple(sorted(end_side for end_index, end_side in row_ends if end_index == index))
+            lot.update(model=f"res://art/town/shops/shop_{kind}.gltf", depth=SHOP_LOTS[kind][1], shop=kind, exposed=exposed)
             history.append(kind)
         else:
             archetype = pick_archetype(width, history, usage, index in corners, is_main, generator)
@@ -877,7 +889,7 @@ def check_town_plan(lots: list) -> None:
     overlapping = [(first, second) for first, second in pairs if rectangles_overlap(rectangles[first], rectangles[second])]
     in_roundabout = [index for index, rectangle in enumerate(rectangles) if rectangle_distance(rectangle, ROUNDABOUT) < ROUNDABOUT_OUTER_RADIUS + 0.5]
     sidecars = [(lot, model_sidecar(lot["model"])) for lot in lots]
-    outside_lot = [lot["model"] for lot, sidecar in sidecars if sidecar and not rectangle_inside(model_rectangle(lot, sidecar), lot_rectangle(lot, LOT_FRONT_OVERHANG), 0.01)]
+    outside_lot = [lot["model"] for lot, sidecar in sidecars if sidecar and not rectangle_inside(model_rectangle(lot, sidecar), lot_rectangle(lot, SHOP_FRONT_OVERHANG if lot.get("shop") else LOT_FRONT_OVERHANG), 0.01)]
     models = [model_rectangle(lot, sidecar) for lot, sidecar in sidecars if sidecar]
     touching_models = [(first, second) for first, second in itertools.combinations(range(len(models)), 2) if rectangles_overlap(models[first], models[second])]
 
@@ -910,19 +922,21 @@ def town_models_ready(lots: list) -> bool:
     return all((PROJECT_DIR / lot["model"].removeprefix("res://")).exists() for lot in lots)
 
 
-SHOPKEEPERS = {  # loja -> (corpo, cabelo, animação) do lojista atrás do balcão
+SHOPKEEPERS = {  # prédio -> (corpo, cabelo, animação) de quem atende atrás do balcão
     "smith": ("villager_male", "black", "ual2/Idle_FoldArms"),
     "armor": ("adventurer_male", "brown", "ual1/Idle"),
     "magic": ("villager_female", "grey", "ual1/Idle_Talking"),
-    "alchemy": ("villager_male", "auburn", "ual1/Idle"),
-    "tavern": ("villager_female", "auburn", "ual1/Idle_Talking"),
-    "inn": ("villager_female", "blond", "ual1/Idle"),
-    "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
-    "bakery": ("villager_female", "brown", "ual1/Idle"),
     "tailor": ("villager_male", "grey", "ual1/Idle"),
-    "jeweler": ("villager_male", "dark", "ual1/Idle"),
+    "tavern": ("villager_female", "auburn", "ual1/Idle_Talking"),
+    "alchemy": ("villager_male", "auburn", "ual1/Idle"),
+    "general": ("villager_female", "brown", "ual1/Idle_Talking"),
+    "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
+    "library": ("villager_female", "dark", "ual1/Idle"),
+    "school": ("villager_male", "brown", "ual1/Idle_Talking"),
+    "seminary": ("villager_male", "grey", "ual1/Idle"),
 }
-SHOP_SIGN_OFFSET = 1.4  # da borda da porta até o braço da placa, na fachada
+SHOP_SIGN_SCALE = 1.6  # as placas foram feitas para fachadas de 8 m
+SHOP_SIGN_OFFSET = 0.45  # da borda da porta até o braço da placa, no pilar entre a porta e a primeira vitrine
 
 
 def lot_to_world(lot: dict, point: tuple) -> tuple:
@@ -953,25 +967,37 @@ def add_town_lots(scene: SceneWriter, lots: list) -> None:
 
 
 def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
-    """Shop building with its hanging sign, warm interior lights (from the sidecar) and the shopkeeper behind the counter."""
+    """Shop building with its hanging sign, the furnished interior (own model, hidden from afar), the lights of both
+    sidecars and the shopkeeper behind the counter."""
     shop_type = lot["shop"]
     sidecar = model_sidecar(lot["model"])
+    interior_model = lot["model"].replace(".gltf", "_interior.gltf")
+    interior_sidecar = model_sidecar(interior_model)
     shop_name = f"Shop{index:02d}{shop_type.title()}"
     door = sidecar["doors"][0]
-    sign_x = door["x"] + door["width"] / 2.0 + SHOP_SIGN_OFFSET
+    sign_reach = door["width"] / 2.0 + SHOP_SIGN_OFFSET
+    interior_script = scene.external_id("Script", "res://features/hub/shop_interior.gd")
 
     scene.add_node(shop_name, "Shops", "Node3D", properties={"position": vector(*lot["position"]), "rotation": vector(0.0, lot["rotation"], 0.0)}, groups=[f"shop_{shop_type}"])
     place(scene, "Building", f"Shops/{shop_name}", lot["model"], (0.0, 0.0, 0.0))
-    place(scene, "Sign", f"Shops/{shop_name}", f"res://art/town/shops/shop_{shop_type}_sign.gltf", (sign_x, 0.0, 0.0))
 
-    for light_index, light in enumerate(sidecar["lights"]):
+    for sign_index, sign in enumerate(SHOP_SIGNS.get(shop_type, ())):
+        sign_x = door["x"] + (1.0 - 2.0 * sign_index) * sign_reach
+        place(scene, f"Sign{sign_index}", f"Shops/{shop_name}", f"res://art/town/shops/shop_{sign}_sign.gltf", (sign_x, 0.0, 0.0), scale=SHOP_SIGN_SCALE)
+
+    if interior_sidecar:
+        scene.add_node("Interior", f"Shops/{shop_name}", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
+        place(scene, "Props", f"Shops/{shop_name}/Interior", interior_model, (0.0, 0.0, 0.0))
+
+    for light_index, light in enumerate(sidecar["lights"] + interior_sidecar.get("lights", [])):
         scene.add_node(f"Light{light_index}", f"Shops/{shop_name}", "OmniLight3D", properties={
             "position": vector(*light["position"]),
             "light_color": hex_color(light["color"]),
             "light_energy": f"{light['energy']}",
             "omni_range": f"{light['range']}",
             "distance_fade_enabled": "true",
-            "distance_fade_begin": "45.0",
+            "distance_fade_begin": "40.0",
+            "distance_fade_length": "15.0",
         })
 
 
@@ -1160,7 +1186,7 @@ def old_tree_spots() -> list:
     west_square = [spot for spot in mirrored_in_z(OLD_TREES_WEST_SQUARE) if can_plant(spot, "tree_old")]
     grove = [spot for spot in mirrored_in_z(GROVE_FORCED) if can_plant(spot, "tree_old")]
     generator = random.Random(GROVE_SEED)
-    minimum, maximum = LAWN_RECTS["SaoJose"]
+    minimum, maximum = LAWN_RECTS["EastSquare"]
 
     for _ in range(GROVE_ATTEMPTS):
         spot = (generator.uniform(minimum[0], maximum[0]), generator.uniform(minimum[1], maximum[1]))
@@ -1359,7 +1385,8 @@ def add_trees(scene: SceneWriter) -> None:
     bloom_trees = [spot for spot in mirrored_in_z(BLOOM_TREES_WEST_EDGE) if can_plant(spot, "tree_bloom")]
     palms = palm_spots(old_trees)
     median = [(x, MEDIAN_BEDS[0][0][1] + 1.5) for x in range(-88, 89, 16) if abs(x) > MEDIAN_NOSE_X + 2.0]
-    backyards = [backyard_spot(block) for block in BLOCKS]
+    shop_rectangles = [lot_rectangle(lot) for lot in town_lots() if lot.get("shop")]
+    backyards = [spot for spot in map(backyard_spot, BLOCKS) if all(rectangle_distance(rectangle, spot) > 5.0 for rectangle in shop_rectangles)]
 
     assert all(bed_field(spot) >= PLANT_CLEARANCE for spot in old_trees + bloom_trees + palms), "tronco fora do canteiro"
 
@@ -1637,7 +1664,40 @@ def build_hub_scene() -> str:
     return scene.render()
 
 
+SHOP_SHOTS_PATH = PROJECT_DIR / "tests" / "shots" / "shop_shots.tscn"
+SHOP_SHOT_VIEWS = {  # sufixo -> (olho, alvo) em coordenadas do lote: x ao longo da fachada, z > 0 = rua, z < 0 = dentro
+    "Front": ((6.0, 1.6, 16.0), (0.0, 4.0, 0.0)),
+    "Door": ((0.0, 1.6, 4.0), (0.0, 1.8, -10.0)),
+    "Inside": ((0.0, 1.6, -1.2), (0.0, 1.4, -12.0)),
+    "Left": ((2.0, 1.6, -9.0), (-12.0, 1.4, -11.0)),
+    "Right": ((-2.0, 1.6, -9.0), (12.0, 1.4, -11.0)),
+    "Back": ((0.0, 1.6, -9.0), (0.0, 1.5, -19.0)),
+    "Out": ((0.0, 1.6, -15.0), (0.0, 1.6, 0.0)),
+    "Top": ((0.0, 30.0, -9.5), (0.0, 0.0, -9.6)),
+}
+
+
+def build_shop_shots() -> str:
+    """Shot scene with the same views of every shop, at the player's eye height (tools_src/shot.sh <Type><View>)."""
+    scene = SceneWriter()
+    capture = scene.external_id("Script", "res://tests/shots/shot_capture.gd")
+    shops = [lot for lot in town_lots() if lot.get("shop")]
+
+    scene.add_node("ShopShots", None, "Node3D")
+    scene.add_node("Hub", ".", instance=scene.external_id("PackedScene", "res://features/hub/hub.tscn"))
+    scene.add_node("ShotCapture", ".", "Node", properties={"script": f'ExtResource("{capture}")', "seconds_before_capture": "3.0"})
+
+    for lot, (view, (eye, target)) in itertools.product(shops, SHOP_SHOT_VIEWS.items()):
+        door_x = model_sidecar(lot["model"]).get("doors", [{"x": 0.0}])[0]["x"] if view in ("Door", "Inside") else 0.0
+        world_eye = lot_to_world(lot, (eye[0] + door_x, eye[1], eye[2]))
+        world_target = lot_to_world(lot, (target[0] + door_x, target[1], target[2]))
+        scene.add_node(f"{lot['shop'].title()}{view}", ".", "Camera3D", properties={"position": vector(*world_eye), "rotation": look_rotation(world_eye, world_target), "fov": "75.0", "far": "400.0"})
+
+    return scene.render()
+
+
 if __name__ == "__main__":
+    SHOP_SHOTS_PATH.write_text(build_shop_shots(), encoding="utf-8", newline="\n")
     if not NAVMESH_PATH.exists():  # placeholder until tools_src/bake_hub_navmesh.gd bakes the real one
         NAVMESH_PATH.write_text('[gd_resource type="NavigationMesh" format=3]\n\n[resource]\n', encoding="utf-8", newline="\n")
 

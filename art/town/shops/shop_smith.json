@@ -1,61 +1,91 @@
 {
  "aabb_min": [
-  -5.98,
-  -0.003,
-  -11.65
+  -11.99,
+  0.0,
+  -19.8
  ],
  "aabb_max": [
-  5.98,
-  13.371,
-  0.3
+  11.99,
+  12.56,
+  1.702
  ],
- "lot_width": 12,
- "lot_depth": 12.0,
+ "lot_width": 24,
+ "lot_depth": 20.0,
  "shop": "smith",
  "doors": [
   {
-   "x": -2.6,
-   "width": 1.6,
+   "x": -5.0,
+   "width": 2.6,
    "enterable": true
   }
  ],
  "lights": [
   {
    "position": [
-    4.55,
-    1.2,
-    -8.4
+    -7.7,
+    3.9,
+    -5.564
    ],
-   "color": "FF8A3A",
-   "energy": 2.5,
-   "range": 6.0
+   "color": "FFC890",
+   "energy": 1.3,
+   "range": 10.0
   },
   {
    "position": [
-    -2.6,
-    3.0,
-    -3.54
+    -7.7,
+    3.9,
+    -13.836
    ],
-   "color": "FFD9A0",
-   "energy": 1.4,
-   "range": 7.0
+   "color": "FFC890",
+   "energy": 1.3,
+   "range": 10.0
   },
   {
    "position": [
-    -2.6,
-    3.0,
-    -8.076
+    0.0,
+    3.9,
+    -5.564
    ],
-   "color": "FFD9A0",
-   "energy": 1.4,
-   "range": 7.0
+   "color": "FFC890",
+   "energy": 1.3,
+   "range": 10.0
+  },
+  {
+   "position": [
+    0.0,
+    3.9,
+    -13.836
+   ],
+   "color": "FFC890",
+   "energy": 1.3,
+   "range": 10.0
+  },
+  {
+   "position": [
+    7.7,
+    3.9,
+    -5.564
+   ],
+   "color": "FFC890",
+   "energy": 1.3,
+   "range": 10.0
+  },
+  {
+   "position": [
+    7.7,
+    3.9,
+    -13.836
+   ],
+   "color": "FFC890",
+   "energy": 1.3,
+   "range": 10.0
   }
  ],
  "markers": {
   "shopkeeper": [
-   -2.6,
+   -5.0,
    0.0,
-   -7.6
+   -15.6
   ]
  }
 }
