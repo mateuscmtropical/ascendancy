@@ -41,9 +41,6 @@ SIDE_MARGIN = 0.15
 LOT_EDGE_CLEARANCE = 0.02
 STREET_OVERHANG = 1.2
 WALL = 0.3
-SHOP_CEILING = 3.6
-SHOP_GROUND_STOREY = 4.0
-SHOP_DOOR = (1.6, 2.5)
 
 
 def srgb(hex_color: str) -> tuple:
@@ -354,14 +351,15 @@ class Builder:
 
         return self._link(sphere_bmesh, material_key, tint, None, (frame or Matrix.Identity(4)) @ Matrix.Translation(center))
 
-    def collider(self, minimum: tuple, maximum: tuple, frame: Matrix = None) -> None:
+    def collider(self, minimum: tuple, maximum: tuple, frame: Matrix = None, name: str = "Collider") -> None:
+        """Static collision box. The name prefix tells the import which ground it is for footsteps ("WoodFloor")."""
         self.count += 1
         collider_bmesh = box_bmesh(minimum, maximum)
         bmesh.ops.transform(collider_bmesh, matrix=frame or Matrix.Identity(4), verts=collider_bmesh.verts)
-        mesh_data = bpy.data.meshes.new(f"Collider{self.count}-colonly")
+        mesh_data = bpy.data.meshes.new(f"{name}{self.count}-colonly")
         collider_bmesh.to_mesh(mesh_data)
         collider_bmesh.free()
-        bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"Collider{self.count}-colonly", mesh_data))
+        bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{name}{self.count}-colonly", mesh_data))
 
     def light(self, position: tuple, color: str, energy: float, light_range: float = 7.0, frame: Matrix = None) -> None:
         world = (frame or Matrix.Identity(4)) @ Vector(position)
@@ -406,6 +404,7 @@ class Builder:
             paint_vertex_colors(mesh_object)
 
         unify_materials(visible)
+        visible = untinted_first(visible)
 
         with bpy.context.temp_override(active_object=visible[0], selected_editable_objects=visible):
             bpy.ops.object.join()
@@ -544,11 +543,32 @@ def map_uvs(mesh_object) -> None:
     uv_bmesh.free()
 
 
-def paint_vertex_colors(mesh_object) -> None:
+def slot_tints(mesh_object) -> list:
+    """Vertex-colour tint of each material slot of the object."""
     tint = tuple(mesh_object.get("tint", WHITE))
     tints = json.loads(mesh_object.get("tints", "{}"))
+
+    return [next((tuple(color) for prefix, color in tints.items() if slot.material.name.startswith(prefix)), tint) for slot in mesh_object.material_slots]
+
+
+def untinted_first(objects: list) -> list:
+    """Godot's glTF import leaves "vertex colour as albedo" off on the material of the first surface, so that material
+    shows up white. Lead the join with an object whose first material is never tinted (glow, glass): for it the
+    missing flag changes nothing."""
+    slots = [(slot.material.name, tint[:3]) for mesh_object in objects for slot, tint in zip(mesh_object.material_slots, slot_tints(mesh_object))]
+    tinted = {name for name, tint in slots if tint != WHITE}
+    leader = next((mesh_object for mesh_object in objects if mesh_object.material_slots and mesh_object.material_slots[0].material.name not in tinted), None)
+
+    if leader is None:
+        print("AVISO sem material neutro para a primeira superfície: o primeiro material vai aparecer sem tinta")
+
+    return sorted(objects, key=lambda mesh_object: mesh_object is not leader)
+
+
+def paint_vertex_colors(mesh_object) -> None:
+    tint = tuple(mesh_object.get("tint", WHITE))
     layer = mesh_object.data.color_attributes.new("Color", "FLOAT_COLOR", "CORNER")
-    slot_colors = [next((tuple(color) for prefix, color in tints.items() if slot.material.name.startswith(prefix)), tint) for slot in mesh_object.material_slots]
+    slot_colors = slot_tints(mesh_object)
     colors = numpy.ones((len(mesh_object.data.loops), 4), dtype=numpy.float32)
 
     for polygon in mesh_object.data.polygons:
