@@ -76,9 +76,6 @@ toggle_menu={
 "events": [Object(InputEventKey,"physical_keycode":4194305)]
 }
 
-run/main_scene="res://features/hub/hub.tscn"
-config/features=PackedStringArray("4.7", "Forward Plus")
-
 [rendering]
 
 renderer/rendering_method="forward_plus"
