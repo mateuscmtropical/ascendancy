@@ -13,6 +13,8 @@ Godot coordinates, Y up. Every model's front faces +Z locally, so rotation_y tur
 Usage: python tools_src/build_hub_scene.py
 """
 
+import itertools
+import json
 import math
 import random
 from pathlib import Path
@@ -25,7 +27,7 @@ NAVIGATION_SOURCE_GROUP = "navigation_source"  # nós cujas malhas/colisões ent
 CITY_MIN = (-102.0, -96.0)
 CITY_MAX = (102.0, 88.0)
 SIDEWALK = 3.0
-HOUSE_ROW_DEPTH = 10.0
+HOUSE_ROW_DEPTH = 12.5  # recorte de esquina: lotes têm até 12 m de fundo
 SQUARE_HALF = (30.0, 48.0)
 GETULIO_VARGAS = (-34.0, 0.0)
 SAO_JOSE = (34.0, 0.0)
@@ -575,6 +577,25 @@ def shop_houses_for(shop_fronts: list) -> dict:
 
 
 def add_buildings(scene: SceneWriter) -> None:
+    """Cathedral, coreto and the town rows: the modelled lots of town_lots() once build_town_houses.py has run,
+    the kit row houses with dressed shop fronts until then."""
+    lots = town_lots()
+
+    check_town_plan(lots)
+    scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
+    place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, SAO_JOSE[1]), -math.pi / 2.0)
+    place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
+
+    if town_models_ready(lots):
+        add_town_lots(scene, lots)
+        return
+
+    print("AVISO: modelos de build_town_houses.py ausentes; usando as casas antigas do kit")
+    add_kit_rows(scene)
+
+
+def add_kit_rows(scene: SceneWriter) -> None:
+    """Old kit row houses with stalls and signs (kept only until the town models are generated)."""
     generator = random.Random(1942)
     placements = []
     shop_fronts = []
@@ -586,10 +607,6 @@ def add_buildings(scene: SceneWriter) -> None:
             row = house_row(block, side, street_sides[:side_index], generator)
             placements += row
             shop_fronts += row if (block_index, side) in SHOP_FRONTAGES else []
-
-    scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
-    place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, SAO_JOSE[1]), -math.pi / 2.0)
-    place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     shop_houses = shop_houses_for(shop_fronts)
 
@@ -634,6 +651,337 @@ def add_shops(scene: SceneWriter, shop_fronts: list) -> None:
 
         for piece, offset_x in pieces.items():
             place(scene, piece.title(), f"Shops/{shop_name}", f"res://art/town/shops/shop_{shop_type}_{piece}.gltf", (offset_x, 0, 0))
+
+
+# ---------- town plan: lots, archetypes and shops (seções C e D) ----------
+
+HOUSE_ARCHETYPES = {  # arquétipo -> (larguras de lote, profundidade, cores de reboco das 3 variantes) — catálogo C.3
+    "sobrado": ((8, 10, 12), 10.0, ("cal", "creme", "cal")),
+    "terrea": ((6, 8), 9.0, ("ocre", "rosa", "salvia")),
+    "fachwerk": ((6, 8), 10.0, ("creme", "cal", "amarelo")),
+    "tudor": ((10, 12), 10.0, ("creme", "cal", "creme")),
+    "holandesa": ((6,), 12.0, ("tijolo", "tijolo_escuro", "tijolo_claro")),
+    "chale": ((10, 12), 10.0, ("caiada", "creme", "cal")),
+    "mediterranea": ((8, 10), 10.0, ("cal", "ocre", "rosa")),
+    "artdeco": ((8, 10), 10.0, ("creme", "rosa", "azul")),
+    "pedra": ((8,), 9.0, ("dourada", "clara", "dourada")),
+    "palacete": ((10, 12), 10.0, ("ocre", "rosa", "terra")),
+    "torre": ((8,), 8.0, ("cinza", "media", "cinza")),
+    "hanseatica": ((8, 10), 12.0, ("tijolo_claro", "tijolo", "tijolo_claro")),
+}
+HOUSE_VARIANTS = 3
+BACK_STREET_ARCHETYPES = ("terrea", "fachwerk", "chale", "mediterranea", "pedra")
+CORNER_ARCHETYPES = ("torre", "artdeco", "sobrado")
+ARCHETYPE_REPEAT_DISTANCE = 3  # mesmo arquétipo proibido a menos de 3 lotes
+LOT_WIDTHS = (6, 8, 10, 12)
+LOT_FRONT_OVERHANG = 1.2  # beiral, sacada e placa podem avançar sobre a calçada
+LOT_EDGE_CLEARANCE = 0.02
+TOWN_SEED = 4421
+SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio da loja (D.2)
+    "smith": (12, 12.0),
+    "armor": (10, 10.0),
+    "magic": (10, 10.0),
+    "alchemy": (10, 10.0),
+    "tavern": (12, 12.0),
+    "inn": (12, 12.0),
+    "guild": (14, 12.0),
+    "bakery": (8, 9.0),
+    "tailor": (8, 9.0),
+    "jeweler": (6, 9.0),
+}
+FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, loja ou None)] ao longo da fileira (D.1); trechos sem lote fixo são preenchidos
+    (4, "E"): [(-45.0, -37.0, None), (-37.0, -27.0, "armor"), (-27.0, -15.0, "smith"), (-15.0, -7.0, None), (-7.0, 7.0, "guild"), (7.0, 13.0, None), (13.0, 25.0, "tavern"), (25.0, 37.0, "inn"), (37.0, 45.0, None)],
+    (7, "N"): [(-61.0, -55.0, None), (-55.0, -45.0, "magic"), (-45.0, -37.0, None), (-37.0, -31.0, None), (-31.0, -21.0, "alchemy"), (-21.0, -13.0, None), (-13.0, -7.0, None)],
+    (1, "S"): [(-49.0, -41.0, "bakery"), (-33.0, -25.0, "tailor"), (-19.0, -13.0, "jeweler")],
+}
+ALLEY_WALL_HEIGHT = 2.2
+
+
+def lot_widths(length: float, generator: random.Random) -> tuple:
+    """Lot widths that fill length exactly; the odd remainder (< 2 m) becomes an alley (C.1 item 4)."""
+    alley = length % 2.0
+    remaining = length - alley
+    lots = []
+
+    while remaining > 0.0:
+        options = [width for width in LOT_WIDTHS if remaining - width == 0.0 or remaining - width >= min(LOT_WIDTHS)]
+        lots.append(generator.choice(options))
+        remaining -= lots[-1]
+
+    return lots, alley
+
+
+def row_segments(run_start: float, run_end: float, fixed: list) -> list:
+    """Fixed lots in order plus the free stretches between them: (start, end, shop or "fixed" or "free")."""
+    segments = []
+    cursor = run_start
+
+    for start, end, shop in sorted(fixed):
+        segments += [(cursor, start, "free")] if start - cursor > 1e-6 else []
+        segments.append((start, end, shop or "fixed"))
+        cursor = end
+
+    segments += [(cursor, run_end, "free")] if run_end - cursor > 1e-6 else []
+
+    return segments
+
+
+def segment_lots(segment: tuple, generator: random.Random) -> list:
+    """(start, width, shop) lots of one segment; a free stretch may end with an alley ("alley" lot)."""
+    start, end, kind = segment
+    lots_by_kind = {"free": lambda: free_lots(start, end, generator), "fixed": lambda: [(start, end - start, None)]}
+
+    return lots_by_kind.get(kind, lambda: [(start, end - start, kind)])()
+
+
+def free_lots(start: float, end: float, generator: random.Random) -> list:
+    widths, alley = lot_widths(end - start, generator)
+    lots = []
+    cursor = start
+    alley_index = len(widths) // 2 if alley > 1e-6 else -1
+
+    for index, width in enumerate(widths):
+        lots += [(cursor, alley, "alley")] if index == alley_index else []
+        cursor += alley if index == alley_index else 0.0
+        lots.append((cursor, float(width), None))
+        cursor += width
+
+    lots += [(cursor, alley, "alley")] if alley > 1e-6 and not widths else []
+
+    return lots
+
+
+def pick_archetype(width: float, history: list, usage: dict, is_corner: bool, is_main: bool, generator: random.Random) -> str:
+    """Archetype for a residence lot: fits the width, never repeats within ARCHETYPE_REPEAT_DISTANCE lots,
+    corners of the main rows prefer the two-fronted types, back streets the simple ones; among those, the least
+    used so far in town wins (ties drawn by seed)."""
+    recent = history[-(ARCHETYPE_REPEAT_DISTANCE - 1):]
+    fitting = [name for name, (widths, _, _) in HOUSE_ARCHETYPES.items() if int(width) in widths and name not in recent]
+    preferred_by_place = {(True, True): CORNER_ARCHETYPES, (True, False): BACK_STREET_ARCHETYPES + ("torre",), (False, False): BACK_STREET_ARCHETYPES, (False, True): tuple(HOUSE_ARCHETYPES)}
+    preferred = [name for name in fitting if name in preferred_by_place[(is_corner, is_main)]] or fitting
+    fewest = min(usage.get(name, 0) for name in preferred)
+    chosen = generator.choice([name for name in preferred if usage.get(name, 0) == fewest])
+    usage[chosen] = usage.get(chosen, 0) + 1
+
+    return chosen
+
+
+def pick_variant(archetype: str, previous_plaster: str, generator: random.Random) -> int:
+    """Colour variant whose plaster differs from the neighbour's."""
+    plasters = HOUSE_ARCHETYPES[archetype][2]
+    options = [variant for variant in range(HOUSE_VARIANTS) if plasters[variant] != previous_plaster]
+
+    return generator.choice(options)
+
+
+def lot_frame(facade: float, along: float, axis: str, side: str) -> tuple:
+    """Position of the lot front centre and the yaw that turns the model's +Z front to the street."""
+    position = (along, 0.0, facade) if axis == "x" else (facade, 0.0, along)
+
+    return position, SIDE_ROTATION[side]
+
+
+def town_lots() -> list:
+    """Every lot of the town rows: dicts with model, kind, width, depth, position, rotation, side and corner flag."""
+    generator = random.Random(TOWN_SEED)
+    usage = {}
+    lots = []
+
+    for block_index, block in enumerate(BLOCKS):
+        street_sides = block[4]
+
+        for side_index, side in enumerate(street_sides):
+            facade, run_start, run_end, axis = trimmed_run(block, side, street_sides[:side_index])
+            segments = row_segments(run_start, run_end, FIXED_LOTS.get((block_index, side), []))
+            row = [lot for segment in segments for lot in segment_lots(segment, generator)]
+            lots += dress_row(row, facade, axis, side, side_index == 0, usage, generator)
+
+    return lots
+
+
+def dress_row(row: list, facade: float, axis: str, side: str, is_main: bool, usage: dict, generator: random.Random) -> list:
+    """Give each lot of a row its model (shop building, house archetype and variant, or alley gate)."""
+    history = []
+    previous_plaster = ""
+    building_indices = [index for index, (_, _, kind) in enumerate(row) if kind != "alley"]
+    corners = {building_indices[0], building_indices[-1]} if building_indices else set()
+    dressed = []
+
+    for index, (start, width, kind) in enumerate(row):
+        position, rotation = lot_frame(facade, start + width / 2.0, axis, side)
+        lot = {"width": width, "position": position, "rotation": rotation, "side": side, "kind": kind or "house"}
+
+        if kind == "alley":
+            lot.update(model="res://art/town/houses/alley_gate.gltf", depth=0.4)
+        elif kind:
+            lot.update(model=f"res://art/town/shops/shop_{kind}.gltf", depth=SHOP_LOTS[kind][1], shop=kind)
+            history.append(kind)
+        else:
+            archetype = pick_archetype(width, history, usage, index in corners, is_main, generator)
+            variant = pick_variant(archetype, previous_plaster, generator)
+            previous_plaster = HOUSE_ARCHETYPES[archetype][2][variant]
+            history.append(archetype)
+            lot.update(model=f"res://art/town/houses/{archetype}_w{int(width)}_{variant}.gltf", depth=HOUSE_ARCHETYPES[archetype][1], archetype=archetype, variant=variant)
+
+        dressed.append(lot)
+
+    return dressed
+
+
+def lot_rectangle(lot: dict, front_overhang: float = 0.0) -> tuple:
+    """World (min x, max x, min z, max z) of a lot, inset by LOT_EDGE_CLEARANCE at the sides."""
+    half = lot["width"] / 2.0 - LOT_EDGE_CLEARANCE
+    inward = {"N": 1.0, "S": -1.0, "W": 1.0, "E": -1.0}[lot["side"]]
+    x, _, z = lot["position"]
+    near, far = -inward * front_overhang, inward * lot["depth"]
+    rectangles = {
+        "x": (x - half, x + half, z + min(near, far), z + max(near, far)),
+        "z": (x + min(near, far), x + max(near, far), z - half, z + half),
+    }
+
+    return rectangles["x" if lot["side"] in ("N", "S") else "z"]
+
+
+def rectangles_overlap(first: tuple, second: tuple) -> bool:
+    return first[0] < second[1] and second[0] < first[1] and first[2] < second[3] and second[2] < first[3]
+
+
+def model_rectangle(lot: dict, sidecar: dict) -> tuple:
+    """World rectangle of a placed model from its sidecar AABB (yaw is a multiple of 90°)."""
+    x, _, z = lot["position"]
+    minimum, maximum = sidecar["aabb_min"], sidecar["aabb_max"]
+    corners = [(corner_x, corner_z) for corner_x in (minimum[0], maximum[0]) for corner_z in (minimum[2], maximum[2])]
+    cos_yaw, sin_yaw = round(math.cos(lot["rotation"])), round(math.sin(lot["rotation"]))
+    turned = [(x + corner_x * cos_yaw + corner_z * sin_yaw, z - corner_x * sin_yaw + corner_z * cos_yaw) for corner_x, corner_z in corners]
+
+    return min(point[0] for point in turned), max(point[0] for point in turned), min(point[1] for point in turned), max(point[1] for point in turned)
+
+
+def model_sidecar(model: str) -> dict:
+    sidecar_path = PROJECT_DIR / model.removeprefix("res://").replace(".gltf", ".json")
+
+    return json.loads(sidecar_path.read_text(encoding="utf-8")) if sidecar_path.exists() else {}
+
+
+def check_town_plan(lots: list) -> None:
+    """C.1 item 8: lots never overlap, stay out of the roundabout, and (once modelled) each model fits its lot."""
+    rectangles = [lot_rectangle(lot) for lot in lots]
+    pairs = itertools.combinations(range(len(lots)), 2)
+    overlapping = [(first, second) for first, second in pairs if rectangles_overlap(rectangles[first], rectangles[second])]
+    in_roundabout = [index for index, rectangle in enumerate(rectangles) if rectangle_distance(rectangle, ROUNDABOUT) < ROUNDABOUT_OUTER_RADIUS + 0.5]
+    sidecars = [(lot, model_sidecar(lot["model"])) for lot in lots]
+    outside_lot = [lot["model"] for lot, sidecar in sidecars if sidecar and not rectangle_inside(model_rectangle(lot, sidecar), lot_rectangle(lot, LOT_FRONT_OVERHANG), 0.01)]
+
+    assert not overlapping, f"lotes sobrepostos: {overlapping[:4]}"
+    assert not in_roundabout, f"lote dentro da rotatória: {in_roundabout}"
+    assert not outside_lot, f"modelo maior que o lote: {outside_lot[:4]}"
+
+
+def rectangle_distance(rectangle: tuple, point: tuple) -> float:
+    dx = max(rectangle[0] - point[0], 0.0, point[0] - rectangle[1])
+    dz = max(rectangle[2] - point[1], 0.0, point[1] - rectangle[3])
+
+    return math.hypot(dx, dz)
+
+
+def rectangle_inside(inner: tuple, outer: tuple, tolerance: float) -> bool:
+    return inner[0] >= outer[0] - tolerance and inner[1] <= outer[1] + tolerance and inner[2] >= outer[2] - tolerance and inner[3] <= outer[3] + tolerance
+
+
+def ready_town_lots() -> list:
+    """The plan's lots when their models exist, else nothing (the kit rows stand in)."""
+    lots = town_lots()
+
+    return lots if town_models_ready(lots) else []
+
+
+def town_models_ready(lots: list) -> bool:
+    """True once build_town_houses.py has written every model the plan uses."""
+    return all((PROJECT_DIR / lot["model"].removeprefix("res://")).exists() for lot in lots)
+
+
+SHOPKEEPERS = {  # loja -> (corpo, cabelo, animação) do lojista atrás do balcão
+    "smith": ("villager_male", "black", "ual2/Idle_FoldArms"),
+    "armor": ("adventurer_male", "brown", "ual1/Idle"),
+    "magic": ("villager_female", "grey", "ual1/Idle_Talking"),
+    "alchemy": ("villager_male", "auburn", "ual1/Idle"),
+    "tavern": ("villager_female", "auburn", "ual1/Idle_Talking"),
+    "inn": ("villager_female", "blond", "ual1/Idle"),
+    "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
+    "bakery": ("villager_female", "brown", "ual1/Idle"),
+    "tailor": ("villager_male", "grey", "ual1/Idle"),
+    "jeweler": ("villager_male", "dark", "ual1/Idle"),
+}
+SHOP_SIGN_OFFSET = 1.4  # da borda da porta até o braço da placa, na fachada
+
+
+def lot_to_world(lot: dict, point: tuple) -> tuple:
+    """Model-local Godot point of a lot (x, y, z) to world coordinates."""
+    x, _, z = lot["position"]
+    cos_yaw, sin_yaw = math.cos(lot["rotation"]), math.sin(lot["rotation"])
+
+    return x + point[0] * cos_yaw + point[2] * sin_yaw, point[1], z - point[0] * sin_yaw + point[2] * cos_yaw
+
+
+def add_town_lots(scene: SceneWriter, lots: list) -> None:
+    """Place the modelled houses, alley gates and enterable shops of the plan."""
+    houses = [lot for lot in lots if lot["kind"] == "house"]
+    alleys = [lot for lot in lots if lot["kind"] == "alley"]
+    shops = [lot for lot in lots if lot.get("shop")]
+
+    for index, lot in enumerate(houses):
+        place(scene, f"House{index:03d}", "Buildings", lot["model"], lot["position"], lot["rotation"])
+
+    for index, lot in enumerate(alleys):
+        properties = {"position": vector(*lot["position"]), "rotation": vector(0.0, lot["rotation"], 0.0), "scale": vector(lot["width"], 1.0, 1.0)}
+        scene.add_node(f"AlleyGate{index:02d}", "Buildings", instance=scene.external_id("PackedScene", lot["model"]), properties=properties)
+
+    scene.add_node("Shops", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
+
+    for index, lot in enumerate(shops):
+        add_shop_building(scene, index, lot)
+
+
+def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
+    """Shop building with its hanging sign, warm interior lights (from the sidecar) and the shopkeeper behind the counter."""
+    shop_type = lot["shop"]
+    sidecar = model_sidecar(lot["model"])
+    shop_name = f"Shop{index:02d}{shop_type.title()}"
+    door = sidecar["doors"][0]
+    sign_x = door["x"] + door["width"] / 2.0 + SHOP_SIGN_OFFSET
+
+    scene.add_node(shop_name, "Shops", "Node3D", properties={"position": vector(*lot["position"]), "rotation": vector(0.0, lot["rotation"], 0.0)}, groups=[f"shop_{shop_type}"])
+    place(scene, "Building", f"Shops/{shop_name}", lot["model"], (0.0, 0.0, 0.0))
+    place(scene, "Sign", f"Shops/{shop_name}", f"res://art/town/shops/shop_{shop_type}_sign.gltf", (sign_x, 0.0, 0.0))
+
+    for light_index, light in enumerate(sidecar["lights"]):
+        scene.add_node(f"Light{light_index}", f"Shops/{shop_name}", "OmniLight3D", properties={
+            "position": vector(*light["position"]),
+            "light_color": hex_color(light["color"]),
+            "light_energy": f"{light['energy']}",
+            "omni_range": f"{light['range']}",
+            "distance_fade_enabled": "true",
+            "distance_fade_begin": "45.0",
+        })
+
+
+def add_shopkeepers(scene: SceneWriter, lots: list) -> None:
+    """One shopkeeper standing behind each shop counter, turned toward the door."""
+    shops = [lot for lot in lots if lot.get("shop")]
+
+    for index, lot in enumerate(shops):
+        sidecar = model_sidecar(lot["model"])
+        keeper_body, keeper_hair, keeper_animation = SHOPKEEPERS[lot["shop"]]
+        keeper = lot_to_world(lot, sidecar["markers"]["shopkeeper"])
+        door = sidecar["doors"][0]
+        door_world = lot_to_world(lot, (door["x"], 0.0, 1.0))
+        facing = facing_yaw((keeper[0], keeper[2]), (door_world[0], door_world[2]))
+        npc(scene, f"Shopkeeper{index:02d}", keeper_body, keeper_hair, stand((keeper[0], keeper[2]), facing, keeper_animation, 0.0))
+
+
+def hex_color(text: str) -> str:
+    """'FFD9A0' (sRGB) -> Godot Color literal."""
+    return color(tuple(int(text[offset:offset + 2], 16) / 255.0 for offset in (0, 2, 4)))
 
 
 CATHEDRAL_GLASS_SPOTS = [  # (nome, posição, alvo, cor): luz colorida das lancetas e do óculo no piso do presbitério
@@ -888,13 +1236,27 @@ def place_plants(scene: SceneWriter, kind: str, spots: list, name: str) -> None:
         place(scene, f"{name}{index:03d}", "Trees", models[variants[index]], grounded(x, z), rotation_y=index * 1.3, scale=scale)
 
 
+BACKYARD_SHIFT = 4.5  # do centro da quadra para longe da fileira principal (lotes de 12 m chegam ao centro)
+
+
+def backyard_spot(block: tuple) -> tuple:
+    """Old tree in the middle of a block's back yards, clear of the 12 m lots: pushed away from the main row,
+    and on corner blocks (two rows) away from both."""
+    shifts = {"N": (0.0, BACKYARD_SHIFT), "S": (0.0, -BACKYARD_SHIFT), "W": (BACKYARD_SHIFT, 0.0), "E": (-BACKYARD_SHIFT, 0.0)}
+    pushing_sides = block[4] if len(block[4]) == 2 else block[4][0]
+    shift_x = sum(shifts[side][0] for side in pushing_sides)
+    shift_z = sum(shifts[side][1] for side in pushing_sides)
+
+    return (block[0] + block[1]) / 2.0 + shift_x, (block[2] + block[3]) / 2.0 + shift_z
+
+
 def add_trees(scene: SceneWriter) -> None:
     """Old trees in bands and the São José grove, blooming trees on the west edge and the median, royal palms in rows."""
     old_trees = old_tree_spots()
     bloom_trees = [spot for spot in mirrored_in_z(BLOOM_TREES_WEST_EDGE) if can_plant(spot, "tree_bloom")]
     palms = palm_spots(old_trees)
     median = [(x, MEDIAN_BEDS[0][0][1] + 1.5) for x in range(-88, 89, 16) if abs(x) > MEDIAN_NOSE_X + 2.0]
-    backyards = [((block[0] + block[1]) / 2.0, (block[2] + block[3]) / 2.0) for block in BLOCKS]
+    backyards = [backyard_spot(block) for block in BLOCKS]
 
     assert all(bed_field(spot) >= PLANT_CLEARANCE for spot in old_trees + bloom_trees + palms), "tronco fora do canteiro"
 
@@ -1066,6 +1428,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "SittingCathedral", "adventurer_male", "brown", stand(cathedral_bench_seat, cathedral_bench_facing, "ual1/Sitting_Talking", 0.5))
     npc(scene, "Bard", "adventurer_female", "auburn", stand((COREO_POSITION[0], COREO_POSITION[1]), math.pi / 2.0, "ual1/Idle_Talking", 0.2, height=1.2))
     npc(scene, "Guard", "adventurer_female", "dark", stand((CATHEDRAL_FACADE_X - 4.2, -6.5), -math.pi / 2.0, "ual2/Idle_FoldArms", 0.0))
+    add_shopkeepers(scene, ready_town_lots())
     npc(scene, "Priest", "villager_male", "grey", stand((CATHEDRAL_FACADE_X + 40.4, 0.0), -math.pi / 2.0, "ual1/Idle", 0.0, height=CHANCEL_FLOOR + 0.3))
 
 
