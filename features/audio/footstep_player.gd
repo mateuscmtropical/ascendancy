@@ -8,16 +8,19 @@ const STEP_SOUNDS: Dictionary[GroundSurface.Kind, AudioStream] = {
 	GroundSurface.Kind.STONE: preload("res://art/audio/step_stone.tres"),
 	GroundSurface.Kind.GRASS: preload("res://art/audio/step_grass.tres"),
 	GroundSurface.Kind.WOOD: preload("res://art/audio/step_wood.tres"),
+	GroundSurface.Kind.DIRT: preload("res://art/audio/step_dirt.tres"),
 }
 const JUMP_SOUNDS: Dictionary[GroundSurface.Kind, AudioStream] = {
 	GroundSurface.Kind.STONE: preload("res://art/audio/jump_stone.tres"),
 	GroundSurface.Kind.GRASS: preload("res://art/audio/jump_grass.tres"),
 	GroundSurface.Kind.WOOD: preload("res://art/audio/jump_wood.tres"),
+	GroundSurface.Kind.DIRT: preload("res://art/audio/jump_dirt.tres"),
 }
 const LAND_SOUNDS: Dictionary[GroundSurface.Kind, AudioStream] = {
 	GroundSurface.Kind.STONE: preload("res://art/audio/land_stone.tres"),
 	GroundSurface.Kind.GRASS: preload("res://art/audio/land_grass.tres"),
 	GroundSurface.Kind.WOOD: preload("res://art/audio/land_wood.tres"),
+	GroundSurface.Kind.DIRT: preload("res://art/audio/land_dirt.tres"),
 }
 const MIN_STEP_SPEED: float = 0.4
 const MIN_STEPS_PER_SECOND: float = 1.8

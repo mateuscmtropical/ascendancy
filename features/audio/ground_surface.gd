@@ -4,7 +4,7 @@ extends RefCounted
 ## O import dos modelos (tag_ground_surfaces.gd) grava o tipo como metadado no corpo estático;
 ## sem metadado o chão é pedra (ruas, calçadas, catedral).
 
-enum Kind { STONE, GRASS, WOOD }
+enum Kind { STONE, GRASS, WOOD, DIRT }
 
 const META_NAME: StringName = &"ground_surface"
 

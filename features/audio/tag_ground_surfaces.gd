@@ -7,6 +7,9 @@ const SURFACE_BY_COLLIDER_NAME: Dictionary[String, GroundSurface.Kind] = {
 	"Bed": GroundSurface.Kind.GRASS,
 	"Hedge": GroundSurface.Kind.GRASS,
 	"WoodFloor": GroundSurface.Kind.WOOD,
+	"Field": GroundSurface.Kind.DIRT,
+	"Yard": GroundSurface.Kind.DIRT,
+	"Path": GroundSurface.Kind.DIRT,
 }
 
 

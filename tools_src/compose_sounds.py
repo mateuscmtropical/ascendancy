@@ -1,5 +1,5 @@
 """Synthesise the game's sound effects and ambience loops (all original, no recordings): footsteps, jump take-offs and
-landings on stone, grass and wood (with a Godot AudioStreamRandomizer .tres per set), the fountain's water, the
+landings on stone, grass, wood and dirt (with a Godot AudioStreamRandomizer .tres per set), the fountain's water, the
 town's breeze and birdsong, the cathedral bell and the menu sounds.
 
 Noise is shaped in the frequency domain (FFT of white noise times a spectral envelope), which makes every loop
@@ -161,8 +161,17 @@ def wood_contact(length: int, weight: float, generator: np.random.Generator, del
     return weight * (0.9 * wood_knock(length, generator, delay) + 0.35 * click)
 
 
-CONTACT_BY_SURFACE = {"stone": stone_contact, "grass": grass_contact, "wood": wood_contact}
-SEED_BY_SURFACE = {"stone": 100, "grass": 200, "wood": 300}
+def dirt_contact(length: int, weight: float, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """Sole on packed farm earth: a muffled low thump, the soft crush of loose soil and a few small pebbles."""
+    knock = delayed(length, thud(length / RATE, generator.uniform(55.0, 80.0), 0.035), delay)
+    crush = burst(length, generator.uniform(180.0, 320.0), generator.uniform(1100.0, 1800.0), generator.uniform(0.03, 0.05), generator, delay)
+    pebbles = crackle(length, generator.uniform(600.0, 1100.0), generator.uniform(0.02, 0.04), generator, delay)
+
+    return weight * (0.6 * knock + 0.7 * crush + 0.3 * normalized(pebbles, 1.0))
+
+
+CONTACT_BY_SURFACE = {"stone": stone_contact, "grass": grass_contact, "wood": wood_contact, "dirt": dirt_contact}
+SEED_BY_SURFACE = {"stone": 100, "grass": 200, "wood": 300, "dirt": 400}
 
 
 def footstep(surface: str, variant: int) -> np.ndarray:
