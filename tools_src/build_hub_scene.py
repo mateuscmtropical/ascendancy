@@ -32,8 +32,11 @@ SAO_JOSE = (34.0, 0.0)
 AVENUE_Z = (-66.0, -48.0)
 MEDIAN_Z = (-60.0, -54.0)
 ROUNDABOUT = (0.0, -57.0)
-CATHEDRAL_FACADE_X = 18.0
+CATHEDRAL_FACADE_X = 13.0  # catedral de 26 x 47,6 m (build_cathedral.py): fundo da abside em x = 60,6
 CATHEDRAL_FLOOR = 1.05
+CHANCEL_FLOOR = CATHEDRAL_FLOOR + 0.9
+CATHEDRAL_CRUCIFIX = (CATHEDRAL_FACADE_X + 45.4, CHANCEL_FLOOR + 5.6, 0.0)  # peito do Cristo no retábulo
+ADRO_WIDTH = 30.0  # cobre as estátuas da escadaria (z = ±12,2)
 COREO_POSITION = (-46.0, -13.0)  # no gramado a noroeste do chafariz, como na foto aérea
 COREO_APRON_RADIUS = 4.6
 COREO_ACCESS_END = (-38.2, -13.0)  # o caminho do coreto encosta na diagonal do largo noroeste
@@ -109,7 +112,7 @@ def square_paths() -> list:
         ("strip", COREO_POSITION, COREO_ACCESS_END, COREO_ACCESS_WIDTH),
         *[("disc", node, NODE_RADIUS) for node in WEST_NODES],
         *[("disc", rondel, RONDEL_RADIUS) for rondel in EAST_RONDELS],
-        ("strip", (sao_jose_west, 0.0), (CATHEDRAL_FACADE_X, 0.0), 22.0),  # adro
+        ("strip", (sao_jose_west, 0.0), (CATHEDRAL_FACADE_X, 0.0), ADRO_WIDTH),  # adro
         ("strip", (CATHEDRAL_FACADE_X, 0.0), (sao_jose_east, 0.0), 32.0),  # passeio em volta da catedral
     ]
     branches = [path for sign in (-1.0, 1.0) for path in getulio_vargas_branches(sign) + sao_jose_walks(sign)]
@@ -633,31 +636,51 @@ def add_shops(scene: SceneWriter, shop_fronts: list) -> None:
             place(scene, piece.title(), f"Shops/{shop_name}", f"res://art/town/shops/shop_{shop_type}_{piece}.gltf", (offset_x, 0, 0))
 
 
+CATHEDRAL_GLASS_SPOTS = [  # (nome, posição, alvo, cor): luz colorida das lancetas e do óculo no piso do presbitério
+    ("LancetSpotA", (CATHEDRAL_FACADE_X + 45.6, CHANCEL_FLOOR + 7.0, 3.25), (CATHEDRAL_FACADE_X + 38.0, CHANCEL_FLOOR, -1.0), "Color(0.5, 0.69, 1, 1)"),
+    ("LancetSpotB", (CATHEDRAL_FACADE_X + 45.6, CHANCEL_FLOOR + 7.0, -3.25), (CATHEDRAL_FACADE_X + 38.0, CHANCEL_FLOOR, 1.0), "Color(0.5, 0.69, 1, 1)"),
+    ("OculusSpot", (CATHEDRAL_FACADE_X + 46.5, CHANCEL_FLOOR + 11.3, 0.0), (CATHEDRAL_FACADE_X + 37.0, CHANCEL_FLOOR, 0.0), "Color(1, 0.78, 0.4, 1)"),
+]
+
+
 def add_cathedral_lights(scene: SceneWriter) -> None:
-    """Warm lamps along the nave and a spot on the altar (the stained glass glows on its own)."""
-    nave_lights = [CATHEDRAL_FACADE_X + offset for offset in (6.0, 14.0, 22.0, 30.0)]
-    altar = (CATHEDRAL_FACADE_X + 32.6, CATHEDRAL_FLOOR + 6.0, 0.0)
+    """Warm lamps along the nave, a spot on the crucifix, gold backlight in the retable, coloured light from the apse
+    windows and a small lamp at each side altar (the stained glass glows on its own)."""
+    nave_lights = [CATHEDRAL_FACADE_X + offset for offset in (8.0, 15.0, 22.0, 29.0)]
+    altar_light = (CATHEDRAL_FACADE_X + 39.7, CHANCEL_FLOOR + 9.0, 0.0)
+    retable_backlights = [(CATHEDRAL_FACADE_X + 45.0, CHANCEL_FLOOR + 8.0, side * 2.0) for side in (-1.0, 1.0)]
+    side_altar_lights = [(CATHEDRAL_FACADE_X + 38.5, CATHEDRAL_FLOOR + 3.0, side * 10.0) for side in (-1.0, 1.0)]
+    warm_omni = {"light_color": "Color(1, 0.85, 0.62, 1)", "distance_fade_enabled": "true", "distance_fade_begin": "60.0"}
 
     scene.add_node("CathedralLights", ".", "Node3D")
 
     for index, light_x in enumerate(nave_lights):
-        scene.add_node(f"NaveLight{index}", "CathedralLights", "OmniLight3D", properties={
-            "position": vector(light_x, CATHEDRAL_FLOOR + 9.0, 0.0),
-            "light_color": "Color(1, 0.85, 0.62, 1)",
-            "light_energy": "1.6",
-            "omni_range": "13.0",
-            "distance_fade_enabled": "true",
-            "distance_fade_begin": "60.0",
-        })
+        scene.add_node(f"NaveLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(light_x, CATHEDRAL_FLOOR + 9.0, 0.0), "light_energy": "1.6", "omni_range": "13.0"})
 
     scene.add_node("AltarLight", "CathedralLights", "SpotLight3D", properties={
-        "position": vector(*altar),
-        "rotation": vector(-math.pi / 2.0, 0.0, 0.0),
-        "light_color": "Color(1, 0.9, 0.7, 1)",
-        "light_energy": "3.0",
-        "spot_range": "9.0",
-        "spot_angle": "35.0",
+        "position": vector(*altar_light),
+        "rotation": look_rotation(altar_light, CATHEDRAL_CRUCIFIX),
+        "light_color": "Color(1, 0.914, 0.769, 1)",
+        "light_energy": "4.0",
+        "spot_range": "14.0",
+        "spot_angle": "28.0",
     })
+
+    for index, position in enumerate(retable_backlights):
+        scene.add_node(f"RetableBacklight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_color": "Color(1, 0.8, 0.45, 1)", "light_energy": "0.6", "omni_range": "4.0"})
+
+    for index, position in enumerate(side_altar_lights):
+        scene.add_node(f"SideAltarLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_energy": "0.8", "omni_range": "4.0"})
+
+    for name, position, target, color in CATHEDRAL_GLASS_SPOTS:
+        scene.add_node(name, "CathedralLights", "SpotLight3D", properties={
+            "position": vector(*position),
+            "rotation": look_rotation(position, target),
+            "light_color": color,
+            "light_energy": "1.2",
+            "spot_range": "16.0",
+            "spot_angle": "30.0",
+        })
 
 
 # ---------- squares ----------
@@ -1043,7 +1066,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "SittingCathedral", "adventurer_male", "brown", stand(cathedral_bench_seat, cathedral_bench_facing, "ual1/Sitting_Talking", 0.5))
     npc(scene, "Bard", "adventurer_female", "auburn", stand((COREO_POSITION[0], COREO_POSITION[1]), math.pi / 2.0, "ual1/Idle_Talking", 0.2, height=1.2))
     npc(scene, "Guard", "adventurer_female", "dark", stand((CATHEDRAL_FACADE_X - 4.2, -6.5), -math.pi / 2.0, "ual2/Idle_FoldArms", 0.0))
-    npc(scene, "Priest", "villager_male", "grey", stand((CATHEDRAL_FACADE_X + 33.6, 0.0), -math.pi / 2.0, "ual1/Idle", 0.0, height=CATHEDRAL_FLOOR + 0.9))
+    npc(scene, "Priest", "villager_male", "grey", stand((CATHEDRAL_FACADE_X + 40.4, 0.0), -math.pi / 2.0, "ual1/Idle", 0.0, height=CHANCEL_FLOOR + 0.3))
 
 
 # ---------- player and cameras ----------
@@ -1057,7 +1080,7 @@ def add_player_and_cameras(scene: SceneWriter) -> None:
         ((-37, 3.2, -23), (COREO_POSITION[0], 2.6, COREO_POSITION[1])),
         ((0, 2.2, 44), (0, 2.0, -20)),
         ((2, 1.8, 7), (18, 18, 0)),
-        ((CATHEDRAL_FACADE_X + 4, 2.8, 0), (CATHEDRAL_FACADE_X + 34, 5.0, 0)),
+        ((CATHEDRAL_FACADE_X + 4, 2.8, 0), CATHEDRAL_CRUCIFIX),
         ((-90, 4, -57), (0, 3, -57)),
     ]
 

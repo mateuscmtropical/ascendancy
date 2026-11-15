@@ -74,6 +74,16 @@ LOFT_HEIGHT = 7.4  # laje do coro alto sobre o nartex
 RETABLE_Y = BODY_LENGTH + APSE_RADIUS - 1.3
 LANCET_ANGLES = (30.0, 55.0, 78.0)  # graus do eixo da abside, de cada lado
 LANCET_SIZE = (1.5, 8.5)
+CHANCEL_STEPS = 6
+CHANCEL_TREAD = 0.4
+CHANCEL_STAIR_HALF = 5.5
+ALTAR_PLATFORM = (4.4, 3.0)  # supedâneo (largura, fundo), centro em y = BODY_LENGTH - 0,5
+CHRIST_SCALE = 1.6
+CHRIST_CHEST_HEIGHT = 5.6  # acima do piso do presbitério; abaixo da spec (6,3) para o frontão não encostar no óculo
+WING_FIGURE_SCALE = 0.85
+RETABLE_PEDIMENT_RISE = 0.9
+SIDE_DOOR_SIZE = (1.8, 3.0)
+TOWER_UPPER_SCALE = 1.3  # sineira, relógio e coroamento crescem com a catedral (cruz a ~46 m)
 
 GLASS_COLORS = numpy.array([
     [0.12, 0.25, 0.75], [0.10, 0.20, 0.60], [0.95, 0.62, 0.15], [0.98, 0.78, 0.30],
@@ -570,7 +580,6 @@ def build_materials() -> dict:
 
     return {
         "figure_glass": figure_glass,
-        "figure_painting": make_material("M_SaintPainting", figure_image),
         "dove_glass": dove_glass,
         "oculus_glass": oculus_glass,
         "ochre_band": ochre_band,
@@ -782,14 +791,15 @@ def map_uvs_per_face(mesh_object: bpy.types.Object, meters_per_tile) -> None:
     uv_bmesh.free()
 
 
-def make_image_panel(name: str, profile: list, size: tuple, transform: Matrix, material) -> bpy.types.Object:
+def make_image_panel(name: str, profile: list, size: tuple, transform: Matrix, material, mirror_u: bool = False) -> bpy.types.Object:
     """Flat XZ polygon showing a whole image once (UV 0..1 across size); finalize_objects keeps these UVs."""
     panel_bmesh = bmesh.new()
     uv_layer = panel_bmesh.loops.layers.uv.verify()
     face = panel_bmesh.faces.new([panel_bmesh.verts.new((x, 0.0, z)) for x, z in profile])
+    u_sign = -1.0 if mirror_u else 1.0
 
     for loop in face.loops:
-        loop[uv_layer].uv = (loop.vert.co.x / size[0] + 0.5, loop.vert.co.z / size[1])
+        loop[uv_layer].uv = (u_sign * loop.vert.co.x / size[0] + 0.5, loop.vert.co.z / size[1])
 
     bmesh.ops.transform(panel_bmesh, matrix=transform, verts=panel_bmesh.verts)
     panel = object_from_bmesh(name, panel_bmesh, material)
@@ -996,8 +1006,8 @@ def build_podium(materials: dict) -> None:
 
 def build_facade_center(materials: dict) -> None:
     """Portal, balustrade band, twin segmental windows and the stepped gable between the towers."""
-    window_bottom = BASE + 8.2
-    window_spring = BASE + 12.4
+    window_bottom = BASE + 9.0
+    window_spring = BASE + 14.4
     window_width = 2.3
     window_rise = 0.6
     window_centers = (-1.35, 1.35)
@@ -1020,19 +1030,19 @@ def build_facade_center(materials: dict) -> None:
 
     make_voussoirs("PortalVoussoir", portal_center, PORTAL_WIDTH / 2.0, 0.0, math.pi, 13, 0.7, -0.3, 0.35, materials["trim"])
     make_mirrored_span("PortalJamb", (PORTAL_WIDTH / 2.0, -0.3, BASE), (PORTAL_WIDTH / 2.0 + 0.7, 0.05, BASE + PORTAL_SPRING), materials["trim"])
-    make_balustrade("ArchBalustrade", (-CENTER_HALF, -0.25), (CENTER_HALF, -0.25), BASE + 7.2, materials)
-    make_span("ArchSill", (-CENTER_HALF, -0.5, BASE + 7.05), (CENTER_HALF, 0.1, BASE + 7.2), materials["trim"])
+    make_balustrade("ArchBalustrade", (-CENTER_HALF, -0.25), (CENTER_HALF, -0.25), BASE + 8.0, materials)
+    make_span("ArchSill", (-CENTER_HALF, -0.5, BASE + 7.85), (CENTER_HALF, 0.1, BASE + 8.0), materials["trim"])
 
     for column_x in (-0.3, 0.3):
         make_cylinder(f"ArchColumn{column_x:+.1f}", (column_x, -0.3, window_bottom), 0.17, window_spring - window_bottom + 0.3, 12, materials["trim"])
 
-    gable_steps = [(5.6, NAVE_WALL_TOP, 16.3), (3.8, 16.3, 17.1), (1.8, 17.1, 18.8)]
+    gable_steps = [(7.2, NAVE_WALL_TOP, NAVE_WALL_TOP + 1.4), (4.8, NAVE_WALL_TOP + 1.4, NAVE_WALL_TOP + 2.4), (2.3, NAVE_WALL_TOP + 2.4, NAVE_WALL_TOP + 4.4)]
 
     for step_index, (width, bottom, top) in enumerate(gable_steps):
         make_span(f"GableStep{step_index}", (-width / 2.0, -0.1, BASE + bottom), (width / 2.0, FACADE_DEPTH, BASE + top), materials["wall"])
         make_span(f"GableCoping{step_index}", (-width / 2.0 - 0.1, -0.2, BASE + top), (width / 2.0 + 0.1, FACADE_DEPTH + 0.1, BASE + top + 0.12), materials["trim"])
 
-    make_cross("GableRelief", (0, -0.1, BASE + 17.3), 1.4, 0.18, materials["trim"], front_offset=-0.05)
+    make_cross("GableRelief", (0, -0.1, BASE + NAVE_WALL_TOP + 1.6), 1.8, 0.2, materials["trim"], front_offset=-0.05)
 
 
 def build_portal_doors(materials: dict) -> None:
@@ -1060,27 +1070,28 @@ def build_tower(side_sign: int, materials: dict) -> None:
     cutters = []
 
     for slit_offset in (-0.65, 0.0, 0.65):
-        wall_opening(f"TowerSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, 13.5), (middle_x + slit_offset, 0, BASE + 1.5), "-Y", 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
+        wall_opening(f"TowerSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, TOWER_BASE_TOP - 4.0), (middle_x + slit_offset, 0, BASE + 1.5), "-Y", 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
 
     for slit_offset in (-0.5, 0.5):
         wall_opening(f"TowerSideSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, 3.6), (side_sign * outer_x, center_y + slit_offset, BASE + AISLE_TOP + 1.4), side_facing, 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
 
     carve(tower_base, cutters)
 
-    make_span(f"TowerPierInner{tag}", (middle_x - 2.1, -0.3, BASE), (middle_x - 1.2, 0.0, BASE + 15.8), materials["trim"])
-    make_span(f"TowerPierOuter{tag}", (middle_x + 1.2, -0.3, BASE), (middle_x + 2.1, 0.0, BASE + 15.8), materials["trim"])
+    make_span(f"TowerPierInner{tag}", (middle_x - 2.6, -0.3, BASE), (middle_x - 1.6, 0.0, BASE + TOWER_BASE_TOP - 1.2), materials["trim"])
+    make_span(f"TowerPierOuter{tag}", (middle_x + 1.6, -0.3, BASE), (middle_x + 2.6, 0.0, BASE + TOWER_BASE_TOP - 1.2), materials["trim"])
 
     for fin_offset in (-0.325, 0.325):
         make_span(f"TowerFin{tag}{fin_offset:+.1f}", (middle_x + fin_offset - 0.11, -0.22, BASE + 1.2), (middle_x + fin_offset + 0.11, 0.0, BASE + TOWER_BASE_TOP + 0.6), materials["trim"])
 
-    make_span(f"TowerBaseCornice{tag}", (middle_x - 2.3, -0.4, BASE + TOWER_BASE_TOP), (middle_x + 2.3, NARTHEX_DEPTH + 0.2, BASE + TOWER_BASE_TOP + 0.35), materials["trim"])
+    make_span(f"TowerBaseCornice{tag}", (middle_x - 2.95, -0.4, BASE + TOWER_BASE_TOP), (middle_x + 2.95, NARTHEX_DEPTH + 0.2, BASE + TOWER_BASE_TOP + 0.35), materials["trim"])
     build_tower_upper(tag, Vector((middle_x, center_y, BASE + TOWER_BASE_TOP + 0.35)), materials)
 
 
 def build_tower_upper(tag: str, base_center: Vector, materials: dict) -> None:
-    """Belfry stage with overshooting corner fins, clock stage, stepped crown and cross."""
-    belfry_half = 1.7
-    belfry_top = 8.65
+    """Belfry stage with overshooting corner fins, clock stage, stepped crown and cross (all scaled by TOWER_UPPER_SCALE)."""
+    scale = TOWER_UPPER_SCALE
+    belfry_half = 1.7 * scale
+    belfry_top = 8.65 * scale
     belfry = make_span(f"Belfry{tag}", (base_center.x - belfry_half, base_center.y - belfry_half, base_center.z), (base_center.x + belfry_half, base_center.y + belfry_half, base_center.z + belfry_top), materials["wall"])
     cutters = []
     faces = {
@@ -1092,33 +1103,33 @@ def build_tower_upper(tag: str, base_center: Vector, materials: dict) -> None:
     corner_offsets = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
 
     for (facing, face_offset), slit_offset in itertools.product(faces.items(), (-0.42, 0.42)):
-        lateral = Vector((slit_offset, 0, 0)) if facing in ("-Y", "+Y") else Vector((0, slit_offset, 0))
-        position = base_center + face_offset + lateral + Vector((0, 0, 1.1))
-        wall_opening(f"BelfrySlit{tag}{facing}{slit_offset:+.1f}", rectangle_profile(0.34, 6.4), tuple(position), facing, 0.5, materials["dark"], cutters, pane_depth=1.0)
+        lateral = Vector((slit_offset * scale, 0, 0)) if facing in ("-Y", "+Y") else Vector((0, slit_offset * scale, 0))
+        position = base_center + face_offset + lateral + Vector((0, 0, 1.1 * scale))
+        wall_opening(f"BelfrySlit{tag}{facing}{slit_offset:+.1f}", rectangle_profile(0.34 * scale, 6.4 * scale), tuple(position), facing, 0.5, materials["dark"], cutters, pane_depth=1.0)
 
     carve(belfry, cutters)
 
     for corner_index, (corner_x, corner_y) in enumerate(corner_offsets):
         corner = (base_center.x + corner_x * belfry_half, base_center.y + corner_y * belfry_half)
-        make_span(f"BelfryCornerFin{tag}{corner_index}", (corner[0] - 0.3, corner[1] - 0.3, base_center.z), (corner[0] + 0.3, corner[1] + 0.3, base_center.z + belfry_top + 0.6), materials["trim"])
+        make_span(f"BelfryCornerFin{tag}{corner_index}", (corner[0] - 0.3 * scale, corner[1] - 0.3 * scale, base_center.z), (corner[0] + 0.3 * scale, corner[1] + 0.3 * scale, base_center.z + belfry_top + 0.6 * scale), materials["trim"])
 
-    clock_half = 1.5
+    clock_half = 1.5 * scale
     clock_bottom = base_center.z + belfry_top
-    clock_top = clock_bottom + 3.4
+    clock_top = clock_bottom + 3.4 * scale
     make_span(f"ClockStage{tag}", (base_center.x - clock_half, base_center.y - clock_half, clock_bottom), (base_center.x + clock_half, base_center.y + clock_half, clock_top), materials["wall"])
-    make_span(f"ClockCornice{tag}", (base_center.x - 1.75, base_center.y - 1.75, clock_top), (base_center.x + 1.75, base_center.y + 1.75, clock_top + 0.3), materials["trim"])
+    make_span(f"ClockCornice{tag}", (base_center.x - 1.75 * scale, base_center.y - 1.75 * scale, clock_top), (base_center.x + 1.75 * scale, base_center.y + 1.75 * scale, clock_top + 0.3 * scale), materials["trim"])
 
     for facing_index, facing_angle in enumerate((0.0, math.pi / 2.0, math.pi, -math.pi / 2.0)):
-        build_clock(f"Clock{tag}{facing_index}", base_center, clock_half, clock_bottom + 1.8, facing_angle, materials)
+        build_clock(f"Clock{tag}{facing_index}", base_center, clock_half, clock_bottom + 1.8 * scale, facing_angle, materials)
 
-    crown_steps = [(2.4, 0.6, "wall"), (1.5, 0.6, "trim"), (0.7, 0.4, "trim")]
-    crown_bottom = clock_top + 0.3
+    crown_steps = [(2.4 * scale, 0.6 * scale, "wall"), (1.5 * scale, 0.6 * scale, "trim"), (0.7 * scale, 0.4 * scale, "trim")]
+    crown_bottom = clock_top + 0.3 * scale
 
     for step_index, (width, height, material_key) in enumerate(crown_steps):
         make_span(f"Crown{tag}{step_index}", (base_center.x - width / 2.0, base_center.y - width / 2.0, crown_bottom), (base_center.x + width / 2.0, base_center.y + width / 2.0, crown_bottom + height), materials[material_key])
         crown_bottom += height
 
-    make_cross(f"TowerCross{tag}", (base_center.x, base_center.y, crown_bottom), 3.4, 0.28, materials["trim"])
+    make_cross(f"TowerCross{tag}", (base_center.x, base_center.y, crown_bottom), 3.4 * scale, 0.28 * scale, materials["trim"])
 
 
 def build_clock(name: str, tower_center: Vector, half_size: float, height: float, facing_angle: float, materials: dict) -> None:
@@ -1141,8 +1152,8 @@ def build_aisle_front(side_sign: int, materials: dict) -> None:
     corner_radius = 1.0
     front = make_span(f"AisleFront{tag}", (min(side_sign * TOWER_OUTER, side_sign * (HALF_WIDTH - corner_radius)), 0.0, BASE), (max(side_sign * TOWER_OUTER, side_sign * (HALF_WIDTH - corner_radius)), FACADE_DEPTH, BASE + AISLE_TOP), materials["wall"])
     cutters = []
-    slit_rows = (1.5, 4.2, 6.9, 9.6)
-    slit_columns = (7.55, 8.35)
+    slit_rows = (1.5, 4.6, 7.7, 10.8)
+    slit_columns = (TOWER_OUTER + 1.1, TOWER_OUTER + 1.9)
 
     for row_height, column_x in itertools.product(slit_rows, slit_columns):
         wall_opening(f"AisleFrontSlit{tag}{row_height}{column_x}", rectangle_profile(0.3, 1.6), (side_sign * column_x, 0, BASE + row_height), "-Y", 0.5, materials["slit_glass"], cutters)
@@ -1163,18 +1174,31 @@ def build_side_wall(side_sign: int, materials: dict) -> None:
     cutters = []
     fin_positions = [NARTHEX_DEPTH] + PIER_Y + [BODY_LENGTH - 0.5]
 
-    window_profile = round_arch_profile(AISLE_WINDOW[0], AISLE_WINDOW[1] - AISLE_WINDOW[0] / 2.0)
+    tall_bottom = BASE + OCHRE_BAND[1] + 0.3
+    tall_height = min(AISLE_WINDOW[1], AISLE_TOP + BASE - tall_bottom - 0.6)
+    window_profile = round_arch_profile(AISLE_WINDOW[0], tall_height - AISLE_WINDOW[0] / 2.0)
+    low_profile = round_arch_profile(LOW_WINDOW[0], LOW_WINDOW[1] - LOW_WINDOW[0] / 2.0)
+    low_bays = [bay_y for bay_y in BAY_CENTERS if abs(bay_y - SIDE_DOOR_Y) > 1.0]
+    inner_face = (min(side_sign * (inner_x - 0.05), side_sign * inner_x), max(side_sign * (inner_x - 0.05), side_sign * inner_x))
+    door_half = SIDE_DOOR_SIZE[0] / 2.0
 
     for bay_y in BAY_CENTERS:
-        window_position = (side_sign * HALF_WIDTH, bay_y, BASE + 2.2)
+        window_position = (side_sign * HALF_WIDTH, bay_y, tall_bottom)
         wall_opening(f"AisleWindow{tag}{bay_y}", window_profile, window_position, facing, WALL, None, cutters)
-        make_image_panel(f"AisleGlass{tag}{bay_y}", window_profile, AISLE_WINDOW, facing_transform(window_position, facing) @ Matrix.Translation((0, WALL / 2.0, 0)), materials["figure_glass"])
-        make_span(f"AisleSill{tag}{bay_y}", (min(side_sign * (inner_x - 0.12), side_sign * inner_x), bay_y - AISLE_WINDOW[0] / 2.0 - 0.15, BASE + 2.05), (max(side_sign * (inner_x - 0.12), side_sign * inner_x), bay_y + AISLE_WINDOW[0] / 2.0 + 0.15, BASE + 2.2), materials["trim"])
+        make_image_panel(f"AisleGlass{tag}{bay_y}", window_profile, (AISLE_WINDOW[0], tall_height), facing_transform(window_position, facing) @ Matrix.Translation((0, WALL / 2.0, 0)), materials["figure_glass"])
+        make_span(f"AisleSill{tag}{bay_y}", (min(side_sign * (inner_x - 0.12), side_sign * inner_x), bay_y - AISLE_WINDOW[0] / 2.0 - 0.15, tall_bottom - 0.15), (max(side_sign * (inner_x - 0.12), side_sign * inner_x), bay_y + AISLE_WINDOW[0] / 2.0 + 0.15, tall_bottom), materials["trim"])
+
+    for bay_y in low_bays:
+        wall_opening(f"AisleLowWindow{tag}{bay_y}", low_profile, (side_sign * HALF_WIDTH, bay_y, BASE + 2.2), facing, WALL, materials["glass"], cutters)
 
     carve(wall, cutters)
-    make_span(f"Wainscot{tag}", (min(side_sign * (inner_x - 0.05), side_sign * inner_x), NARTHEX_DEPTH, BASE), (max(side_sign * (inner_x - 0.05), side_sign * inner_x), BODY_LENGTH - WALL, BASE + 1.35), materials["pew_wood"])
-    make_span(f"WainscotCap{tag}", (min(side_sign * (inner_x - 0.1), side_sign * inner_x), NARTHEX_DEPTH, BASE + 1.35), (max(side_sign * (inner_x - 0.1), side_sign * inner_x), BODY_LENGTH - WALL, BASE + 1.43), materials["gold"])
-    build_side_altar(side_sign, materials)
+    make_span(f"Wainscot{tag}", (inner_face[0], NARTHEX_DEPTH, BASE), (inner_face[1], BODY_LENGTH - WALL, BASE + 1.6), materials["marble_grey"])
+    make_span(f"WainscotCap{tag}", (min(side_sign * (inner_x - 0.1), side_sign * inner_x), NARTHEX_DEPTH, BASE + 1.6), (max(side_sign * (inner_x - 0.1), side_sign * inner_x), BODY_LENGTH - WALL, BASE + 1.68), materials["gold"])
+    make_span(f"OchreBand{tag}", (inner_face[0], NARTHEX_DEPTH, BASE + OCHRE_BAND[0]), (inner_face[1], BODY_LENGTH - WALL, BASE + OCHRE_BAND[1]), materials["ochre_band"])
+
+    for face_x in (side_sign * (inner_x - 0.08), side_sign * (HALF_WIDTH + 0.08)):
+        make_span(f"SideDoor{tag}{face_x:+.1f}", (face_x - 0.04, SIDE_DOOR_Y - door_half, BASE), (face_x + 0.04, SIDE_DOOR_Y + door_half, BASE + SIDE_DOOR_SIZE[1]), materials["wood"])
+        make_span(f"SideDoorLintel{tag}{face_x:+.1f}", (face_x - 0.06, SIDE_DOOR_Y - door_half - 0.2, BASE + SIDE_DOOR_SIZE[1]), (face_x + 0.06, SIDE_DOOR_Y + door_half + 0.2, BASE + SIDE_DOOR_SIZE[1] + 0.3), materials["trim"])
 
     for fin_y in fin_positions:
         make_span(f"SideFin{tag}{fin_y}", (min(side_sign * HALF_WIDTH, side_sign * (HALF_WIDTH + 0.3)), fin_y - 0.4, BASE), (max(side_sign * HALF_WIDTH, side_sign * (HALF_WIDTH + 0.3)), fin_y + 0.4, BASE + AISLE_TOP + 0.25), materials["trim"])
@@ -1232,26 +1256,7 @@ def build_arcade_wall(side_sign: int, facing: str, materials: dict) -> None:
     for pier_y in PIER_Y:
         build_column(side_sign * (NAVE_HALF + WALL / 2.0), pier_y, f"{tag}{pier_y}", materials)
 
-    make_span(f"Frieze{tag}", (min(nave_face_x, nave_face_x - side_sign * 0.06), NARTHEX_DEPTH, BASE + 9.2), (max(nave_face_x, nave_face_x - side_sign * 0.06), BODY_LENGTH - WALL, BASE + 9.7), materials["paint_ochre"])
-
-
-def build_side_altar(side_sign: int, materials: dict) -> None:
-    """Small altar at the end of an aisle: marble table, gilded frontal and an arched niche with the saint painted in it."""
-    tag = "L" if side_sign < 0 else "R"
-    altar_x = side_sign * (NAVE_HALF + HALF_WIDTH) / 2.0
-    wall_y = BODY_LENGTH - WALL
-    niche_profile = round_arch_profile(1.3, 2.2)
-
-    make_span(f"SideAltarStep{tag}", (altar_x - 1.3, wall_y - 1.5, BASE), (altar_x + 1.3, wall_y, BASE + 0.15), materials["marble"])
-    make_span(f"SideAltarTable{tag}", (altar_x - 0.9, wall_y - 0.8, BASE + 0.15), (altar_x + 0.9, wall_y, BASE + 1.15), materials["marble"])
-    make_span(f"SideAltarTop{tag}", (altar_x - 1.0, wall_y - 0.88, BASE + 1.15), (altar_x + 1.0, wall_y, BASE + 1.23), materials["trim"])
-    make_span(f"SideAltarFrontal{tag}", (altar_x - 0.6, wall_y - 0.83, BASE + 0.35), (altar_x + 0.6, wall_y - 0.8, BASE + 0.95), materials["gold"])
-    make_profile_prism(f"SideAltarNicheFrame{tag}", round_arch_profile(1.6, 2.3), 0.1, Matrix.Translation((altar_x, wall_y - 0.1, BASE + 1.5)), materials["gold"])
-    make_image_panel(f"SideAltarPainting{tag}", niche_profile, (1.3, 2.85), Matrix.Translation((altar_x, wall_y - 0.12, BASE + 1.6)), materials["figure_painting"])
-
-    for candle_sign in (-1, 1):
-        make_cylinder(f"SideAltarCandle{tag}{candle_sign:+d}", (altar_x + candle_sign * 0.7, wall_y - 0.4, BASE + 1.23), 0.04, 0.45, 8, materials["gold"])
-        make_cone(f"SideAltarFlame{tag}{candle_sign:+d}", (altar_x + candle_sign * 0.7, wall_y - 0.4, BASE + 1.68), 0.03, 0.09, 6, materials["lamp_glow"])
+    make_span(f"Frieze{tag}", (min(nave_face_x, nave_face_x - side_sign * 0.06), NARTHEX_DEPTH, BASE + NAVE_FRIEZE[0]), (max(nave_face_x, nave_face_x - side_sign * 0.06), BODY_LENGTH - WALL, BASE + NAVE_FRIEZE[1]), materials["paint_ochre"])
 
 
 def make_fluted_shaft(name: str, center: tuple, bottom: float, height: float, radius: float, flutes: int, material) -> bpy.types.Object:
@@ -1354,76 +1359,299 @@ def build_chandeliers(materials: dict) -> None:
             make_sphere(f"{tag}Globe{globe_index}", (*globe_spot, ring_height + 0.17), 0.12, materials["lamp_glow"])
 
 
+def apse_frame(radius: float, axis_degrees: float, height: float) -> Matrix:
+    """Frame on the apse wall at axis_degrees from the axis (+ = toward +X): local -Y points out of the church."""
+    angle = math.pi / 2.0 - math.radians(axis_degrees)
+    plan_x, plan_y = apse_point(radius, angle)
+
+    return Matrix.Translation((plan_x, plan_y, height)) @ Matrix.Rotation(angle + math.pi / 2.0, 4, "Z")
+
+
+def circle_profile(radius: float, segments: int = 24) -> list:
+    """Round window outline standing on its lowest point (local z = 0 .. 2 * radius)."""
+    return [(radius * math.sin(2.0 * math.pi * step / segments), radius - radius * math.cos(2.0 * math.pi * step / segments)) for step in range(segments)]
+
+
 def build_apse(materials: dict) -> None:
-    """Half-round apse wall with three tall slits, closing the nave behind the chancel."""
+    """Half-round apse: six tall dove lancets and the Holy Spirit oculus, marble dado, ochre band, pilasters,
+    cornice and a painted half dome inside; copper half dome outside."""
     segments = 24
     apse_top = NAVE_CEILING + 0.4
+    floor_top = CHANCEL_FLOOR
+    lancet_width, lancet_height = LANCET_SIZE
+    lancet_profile = round_arch_profile(lancet_width, lancet_height - lancet_width / 2.0)
+    oculus_radius = 1.2
+    oculus_bottom = floor_top + 11.3 - oculus_radius
+    cornice_height = floor_top + 12.6
+    lancets = [(side_sign * angle, variant, side_sign < 0) for (variant, angle), side_sign in itertools.product(enumerate(LANCET_ANGLES), (-1, 1))]
+    pilaster_angles = [0.0, LANCET_ANGLES[0] / 2.0] + [(first + second) / 2.0 for first, second in zip(LANCET_ANGLES, LANCET_ANGLES[1:])] + [88.0]
     outer_arc = [((APSE_RADIUS + WALL) * math.cos(math.pi * step / segments), BODY_LENGTH + (APSE_RADIUS + WALL) * math.sin(math.pi * step / segments)) for step in range(segments + 1)]
     inner_arc = [(APSE_RADIUS * math.cos(math.pi * step / segments), BODY_LENGTH + APSE_RADIUS * math.sin(math.pi * step / segments)) for step in reversed(range(segments + 1))]
     apse = make_vertical_prism("Apse", outer_arc + inner_arc, BASE, apse_top, materials["wall"])
     cutters = []
 
-    for window_index, angle_degrees in enumerate((-40, 0, 40)):
-        angle = math.radians(angle_degrees)
-        direction = Vector((math.sin(angle), math.cos(angle), 0))
-        position = Vector((0, BODY_LENGTH, BASE + 3.0)) + direction * (APSE_RADIUS + WALL)
-        transform = Matrix.Translation(position) @ Matrix.Rotation(math.pi - angle, 4, "Z")
-        cutters.append(make_profile_prism(f"ApseCut{window_index}", rectangle_profile(0.45, 8.5), WALL + 0.6, transform @ Matrix.Translation((0, -0.3, 0)), None))
-        make_profile_prism(f"ApseGlass{window_index}", rectangle_profile(0.45, 8.5), 0.05, transform @ Matrix.Translation((0, WALL / 2.0, 0)), materials["glass"])
+    for index, (axis_degrees, variant, mirror) in enumerate(lancets):
+        frame = apse_frame(APSE_RADIUS + WALL, axis_degrees, floor_top + 3.2)
+        cutters.append(make_profile_prism(f"LancetCut{index}", lancet_profile, WALL + 0.6, frame @ Matrix.Translation((0, -0.3, 0)), None))
+        make_image_panel(f"LancetGlass{index}", lancet_profile, LANCET_SIZE, frame @ Matrix.Translation((0, WALL / 2.0, 0)), materials["dove_glass"][variant], mirror_u=mirror)
+        make_box(f"LancetSill{index}", (0, 0, 0), (lancet_width + 0.3, 0.35, 0.12), materials["marble_white"]).matrix_world = frame @ Matrix.Translation((0, WALL + 0.1, -0.06))
 
+    oculus_frame = apse_frame(APSE_RADIUS + WALL, 0.0, oculus_bottom)
+    cutters.append(make_profile_prism("OculusCut", circle_profile(oculus_radius), WALL + 0.6, oculus_frame @ Matrix.Translation((0, -0.3, 0)), None))
+    make_image_panel("OculusGlass", circle_profile(oculus_radius), (2.0 * oculus_radius, 2.0 * oculus_radius), oculus_frame @ Matrix.Translation((0, WALL / 2.0, 0)), materials["oculus_glass"])
     carve(apse, cutters)
 
-    make_cylinder("ApseRoof", (0, BODY_LENGTH, BASE + apse_top), APSE_RADIUS + WALL + 0.2, 0.4, 32, materials["trim"])
+    make_arc_band("ApseDado", APSE_RADIUS - 0.05, APSE_RADIUS, floor_top, floor_top + 2.2, materials["marble_grey"])
+    make_arc_band("ApseOchreBand", APSE_RADIUS - 0.06, APSE_RADIUS, floor_top + 2.2, floor_top + 3.0, materials["ochre_band"])
+    make_arc_band("ApseCornice", APSE_RADIUS - 0.3, APSE_RADIUS, cornice_height, cornice_height + 0.35, materials["trim"])
+    make_arc_band("ApseCorniceFillet", APSE_RADIUS - 0.34, APSE_RADIUS - 0.3, cornice_height + 0.12, cornice_height + 0.2, materials["gold"])
+    make_dome_shell("ApseHalfDome", APSE_RADIUS - 0.02, cornice_height + 0.35, NAVE_CEILING + BASE - cornice_height - 0.35, materials["dome_sky"])
+
+    for pilaster_index, (axis_degrees, side_sign) in enumerate(itertools.product(pilaster_angles, (-1, 1))):
+        make_box(f"ApsePilaster{pilaster_index}", (0, 0, 0), (0.35, 0.2, cornice_height - floor_top), materials["trim"]).matrix_world = apse_frame(APSE_RADIUS - 0.1, side_sign * axis_degrees, (floor_top + cornice_height) / 2.0)
+
+    make_dome_shell("ApseRoofDome", APSE_RADIUS + WALL + 0.2, BASE + apse_top, 3.2, materials["copper"])
+
+    for buttress_index, (axis_degrees, side_sign) in enumerate(itertools.product(pilaster_angles[1:], (-1, 1))):
+        make_box(f"ApseButtress{buttress_index}", (0, 0, 0), (0.5, 0.6, apse_top - 1.0), materials["trim"]).matrix_world = apse_frame(APSE_RADIUS + WALL + 0.3, side_sign * axis_degrees, BASE + (apse_top - 1.0) / 2.0)
 
 
-def build_chancel(materials: dict) -> None:
-    """Raised chancel with altar and a stepped reredos that repeats the facade gable."""
-    floor_top = BASE + CHANCEL_HEIGHT
-    step_count = 5
-    reredos_y = BODY_LENGTH + APSE_RADIUS - 0.9
-    reredos_steps = [(4.4, 5.6), (3.0, 7.4), (1.4, 9.7)]
+def build_chancel_floor(materials: dict) -> None:
+    """Raised chancel: six steps across the nave, communion rail, red runner, green marble border and the altar platform."""
+    floor_top = CHANCEL_FLOOR
+    stairs_front = CHANCEL_FRONT - CHANCEL_STEPS * CHANCEL_TREAD
+    platform_front = BODY_LENGTH - 0.5 - ALTAR_PLATFORM[1] / 2.0
 
-    make_span("ChancelFloor", (-NAVE_HALF, CHANCEL_FRONT, BASE), (NAVE_HALF, BODY_LENGTH, floor_top), materials["marble"])
-    make_cylinder("ChancelApseFloor", (0, BODY_LENGTH, BASE), APSE_RADIUS, CHANCEL_HEIGHT, 32, materials["marble"])
+    make_span("ChancelFloor", (-NAVE_HALF, CHANCEL_FRONT, BASE), (NAVE_HALF, BODY_LENGTH, floor_top), materials["marble_white"])
+    make_cylinder("ChancelApseFloor", (0, BODY_LENGTH, BASE), APSE_RADIUS, CHANCEL_HEIGHT, 32, materials["marble_white"])
+    make_arc_band("ChancelBorder", APSE_RADIUS - 0.5, APSE_RADIUS, floor_top, floor_top + 0.01, materials["marble_green"])
 
-    for step_index in range(step_count):
-        step_front = CHANCEL_FRONT - (step_count - step_index) * 0.4
-        make_span(f"ChancelStep{step_index}", (-3.6, step_front, BASE), (3.6, CHANCEL_FRONT, BASE + (step_index + 1) * CHANCEL_HEIGHT / step_count), materials["marble"])
+    for step_index in range(CHANCEL_STEPS):
+        step_front = stairs_front + step_index * CHANCEL_TREAD
+        make_span(f"ChancelStep{step_index}", (-CHANCEL_STAIR_HALF, step_front, BASE), (CHANCEL_STAIR_HALF, CHANCEL_FRONT, BASE + (step_index + 1) * CHANCEL_HEIGHT / CHANCEL_STEPS), materials["marble_white"])
 
-    make_box("Altar", (0, BODY_LENGTH - 1.4, floor_top + 0.5), (2.6, 1.0, 1.0), materials["marble"])
-    make_box("AltarFrontal", (0, BODY_LENGTH - 1.92, floor_top + 0.5), (1.8, 0.06, 0.7), materials["gold"])
+    make_span("ChancelRunner", (-1.1, CHANCEL_FRONT, floor_top), (1.1, platform_front, floor_top + 0.01), materials["carpet"])
+    make_balustrade("CommunionRailL", (-NAVE_HALF, CHANCEL_FRONT + 0.3), (-1.3, CHANCEL_FRONT + 0.3), floor_top, materials)
+    make_balustrade("CommunionRailR", (1.3, CHANCEL_FRONT + 0.3), (NAVE_HALF, CHANCEL_FRONT + 0.3), floor_top, materials)
 
-    for candle_x in (-1.0, 1.0):
-        make_cylinder(f"Candlestick{candle_x:+.0f}", (candle_x, BODY_LENGTH - 1.4, floor_top + 1.0), 0.05, 0.55, 8, materials["gold"])
+    for step_index in range(2):
+        inset = 0.35 * step_index
+        make_span(f"AltarPlatform{step_index}", (-ALTAR_PLATFORM[0] / 2.0 + inset, platform_front + inset, floor_top), (ALTAR_PLATFORM[0] / 2.0 - inset, platform_front + ALTAR_PLATFORM[1] - inset, floor_top + 0.15 * (step_index + 1)), materials["marble_white"])
+        make_span(f"AltarPlatformFillet{step_index}", (-ALTAR_PLATFORM[0] / 2.0 + inset, platform_front + inset - 0.01, floor_top + 0.15 * step_index + 0.06), (ALTAR_PLATFORM[0] / 2.0 - inset, platform_front + inset, floor_top + 0.15 * step_index + 0.09), materials["gold"])
 
-    for step_index, (width, height) in enumerate(reredos_steps):
-        make_span(f"Reredos{step_index}", (-width / 2.0, reredos_y, floor_top), (width / 2.0, reredos_y + 0.6, floor_top + height), materials["marble"])
-        make_span(f"ReredosCoping{step_index}", (-width / 2.0 - 0.08, reredos_y - 0.08, floor_top + height), (width / 2.0 + 0.08, reredos_y + 0.6, floor_top + height + 0.12), materials["gold"])
 
-    make_cross("ReredosCross", (0, reredos_y, floor_top + 6.2), 3.0, 0.2, materials["gold"], front_offset=-0.12)
+def build_high_altar(materials: dict) -> None:
+    """Marble altar: mensa with a cloth, frontal of five little arches on gilded colonnettes, candlesticks, missal stand."""
+    altar_y = BODY_LENGTH - 0.5
+    platform_top = CHANCEL_FLOOR + 0.30
+    mensa_top = platform_top + 1.0
+    front_y = altar_y - 0.55
+    arch_spacing = 0.6
+    arch_centers = [arch_spacing * (index - 2) for index in range(5)]
+    colonnette_x = [arch_spacing * (index - 2.5) for index in range(6)]
+    candle_x = [side_sign * offset for side_sign, offset in itertools.product((-1, 1), (0.7, 1.05, 1.4))]
 
-    for panel_x, panel_width, panel_height in ((0.0, 1.0, 3.0), (-1.65, 0.8, 2.2), (1.65, 0.8, 2.2)):
-        make_span(f"PaintingFrame{panel_x:+.1f}", (panel_x - panel_width / 2.0 - 0.1, reredos_y - 0.06, floor_top + 1.5), (panel_x + panel_width / 2.0 + 0.1, reredos_y, floor_top + 1.7 + panel_height), materials["gold"])
-        make_image_panel(f"Painting{panel_x:+.1f}", rectangle_profile(panel_width, panel_height), (panel_width, panel_height), Matrix.Translation((panel_x, reredos_y - 0.09, floor_top + 1.6)), materials["figure_painting"])
+    make_span("AltarBody", (-1.5, front_y + 0.15, platform_top), (1.5, altar_y + 0.5, mensa_top - 0.12), materials["marble_white"])
+    make_span("AltarMensa", (-1.6, front_y - 0.03, mensa_top - 0.12), (1.6, altar_y + 0.55, mensa_top), materials["marble_white"])
+    make_span("AltarCloth", (-1.65, front_y - 0.05, mensa_top), (1.65, altar_y + 0.57, mensa_top + 0.02), materials["linen"])
+    make_mirrored_span("AltarClothDrop", (1.63, front_y - 0.05, mensa_top - 0.25), (1.65, altar_y + 0.57, mensa_top), materials["linen"])
+    make_mirrored_span("AltarClothLace", (1.655, front_y - 0.05, mensa_top - 0.29), (1.665, altar_y + 0.57, mensa_top - 0.25), materials["gold"])
+    make_span("AltarBaseMoulding", (-1.6, front_y, platform_top), (1.6, altar_y + 0.55, platform_top + 0.12), materials["marble_white"])
+
+    for arch_index, arch_x in enumerate(arch_centers):
+        make_profile_prism(f"AltarArch{arch_index}", round_arch_profile(0.5, 0.45), 0.04, Matrix.Translation((arch_x, front_y + 0.11, platform_top + 0.14)), materials["marble_pink"])
+
+    for colonnette_index, column_x in enumerate(colonnette_x):
+        make_cylinder(f"AltarColonnette{colonnette_index}", (column_x, front_y + 0.08, platform_top + 0.12), 0.06, 0.62, 10, materials["marble_white"])
+        make_box(f"AltarColonnetteCapital{colonnette_index}", (column_x, front_y + 0.08, platform_top + 0.77), (0.16, 0.16, 0.06), materials["gold"])
+        make_box(f"AltarColonnetteBase{colonnette_index}", (column_x, front_y + 0.08, platform_top + 0.15), (0.15, 0.15, 0.05), materials["gold"])
+
+    make_cylinder("AltarMedallion", (0, 0, 0), 0.2, 0.03, 20, materials["gold"]).matrix_world = Matrix.Translation((0, front_y + 0.06, platform_top + 0.5)) @ Matrix.Rotation(math.pi / 2.0, 4, "X")
+    make_box("AltarMedallionCrossUp", (0, front_y + 0.03, platform_top + 0.5), (0.06, 0.03, 0.26), materials["marble_white"])
+    make_box("AltarMedallionCrossArm", (0, front_y + 0.03, platform_top + 0.5), (0.26, 0.03, 0.06), materials["marble_white"])
+
+    for candle_index, candle_position_x in enumerate(candle_x):
+        build_candlestick(f"AltarCandle{candle_index}", (candle_position_x, altar_y + 0.25, mensa_top + 0.02), 0.5, materials)
+
+    make_cross("AltarTableCross", (0, altar_y + 0.3, mensa_top + 0.02), 0.55, 0.04, materials["gold"])
+    make_slope("MissalStand", (0.45, altar_y - 0.2, mensa_top + 0.05), (0.45, altar_y + 0.05, mensa_top + 0.2), 0.36, 0.03, materials["gold"])
+
+
+def build_candlestick(name: str, base: tuple, candle_height: float, materials: dict) -> None:
+    """Tall gilded candlestick: conical foot, knot, drip pan, white candle and a glowing flame."""
+    x, y, z = base
+
+    make_cone(f"{name}Foot", (x, y, z), 0.09, 0.12, 8, materials["gold"], top_radius=0.025)
+    make_cylinder(f"{name}Shaft", (x, y, z + 0.12), 0.022, 0.32, 8, materials["gold"])
+    make_sphere(f"{name}Knot", (x, y, z + 0.25), 0.04, materials["gold"])
+    make_cylinder(f"{name}Pan", (x, y, z + 0.44), 0.06, 0.02, 10, materials["gold"])
+    make_cylinder(f"{name}Wax", (x, y, z + 0.46), 0.028, candle_height, 8, materials["candle"])
+    make_cone(f"{name}Flame", (x, y, z + 0.46 + candle_height), 0.022, 0.08, 6, materials["flame"])
+
+
+def build_retable(materials: dict, christ: tuple, wing_figures: dict) -> None:
+    """Retable against the apse: predella with the tabernacle, aedicule with fluted columns and arched pediment,
+    deep blue starry niche with the carved crucifix, and two side niches with Our Lady and Saint John."""
+    floor_top = CHANCEL_FLOOR
+    back_y = RETABLE_Y
+    predella_front = back_y - 1.1
+    predella_top = floor_top + 1.6
+    christ_parts, christ_bones = christ
+    head_height = christ_bones["Head"].z
+    hand_height = (christ_bones["hand_l"].z + christ_bones["hand_r"].z) / 2.0
+    soles_height = floor_top + CHRIST_CHEST_HEIGHT - CHRIST_SCALE * (head_height - 0.35)
+    cross_y = back_y - 0.3
+    beam_height = soles_height + CHRIST_SCALE * hand_height
+    cross_bottom = predella_top + 0.6
+    cross_top = beam_height + 1.3
+    column_top = cross_top + 0.3
+    entablature_top = column_top + 0.8
+    pediment_spring = entablature_top
+    cross_ends = [((0, cross_y, cross_top + 0.08), 0.13), ((-1.5, cross_y, beam_height), 0.12), ((1.5, cross_y, beam_height), 0.12)]
+    wing_niches = {"Mary": -2.4, "John": 2.4}
+
+    make_span("Predella", (-3.0, predella_front, floor_top), (3.0, back_y + 0.6, predella_top), materials["marble_white"])
+
+    for panel_x in (-2.0, 0.0, 2.0):
+        make_span(f"PredellaPanel{panel_x:+.0f}", (panel_x - 0.5, predella_front - 0.03, floor_top + 0.4), (panel_x + 0.5, predella_front, floor_top + 1.2), materials["gold"])
+
+    make_span("RetableNiche", (-1.8, back_y, predella_top), (1.8, back_y + 0.6, entablature_top), materials["marble_white"])
+    make_image_panel("RetableBlue", rectangle_profile(3.0, column_top - predella_top), (3.0, column_top - predella_top), Matrix.Translation((0, back_y - 0.01, predella_top)), materials["retable_blue"])
+
+    for column_sign in (-1, 1):
+        column_x = column_sign * 1.6
+        make_box(f"RetableColumnBase{column_sign:+d}", (column_x, back_y - 0.25, predella_top + 0.12), (0.6, 0.6, 0.24), materials["gold"])
+        make_fluted_shaft(f"RetableColumn{column_sign:+d}", (column_x, back_y - 0.25), predella_top + 0.24, column_top - predella_top - 0.6, 0.22, 12, materials["marble_white"])
+        make_cone(f"RetableCapital{column_sign:+d}", (column_x, back_y - 0.25, column_top - 0.36), 0.22, 0.36, 12, materials["gold"], top_radius=0.34)
+
+    make_span("RetableEntablature", (-2.0, back_y - 0.55, column_top), (2.0, back_y + 0.6, entablature_top), materials["marble_white"])
+    make_span("RetableFrieze", (-2.0, back_y - 0.57, column_top + 0.3), (2.0, back_y - 0.55, column_top + 0.5), materials["gold"])
+    make_profile_prism("RetablePediment", segmental_arch_profile(4.0, 0.0, RETABLE_PEDIMENT_RISE), 0.5, Matrix.Translation((0, back_y - 0.4, pediment_spring)), materials["marble_white"])
+
+    for ray_index in range(9):
+        ray_angle = math.pi * (ray_index + 0.5) / 9.0
+        make_box(f"RetableRay{ray_index}", (0, 0, 0), (0.05, 0.04, 0.5), materials["gold"]).matrix_world = Matrix.Translation((0, back_y - 0.43, pediment_spring + 0.1)) @ Matrix.Rotation(math.pi / 2.0 - ray_angle, 4, "Y") @ Matrix.Scale(0.25 + 0.75 * math.sin(ray_angle), 4) @ Matrix.Translation((0, 0, 0.35))
+
+    make_cylinder("TabernacleBox", (0, predella_front + 0.3, predella_top), 0.32, 0.8, 8, materials["gold"])
+    make_profile_prism("TabernacleDoor", round_arch_profile(0.32, 0.36), 0.02, Matrix.Translation((0, predella_front - 0.04, predella_top + 0.12)), materials["marble_white"])
+    make_cone("TabernacleDome", (0, predella_front + 0.3, predella_top + 0.8), 0.34, 0.3, 8, materials["gold"], top_radius=0.05)
+    make_cross("TabernacleCross", (0, predella_front + 0.3, predella_top + 1.1), 0.3, 0.035, materials["gold"])
+    make_cone("CrossMound", (0, cross_y, predella_top), 0.6, 0.6, 9, materials["stone"], top_radius=0.2)
+
+    make_box("CrossUpright", (0, cross_y, (cross_bottom + cross_top) / 2.0), (0.30, 0.22, cross_top - cross_bottom), materials["wood_dark"])
+    make_box("CrossBeam", (0, cross_y, beam_height), (3.0, 0.22, 0.26), materials["wood_dark"])
+    make_box("CrossTitulus", (0, cross_y - 0.12, cross_top - 0.35), (0.5, 0.03, 0.18), materials["linen"])
+
+    for end_index, (end_center, end_radius) in enumerate(cross_ends):
+        make_sphere(f"CrossFinial{end_index}", end_center, end_radius, materials["gold"])
+
+    make_slope("CrossFootrest", (-0.16, cross_y - 0.11, soles_height - 0.02), (-0.16, cross_y - 0.3, soles_height - 0.08), 0.3, 0.08, materials["wood_dark"])
+    place_figure(christ_parts, Matrix.Translation((0, cross_y - 0.2, soles_height)) @ Matrix.Scale(CHRIST_SCALE, 4), "Retable")
+
+    for figure_name, niche_x in wing_niches.items():
+        make_span(f"RetableWing{figure_name}", (niche_x - 0.6, back_y, predella_top), (niche_x + 0.6, back_y + 0.6, floor_top + 5.5), materials["marble_white"])
+        make_profile_prism(f"RetableWingNiche{figure_name}", round_arch_profile(1.0, 2.2), 0.04, Matrix.Translation((niche_x, back_y - 0.02, predella_top + 0.3)), materials["retable_blue"])
+        make_span(f"RetableWingCornice{figure_name}", (niche_x - 0.7, back_y - 0.1, floor_top + 5.5), (niche_x + 0.7, back_y + 0.6, floor_top + 5.7), materials["gold"])
+        place_figure(wing_figures[figure_name], Matrix.Translation((niche_x, back_y - 0.35, predella_top + 0.14 * WING_FIGURE_SCALE)) @ Matrix.Scale(WING_FIGURE_SCALE, 4), f"Retable{figure_name}")
+
+    make_cylinder("SanctuaryLampChain", (2.6, BODY_LENGTH + 2.5, floor_top + 3.6), 0.012, NAVE_CEILING + BASE - floor_top - 3.6, 4, materials["iron"])
+    make_sphere("SanctuaryLamp", (2.6, BODY_LENGTH + 2.5, floor_top + 3.5), 0.09, materials["ruby_glow"])
 
 
 def build_pews(materials: dict) -> None:
-    """Two blocks of dark pews facing the altar (+Y), each with a kneeler behind its back for the next row."""
-    rows = [PEW_ROWS[0] + row_index * 1.05 for row_index in range(int((PEW_ROWS[1] - PEW_ROWS[0]) / 1.05) + 1)]
-    blocks = (-2.3, 2.3)
-    pew_length = 2.6
+    """Three blocks of pews on each side of the centre aisle (nave inner, nave outer, side aisle), all facing the altar.
+    One mesh: seat, back with a lighter top rail, kneeler and scrolled end panels."""
+    pew_bmesh = bmesh.new()
+    stairs_front = CHANCEL_FRONT - CHANCEL_STEPS * CHANCEL_TREAD
+    row_count = int(round((PEW_ROWS[1] - PEW_ROWS[0]) / PEW_PITCH)) + 1
+    rows = [PEW_ROWS[0] + index * PEW_PITCH for index in range(row_count) if index != PEW_GAP_ROW]
+    blocks = [(side_sign * inner, side_sign * outer, inner < NAVE_HALF) for side_sign, (inner, outer) in itertools.product((-1, 1), PEW_BLOCKS)]
+    end_profile = [(-0.32, 0.0), (0.26, 0.0), (0.26, 0.5), (0.14, 0.58), (-0.14, 0.6), (-0.22, 0.9), (-0.32, 1.0)]
 
-    for block_x, row_y in itertools.product(blocks, rows):
-        tag = f"{block_x:+.0f}_{row_y:.1f}"
-        make_box(f"PewSeat{tag}", (block_x, row_y, BASE + 0.45), (pew_length, 0.45, 0.07), materials["pew_wood"])
-        make_box(f"PewBack{tag}", (block_x, row_y - 0.24, BASE + 0.75), (pew_length, 0.07, 0.6), materials["pew_wood"])
-        make_box(f"PewRail{tag}", (block_x, row_y - 0.24, BASE + 1.07), (pew_length + 0.1, 0.11, 0.05), materials["pew_wood"])
-        make_box(f"PewKneeler{tag}", (block_x, row_y - 0.42, BASE + 0.14), (pew_length - 0.2, 0.16, 0.05), materials["pew_wood"])
+    for (first_x, second_x, is_nave), row_y in itertools.product(blocks, rows):
+        low_x, high_x = min(first_x, second_x), max(first_x, second_x)
+        middle_x = (low_x + high_x) / 2.0
+        length = high_x - low_x
 
-        for end_sign in (-1, 1):
-            end_x = block_x + end_sign * pew_length / 2.0
-            make_box(f"PewEnd{tag}{end_sign:+d}", (end_x, row_y - 0.05, BASE + 0.5), (0.09, 0.62, 1.0), materials["pew_wood"])
-            make_cylinder(f"PewEndKnob{tag}{end_sign:+d}", (end_x, row_y - 0.24, BASE + 1.0), 0.07, 0.12, 8, materials["pew_wood"])
+        if is_nave and row_y > stairs_front - 1.0:
+            continue
+
+        bm_box(pew_bmesh, (middle_x, row_y, BASE + 0.43), (length, 0.45, 0.06))
+        bm_box(pew_bmesh, (middle_x, row_y - 0.24, BASE + 0.72), (length, 0.06, 0.5))
+        bm_box(pew_bmesh, (middle_x, row_y - 0.24, BASE + 0.98), (length + 0.04, 0.1, 0.05))
+        bm_box(pew_bmesh, (middle_x, row_y - 0.44, BASE + 0.14), (length - 0.2, 0.16, 0.05))
+        bm_prism_yz(pew_bmesh, low_x + 0.04, 0.08, [(row_y + y, BASE + z) for y, z in end_profile])
+        bm_prism_yz(pew_bmesh, high_x - 0.04, 0.08, [(row_y + y, BASE + z) for y, z in end_profile])
+
+    object_from_bmesh("Pews", pew_bmesh, materials["pew_wood"])
+
+
+def pew_block_spans() -> list:
+    """(x_min, x_max, y_min, y_max) of each continuous run of pews, for one collider per run."""
+    stairs_front = CHANCEL_FRONT - CHANCEL_STEPS * CHANCEL_TREAD
+    gap_y = PEW_ROWS[0] + PEW_GAP_ROW * PEW_PITCH
+    row_count = int(round((PEW_ROWS[1] - PEW_ROWS[0]) / PEW_PITCH)) + 1
+    last_row = {True: max(PEW_ROWS[0] + index * PEW_PITCH for index in range(row_count) if PEW_ROWS[0] + index * PEW_PITCH <= stairs_front - 1.0), False: PEW_ROWS[1]}
+    spans = []
+
+    for side_sign, (inner, outer) in itertools.product((-1, 1), PEW_BLOCKS):
+        low_x, high_x = sorted((side_sign * inner, side_sign * outer))
+        is_nave = inner < NAVE_HALF
+        spans.append((low_x, high_x, PEW_ROWS[0] - 0.55, gap_y - PEW_PITCH + 0.3))
+        spans.append((low_x, high_x, gap_y + PEW_PITCH - 0.55, last_row[is_nave] + 0.3))
+
+    return spans
+
+
+def build_side_altar(side_sign: int, figure: list, materials: dict) -> None:
+    """Altar at the end of an aisle: double step, table with three little arches, aedicule with a shell niche and a
+    statue in the round, candlesticks, a votive candle stand and a kneeler."""
+    tag = "L" if side_sign < 0 else "R"
+    altar_x = side_sign * (NAVE_HALF + WALL + HALF_WIDTH - WALL) / 2.0
+    wall_y = BODY_LENGTH - WALL
+    table_top = BASE + 0.3 + 1.0
+    niche_bottom = table_top + 0.5
+    niche_profile = round_arch_profile(1.4, 2.6 - 0.7)
+    candle_offsets = (-1.0, -0.75, 0.75, 1.0)
+    votive_x = altar_x - side_sign * 1.5
+    votive_y = wall_y - 3.2
+    votive_spots = list(itertools.product(range(6), range(2)))
+
+    for step_index in range(2):
+        inset = 0.3 * step_index
+        make_span(f"SideAltarStep{tag}{step_index}", (altar_x - 1.7 + inset, wall_y - 2.0 + inset, BASE), (altar_x + 1.7 - inset, wall_y, BASE + 0.15 * (step_index + 1)), materials["marble_white"])
+
+    make_span(f"SideAltarTable{tag}", (altar_x - 1.1, wall_y - 0.8, BASE + 0.3), (altar_x + 1.1, wall_y, table_top - 0.08), materials["marble_pink"])
+    make_span(f"SideAltarTop{tag}", (altar_x - 1.15, wall_y - 0.85, table_top - 0.08), (altar_x + 1.15, wall_y, table_top), materials["marble_white"])
+    make_span(f"SideAltarCloth{tag}", (altar_x - 1.2, wall_y - 0.87, table_top), (altar_x + 1.2, wall_y, table_top + 0.02), materials["linen"])
+
+    for arch_index in range(3):
+        make_profile_prism(f"SideAltarArch{tag}{arch_index}", round_arch_profile(0.55, 0.35), 0.04, Matrix.Translation((altar_x + 0.65 * (arch_index - 1), wall_y - 0.84, BASE + 0.45)), materials["marble_white"])
+
+    make_span(f"SideAltarAedicule{tag}", (altar_x - 1.3, wall_y - 0.5, table_top), (altar_x + 1.3, wall_y, table_top + 5.5), materials["marble_white"])
+    make_profile_prism(f"SideAltarNiche{tag}", niche_profile, 0.02, Matrix.Translation((altar_x, wall_y - 0.52, niche_bottom)), materials["gold"])
+    make_profile_prism(f"SideAltarPediment{tag}", [(-1.5, 0.0), (1.5, 0.0), (0.0, 0.9)], 0.6, Matrix.Translation((altar_x, wall_y - 0.6, table_top + 5.5)), materials["marble_white"])
+    make_cross(f"SideAltarCross{tag}", (altar_x, wall_y - 0.35, table_top + 6.4), 0.8, 0.08, materials["gold"])
+
+    for column_sign in (-1, 1):
+        make_fluted_shaft(f"SideAltarColumn{tag}{column_sign:+d}", (altar_x + column_sign * 1.05, wall_y - 0.65), table_top, 2.6, 0.12, 10, materials["marble_white"])
+        make_cone(f"SideAltarCapital{tag}{column_sign:+d}", (altar_x + column_sign * 1.05, wall_y - 0.65, table_top + 2.6), 0.12, 0.2, 10, materials["gold"], top_radius=0.2)
+
+    make_span(f"SideAltarConsole{tag}", (altar_x - 0.45, wall_y - 1.0, niche_bottom - 0.1), (altar_x + 0.45, wall_y - 0.5, niche_bottom), materials["gold"])
+    place_figure(figure, Matrix.Translation((altar_x, wall_y - 0.75, niche_bottom + 0.14)), f"SideAltar{tag}")
+
+    for candle_index, offset in enumerate(candle_offsets):
+        build_candlestick(f"SideAltarCandle{tag}{candle_index}", (altar_x + offset, wall_y - 0.3, table_top + 0.02), 0.35, materials)
+
+    make_span(f"VotiveStand{tag}", (votive_x - 0.5, votive_y - 0.2, BASE), (votive_x + 0.5, votive_y + 0.2, BASE + 0.9), materials["iron"])
+
+    for votive_index, (column, row) in enumerate(votive_spots):
+        votive_center = (votive_x - 0.4 + 0.16 * column, votive_y - 0.1 + 0.2 * row, BASE + 0.9)
+        make_cylinder(f"Votive{tag}{votive_index}", votive_center, 0.035, 0.06, 6, materials["paint_red"] if votive_index % 3 else materials["candle"])
+        make_cone(f"VotiveFlame{tag}{votive_index}", (votive_center[0], votive_center[1], BASE + 0.96), 0.015, 0.05, 5, materials["flame"])
+
+    make_span(f"Kneeler{tag}", (altar_x - 0.8, wall_y - 2.6, BASE), (altar_x + 0.8, wall_y - 2.3, BASE + 0.2), materials["pew_wood"])
+    make_span(f"KneelerRail{tag}", (altar_x - 0.8, wall_y - 2.35, BASE + 0.2), (altar_x + 0.8, wall_y - 2.25, BASE + 0.85), materials["pew_wood"])
 
 
 STATUE_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_male.gltf"  # CC0, montado por build_characters.py
@@ -1766,21 +1994,33 @@ def make_stair_ramp(name: str, width: float, first_step_front: float, step_count
 
 def build_colliders() -> None:
     """Simple boxes for the player and the navmesh; names ending in -colonly become static bodies in Godot."""
+    platform_front = BODY_LENGTH - 0.5 - ALTAR_PLATFORM[1] / 2.0
+
     make_stair_ramp("Stairs", 18.0, -STEP_COUNT * STEP_TREAD, STEP_COUNT, STEP_TREAD, STEP_RISE, 0.0)
-    make_stair_ramp("ChancelSteps", 7.2, CHANCEL_FRONT - 5 * 0.4, 5, 0.4, CHANCEL_HEIGHT / 5, BASE)
+    make_stair_ramp("ChancelSteps", 2.0 * CHANCEL_STAIR_HALF, CHANCEL_FRONT - CHANCEL_STEPS * CHANCEL_TREAD, CHANCEL_STEPS, CHANCEL_TREAD, CHANCEL_HEIGHT / CHANCEL_STEPS, BASE)
 
     make_span("Plinth-colonly", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), None)
     make_span("ApsePlinth-colonly", (-APSE_RADIUS - WALL, BODY_LENGTH, 0.0), (APSE_RADIUS + WALL, BODY_LENGTH + APSE_RADIUS + WALL, BASE), None)
     make_span("Chancel-colonly", (-NAVE_HALF, CHANCEL_FRONT, BASE), (NAVE_HALF, BODY_LENGTH + APSE_RADIUS, BASE + CHANCEL_HEIGHT), None)
-    make_span("Altar-colonly", (-1.3, BODY_LENGTH - 1.9, BASE + CHANCEL_HEIGHT), (1.3, BODY_LENGTH - 0.9, BASE + CHANCEL_HEIGHT + 1.0), None)
-    make_span("Reredos-colonly", (-2.2, BODY_LENGTH + APSE_RADIUS - 0.9, BASE + CHANCEL_HEIGHT), (2.2, BODY_LENGTH + APSE_RADIUS, BASE + 7.0), None)
+    make_span("AltarPlatform0-colonly", (-ALTAR_PLATFORM[0] / 2.0, platform_front, CHANCEL_FLOOR), (ALTAR_PLATFORM[0] / 2.0, platform_front + ALTAR_PLATFORM[1], CHANCEL_FLOOR + 0.15), None)
+    make_span("AltarPlatform1-colonly", (-ALTAR_PLATFORM[0] / 2.0 + 0.35, platform_front + 0.35, CHANCEL_FLOOR + 0.15), (ALTAR_PLATFORM[0] / 2.0 - 0.35, platform_front + ALTAR_PLATFORM[1] - 0.35, CHANCEL_FLOOR + 0.3), None)
+    make_span("Altar-colonly", (-1.65, BODY_LENGTH - 1.1, CHANCEL_FLOOR + 0.3), (1.65, BODY_LENGTH + 0.1, CHANCEL_FLOOR + 1.3), None)
+    make_span("Predella-colonly", (-3.0, RETABLE_Y - 1.1, CHANCEL_FLOOR), (3.0, RETABLE_Y + 0.6, CHANCEL_FLOOR + 1.6), None)
+    make_span("Retable-colonly", (-3.0, RETABLE_Y, CHANCEL_FLOOR + 1.6), (3.0, RETABLE_Y + 0.6, CHANCEL_FLOOR + 5.5), None)
     make_span("Lintel-colonly", (-PORTAL_WIDTH / 2.0, 0.0, BASE + PORTAL_SPRING), (PORTAL_WIDTH / 2.0, FACADE_DEPTH, BASE + NAVE_WALL_TOP), None)
     make_mirrored_span("Jamb-colonly", (PORTAL_WIDTH / 2.0, -0.3, BASE), (CENTER_HALF, FACADE_DEPTH, BASE + NAVE_WALL_TOP), None)
     make_mirrored_span("Tower-colonly", (CENTER_HALF, -0.3, 0.0), (TOWER_OUTER, NARTHEX_DEPTH, BASE + TOWER_BASE_TOP), None)
     make_mirrored_span("AisleFront-colonly", (TOWER_OUTER, 0.0, 0.0), (HALF_WIDTH, FACADE_DEPTH, BASE + AISLE_TOP), None)
     make_mirrored_span("SideWall-colonly", (HALF_WIDTH - WALL, 0.0, 0.0), (HALF_WIDTH + 0.3, BODY_LENGTH, BASE + AISLE_TOP), None)
     make_mirrored_span("BackWall-colonly", (NAVE_HALF, BODY_LENGTH - WALL, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE + AISLE_TOP), None)
-    make_mirrored_span("Pews-colonly", (1.0, PEW_ROWS[0] - 0.5, BASE), (3.6, PEW_ROWS[1] + 0.5, BASE + 1.0), None)
+    for span_index, (low_x, high_x, low_y, high_y) in enumerate(pew_block_spans()):
+        make_span(f"Pews{span_index}-colonly", (low_x, low_y, BASE), (high_x, high_y, BASE + 0.95), None)
+
+    for side_sign in (-1, 1):
+        altar_x = side_sign * (NAVE_HALF + HALF_WIDTH) / 2.0
+        make_span(f"SideAltar{side_sign:+d}-colonly", (altar_x - 1.3, BODY_LENGTH - WALL - 0.9, BASE), (altar_x + 1.3, BODY_LENGTH - WALL, BASE + 1.3), None)
+        make_span(f"Kneeler{side_sign:+d}-colonly", (altar_x - 0.8, BODY_LENGTH - WALL - 2.6, BASE), (altar_x + 0.8, BODY_LENGTH - WALL - 2.25, BASE + 0.85), None)
+        make_span(f"VotiveStand{side_sign:+d}-colonly", (altar_x - side_sign * 1.5 - 0.5, BODY_LENGTH - WALL - 3.4, BASE), (altar_x - side_sign * 1.5 + 0.5, BODY_LENGTH - WALL - 3.0, BASE + 0.95), None)
     make_mirrored_span("DoorLeaf-colonly", (PORTAL_WIDTH / 2.0 - 0.15, FACADE_DEPTH, BASE), (PORTAL_WIDTH / 2.0, FACADE_DEPTH + PORTAL_WIDTH / 2.0, BASE + PORTAL_SPRING), None)
 
     make_mirrored_span("ArcadeEndFront-colonly", (NAVE_HALF, NARTHEX_DEPTH, BASE), (NAVE_HALF + WALL, BAY_CENTERS[0] - ARCH_WIDTH / 2.0, BASE + ARCH_SPRING), None)
@@ -1795,8 +2035,8 @@ def build_colliders() -> None:
         segment = make_box(f"ApseWall{segment_index}-colonly", (0, 0, 0), (2.0 * radius * math.sin(math.pi / 16.0) + 0.2, WALL, NAVE_CEILING), None)
         segment.matrix_world = Matrix.Translation((radius * math.cos(angle), BODY_LENGTH + radius * math.sin(angle), BASE + NAVE_CEILING / 2.0)) @ Matrix.Rotation(angle - math.pi / 2.0, 4, "Z")
 
-    for side_sign in (-1, 1):
-        make_box(f"Statue{side_sign:+d}-colonly", (side_sign * 9.6, -2.0, 2.4), (1.6, 1.6, 4.8), None)
+    for spot_index, (statue_x, statue_y) in enumerate(STATUE_SPOTS):
+        make_box(f"Statue{spot_index}-colonly", (statue_x, statue_y, (PEDESTAL_HEIGHT + 2.6) / 2.0), (1.9, 1.9, PEDESTAL_HEIGHT + 2.6), None)
 
 
 # ---------- export ----------
@@ -1818,7 +2058,7 @@ def merge_meshes_by_material(name_prefix: str) -> None:
 
 def finalize_objects(materials: dict) -> None:
     """World-space UVs per material, then merge per material."""
-    tile_sizes = {"stone": 4.5, "wall": 4.0, "trim": 2.5, "roof": 3.0, "floor": 2.4, "glass": 3.0, "wood": 2.0}
+    tile_sizes = {"stone": 4.5, "wall": 4.0, "trim": 2.5, "roof": 3.0, "floor": 2.4, "glass": 3.0, "wood": 2.0, "ochre_band": 0.8}
     meters_per_tile = {materials[key].name: size for key, size in tile_sizes.items()}
     visible_meshes = [scene_object for scene_object in bpy.data.objects if scene_object.type == "MESH" and not scene_object.name.endswith("-colonly")]
 
@@ -1847,10 +2087,24 @@ def build_cathedral() -> Path:
     build_side_wall(1, materials)
     build_nave(materials)
     build_apse(materials)
-    build_chancel(materials)
+    build_chancel_floor(materials)
+    build_high_altar(materials)
     build_pews(materials)
     build_chandeliers(materials)
-    build_statues(materials)
+
+    saint = build_saint_figure(materials)
+    joseph = build_saint_figure(materials, robe_key="brown_robe")
+    john = build_saint_figure(materials, staff=False)
+    mary = build_mary_figure(materials)
+    christ = build_christ_figure(materials)
+    build_statues(materials, saint)
+    build_side_altar(-1, mary, materials)
+    build_side_altar(1, joseph, materials)
+    build_retable(materials, christ, {"Mary": mary, "John": john})
+
+    for template in (saint, joseph, john, mary, christ[0]):
+        discard_figure(template)
+
     build_colliders()
     finalize_objects(materials)
 

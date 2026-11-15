@@ -17,9 +17,9 @@ const LAWN_POINT: Vector2 = Vector2(-20, -30)
 const STREET_START: Vector3 = Vector3(-68, 0, 9)
 const CURB_DISTANCE: float = 4.0
 ## Na frente da escadaria da catedral, de frente para a porta (+X).
-const CATHEDRAL_STAIRS_START: Vector3 = Vector3(11, 0.1, -1.5)
+const CATHEDRAL_STAIRS_START: Vector3 = Vector3(6, 0.1, -1.5)
 const NAVE_FLOOR_HEIGHT: float = 1.05
-const NAVE_ENTRANCE_X: float = 21.0
+const NAVE_ENTRANCE_X: float = 16.0
 ## Pé da escada do coreto; a escada sobe para -X.
 const CORETO_STAIRS_START: Vector3 = Vector3(-37.5, 0.1, -13.0)
 const CORETO_FLOOR_HEIGHT: float = 1.2
