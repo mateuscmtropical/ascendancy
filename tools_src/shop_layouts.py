@@ -5,7 +5,9 @@ along), f.wall(side, [props]), f.grid(prop, u range, d range, columns, rows). Co
 facade (0 = middle of the lot, the hall goes from f.left to f.right), d into the lot (f.front at the door wall,
 f.back at the far wall). Props turn their front to the street at 0 degrees; the wall helpers turn their backs to
 the wall. PLANS also says where the shopkeeper stands and, when the default grid does not fit, the posts and the
-inner walls ("u" | "d", fixed coordinate, from, to).
+inner walls ("u" | "d", fixed coordinate, from, to). The back wall and the sides facing a street have windows
+(f.windows, f.piers(side)): tall furniture goes on the piers between them (window_wall), the report flags any
+prop that covers one.
 """
 
 
@@ -75,7 +77,7 @@ def furnish_smith(f) -> None:
     f.put("counter_till", -5.0, 14.0)
     f.put("rug", -5.0, 11.4, variant="gold")
     f.wall("back", ["shield_wall", "axe_mace_rack", ("sword_wall", {"seed": 2}), "spear_rack", "helmet_shelf", "giant_sword"], start=-11.3, gap=0.4)
-    f.wall("left", [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "mail"}), ("wall_shelf", {"variant": "helmets"}), "sword_wall", "boots_rack", "crate_stack"], start=3.6, gap=0.6)
+    window_wall(f, "left", [[], [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "mail"})], [("wall_shelf", {"variant": "helmets"})], ["spear_rack", ("armor_stand", {"variant": "leather"})]], ["boots_rack", "crate_stack", "gauntlet_basket", None], gap=0.5)
     f.put("floor_shelf", -8.4, 9.6, 90.0, variant="tools")
     f.put("floor_shelf", -1.6, 9.6, 90.0, variant="helmets")
     f.put("ingot_crates", 0.8, 4.2)
@@ -91,7 +93,7 @@ def furnish_smith(f) -> None:
     f.put("quench_barrel", 9.4, 13.4)
     f.put("grindstone", 5.2, 10.8, 90.0)
     f.on_wall("right", "coal_pile", 16.8)
-    f.on_wall("right", "tool_wall_rack", 12.6)
+    f.on_wall("right", "tool_wall_rack", 13.9)
     f.on_wall("right", "ingot_crates", 8.4)
     f.put("plans_table", 3.9, 15.6, 90.0)
     f.put("blade_shelf", 3.6, 12.2, 90.0)
@@ -113,7 +115,7 @@ def furnish_armor(f) -> None:
     f.on_wall("back", "helmet_shelf", -3.6)
     f.on_wall("back", "helmet_shelf", 3.6)
     f.on_wall("back", "guild_banner", 6.6, tint="7A2F3A")
-    f.wall("left", [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "knight_gold"}), ("armor_stand", {"variant": "mail"}), ("armor_stand", {"variant": "leather"}), "boots_rack", "chainmail_stand"], start=3.4, gap=0.9)
+    window_wall(f, "left", [[], [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "knight_gold"})], [("armor_stand", {"variant": "mail"}), ("armor_stand", {"variant": "leather"})], ["chainmail_stand", ("armor_stand", {"variant": "plate"})]], ["boots_rack", "gauntlet_basket", "boots_rack", None], gap=0.5)
     f.wall("right", [("wall_shelf", {"variant": "helmets"}), ("armor_stand", {"variant": "leather"}), "shield_wall", "gauntlet_basket", ("armor_stand", {"variant": "plate"}), "plate_pile", "crate_stack"], start=3.4, gap=0.6)
     f.grid("armor_stand", (-5.6, 5.6), (5.6, 11.6), 2, 2, variant="knight_gold")
     f.put("floor_shelf", -5.6, 8.6, 90.0, variant="helmets")
@@ -126,8 +128,8 @@ def furnish_armor(f) -> None:
 
 def furnish_tavern(f) -> None:
     """Tavern and inn (18 m): inn reception by the door on the left and the stairs to the rooms at the back, big
-    fireplace on the left wall, L bar with kegs and bottles in the back right, a small stage on the right wall,
-    long tables down the middle."""
+    fireplace with a mounted head over the mantel on the left wall, L bar with kegs and bottles in the back right,
+    a small stage on the right wall, long tables down the middle."""
     f.put("bar_counter_l", 4.6, 15.9)
     f.on_wall("back", "bottle_shelf", 5.4)
     f.on_wall("back", "keg_rack", 1.6)
@@ -137,14 +139,14 @@ def furnish_tavern(f) -> None:
     f.put("hanging_pots", -2.0, 18.0)
     f.put("garlic_strings", 0.2, 18.2)
 
-    f.on_wall("left", "reception_desk", 4.4)
-    f.put("luggage_pile", -7.6, 6.6)
+    f.on_wall("left", "reception_desk", 5.5)
+    f.on_wall("left", "luggage_pile", 7.6)
     f.on_wall("left", "fireplace", 9.7)
+    f.on_wall("left", "mounted_head", 9.7, z=0.7)
     f.put("spit_roast", -6.6, 9.7, 90.0)
     f.put("armchair", -5.6, 8.0, -50.0)
     f.put("armchair", -5.6, 11.4, -130.0)
     f.put("stairs_straight", -7.75, 15.6)
-    f.on_wall("left", "mounted_head", 12.2)
 
     f.put("stage", 6.9, 9.7, -90.0)
     f.on_wall("right", "dart_board", 4.6)
@@ -165,8 +167,8 @@ def furnish_school(f) -> None:
     f.put("lectern", 0.0, 15.2)
     f.on_wall("back", "world_map_wall", 0.0)
     f.wall("back", ["recipe_board", "recipe_board", 4.4, "recipe_board", "recipe_board"], start=-4.6, gap=0.5)
-    f.on_wall("back", "tall_bookcase", -9.6)
-    f.on_wall("back", "tall_bookcase", 9.6)
+    f.on_wall("back", "tall_bookcase", -9.7)
+    f.on_wall("back", "tall_bookcase", 9.7)
     f.on_wall("back", "scroll_rack", -12.6)
     f.on_wall("back", "scroll_rack", 12.6)
     f.put("globe_stand", -3.2, 15.6)
@@ -183,8 +185,8 @@ def furnish_seminary(f) -> None:
     dormitory on the right, books and candles along the walls."""
     f.put("lectern", 0.0, 15.4)
     f.on_wall("back", "star_tapestry", 0.0)
-    f.on_wall("back", "tall_bookcase", -3.4)
-    f.on_wall("back", "tall_bookcase", 3.4)
+    f.on_wall("back", "tall_bookcase", -1.95)
+    f.on_wall("back", "tall_bookcase", 1.95)
     f.grid("bench_long", (-1.2, 1.2), (5.0, 12.2), 2, 5)
     f.put("rug", 0.0, 13.8, variant="red")
 
@@ -212,6 +214,20 @@ def side_wall(f, side: str, tall: list, low: list, start: float = None, gap: flo
     items = low if side in f.room.exposed else tall
 
     f.wall(side, items, start=start, gap=gap)
+
+
+def window_wall(f, side: str, pier_rows: list, sill_items: list, gap: float = 0.3) -> None:
+    """A wall with windows: each row of tall props centred on the next pier between windows (an empty row skips
+    that pier), each low prop centred under the next window (None skips that window)."""
+    for (pier_from, pier_to), row in zip(f.piers(side), pier_rows):
+        f.wall(side, row, start=(pier_from + pier_to - f.row_length(row, gap)) / 2.0, gap=gap)
+
+    for (window_from, window_to, _), item in zip(f.windows[side], sill_items):
+        if item is None:
+            continue
+
+        name, options = (item, {}) if isinstance(item, str) else item
+        f.on_wall(side, name, (window_from + window_to) / 2.0, **options)
 
 
 def shelf_island(f, u: float, d: float, variants: tuple) -> None:
@@ -279,7 +295,7 @@ def furnish_alchemy(f) -> None:
     f.put("stool_round", 0.9, 16.0)
 
     f.on_wall("back", "seed_drawers", -7.3)
-    f.on_wall("back", "potion_wall", -4.0)
+    f.on_wall("back", "potion_wall", -2.85)
     f.on_wall("back", "potion_wall", 0.0)
     f.on_wall("back", "alembic_table", 3.4)
     f.on_wall("back", "potion_wall", 6.8)
@@ -318,11 +334,9 @@ def furnish_tailor(f) -> None:
     f.put("counter_straight", 0.0, 14.2)
     f.put("stool_round", 0.9, 16.0)
     f.put("fitting_platform", 5.6, 14.6)
-    f.put("standing_mirror", 7.6, 15.9, -60.0)
+    f.put("standing_mirror", 7.5, 14.6, -90.0)
 
-    f.wall("back", ["fabric_shelf", "hat_shelf", "fabric_shelf"], start=f.left + 0.4)
-    f.on_wall("back", "wall_banner", 0.0)
-    f.wall("back", ["fabric_shelf", "fitting_booth"], start=2.2, gap=0.4)
+    window_wall(f, "back", [["fabric_shelf"], ["fabric_shelf", 1.0, "wall_banner", 1.0, "fabric_shelf"], ["fitting_booth"]], ["hat_shelf", "hat_shelf"])
     f.put("cutting_table", -4.8, 16.4)
     f.put("chair", -4.8, 17.4)
     f.on_wall("left", "spinning_wheel", 17.6)
@@ -334,7 +348,7 @@ def furnish_tailor(f) -> None:
     f.put("rug", -6.6, 3.8, 90.0, variant="gold")
     side_wall(f, "left", ["fabric_shelf", "clothes_rail", ("wall_shelf", {"variant": "shoes"}), "clothes_rail", "hat_shelf"], ["yarn_basket", ("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "gown"}), "yarn_basket", ("crate_open", {"variant": "cloth"})], start=6.6)
 
-    side_wall(f, "right", ["clothes_rail", "fabric_shelf", "standing_mirror", ("wall_shelf", {"variant": "shoes"}), "clothes_rail", "hat_shelf", "loom"], [("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "dress"}), "yarn_basket", ("dress_form", {"variant": "cloak"}), ("plant_pot", {"variant": "flower"}), "spinning_wheel"], start=0.8, gap=0.45)
+    window_wall(f, "right", [[("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "dress"})], [("dress_form", {"variant": "cloak"}), ("plant_pot", {"variant": "flower"})], ["clothes_rail"]], ["yarn_basket", "spinning_wheel", ("crate_open", {"variant": "cloth"}), None])
 
     f.wall("front", ["necklace_busts", ("plant_pot", {"variant": "flower"}), "necklace_busts"], start=f.left + 1.2)
     f.wall("front", [("dress_form", {"variant": "gown"}), ("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "dress"}), "yarn_basket"], start=f.door_u + 2.0, gap=0.5)
@@ -362,8 +376,8 @@ def furnish_general(f) -> None:
     f.put("stool_round", -0.2, 16.0)
     f.put("ceiling_beam_hooks", -1.0, 15.6, variant="sausages")
 
-    f.wall("back", [("wall_shelf", {"variant": "jars"}), ("wall_shelf", {"variant": "bottles"}), ("wall_shelf", {"variant": "boxes"})], start=f.left + 0.4, gap=0.3)
-    f.on_wall("back", "bread_rack", 2.4)
+    window_wall(f, "back", [[("wall_shelf", {"variant": "jars"})], [("wall_shelf", {"variant": "bottles"}), ("wall_shelf", {"variant": "boxes"})]], [("crate_open", {"variant": "apples"})])
+    f.on_wall("back", "bread_rack", 3.3)
     f.on_wall("back", "stone_oven", 5.6)
     f.put("dough_table", 5.4, 16.2)
     f.put("chest_gold", -5.6, 16.8)

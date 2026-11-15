@@ -41,6 +41,13 @@ LIGHT_ROWS = (0.28, 0.72)  # frações da profundidade
 AWNING_REACH = 1.7
 AWNING_STRIPE = 0.5
 SIDE_WINDOW_PITCH = 4.0
+SIDE_WINDOW_SILL = 1.2
+TALL_HALL = 6.0  # salões a partir desta altura de forro levam as janelas laterais no alto (clerestório)
+HIGH_SIDE_WINDOW_DROP = 3.6  # peitoril dessas janelas altas: forro menos isto
+BACK_WINDOW_PITCH = 4.0
+BACK_AXIS_PIER = 1.8  # meia largura da parede cega no eixo do fundo (mapa, tapeçaria, estandarte atrás do balcão)
+CHIMNEY_CLEARANCE = 1.0  # janela do fundo não abre a menos disto do eixo de uma chaminé encostada nele
+WALL_PROP_REACH = 0.8  # móvel a menos disto de uma parede conta como encostado nela (checagem das janelas)
 COLLIDER_MAX_HEIGHT = 2.4
 PLINTH_HEIGHT = 0.5
 FLOOR_TOP = 0.05  # acima do calçamento da quadra, para o piso do salão não brigar com ele
@@ -211,8 +218,47 @@ def front_openings(room: Room) -> list:
     return [door] + open_bays + vitrines
 
 
-def side_windows(room: Room, length: float, sill: float, height: float) -> list:
+def side_windows(room: Room, length: float) -> list:
+    """Windows of an exposed side wall; halls taller than TALL_HALL get them high, over the wall furniture."""
+    is_tall = room.ceiling >= TALL_HALL
+    sill = room.ceiling - HIGH_SIDE_WINDOW_DROP if is_tall else SIDE_WINDOW_SILL
+    height = min(2.2, room.ceiling - 1.8)
+
     return [Opening(u, 1.5, sill, height, "segment", kind="vitrine") for u, _ in evenly(1.0, length - 1.0, SIDE_WINDOW_PITCH)]
+
+
+def back_windows(room: Room) -> list:
+    """High windows of the back wall in pairs around the axis (the wall behind the counter stays blind for the
+    centrepiece), none in front of a chimney stack set against that wall. Wall-local u = half - facade u."""
+    high_sill = room.ceiling - 1.9
+    chimney = room.spec.get("chimney")
+    chimney_us = [chimney["u"]] if chimney and chimney["d"] > room.depth - 2.0 else []
+    offsets = [offset for offset, _ in evenly(BACK_AXIS_PIER, room.half - 1.0, BACK_WINDOW_PITCH)]
+    facade_us = sorted([-offset for offset in offsets] + offsets)
+    clear_us = [u for u in facade_us if all(abs(u - chimney_u) > 0.8 + CHIMNEY_CLEARANCE for chimney_u in chimney_us)]
+
+    return [Opening(room.half - u, 1.6, high_sill, 1.4, "segment", kind="vitrine") for u in clear_us]
+
+
+def wall_windows(room: Room) -> dict:
+    """Openings of the back wall and of the sides that face a street, in wall-local coords (shell and furniture
+    check read the same list)."""
+    side_length = room.depth - 2.0 * WALL
+    side = side_windows(room, side_length)
+
+    return {"back": back_windows(room), "left": side if "left" in room.exposed else [], "right": side if "right" in room.exposed else []}
+
+
+def window_spans(room: Room) -> dict:
+    """The same windows in hall coords: side -> [(from, to, sill)] along the wall (u on the back, d on the sides),
+    sorted from the start of the wall (left corner on the back, the facade on the sides)."""
+    to_hall = {
+        "back": lambda opening: (room.half - opening.u - opening.width / 2.0, room.half - opening.u + opening.width / 2.0),
+        "right": lambda opening: (WALL + opening.u - opening.width / 2.0, WALL + opening.u + opening.width / 2.0),
+        "left": lambda opening: (room.depth - WALL - opening.u - opening.width / 2.0, room.depth - WALL - opening.u + opening.width / 2.0),
+    }
+
+    return {side: sorted((*to_hall[side](opening), opening.bottom) for opening in openings) for side, openings in wall_windows(room).items()}
 
 
 def flat_window(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
@@ -256,13 +302,7 @@ def build_walls(b: Builder, room: Room) -> list:
         "left": Matrix.Translation((-room.half, room.depth - WALL, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z"),
     }
     front = front_openings(room)
-    high_sill = room.ceiling - 1.9
-    openings = {
-        "front": front,
-        "back": [Opening(u, 1.6, high_sill, 1.4, "segment", kind="vitrine") for u, _ in evenly(1.0, 2.0 * room.half - 1.0, 5.0)],
-        "left": side_windows(room, side_length, 1.2, min(2.2, room.ceiling - 1.8)) if "left" in room.exposed else [],
-        "right": side_windows(room, side_length, 1.2, min(2.2, room.ceiling - 1.8)) if "right" in room.exposed else [],
-    }
+    openings = {"front": front, **wall_windows(room)}
     lengths = {"front": 2.0 * room.half, "back": 2.0 * room.half, "left": side_length, "right": side_length}
 
     for side, frame in frames.items():
@@ -415,6 +455,9 @@ class Furnisher:
         self.placed = 0
         self.missing = set()
         self.lights = []
+        self.windows = window_spans(room)
+        self.window_list = [(side, window) for side, windows in self.windows.items() for window in windows]
+        self.window_blockers = []
         self.footprints = [("porta", (door_u - door_width / 2.0 - 0.2, door_u + door_width / 2.0 + 0.2, room.front, room.front + DOOR_CLEARANCE)), ("lojista", (self.keeper[0] - 0.35, self.keeper[0] + 0.35, self.keeper[1] - 0.35, self.keeper[1] + 0.35))]
         self.footprints += [("pilar", (u - POST / 2.0, u + POST / 2.0, d - POST / 2.0, d + POST / 2.0)) for u, d in room.posts]
         self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in (partition_box(room, partition) for partition in room.partitions)]
@@ -436,6 +479,9 @@ class Furnisher:
 
         entry["build"](self.b, frame, **options)
         self.placed += 1
+
+        if not entry.get("hang") and not entry.get("beside_window"):
+            self.note_window_blocker(name, (u - half_u, u + half_u, d - half_d, d + half_d), height_origin + height)
 
         if entry.get("solid"):
             self.b.collider((-width / 2.0, -depth / 2.0, 0.0), (width / 2.0, depth / 2.0, min(height, COLLIDER_MAX_HEIGHT)), frame)
@@ -469,6 +515,31 @@ class Furnisher:
 
         self.put(name, *spots[side], turns[side], z, **options)
 
+    def note_window_blocker(self, name: str, box: tuple, top: float) -> None:
+        """Remember a prop that stands against a wall in front of one of its windows, above the sill."""
+        u_from, u_to, d_from, d_to = box
+        against = {"back": d_to > self.back - WALL_PROP_REACH, "left": u_from < self.left + WALL_PROP_REACH, "right": u_to > self.right - WALL_PROP_REACH}
+        along = {"back": (u_from, u_to), "left": (d_from, d_to), "right": (d_from, d_to)}
+        covered = [(side, window) for side, window in self.window_list if against[side] and along[side][0] < window[1] - 0.05 and window[0] + 0.05 < along[side][1] and top > window[2] + 0.05]
+
+        self.window_blockers += [(name, side, round(window[0], 1), round(window[1], 1)) for side, window in covered]
+
+    def piers(self, side: str) -> list:
+        """Stretches of solid wall between the windows of a side, (from, to) along it, from the start of the wall."""
+        wall_start, wall_end = (self.left, self.right) if side == "back" else (self.front, self.back)
+        window_edges = [(window_from, window_to) for window_from, window_to, _ in self.windows[side]]
+        pier_from = [wall_start] + [window_to for _, window_to in window_edges]
+        pier_to = [window_from for window_from, _ in window_edges] + [wall_end]
+
+        return list(zip(pier_from, pier_to))
+
+    def row_length(self, items: list, gap: float) -> float:
+        """Length along a wall of a row of props as wall() would place it."""
+        names = [item if isinstance(item, str) else item[0] for item in items if not isinstance(item, (int, float))]
+        skips = [item for item in items if isinstance(item, (int, float))]
+
+        return sum(PROPS.get(name, {"size": (1.0, 0.5, 1.0)})["size"][0] for name in names) + gap * max(0, len(names) - 1) + sum(skips)
+
     def is_free(self, name: str, u: float, d: float, degrees: float, aisle: float) -> bool:
         """True when the prop would stand inside the hall with an aisle to everything already placed."""
         width, depth, _ = PROPS.get(name, {"size": (1.0, 1.0, 1.0)})["size"]
@@ -500,7 +571,8 @@ class Furnisher:
             self.put(name, u, d, degrees, **options)
 
     def report(self) -> None:
-        """Print solid props that overlap each other, a post, a partition, the door lane, or leave the room."""
+        """Print solid props that overlap each other, a post, a partition, the door lane, leave the room, or stand
+        against a wall in front of one of its windows."""
         pairs = itertools.combinations(self.footprints, 2)
         overlapping = [(first[0], second[0], tuple(round(value, 1) for value in second[1])) for first, second in pairs if first[1][0] < second[1][1] - 0.02 and second[1][0] < first[1][1] - 0.02 and first[1][2] < second[1][3] - 0.02 and second[1][2] < first[1][3] - 0.02]
         outside = [name for name, (u_from, u_to, d_from, d_to) in self.footprints if u_from < self.left - 0.02 or u_to > self.right + 0.02 or d_from < self.front - 0.02 or d_to > self.back + 0.02]
@@ -510,6 +582,9 @@ class Furnisher:
 
         for name in outside:
             print(f"AVISO {self.room.shop_type}: {name} fora do salão")
+
+        for name, side, window_from, window_to in self.window_blockers:
+            print(f"AVISO {self.room.shop_type}: {name} tapa a janela {side} em {window_from}..{window_to}")
 
         if self.missing:
             print(f"AVISO {self.room.shop_type}: props ainda não modelados: {sorted(self.missing)}")

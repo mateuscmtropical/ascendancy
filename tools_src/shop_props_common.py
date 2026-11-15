@@ -5,7 +5,8 @@ Runs inside Blender, imported by build_market_shops.py and build_prop_sheet.py.
 Prop contract (every shop_props_<group>.py follows it):
   def name(b: Builder, frame: Matrix, **options) -> None   # Builder primitives only, always frame=frame
   PROPS = {"name": {"build": name, "size": (x, y, z), "solid": bool, "light": optional ((x, y, z), "HEX", energy, range),
-                    "variants": optional [str, ...] (only for the prop sheet)}}
+                    "variants": optional [str, ...] (only for the prop sheet),
+                    "beside_window": optional True (may stand by a window, like a stair climbing past it)}}
 Local axes: X width centred on 0; Y depth centred on 0, the customer side faces -Y, the back at
 Y = +size[1] / 2 (wall props touch the wall there); Z up from the floor at 0. Wall props are built at
 their mounting height. options: variant (str), tint (hex), seed (int, random.Random(seed) for fill).
@@ -875,7 +876,7 @@ PROPS.update(
         "chair": {"build": chair, "size": (0.42, 0.42, 0.9), "solid": True, "clearance": 0.4},
         "wall_banner": {"build": wall_banner, "size": (0.72, 0.065, 2.6), "solid": False},
         "ceiling_beam_hooks": {"build": ceiling_beam_hooks, "size": (2.0, 0.3, 1.1), "solid": False, "hang": True, "variants": list(HOOK_GOODS)},
-        "stairs_straight": {"build": stairs_straight, "size": (1.4, 4.8, 4.2), "solid": True, "clearance": 0.8},
+        "stairs_straight": {"build": stairs_straight, "size": (1.4, 4.8, 4.2), "solid": True, "clearance": 0.8, "beside_window": True},
         "railing": {"build": railing, "size": (2.0, 0.1, 1.0), "solid": True},
     }
 )
