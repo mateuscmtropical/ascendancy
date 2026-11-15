@@ -58,14 +58,14 @@ void vertex() {
 	stream_seed = floor(UV.x * 0.5);
 	stream_around = UV.x - stream_seed * 2.0;
 
-	float pulse = sin(UV.y * stream_length_meters * 9.0 - TIME * wobble_speed + stream_seed * 2.3);
+	float pulse = sin(UV.y * stream_length_meters * 9.0 + TIME * wobble_speed + stream_seed * 2.3);
 
 	VERTEX += NORMAL * pulse * wobble_amount * smoothstep(0.0, 0.25, UV.y);
 }
 
 void fragment() {
 	float length_meters = UV.y * stream_length_meters;
-	vec2 streak_point = vec2(stream_around * streaks_around, length_meters * streak_stretch - TIME * scroll_speed + stream_seed * 13.7);
+	vec2 streak_point = vec2(stream_around * streaks_around, length_meters * streak_stretch + TIME * scroll_speed + stream_seed * 13.7);
 	float streaks = layered_streaks(streak_point, streaks_around);
 	float facing = abs(dot(normalize(NORMAL), normalize(VIEW)));
 	float fresnel = pow(1.0 - facing, fresnel_power);
