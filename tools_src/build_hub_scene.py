@@ -71,7 +71,7 @@ MEDIAN_HALF_WIDTH = (MEDIAN_Z[1] - MEDIAN_Z[0]) / 2.0
 MEDIAN_BEDS = [((CITY_MIN[0] + 4.0, MEDIAN_Z[0] + 0.7), (-MEDIAN_NOSE_X - 1.0, MEDIAN_Z[1] - 2.3)), ((MEDIAN_NOSE_X + 1.0, MEDIAN_Z[0] + 0.7), (CITY_MAX[0] - 4.0, MEDIAN_Z[1] - 2.3))]
 LAWN_RECTS = {  # canteiros = retângulo menos os caminhos de SQUARE_PATHS
     "WestSquare": ((WEST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (WEST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
-    "SaoJose": ((EAST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (EAST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
+    "EastSquare": ((EAST_SQUARE[0] - SQUARE_HALF[0] + PATH_WIDTH, -SQUARE_HALF[1] + PATH_WIDTH), (EAST_SQUARE[0] + SQUARE_HALF[0] - PATH_WIDTH, SQUARE_HALF[1] - PATH_WIDTH)),
 }
 
 
@@ -1186,7 +1186,7 @@ def old_tree_spots() -> list:
     west_square = [spot for spot in mirrored_in_z(OLD_TREES_WEST_SQUARE) if can_plant(spot, "tree_old")]
     grove = [spot for spot in mirrored_in_z(GROVE_FORCED) if can_plant(spot, "tree_old")]
     generator = random.Random(GROVE_SEED)
-    minimum, maximum = LAWN_RECTS["SaoJose"]
+    minimum, maximum = LAWN_RECTS["EastSquare"]
 
     for _ in range(GROVE_ATTEMPTS):
         spot = (generator.uniform(minimum[0], maximum[0]), generator.uniform(minimum[1], maximum[1]))

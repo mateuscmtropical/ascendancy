@@ -43,6 +43,12 @@ AWNING_STRIPE = 0.5
 SIDE_WINDOW_PITCH = 4.0
 COLLIDER_MAX_HEIGHT = 2.4
 PLINTH_HEIGHT = 0.5
+FLOOR_TOP = 0.05  # acima do calçamento da quadra, para o piso do salão não brigar com ele
+FILL_PITCH = 2.5  # passo da grade de ilhas com que fill_floor enche o chão livre
+FILL_AISLE = 0.55
+FILL_LANE = 1.9  # meia largura do corredor que fica livre da porta ao balcão
+FILL_BACK = 6.0  # fundo do salão que fica para o balcão e o lojista
+ISLAND_AISLE = 0.9  # folga em volta de cada ilha que scatter() põe no meio do salão
 
 SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como ARCHETYPE_SPECS; awning = (cor, cor)
     "smith": dict(archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(5.2,), roof_shape=("gable_parallel", dict(pitch=30.0, eave_front=0.5, eave_back=0.4)), features=("dormers",), floor="stone", awning=("B5533F", "F2E6CF"), door=(-5.0, 2.6, 3.2, "segment"), open_bays=((7.4, 7.2),), chimney=dict(u=8.2, d=18.3, extra=1.5, pots=0, material="stone"), light="FFC890"),
@@ -125,7 +131,7 @@ def dress_door(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
     leaf_height = opening.spring - 0.05
     swing = math.radians(100.0)
 
-    b.box((opening.u - half, -0.3, 0.0), (opening.u + half, WALL, 0.025), "trim", house.trim_tint, frame=frame)
+    b.box((opening.u - half, -0.3, 0.0), (opening.u + half, WALL, FLOOR_TOP + 0.005), "trim", house.trim_tint, frame=frame)
     town.open_frame(b, opening, 0.18, -0.06, 0.0, house.trim_tint, town.TRIM_BLOCK_BAND, frame)
 
     for side_sign in (-1, 1):
@@ -279,7 +285,7 @@ def build_walls(b: Builder, room: Room) -> list:
 def build_floor(b: Builder, room: Room) -> None:
     """Planked or flagged floor flush with the pavement."""
     if room.spec["floor"] == "stone":
-        b.box((room.left, room.front, 0.0), (room.right, room.back, 0.02), "stone", srgb(STONE["dourada"]), uv=("world", 1.2))
+        b.box((room.left, room.front, 0.0), (room.right, room.back, FLOOR_TOP), "stone", srgb(STONE["dourada"]), uv=("world", 1.2))
         return
 
     board_count = round((room.right - room.left) / BOARD_WIDTH)
@@ -287,8 +293,10 @@ def build_floor(b: Builder, room: Room) -> None:
 
     for board_index in range(board_count):
         board_left = room.left + board_index * board_width
-        shade = WOOD["media"] if board_index % 3 else WOOD["mel"]
-        b.box((board_left, room.front, 0.0), (board_left + board_width, room.back, 0.02), "wood", srgb(shade), uv=("band", *WOOD_LIGHT_BAND, 2.0))
+        shade = 1.0 if board_index % 3 else 0.9
+        b.box((board_left, room.front, 0.0), (board_left + board_width, room.back, FLOOR_TOP), "wood", tuple(shade * channel for channel in srgb(WOOD["mel"])), uv=("band", *WOOD_LIGHT_BAND, 2.0))
+
+    b.collider((room.left, room.front, 0.0), (room.right, room.back, FLOOR_TOP), name="WoodFloor")  # passos com som de madeira
 
 
 def build_ceiling(b: Builder, room: Room) -> None:
@@ -421,7 +429,7 @@ class Furnisher:
             return
 
         width, depth, height = entry["size"]
-        height_origin = (self.ceiling if entry.get("hang") else 0.0) if z is None else z
+        height_origin = (self.ceiling if entry.get("hang") else FLOOR_TOP) if z is None else z
         frame = Matrix.Translation((u, d, height_origin)) @ Matrix.Rotation(math.radians(degrees), 4, "Z")
         cos_turn, sin_turn = abs(math.cos(math.radians(degrees))), abs(math.sin(math.radians(degrees)))
         half_u, half_d = (width * cos_turn + depth * sin_turn) / 2.0, (width * sin_turn + depth * cos_turn) / 2.0
@@ -461,6 +469,29 @@ class Furnisher:
 
         self.put(name, *spots[side], turns[side], z, **options)
 
+    def is_free(self, name: str, u: float, d: float, degrees: float, aisle: float) -> bool:
+        """True when the prop would stand inside the hall with an aisle to everything already placed."""
+        width, depth, _ = PROPS.get(name, {"size": (1.0, 1.0, 1.0)})["size"]
+        cos_turn, sin_turn = abs(math.cos(math.radians(degrees))), abs(math.sin(math.radians(degrees)))
+        half_u, half_d = (width * cos_turn + depth * sin_turn) / 2.0 + aisle, (width * sin_turn + depth * cos_turn) / 2.0 + aisle
+        inside = self.left < u - half_u and u + half_u < self.right and self.front < d - half_d and d + half_d < self.back
+
+        return inside and not any(u - half_u < taken[1] and taken[0] < u + half_u and d - half_d < taken[3] and taken[2] < d + half_d for _, taken in self.footprints)
+
+    def scatter(self, items: list, u_range: tuple, d_range: tuple, columns: int, rows: int, aisle: float = ISLAND_AISLE) -> None:
+        """Islands for the open floor: walks a columns x rows grid and stands the next item of the cycle on every
+        cell that is still free (aisle kept to walls, posts, the door lane and earlier props).
+        items: prop name or (name, degrees, options)."""
+        cycle = itertools.cycle(items)
+
+        for row, column in itertools.product(range(rows), range(columns)):
+            u = u_range[0] + (u_range[1] - u_range[0]) * column / max(1, columns - 1)
+            d = d_range[0] + (d_range[1] - d_range[0]) * row / max(1, rows - 1)
+            name, degrees, options = next(cycle)
+
+            if self.is_free(name, u, d, degrees, aisle):
+                self.put(name, u, d, degrees, **options)
+
     def grid(self, name: str, u_range: tuple, d_range: tuple, columns: int, rows: int, degrees: float = 0.0, **options) -> None:
         """columns x rows copies spread over a rectangle (ranges are the centres of the outer ones)."""
         for column, row in itertools.product(range(columns), range(rows)):
@@ -484,6 +515,19 @@ class Furnisher:
             print(f"AVISO {self.room.shop_type}: props ainda não modelados: {sorted(self.missing)}")
 
 
+def fill_floor(furnisher: Furnisher, items: list) -> None:
+    """Loose islands of goods on whatever floor the plan left free, on both sides of the lane from the door."""
+    if not items:
+        return
+
+    d_range = (furnisher.front + 2.2, furnisher.back - FILL_BACK)
+    rows = round((d_range[1] - d_range[0]) / FILL_PITCH) + 1
+
+    for u_range in ((furnisher.left + 1.2, furnisher.door_u - FILL_LANE), (furnisher.door_u + FILL_LANE, furnisher.right - 1.2)):
+        columns = max(1, round((u_range[1] - u_range[0]) / FILL_PITCH) + 1)
+        furnisher.scatter(items, u_range, d_range, columns, rows, aisle=FILL_AISLE)
+
+
 def build_interior(shop_type: str) -> dict:
     """Furniture model of one shop; nothing is written while its plan or its props do not exist yet."""
     room = Room(shop_type)
@@ -493,6 +537,7 @@ def build_interior(shop_type: str) -> dict:
     feature_light_limit = 3
 
     room.plan.get("furnish", shop_layouts.furnish_generic)(furnisher)
+    fill_floor(furnisher, shop_layouts.FILL.get(shop_type, []))
     furnisher.report()
 
     if furnisher.placed == 0:
