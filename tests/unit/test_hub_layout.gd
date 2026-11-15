@@ -21,9 +21,9 @@ const CATHEDRAL_STAIRS_START: Vector3 = Vector3(11, 0.1, -1.5)
 const NAVE_FLOOR_HEIGHT: float = 1.05
 const NAVE_ENTRANCE_X: float = 21.0
 ## Pé da escada do coreto; a escada sobe para -X.
-const CORETO_STAIRS_START: Vector3 = Vector3(-41.5, 0.1, -12.0)
+const CORETO_STAIRS_START: Vector3 = Vector3(-37.5, 0.1, -13.0)
 const CORETO_FLOOR_HEIGHT: float = 1.2
-const CORETO_FLOOR_X: float = -47.0
+const CORETO_FLOOR_X: float = -43.0
 
 var _hub: Node3D
 

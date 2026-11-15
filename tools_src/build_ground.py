@@ -1,8 +1,8 @@
 """Model the city ground and export it as art/town/ground.gltf.
 
 Streets sit STREET_DROP below every pavement, each pavement slab has a stone curb, and the planted beds
-of the squares, the roundabout and the avenue median are raised lawns with their own curb, a gentle swell
-and clipped hedges along the street side. The layout (paths, beds, heights) comes from build_hub_scene.py,
+of the squares, the roundabout, the marco and the avenue median are raised lawns with their own curb, a gentle
+swell and a knee-high clipped hedge all around, broken by a few gaps with topiary balls. The layout (paths, beds, heights) comes from build_hub_scene.py,
 so props placed there and the ground modelled here always agree.
 
 Beds are cut out of a regular grid by clipping its triangles against the bed distance field, which gives
@@ -40,9 +40,14 @@ GRID_STEP = 0.5
 COLLISION_GRID_STEP = 1.0
 SLAB_CURB_WIDTH = 0.32
 SKIRT_WIDTH = 0.3  # largura da rampa de colisão do meio-fio
-HEDGE_BAND = (0.45, 1.25)  # distância da borda do canteiro (lado da rua) onde fica a sebe
-HEDGE_PATH_CLEARANCE = 1.6
-HEDGE_HEIGHT = 0.8
+HEDGE_HEIGHT = 0.50  # acima da grama da borda: altura do joelho
+HEDGE_CHAMFER = 0.08
+TOPIARY_RADIUS = 0.35
+WINDOW_GRID_STEP = 0.5
+ROUNDABOUT_INLAY_RADII = (7.55, 7.85)  # faixa de pedra clara na pista em anel
+MARCO_BASE = 1.2
+MARCO_HEIGHT = 5.0
+HEDGE_GAPS = layout.hedge_gaps()
 METERS_PER_TILE = {"brick": 1.0, "stone": 1.7, "street": 1.8, "curb": 1.5, "grass": 7.0, "hedge": 1.6}
 
 
@@ -128,17 +133,17 @@ def build_ground_materials() -> dict:
 # ---------- clipped grid meshes ----------
 
 def bed_fields(point: tuple) -> tuple:
-    """(bed distance, hedge distance): the hedge follows the street edge of a square and keeps clear of every path."""
-    bed = layout.bed_field(point)
-    street_edge = layout.square_edge_distance(point)
-    path_clearance = min(layout.path_distance(point, path) for path in layout.SQUARE_PATHS)
-    hedge = min(street_edge - HEDGE_BAND[0], HEDGE_BAND[1] - street_edge, path_clearance - HEDGE_PATH_CLEARANCE)
+    """(bed distance, gap distance): the hedge runs along every bed edge except within HEDGE_GAP_HALF_WIDTH of a gap."""
+    gap = min(math.hypot(point[0] - center[0], point[1] - center[1]) for center in HEDGE_GAPS) - layout.HEDGE_GAP_HALF_WIDTH
 
-    return bed, hedge
+    return layout.bed_field(point), gap
 
 
-def grid_triangles(minimum: tuple, maximum: tuple, step: float) -> list:
-    """Triangles of a regular grid over a Godot (x, z) rectangle; each vertex is (x, z, bed, hedge)."""
+def grid_triangles(minimum: tuple, maximum: tuple, step: float, fields_of=bed_fields, band: tuple = (0.0, math.inf)) -> list:
+    """Triangles of a regular grid over a Godot (x, z) rectangle; each vertex is (x, z, *fields_of(point)).
+
+    Only cells whose first field reaches into band are kept.
+    """
     columns = int(round((maximum[0] - minimum[0]) / step))
     rows = int(round((maximum[1] - minimum[1]) / step))
     vertices = {}
@@ -146,15 +151,16 @@ def grid_triangles(minimum: tuple, maximum: tuple, step: float) -> list:
     for row in range(rows + 1):
         for column in range(columns + 1):
             point = (minimum[0] + column * step, minimum[1] + row * step)
-            vertices[(column, row)] = (*point, *bed_fields(point))
+            vertices[(column, row)] = (*point, *fields_of(point))
 
     triangles = []
 
     for row in range(rows):
         for column in range(columns):
             corners = [vertices[(column, row)], vertices[(column + 1, row)], vertices[(column + 1, row + 1)], vertices[(column, row + 1)]]
+            values = [corner[2] for corner in corners]
 
-            if max(corner[2] for corner in corners) <= 0.0:
+            if max(values) < band[0] or min(values) > band[1]:
                 continue
 
             triangles.append([corners[0], corners[1], corners[2]])
@@ -235,8 +241,13 @@ def region_mesh(name: str, polygons: list, height_of, material, wall_bottom: flo
 
 
 def hedge_top(corner: tuple) -> float:
-    """Clipped hedge with a softly uneven top."""
-    return layout.bed_height(corner[2]) + HEDGE_HEIGHT + 0.05 * math.sin(corner[0] * 1.7) * math.cos(corner[1] * 1.3)
+    """Flat knee-high top at a fixed height, chamfered on both edges, with a soft clipped ripple."""
+    inner, outer = layout.HEDGE_BAND
+    depth_into_band = min(corner[2] - inner, outer - corner[2])
+    chamfer = HEDGE_CHAMFER - min(max(depth_into_band, 0.0), HEDGE_CHAMFER)
+    ripple = 0.03 * math.sin(corner[0] * 1.7) * math.cos(corner[1] * 1.3)
+
+    return layout.LAWN_EDGE_HEIGHT + HEDGE_HEIGHT - chamfer + ripple
 
 
 def collision_height(corner: tuple) -> float:
@@ -244,22 +255,14 @@ def collision_height(corner: tuple) -> float:
     return min(layout.bed_height(max(corner[2], layout.CURB_WIDTH)), layout.CURB_HEIGHT * max(corner[2], 0.0) / SKIRT_WIDTH + 0.02)
 
 
-def bed_domains() -> list:
-    """Godot (x, z) rectangles that contain planted beds."""
-    radius = layout.ROUNDABOUT_LAWN_RADII[1] + 1.0
-    roundabout = ((layout.ROUNDABOUT[0] - radius, layout.ROUNDABOUT[1] - radius), (layout.ROUNDABOUT[0] + radius, layout.ROUNDABOUT[1] + radius))
-    padded_medians = [((minimum[0] - 1.0, minimum[1] - 1.0), (maximum[0] + 1.0, maximum[1] + 1.0)) for minimum, maximum in layout.MEDIAN_BEDS]
-
-    return list(layout.LAWN_RECTS.values()) + [roundabout] + padded_medians
-
-
 def build_beds(materials: dict) -> None:
     curb_width = layout.CURB_WIDTH
+    inner, outer = layout.HEDGE_BAND
 
-    for index, (minimum, maximum) in enumerate(bed_domains()):
+    for index, (minimum, maximum) in enumerate(layout.bed_domains()):
         triangles = grid_triangles(minimum, maximum, GRID_STEP)
         collision_triangles = grid_triangles(minimum, maximum, COLLISION_GRID_STEP)
-        hedge_polygons = clip_region(triangles, [(2, HEDGE_BAND[0], True), (3, 0.0, True)])
+        hedge_polygons = clip_region(triangles, [(2, inner, True), (2, outer, False), (3, 0.0, True)])
 
         region_mesh(f"BedCurb{index}", clip_region(triangles, [(2, 0.0, True), (2, curb_width, False)]), lambda corner: layout.CURB_HEIGHT, materials["curb"], wall_bottom=0.0)
         region_mesh(f"BedLawn{index}", clip_region(triangles, [(2, curb_width, True)]), lambda corner: layout.bed_height(max(corner[2], curb_width)), materials["grass"])
@@ -268,6 +271,19 @@ def build_beds(materials: dict) -> None:
         if hedge_polygons:
             region_mesh(f"BedHedge{index}", hedge_polygons, hedge_top, materials["hedge"], wall_bottom=layout.LAWN_EDGE_HEIGHT)
             region_mesh(f"Hedge{index}-colonly", hedge_polygons, hedge_top, None, wall_bottom=layout.LAWN_EDGE_HEIGHT)
+
+
+def build_topiary(materials: dict) -> None:
+    """A clipped ball on the hedge at both ends of every gap."""
+    reach = layout.HEDGE_GAP_HALF_WIDTH + TOPIARY_RADIUS * 0.6
+    height = layout.LAWN_EDGE_HEIGHT + HEDGE_HEIGHT + TOPIARY_RADIUS * 0.55
+    ends = [(gap[0] + side * reach * layout.hedge_tangent(gap)[0], gap[1] + side * reach * layout.hedge_tangent(gap)[1]) for gap in HEDGE_GAPS for side in (-1.0, 1.0)]
+
+    for index, (x, z) in enumerate(ends):
+        ball_bmesh = bmesh.new()
+        bmesh.ops.create_icosphere(ball_bmesh, subdivisions=2, radius=TOPIARY_RADIUS)
+        bmesh.ops.translate(ball_bmesh, vec=(x, -z, height), verts=ball_bmesh.verts)
+        object_from_bmesh(f"Topiary{index}", ball_bmesh, materials["hedge"])
 
 
 # ---------- slabs ----------
@@ -329,20 +345,104 @@ def slab_rectangles() -> list:
         ((calcadao[1], -half_z), (east, half_z), "brick"),
     ]
     blocks = [(f"Block{index}", (block[0], block[2]), (block[1], block[3]), [((block[0], block[2]), (block[1], block[3]), "stone")]) for index, block in enumerate(layout.BLOCKS)]
-    median = ("Median", (layout.CITY_MIN[0], layout.MEDIAN_Z[0]), (layout.CITY_MAX[0], layout.MEDIAN_Z[1]), [((layout.CITY_MIN[0], layout.MEDIAN_Z[0]), (layout.CITY_MAX[0], layout.MEDIAN_Z[1]), "brick")])
 
-    return blocks + [median, ("Squares", (west, -half_z), (east, half_z), squares)]
+    return blocks + [("Squares", (west, -half_z), (east, half_z), squares)]
+
+
+def roundabout_cut(point: tuple) -> float:
+    """Distance outside the roundabout ring road (negative = on the ring road)."""
+    return math.hypot(point[0] - layout.ROUNDABOUT[0], point[1] - layout.ROUNDABOUT[1]) - layout.ROUNDABOUT_OUTER_RADIUS
+
+
+def median_field(sign: float):
+    """Signed distance into one half of the avenue median: a long strip whose end toward the roundabout is a round nose."""
+    center_z = sum(layout.MEDIAN_Z) / 2.0
+
+    return lambda point: (layout.MEDIAN_HALF_WIDTH - math.hypot(max(layout.MEDIAN_NOSE_X - sign * point[0], 0.0), point[1] - center_z),)
+
+
+def rectangle_overlap(first: tuple, second: tuple) -> tuple:
+    """Overlap of two (min, max) rectangles, or None."""
+    minimum = (max(first[0][0], second[0][0]), max(first[0][1], second[0][1]))
+    maximum = (min(first[1][0], second[1][0]), min(first[1][1], second[1][1]))
+
+    return (minimum, maximum) if minimum[0] < maximum[0] and minimum[1] < maximum[1] else None
+
+
+def rectangle_minus(rectangle: tuple, hole: tuple) -> list:
+    """Up to four rectangles covering rectangle outside hole (hole lies inside rectangle)."""
+    (min_x, min_z), (max_x, max_z) = rectangle
+    (hole_min_x, hole_min_z), (hole_max_x, hole_max_z) = hole
+    pieces = [
+        ((min_x, min_z), (hole_min_x, max_z)),
+        ((hole_max_x, min_z), (max_x, max_z)),
+        ((hole_min_x, min_z), (hole_max_x, hole_min_z)),
+        ((hole_min_x, hole_max_z), (hole_max_x, max_z)),
+    ]
+
+    return [piece for piece in pieces if piece[0][0] < piece[1][0] and piece[0][1] < piece[1][1]]
+
+
+def slab_collision_height(corner: tuple) -> float:
+    """Slab top at 0 with the curb turned into a ramp down to the street."""
+    return -(layout.STREET_DROP + 0.02) * min(1.0, max(-corner[2], 0.0) / SKIRT_WIDTH)
+
+
+def build_field_slab(name: str, domain: tuple, fields_of, surfaces: list, window: tuple, materials: dict) -> None:
+    """Pavement shaped by a distance field: curb and collision follow the field inside window, plain quads elsewhere."""
+    padded_window = ((window[0][0] - SKIRT_WIDTH, window[0][1] - SKIRT_WIDTH), (window[1][0] + SKIRT_WIDTH, window[1][1] + SKIRT_WIDTH))
+    curb_triangles = grid_triangles(*domain, WINDOW_GRID_STEP, fields_of, (0.0, SLAB_CURB_WIDTH))
+    collision_triangles = grid_triangles(*padded_window, WINDOW_GRID_STEP, fields_of, (-SKIRT_WIDTH, math.inf))
+    window_surfaces = [(overlap, key) for overlap, key in ((rectangle_overlap((minimum, maximum), window), key) for minimum, maximum, key in surfaces) if overlap]
+    pieces = rectangle_minus(domain, window) if rectangle_overlap(domain, window) != domain else []
+
+    region_mesh(f"{name}Curb", clip_region(curb_triangles, [(2, 0.0, True), (2, SLAB_CURB_WIDTH, False)]), lambda corner: 0.0, materials["curb"], wall_bottom=-layout.STREET_DROP)
+    region_mesh(f"{name}Window-colonly", clip_region(collision_triangles, [(2, -SKIRT_WIDTH, True)]), slab_collision_height, None)
+
+    for surface_index, ((minimum, maximum), key) in enumerate(window_surfaces):
+        surface_triangles = grid_triangles(minimum, maximum, WINDOW_GRID_STEP, fields_of, (SLAB_CURB_WIDTH, math.inf))
+        region_mesh(f"{name}WindowSurface{surface_index}", clip_region(surface_triangles, [(2, SLAB_CURB_WIDTH, True)]), lambda corner: 0.0, materials[key])
+
+    for piece_index, piece in enumerate(pieces):
+        make_slab_collider(f"{name}Piece{piece_index}-convcolonly", *piece)
+        add_inset_surfaces(f"{name}Piece{piece_index}", domain, [(overlap, key) for overlap, key in ((rectangle_overlap(piece, (minimum, maximum)), key) for minimum, maximum, key in surfaces) if overlap], materials)
+
+
+def add_inset_surfaces(name: str, slab: tuple, surfaces: list, materials: dict) -> None:
+    """Flat surface quads kept clear of the curb band along the slab edges."""
+    (minimum, maximum) = slab
+
+    for surface_index, ((surface_minimum, surface_maximum), key) in enumerate(surfaces):
+        inset_minimum = (max(surface_minimum[0], minimum[0] + SLAB_CURB_WIDTH), max(surface_minimum[1], minimum[1] + SLAB_CURB_WIDTH))
+        inset_maximum = (min(surface_maximum[0], maximum[0] - SLAB_CURB_WIDTH), min(surface_maximum[1], maximum[1] - SLAB_CURB_WIDTH))
+        make_flat_quad(f"{name}Surface{surface_index}", inset_minimum, inset_maximum, 0.0, materials[key])
 
 
 def build_slabs(materials: dict) -> None:
-    for name, minimum, maximum, surfaces in slab_rectangles():
-        make_curb_frame(f"{name}Curb", minimum, maximum, materials["curb"])
-        make_slab_collider(f"{name}-convcolonly", minimum, maximum)
+    """Pavements: plain rectangles, except where the roundabout ring road cuts an arc out of them, and the median halves."""
+    reach = layout.ROUNDABOUT_OUTER_RADIUS + 1.0
+    roundabout_box = ((layout.ROUNDABOUT[0] - reach, layout.ROUNDABOUT[1] - reach), (layout.ROUNDABOUT[0] + reach, layout.ROUNDABOUT[1] + reach))
+    median_reach = layout.MEDIAN_NOSE_X - layout.MEDIAN_HALF_WIDTH
 
-        for surface_index, (surface_minimum, surface_maximum, material_key) in enumerate(surfaces):
-            inset_minimum = (max(surface_minimum[0], minimum[0] + SLAB_CURB_WIDTH), max(surface_minimum[1], minimum[1] + SLAB_CURB_WIDTH))
-            inset_maximum = (min(surface_maximum[0], maximum[0] - SLAB_CURB_WIDTH), min(surface_maximum[1], maximum[1] - SLAB_CURB_WIDTH))
-            make_flat_quad(f"{name}Surface{surface_index}", inset_minimum, inset_maximum, 0.0, materials[material_key])
+    for name, minimum, maximum, surfaces in slab_rectangles():
+        window = rectangle_overlap((minimum, maximum), roundabout_box)
+
+        if window is None:
+            make_curb_frame(f"{name}Curb", minimum, maximum, materials["curb"])
+            make_slab_collider(f"{name}-convcolonly", minimum, maximum)
+            add_inset_surfaces(name, (minimum, maximum), [((surface_minimum, surface_maximum), key) for surface_minimum, surface_maximum, key in surfaces], materials)
+
+            continue
+
+        fields_of = lambda point, minimum=minimum, maximum=maximum: (min(layout.inside_distance(point, minimum, maximum), roundabout_cut(point)),)
+        build_field_slab(name, (minimum, maximum), fields_of, [(surface_minimum, surface_maximum, key) for surface_minimum, surface_maximum, key in surfaces], window, materials)
+
+    for sign, name in ((-1.0, "MedianWest"), (1.0, "MedianEast")):
+        far_x = layout.CITY_MIN[0] if sign < 0.0 else layout.CITY_MAX[0]
+        domain = ((min(sign * median_reach, far_x), layout.MEDIAN_Z[0]), (max(sign * median_reach, far_x), layout.MEDIAN_Z[1]))
+        median = median_field(sign)
+        fields_of = lambda point, median=median, domain=domain: (min(median(point)[0], layout.inside_distance(point, *domain) + SLAB_CURB_WIDTH),)
+        build_field_slab(name, domain, fields_of, [(*domain, "brick")], domain, materials)
 
 
 def make_disc(name: str, center: tuple, inner_radius: float, outer_radius: float, height: float, material, wall_bottom: float = None) -> None:
@@ -370,20 +470,49 @@ def make_disc(name: str, center: tuple, inner_radius: float, outer_radius: float
 
 
 def build_roundabout(materials: dict) -> None:
-    radius = layout.ROUNDABOUT_RADIUS
+    """Raised island with the small fountain, a light inlay on the ring road around it."""
+    radius = layout.ROUNDABOUT_ISLAND_RADIUS
     collider_bmesh = bmesh.new()
 
     make_disc("RoundaboutCurb", layout.ROUNDABOUT, radius - SLAB_CURB_WIDTH, radius, 0.001, materials["curb"], wall_bottom=-layout.STREET_DROP)
-    make_disc("RoundaboutPaving", layout.ROUNDABOUT, 0.0, radius - SLAB_CURB_WIDTH, 0.001, materials["brick"])
-    bmesh.ops.create_cone(collider_bmesh, cap_ends=True, segments=24, radius1=radius + SKIRT_WIDTH, radius2=radius, depth=layout.STREET_DROP + 0.02)
+    make_disc("RoundaboutPaving", layout.ROUNDABOUT, 0.0, radius - SLAB_CURB_WIDTH, 0.001, materials["stone"])
+    make_disc("RoundaboutInlay", layout.ROUNDABOUT, *ROUNDABOUT_INLAY_RADII, -layout.STREET_DROP + 0.004, materials["curb"])
+    bmesh.ops.create_cone(collider_bmesh, cap_ends=True, segments=32, radius1=radius + SKIRT_WIDTH, radius2=radius, depth=layout.STREET_DROP + 0.02)
     bmesh.ops.translate(collider_bmesh, vec=(layout.ROUNDABOUT[0], -layout.ROUNDABOUT[1], -(layout.STREET_DROP + 0.02) / 2.0), verts=collider_bmesh.verts)
     object_from_bmesh("Roundabout-convcolonly", collider_bmesh, None)
 
 
+def build_marco(materials: dict) -> None:
+    """White obelisk in the middle of its round bed on the calçadão: square base, tapering shaft, pyramid tip."""
+    x, y = layout.MARCO[0], -layout.MARCO[1]
+    base_height = 0.6
+    shaft_height = MARCO_HEIGHT - base_height - 0.5
+    marco_bmesh = bmesh.new()
+    collider_bmesh = bmesh.new()
+    levels = [(MARCO_BASE / 2.0, 0.0), (MARCO_BASE / 2.0, base_height), (0.35, base_height), (0.35, base_height + shaft_height * 0.02), (0.175, MARCO_HEIGHT - 0.5)]
+    rings = [[marco_bmesh.verts.new((x + sign_x * half, y + sign_y * half, height)) for sign_x, sign_y in ((-1, -1), (1, -1), (1, 1), (-1, 1))] for half, height in levels]
+    tip = marco_bmesh.verts.new((x, y, MARCO_HEIGHT))
+
+    for lower, upper in zip(rings, rings[1:]):
+        for corner in range(4):
+            following = (corner + 1) % 4
+            marco_bmesh.faces.new([lower[corner], lower[following], upper[following], upper[corner]])
+
+    for corner in range(4):
+        marco_bmesh.faces.new([rings[-1][corner], rings[-1][(corner + 1) % 4], tip])
+
+    bmesh.ops.recalc_face_normals(marco_bmesh, faces=marco_bmesh.faces)
+    object_from_bmesh("Marco", marco_bmesh, materials["curb"])
+    bmesh.ops.create_cube(collider_bmesh, size=1.0)
+    bmesh.ops.scale(collider_bmesh, vec=(MARCO_BASE, MARCO_BASE, MARCO_HEIGHT), verts=collider_bmesh.verts)
+    bmesh.ops.translate(collider_bmesh, vec=(x, y, MARCO_HEIGHT / 2.0), verts=collider_bmesh.verts)
+    object_from_bmesh("Marco-convcolonly", collider_bmesh, None)
+
+
 def build_inlays(materials: dict) -> None:
-    """Stone inlays that break up the brick: the chafariz plaza, the coreto plaza and the rondels."""
-    discs = [("ChafarizPlaza", layout.GETULIO_VARGAS, layout.PLAZA_RADIUS - 0.6), ("CoretoPlaza", layout.COREO_POSITION, layout.COREO_PLAZA_RADIUS - 0.6)]
-    discs += [(f"Rondel{index}", rondel, layout.RONDEL_RADIUS - 0.5) for index, rondel in enumerate(layout.rondel_centers())]
+    """Stone inlays that break up the brick: the chafariz plaza, the coreto apron and the secondary plazas."""
+    discs = [("ChafarizPlaza", layout.GETULIO_VARGAS, layout.PLAZA_RADIUS - 0.6), ("CoretoPlaza", layout.COREO_POSITION, layout.COREO_APRON_RADIUS - 0.4)]
+    discs += [(f"Plaza{index}", center, radius - 0.5) for index, (center, radius) in enumerate(layout.secondary_plazas())]
 
     for name, center, radius in discs:
         make_disc(f"{name}Stone", center, 0.0, radius - 0.3, 0.012, materials["stone"])
@@ -439,7 +568,9 @@ def build_ground() -> Path:
     build_slabs(materials)
     build_roundabout(materials)
     build_inlays(materials)
+    build_marco(materials)
     build_beds(materials)
+    build_topiary(materials)
     merge_by_material(materials)
 
     bpy.ops.export_scene.gltf(filepath=str(output_path), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True)
