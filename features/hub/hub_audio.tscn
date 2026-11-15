@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="AudioStream" path="res://art/audio/town_ambience_loop.wav" id="1_ambience"]
+[ext_resource type="AudioStream" path="res://art/audio/church_bell.wav" id="2_bell"]
+[ext_resource type="Script" path="res://features/hub/church_bell.gd" id="3_bell_script"]
+
+[node name="HubAudio" type="Node3D"]
+
+[node name="TownAmbience" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("1_ambience")
+volume_db = -10.0
+autoplay = true
+bus = &"Ambient"
+
+[node name="ChurchBell" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(16, 28, 0)
+stream = ExtResource("2_bell")
+unit_size = 40.0
+max_distance = 400.0
+max_polyphony = 4
+bus = &"Effects"
+script = ExtResource("3_bell_script")

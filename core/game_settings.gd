@@ -1,11 +1,12 @@
 extends Node
-## Configurações de tela e gráficos do jogador: guarda em user://settings.cfg e aplica no motor.
+## Configurações de tela, gráficos e áudio do jogador: guarda em user://settings.cfg
+## e aplica no motor.
 ## Só a cena principal usa o que o jogador salvou. Cenas de teste e de vídeo rodam com o padrão
 ## do projeto, para que prints e medições não dependam do que o jogador escolheu.
 
 signal setting_changed(setting: Setting)
 
-enum Section { DISPLAY, GRAPHICS }
+enum Section { DISPLAY, GRAPHICS, AUDIO }
 ## Ordem de aplicação: monitor antes do modo de janela, modo antes da resolução.
 enum Setting {
 	MONITOR,
@@ -20,6 +21,9 @@ enum Setting {
 	AMBIENT_OCCLUSION,
 	INDIRECT_LIGHT,
 	GLOW,
+	MASTER_VOLUME,
+	AMBIENT_VOLUME,
+	EFFECTS_VOLUME,
 }
 
 const SETTINGS_PATH: String = "user://settings.cfg"
@@ -37,6 +41,9 @@ const SECTION_BY_SETTING: Dictionary[Setting, Section] = {
 	Setting.AMBIENT_OCCLUSION: Section.GRAPHICS,
 	Setting.INDIRECT_LIGHT: Section.GRAPHICS,
 	Setting.GLOW: Section.GRAPHICS,
+	Setting.MASTER_VOLUME: Section.AUDIO,
+	Setting.AMBIENT_VOLUME: Section.AUDIO,
+	Setting.EFFECTS_VOLUME: Section.AUDIO,
 }
 const LABEL_BY_SETTING: Dictionary[Setting, String] = {
 	Setting.MONITOR: "Monitor",
@@ -51,6 +58,9 @@ const LABEL_BY_SETTING: Dictionary[Setting, String] = {
 	Setting.AMBIENT_OCCLUSION: "Ambient occlusion",
 	Setting.INDIRECT_LIGHT: "Indirect light",
 	Setting.GLOW: "Glow",
+	Setting.MASTER_VOLUME: "Master volume",
+	Setting.AMBIENT_VOLUME: "Ambience",
+	Setting.EFFECTS_VOLUME: "Effects",
 }
 ## Cada lista tem constante tipada própria: lista solta dentro do dicionário constante
 ## fica sem tipo e chega vazia ao OptionButton.
@@ -66,6 +76,9 @@ const MAX_FPS_LABELS: PackedStringArray = ["Unlimited", "30", "60", "120", "144"
 const RENDER_SCALE_LABELS: PackedStringArray = ["50%", "67%", "77%", "85%", "100%"]
 const MSAA_LABELS: PackedStringArray = ["Off", "2x", "4x", "8x"]
 const SHADOW_LABELS: PackedStringArray = ["Low", "Medium", "High", "Ultra"]
+const VOLUME_LABELS: PackedStringArray = [
+	"0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"
+]
 const FIXED_OPTION_LABELS: Dictionary[Setting, PackedStringArray] = {
 	Setting.WINDOW_MODE: WINDOW_MODE_LABELS,
 	Setting.RESOLUTION: RESOLUTION_LABELS,
@@ -78,6 +91,9 @@ const FIXED_OPTION_LABELS: Dictionary[Setting, PackedStringArray] = {
 	Setting.AMBIENT_OCCLUSION: OFF_ON,
 	Setting.INDIRECT_LIGHT: OFF_ON,
 	Setting.GLOW: OFF_ON,
+	Setting.MASTER_VOLUME: VOLUME_LABELS,
+	Setting.AMBIENT_VOLUME: VOLUME_LABELS,
+	Setting.EFFECTS_VOLUME: VOLUME_LABELS,
 }
 ## Padrão = o que o projeto já usa (project.godot e o Environment da praça).
 const DEFAULT_OPTION: Dictionary[Setting, int] = {
@@ -93,6 +109,9 @@ const DEFAULT_OPTION: Dictionary[Setting, int] = {
 	Setting.AMBIENT_OCCLUSION: 1,
 	Setting.INDIRECT_LIGHT: 1,
 	Setting.GLOW: 1,
+	Setting.MASTER_VOLUME: 8,
+	Setting.AMBIENT_VOLUME: 10,
+	Setting.EFFECTS_VOLUME: 10,
 }
 const WINDOW_MODES: Array[DisplayServer.WindowMode] = [
 	DisplayServer.WINDOW_MODE_WINDOWED,
@@ -112,6 +131,7 @@ const VSYNC_MODES: Array[DisplayServer.VSyncMode] = [
 	DisplayServer.VSYNC_ADAPTIVE,
 	DisplayServer.VSYNC_MAILBOX,
 ]
+const VOLUME_STEP: float = 0.1
 const MAX_FPS_VALUES: Array[int] = [0, 30, 60, 120, 144, 165, 240]
 const RENDER_SCALES: Array[float] = [0.5, 0.67, 0.77, 0.85, 1.0]
 const MSAA_MODES: Array[Viewport.MSAA] = [
@@ -144,6 +164,9 @@ var _appliers: Dictionary[Setting, Callable] = {
 	Setting.AMBIENT_OCCLUSION: _apply_ambient_occlusion,
 	Setting.INDIRECT_LIGHT: _apply_indirect_light,
 	Setting.GLOW: _apply_glow,
+	Setting.MASTER_VOLUME: _apply_volume.bind(&"Master"),
+	Setting.AMBIENT_VOLUME: _apply_volume.bind(&"Ambient"),
+	Setting.EFFECTS_VOLUME: _apply_volume.bind(&"Effects"),
 }
 
 
@@ -329,3 +352,12 @@ func _apply_glow(option: int) -> void:
 		return
 
 	environment.glow_enabled = option == 1
+
+
+## Volume em passos de 10%; zero silencia o canal de vez.
+func _apply_volume(option: int, bus_name: StringName) -> void:
+	var bus_index: int = AudioServer.get_bus_index(bus_name)
+	var volume: float = option * VOLUME_STEP
+
+	AudioServer.set_bus_mute(bus_index, option == 0)
+	AudioServer.set_bus_volume_db(bus_index, linear_to_db(volume))

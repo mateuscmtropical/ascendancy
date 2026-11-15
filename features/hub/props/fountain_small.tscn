@@ -1,7 +1,8 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://art/town/fountain_small.gltf" id="1_model"]
 
+[ext_resource type="AudioStream" path="res://art/audio/fountain_loop.wav" id="9_water"]
 [sub_resource type="Gradient" id="soft_dot_gradient"]
 offsets = PackedFloat32Array(0, 0.3, 1)
 colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.55, 1, 1, 1, 0)
@@ -92,3 +93,11 @@ lifetime = 1.0
 visibility_aabb = AABB(-1, -1.5, -1, 2, 3, 2)
 process_material = SubResource("finial_spray")
 draw_pass_1 = SubResource("mist_mesh")
+
+[node name="WaterSound" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(0, 1.2, 0)
+stream = ExtResource("9_water")
+unit_size = 3.5
+max_distance = 28.0
+autoplay = true
+bus = &"Ambient"

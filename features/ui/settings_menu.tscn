@@ -123,6 +123,20 @@ theme_override_constants/h_separation = 32
 theme_override_constants/v_separation = 12
 columns = 2
 
+[node name="Audio" type="MarginContainer" parent="Panel/Layout/Tabs"]
+visible = false
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+metadata/_tab_index = 2
+
+[node name="AudioRows" type="GridContainer" parent="Panel/Layout/Tabs/Audio"]
+unique_name_in_owner = true
+theme_override_constants/h_separation = 32
+theme_override_constants/v_separation = 12
+columns = 2
+
 [node name="Buttons" type="HBoxContainer" parent="Panel/Layout"]
 alignment = 1
 theme_override_constants/separation = 24
@@ -134,3 +148,8 @@ text = "Resume"
 [node name="QuitButton" type="Button" parent="Panel/Layout/Buttons"]
 unique_name_in_owner = true
 text = "Quit game"
+
+[node name="InterfaceSound" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+max_polyphony = 2
+bus = &"Effects"
