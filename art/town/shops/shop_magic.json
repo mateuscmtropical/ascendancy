@@ -1,0 +1,71 @@
+{
+ "aabb_min": [
+  -4.98,
+  -0.017,
+  -9.7
+ ],
+ "aabb_max": [
+  4.98,
+  16.612,
+  0.86
+ ],
+ "lot_width": 10,
+ "lot_depth": 10.0,
+ "shop": "magic",
+ "doors": [
+  {
+   "x": -2.4,
+   "width": 1.6,
+   "enterable": true
+  }
+ ],
+ "lights": [
+  {
+   "position": [
+    1.4,
+    2.0,
+    -1.0
+   ],
+   "color": "8FD8FF",
+   "energy": 0.8,
+   "range": 4.0
+  },
+  {
+   "position": [
+    0.0,
+    3.0,
+    -2.94
+   ],
+   "color": "A9C8F0",
+   "energy": 1.2,
+   "range": 7.0
+  },
+  {
+   "position": [
+    0.0,
+    3.0,
+    -6.636
+   ],
+   "color": "A9C8F0",
+   "energy": 1.2,
+   "range": 7.0
+  },
+  {
+   "position": [
+    0.0,
+    1.2,
+    -6.5
+   ],
+   "color": "FFD9A0",
+   "energy": 0.8,
+   "range": 5.0
+  }
+ ],
+ "markers": {
+  "shopkeeper": [
+   2.4,
+   0.0,
+   -8.2
+  ]
+ }
+}

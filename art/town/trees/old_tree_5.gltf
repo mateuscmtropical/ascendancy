@@ -107,18 +107,6 @@
           "material": 2
         }
       ]
-    },
-    {
-      "name": "Trunk-colonly",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 15,
-            "NORMAL": 16
-          },
-          "indices": 17
-        }
-      ]
     }
   ],
   "textures": [
@@ -266,34 +254,6 @@
       "componentType": 5123,
       "count": 5520,
       "type": "SCALAR"
-    },
-    {
-      "bufferView": 15,
-      "componentType": 5126,
-      "count": 60,
-      "max": [
-        0.6790543794631958,
-        3,
-        0.7139999866485596
-      ],
-      "min": [
-        -0.6790543794631958,
-        0,
-        -0.7139999866485596
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 16,
-      "componentType": 5126,
-      "count": 60,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 17,
-      "componentType": 5123,
-      "count": 108,
-      "type": "SCALAR"
     }
   ],
   "bufferViews": [
@@ -386,24 +346,6 @@
       "byteLength": 11040,
       "byteOffset": 317744,
       "target": 34963
-    },
-    {
-      "buffer": 0,
-      "byteLength": 720,
-      "byteOffset": 328784,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 720,
-      "byteOffset": 329504,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 216,
-      "byteOffset": 330224,
-      "target": 34963
     }
   ],
   "samplers": [
@@ -414,7 +356,7 @@
   ],
   "buffers": [
     {
-      "byteLength": 330440,
+      "byteLength": 328784,
       "uri": "old_tree_5.bin"
     }
   ]

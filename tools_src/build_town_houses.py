@@ -66,6 +66,7 @@ IRON = "2E2A2C"
 # Texture atlases: band (v from, v to) of the strip a box face maps onto.
 WOOD_DARK_BAND = (0.42, 0.67)
 WOOD_LIGHT_BAND = (0.72, 0.98)
+FLOOR_BOARD_WIDTH = 0.4  # piso das lojas em tábuas: cada uma ocupa uma faixa do atlas de madeira
 TRIM_SMOOTH_BAND = (0.44, 0.66)
 TRIM_BLOCK_BAND = (0.72, 0.98)
 
@@ -283,7 +284,7 @@ class Builder:
         bpy.context.scene.collection.objects.link(mesh_object)
         mesh_data.materials.append(self.materials[material_key])
         mesh_object["tint"] = tint
-        mesh_object["uv"] = uv or ("world", WORLD_TILE.get(material_key, 2.0))
+        mesh_object["uv"] = json.dumps(uv or ("world", WORLD_TILE.get(material_key, 2.0)))
 
         return mesh_object
 
@@ -388,7 +389,7 @@ class Builder:
                 copy.data.flip_normals()
 
             bpy.context.scene.collection.objects.link(copy)
-            copy["uv"] = ("keep",)
+            copy["uv"] = json.dumps(("keep",))
             copy["tints"] = json.dumps({prefix: list(color) for prefix, color in (tints or {}).items()})
             copies.append(copy)
 
@@ -513,7 +514,7 @@ def face_frame(face):
 def map_uvs(mesh_object) -> None:
     """world: planar UVs per face in metres / tile. band: long side of each face runs along U, the short
     side spans one strip of a trim atlas (wood planks, stone moulding)."""
-    mode, *parameters = mesh_object["uv"]
+    mode, *parameters = json.loads(mesh_object["uv"])
 
     if mode == "keep":
         return
@@ -1373,6 +1374,19 @@ def front_wall(b: Builder, room: ShopRoom, openings: list, material: str, tint: 
         OPENING_DRESSING[kind](b, room, opening, material, tint)
 
 
+def open_frame(b: Builder, opening: Opening, expand: float, depth_from: float, depth_to: float, tint: tuple, band: tuple) -> None:
+    """Moulding around an opening that stays open (shop door, vitrine): two jambs and a band over the top."""
+    half = opening.width / 2.0
+    outer_arc = opening.arc(expand)
+    inner_arc = opening.arc()
+    jamb_top = max(outer_arc[0][1], inner_arc[0][1])
+
+    for jamb_left in (opening.u - half - expand, opening.u + half):
+        b.box((jamb_left, depth_from, opening.bottom), (jamb_left + expand, depth_to, jamb_top), "trim", tint, uv=("band", *band, 1.0))
+
+    b.prism(outer_arc + list(reversed(inner_arc)), depth_from, depth_to, "trim", tint, uv=("band", *band, 1.0))
+
+
 def dress_door_opening(b: Builder, room: ShopRoom, opening: Opening, material: str, tint: tuple) -> None:
     """Flush stone threshold and two leaves fixed open at 100° into the hall."""
     half = opening.width / 2.0
@@ -1380,8 +1394,7 @@ def dress_door_opening(b: Builder, room: ShopRoom, opening: Opening, material: s
     house = room.house
 
     b.box((opening.u - half, room.front - 0.3, 0.0), (opening.u + half, room.front + WALL, 0.01), "trim", house.trim_tint)
-    b.prism(opening.outline(0.15), room.front - 0.05, room.front, "trim", house.trim_tint, uv=("band", *TRIM_BLOCK_BAND, 1.0))
-    b.prism(opening.outline(), room.front - 0.06, room.front - 0.05, "paint", srgb("2A2228"))
+    open_frame(b, opening, 0.15, room.front - 0.05, room.front, house.trim_tint, TRIM_BLOCK_BAND)
 
     for side_sign in (-1, 1):
         hinge_u = opening.u + side_sign * half
@@ -1399,7 +1412,7 @@ def dress_vitrine_opening(b: Builder, room: ShopRoom, opening: Opening, material
 
     wall_piece(b, (opening.u - half, room.front, 0.0), (opening.u + half, room.front + WALL, opening.bottom), material, tint)
     b.prism(opening.outline(), room.front + 0.12, room.front + 0.14, "vitrine")
-    b.prism(opening.outline(0.12), room.front - 0.05, room.front, "trim", room.house.trim_tint, uv=("band", *TRIM_SMOOTH_BAND, 1.0))
+    open_frame(b, opening, 0.12, room.front - 0.05, room.front, room.house.trim_tint, TRIM_SMOOTH_BAND)
     b.box((opening.u - half - 0.1, room.front - 0.2, opening.bottom - 0.08), (opening.u + half + 0.1, room.front + WALL + 0.15, opening.bottom), "trim", room.house.trim_tint)
 
 
@@ -1424,7 +1437,14 @@ def shop_shell(b: Builder, room: ShopRoom, openings: list, side_openings: dict =
     for side, wall_u in (("left", room.left), ("right", room.right - WALL)):
         side_wall(b, room, wall_u, gaps.get(side, []), material, tint)
 
-    b.box((room.inner_left, room.inner_front, 0.0), (room.inner_right, room.inner_back, 0.02), "wood", srgb(WOOD["media"]), uv=("band", *WOOD_LIGHT_BAND, 2.0))
+    floor_width = room.inner_right - room.inner_left
+    board_count = max(1, round(floor_width / FLOOR_BOARD_WIDTH))
+    board_width = floor_width / board_count
+
+    for board_index in range(board_count):
+        board_left = room.inner_left + board_index * board_width
+        b.box((board_left, room.inner_front, 0.0), (board_left + board_width, room.inner_back, 0.02), "wood", srgb(WOOD["media"]), uv=("band", *WOOD_LIGHT_BAND, 2.0))
+
     wall_piece(b, (room.left, room.front, room.ceiling), (room.right, room.back, height), "wood", srgb(WOOD["escura"]))
     b.box(((room.left + room.right) / 2.0 - 0.8, room.inner_back - 0.02, 2.6), ((room.left + room.right) / 2.0 + 0.8, room.inner_back, 3.3), "glass")
 
@@ -1685,7 +1705,7 @@ def build_inn(b: Builder) -> House:
     b.marker("shopkeeper", (door.u, 4.8, 0.0))
     wall_piece(b, (room.inner_left, 1.0, 0.0), (room.inner_left + 0.6, 2.4, 1.4), "stone", srgb(STONE["media"]))
     b.box((room.inner_left + 0.6, 1.3, 0.1), (room.inner_left + 0.62, 2.1, 0.7), "glow_ember")
-    place_props(b, [("Peg_Rack", (door.u, 5.0, 1.7), 180.0), ("Book_Stack", (door.u + 0.6, 3.9, COUNTER_HEIGHT), 0.0), ("Chair_1", (room.inner_left + 1.4, 1.4, 0.0), 120.0), ("Chair_1", (room.inner_left + 1.4, 2.4, 0.0), 60.0), ("Bed_Twin1", (guest_room[0] + 1.0, guest_room[3] - 1.2, 0.0), 180.0), ("Nightstand_Shelf", (guest_room[0] + 2.2, guest_room[3] - 0.3, 0.0), 180.0), ("Chest_Wood", (guest_room[0] + 0.5, guest_room[1] + 0.6, 0.0), 90.0), ("Prop_Wagon", (gate_left + 1.45, house.depth - 2.5, 0.0), 0.0)])
+    place_props(b, [("Peg_Rack", (door.u, 5.0, 1.7), 180.0), ("Book_Stack", (door.u + 0.6, 3.9, COUNTER_HEIGHT), 0.0), ("Chair_1", (room.inner_left + 1.4, 1.4, 0.0), 120.0), ("Chair_1", (room.inner_left + 1.4, 2.4, 0.0), 60.0), ("Bed_Twin1", (guest_room[0] + 1.0, guest_room[3] - 1.2, 0.0), 180.0), ("Nightstand_Shelf", (guest_room[0] + 2.2, guest_room[3] - 0.3, 0.0), 180.0), ("Chest_Wood", (guest_room[0] + 0.8, guest_room[1] + 0.6, 0.0), 90.0), ("Prop_Wagon", (gate_left + 1.45, house.depth - 2.5, 0.0), 0.0)])
     interior_lights(b, room)
     b.light((guest_room[0] + 2.0, guest_room[1] + 2.0, 2.6), WARM_LIGHT, 0.8, 4.0)
 

@@ -76,18 +76,6 @@
           "material": 1
         }
       ]
-    },
-    {
-      "name": "Trunk-colonly",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 10,
-            "NORMAL": 11
-          },
-          "indices": 12
-        }
-      ]
     }
   ],
   "textures": [
@@ -185,34 +173,6 @@
       "componentType": 5123,
       "count": 2004,
       "type": "SCALAR"
-    },
-    {
-      "bufferView": 10,
-      "componentType": 5126,
-      "count": 60,
-      "max": [
-        0.3423803746700287,
-        3,
-        0.36000001430511475
-      ],
-      "min": [
-        -0.3423803746700287,
-        0,
-        -0.36000001430511475
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 11,
-      "componentType": 5126,
-      "count": 60,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 12,
-      "componentType": 5123,
-      "count": 108,
-      "type": "SCALAR"
     }
   ],
   "bufferViews": [
@@ -275,24 +235,6 @@
       "byteLength": 4008,
       "byteOffset": 65336,
       "target": 34963
-    },
-    {
-      "buffer": 0,
-      "byteLength": 720,
-      "byteOffset": 69344,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 720,
-      "byteOffset": 70064,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 216,
-      "byteOffset": 70784,
-      "target": 34963
     }
   ],
   "samplers": [
@@ -303,7 +245,7 @@
   ],
   "buffers": [
     {
-      "byteLength": 71000,
+      "byteLength": 69344,
       "uri": "palm_11.bin"
     }
   ]

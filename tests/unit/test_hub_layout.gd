@@ -10,7 +10,7 @@ const CATHEDRAL_NAVE: Vector3 = Vector3(40, 1.05, 0)
 const SHOP_TYPES: Array[String] = [
 	"smith", "armor", "magic", "alchemy", "tavern", "inn", "guild", "bakery", "tailor", "jeweler"
 ]
-## Placa existe nas duas montagens (casas do kit com barraca, ou prédio de loja de build_town_houses.py).
+## Placa existe nas duas montagens: casa do kit com barraca ou loja de build_town_houses.py.
 const SHOP_PIECES: Array[String] = ["Sign"]
 const STREET_POINT: Vector2 = Vector2(-68, 0)
 const LAWN_POINT: Vector2 = Vector2(-20, -30)
