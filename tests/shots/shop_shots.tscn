@@ -1,0 +1,540 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="1_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="2_ext"]
+
+[node name="ShopShots" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("2_ext")]
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("1_ext")
+seconds_before_capture = 3.0
+
+[node name="SmithFront" type="Camera3D" parent="."]
+position = Vector3(-81.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithDoor" type="Camera3D" parent="."]
+position = Vector3(-92.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithInside" type="Camera3D" parent="."]
+position = Vector3(-92.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithLeft" type="Camera3D" parent="."]
+position = Vector3(-85.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithRight" type="Camera3D" parent="."]
+position = Vector3(-89.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithBack" type="Camera3D" parent="."]
+position = Vector3(-87.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithOut" type="Camera3D" parent="."]
+position = Vector3(-87.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SmithTop" type="Camera3D" parent="."]
+position = Vector3(-87.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorFront" type="Camera3D" parent="."]
+position = Vector3(-46.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorDoor" type="Camera3D" parent="."]
+position = Vector3(-52.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorInside" type="Camera3D" parent="."]
+position = Vector3(-52.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorLeft" type="Camera3D" parent="."]
+position = Vector3(-50.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorRight" type="Camera3D" parent="."]
+position = Vector3(-54.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorBack" type="Camera3D" parent="."]
+position = Vector3(-52.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorOut" type="Camera3D" parent="."]
+position = Vector3(-52.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorTop" type="Camera3D" parent="."]
+position = Vector3(-52.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicFront" type="Camera3D" parent="."]
+position = Vector3(-28.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicDoor" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicInside" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicLeft" type="Camera3D" parent="."]
+position = Vector3(-32.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicRight" type="Camera3D" parent="."]
+position = Vector3(-36.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicBack" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicOut" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicTop" type="Camera3D" parent="."]
+position = Vector3(-34.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorFront" type="Camera3D" parent="."]
+position = Vector3(-10.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorDoor" type="Camera3D" parent="."]
+position = Vector3(-16.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorInside" type="Camera3D" parent="."]
+position = Vector3(-16.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorLeft" type="Camera3D" parent="."]
+position = Vector3(-14.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorRight" type="Camera3D" parent="."]
+position = Vector3(-18.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorBack" type="Camera3D" parent="."]
+position = Vector3(-16.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorOut" type="Camera3D" parent="."]
+position = Vector3(-16.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorTop" type="Camera3D" parent="."]
+position = Vector3(-16.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernFront" type="Camera3D" parent="."]
+position = Vector3(22.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernDoor" type="Camera3D" parent="."]
+position = Vector3(16.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernInside" type="Camera3D" parent="."]
+position = Vector3(16.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernLeft" type="Camera3D" parent="."]
+position = Vector3(18.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernRight" type="Camera3D" parent="."]
+position = Vector3(14.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernBack" type="Camera3D" parent="."]
+position = Vector3(16.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernOut" type="Camera3D" parent="."]
+position = Vector3(16.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernTop" type="Camera3D" parent="."]
+position = Vector3(16.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyFront" type="Camera3D" parent="."]
+position = Vector3(40.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyDoor" type="Camera3D" parent="."]
+position = Vector3(34.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyInside" type="Camera3D" parent="."]
+position = Vector3(34.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyLeft" type="Camera3D" parent="."]
+position = Vector3(36.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyRight" type="Camera3D" parent="."]
+position = Vector3(32.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyBack" type="Camera3D" parent="."]
+position = Vector3(34.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyOut" type="Camera3D" parent="."]
+position = Vector3(34.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyTop" type="Camera3D" parent="."]
+position = Vector3(34.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralFront" type="Camera3D" parent="."]
+position = Vector3(58.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralDoor" type="Camera3D" parent="."]
+position = Vector3(52.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralInside" type="Camera3D" parent="."]
+position = Vector3(52.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralLeft" type="Camera3D" parent="."]
+position = Vector3(54.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralRight" type="Camera3D" parent="."]
+position = Vector3(50.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralBack" type="Camera3D" parent="."]
+position = Vector3(52.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralOut" type="Camera3D" parent="."]
+position = Vector3(52.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GeneralTop" type="Camera3D" parent="."]
+position = Vector3(52.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildFront" type="Camera3D" parent="."]
+position = Vector3(93.000, 1.600, -53.000)
+rotation = Vector3(0.140, 0.359, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildDoor" type="Camera3D" parent="."]
+position = Vector3(87.000, 1.600, -65.000)
+rotation = Vector3(0.014, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildInside" type="Camera3D" parent="."]
+position = Vector3(87.000, 1.600, -70.200)
+rotation = Vector3(-0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildLeft" type="Camera3D" parent="."]
+position = Vector3(89.000, 1.600, -78.000)
+rotation = Vector3(-0.014, 1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildRight" type="Camera3D" parent="."]
+position = Vector3(85.000, 1.600, -78.000)
+rotation = Vector3(-0.014, -1.429, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildBack" type="Camera3D" parent="."]
+position = Vector3(87.000, 1.600, -78.000)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildOut" type="Camera3D" parent="."]
+position = Vector3(87.000, 1.600, -84.000)
+rotation = Vector3(0.000, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildTop" type="Camera3D" parent="."]
+position = Vector3(87.000, 30.000, -78.500)
+rotation = Vector3(-1.567, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryFront" type="Camera3D" parent="."]
+position = Vector3(-59.000, 1.600, -36.000)
+rotation = Vector3(0.140, 1.930, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryDoor" type="Camera3D" parent="."]
+position = Vector3(-71.000, 1.600, -30.000)
+rotation = Vector3(0.014, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryInside" type="Camera3D" parent="."]
+position = Vector3(-76.200, 1.600, -30.000)
+rotation = Vector3(-0.019, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryLeft" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, -32.000)
+rotation = Vector3(-0.014, 3.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryRight" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, -28.000)
+rotation = Vector3(-0.014, 0.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryBack" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, -30.000)
+rotation = Vector3(-0.010, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryOut" type="Camera3D" parent="."]
+position = Vector3(-90.000, 1.600, -30.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryTop" type="Camera3D" parent="."]
+position = Vector3(-84.500, 30.000, -30.000)
+rotation = Vector3(-1.567, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolFront" type="Camera3D" parent="."]
+position = Vector3(-59.000, 1.600, -6.000)
+rotation = Vector3(0.140, 1.930, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolDoor" type="Camera3D" parent="."]
+position = Vector3(-71.000, 1.600, 0.000)
+rotation = Vector3(0.014, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolInside" type="Camera3D" parent="."]
+position = Vector3(-76.200, 1.600, -0.000)
+rotation = Vector3(-0.019, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolLeft" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, -2.000)
+rotation = Vector3(-0.014, 3.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolRight" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, 2.000)
+rotation = Vector3(-0.014, 0.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolBack" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, -0.000)
+rotation = Vector3(-0.010, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolOut" type="Camera3D" parent="."]
+position = Vector3(-90.000, 1.600, -0.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SchoolTop" type="Camera3D" parent="."]
+position = Vector3(-84.500, 30.000, -0.000)
+rotation = Vector3(-1.567, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryFront" type="Camera3D" parent="."]
+position = Vector3(-59.000, 1.600, 24.000)
+rotation = Vector3(0.140, 1.930, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryDoor" type="Camera3D" parent="."]
+position = Vector3(-71.000, 1.600, 30.000)
+rotation = Vector3(0.014, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryInside" type="Camera3D" parent="."]
+position = Vector3(-76.200, 1.600, 30.000)
+rotation = Vector3(-0.019, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryLeft" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, 28.000)
+rotation = Vector3(-0.014, 3.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryRight" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, 32.000)
+rotation = Vector3(-0.014, 0.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryBack" type="Camera3D" parent="."]
+position = Vector3(-84.000, 1.600, 30.000)
+rotation = Vector3(-0.010, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryOut" type="Camera3D" parent="."]
+position = Vector3(-90.000, 1.600, 30.000)
+rotation = Vector3(0.000, -1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryTop" type="Camera3D" parent="."]
+position = Vector3(-84.500, 30.000, 30.000)
+rotation = Vector3(-1.567, 1.571, 0.000)
+fov = 75.0
+far = 400.0
