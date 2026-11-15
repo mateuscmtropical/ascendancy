@@ -125,3 +125,10 @@ fov = 60.0
 position = Vector3(43.000, 3.200, -8.000)
 rotation = Vector3(0.050, -2.098, 0.000)
 fov = 70.0
+
+[node name="TopDown" type="Camera3D" parent="."]
+position = Vector3(0.000, 70.000, -4.000)
+rotation = Vector3(-1.571, 0.000, 0.000)
+projection = 1
+size = 196.0
+far = 200.0

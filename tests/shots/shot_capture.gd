@@ -1,13 +1,15 @@
 extends Node
 ## Tira um print da cena sem roubar foco: janela fora da tela, espera, salva PNG e fecha.
 ## Argumentos (depois de --): --shot-out=<caminho.png>
-## [--camera=<NomeDaCamera3D>] [--shot-delay=<segundos>] [--press-action=<ação do InputMap>]
+## [--camera=<NomeDaCamera3D>] [--shot-delay=<segundos>]
+## [--press-action=<ação do InputMap>] [--hide-ui]
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const OUTPUT_ARGUMENT: String = "--shot-out="
 const CAMERA_ARGUMENT: String = "--camera="
 const DELAY_ARGUMENT: String = "--shot-delay="
 const PRESS_ACTION_ARGUMENT: String = "--press-action="
+const HIDE_UI_ARGUMENT: String = "--hide-ui"
 const HEADLESS_DISPLAY: String = "headless"
 
 @export var seconds_before_capture: float = 1.5
@@ -33,6 +35,9 @@ func _read_arguments() -> void:
 		if argument.begins_with(CAMERA_ARGUMENT):
 			_make_camera_current.call_deferred(argument.trim_prefix(CAMERA_ARGUMENT))
 
+		if argument == HIDE_UI_ARGUMENT:
+			_hide_interface.call_deferred()
+
 		if argument.begins_with(PRESS_ACTION_ARGUMENT):
 			_press_action.call_deferred(argument.trim_prefix(PRESS_ACTION_ARGUMENT))
 
@@ -41,6 +46,14 @@ func _make_camera_current(camera_name: String) -> void:
 	var camera: Camera3D = get_parent().find_child(camera_name, true, false) as Camera3D
 
 	camera.make_current()
+
+
+## Esconde menus e contadores (toda CanvasLayer) para o print mostrar só o mundo.
+func _hide_interface() -> void:
+	var layers: Array[Node] = get_tree().root.find_children("*", "CanvasLayer", true, false)
+
+	for layer in layers:
+		(layer as CanvasLayer).hide()
 
 
 ## Evento interno do jogo (não vai para janela nenhuma): abre menus para o print.

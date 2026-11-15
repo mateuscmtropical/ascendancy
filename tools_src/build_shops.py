@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 import bpy
+from mathutils import Euler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -126,13 +127,13 @@ def make_bottle(name: str, base: tuple, radius: float, material, materials: dict
 
 # ---------- sign ----------
 
-def emblem_box(name: str, offset: tuple, size: tuple, material, degrees: float = 0.0) -> None:
+def emblem_box(name: str, offset: tuple, size: tuple, material, degrees: float = 0.0, thickness: float = SIGN_THICKNESS) -> None:
     """Flat piece of an emblem: offset and size are (across, up) on the board; it shows on both faces."""
-    make_tilted_box(name, (0.0, SIGN_CENTER[0] + offset[0], SIGN_CENTER[1] + offset[1]), (SIGN_THICKNESS, size[0], size[1]), material, x_degrees=degrees)
+    make_tilted_box(name, (0.0, SIGN_CENTER[0] + offset[0], SIGN_CENTER[1] + offset[1]), (thickness, size[0], size[1]), material, x_degrees=degrees)
 
 
-def emblem_disc(name: str, offset: tuple, radius: float, material, sides: int = 12, thickness: float = SIGN_THICKNESS) -> None:
-    make_lying_cylinder(name, (0.0, SIGN_CENTER[0] + offset[0], SIGN_CENTER[1] + offset[1]), radius, thickness, sides, material)
+def emblem_disc(name: str, offset: tuple, radius: float, material, sides: int = 12, thickness: float = SIGN_THICKNESS):
+    return make_lying_cylinder(name, (0.0, SIGN_CENTER[0] + offset[0], SIGN_CENTER[1] + offset[1]), radius, thickness, sides, material)
 
 
 def emblem_anvil(materials: dict) -> None:
@@ -214,6 +215,59 @@ def emblem_gem(materials: dict) -> None:
     emblem_disc("GemTable", (0.0, 0.02), 0.12, materials["cream"], sides=6, thickness=SIGN_THICKNESS + 0.05)
     emblem_box("GemRing", (0.0, -0.24), (0.2, 0.05), materials["gold"])
 
+def emblem_sack_flask(materials: dict) -> None:
+    emblem_disc("SackBody", (-0.1, -0.08), 0.21, materials["wood_light"], sides=10)
+    emblem_box("SackNeck", (-0.1, 0.12), (0.13, 0.12), materials["wood_light"])
+    emblem_box("SackTie", (-0.1, 0.1), (0.19, 0.035), materials["leather"], thickness=SIGN_THICKNESS + 0.04)
+    emblem_box("SackTuftLeft", (-0.15, 0.2), (0.07, 0.1), materials["wood_light"], degrees=-22.0)
+    emblem_box("SackTuftRight", (-0.05, 0.2), (0.07, 0.1), materials["wood_light"], degrees=22.0)
+    emblem_disc("FlaskBody", (0.19, -0.11), 0.12, materials["potion_blue"], thickness=SIGN_THICKNESS + 0.06)
+    emblem_box("FlaskNeck", (0.19, 0.03), (0.06, 0.12), materials["cream"], thickness=SIGN_THICKNESS + 0.06)
+    emblem_box("FlaskLip", (0.19, 0.1), (0.11, 0.03), materials["cream"], thickness=SIGN_THICKNESS + 0.06)
+
+
+def emblem_coin(materials: dict) -> None:
+    emblem_disc("CoinEdge", (0.0, 0.0), 0.28, materials["leather"], sides=16)
+    emblem_disc("CoinFace", (0.0, 0.0), 0.22, materials["gold"], sides=16, thickness=SIGN_THICKNESS + 0.04)
+    emblem_box("CoinBar", (0.0, 0.0), (0.06, 0.3), materials["leather"], thickness=SIGN_THICKNESS + 0.08)
+    emblem_box("CoinBarTop", (0.0, 0.09), (0.2, 0.05), materials["leather"], thickness=SIGN_THICKNESS + 0.08)
+    emblem_box("CoinBarLow", (0.0, -0.09), (0.2, 0.05), materials["leather"], thickness=SIGN_THICKNESS + 0.08)
+
+
+def emblem_book(materials: dict) -> None:
+    for side_name, side in (("Left", -1.0), ("Right", 1.0)):
+        emblem_box(f"BookCover{side_name}", (side * 0.15, -0.01), (0.3, 0.4), materials["leather"], degrees=-side * 8.0)
+        emblem_box(f"BookPage{side_name}", (side * 0.14, 0.0), (0.25, 0.34), materials["cream"], degrees=-side * 8.0, thickness=SIGN_THICKNESS + 0.04)
+
+        for line_index in range(4):
+            emblem_box(f"BookLine{side_name}{line_index}", (side * 0.14, 0.11 - 0.07 * line_index), (0.17, 0.015), materials["wood"], degrees=-side * 8.0, thickness=SIGN_THICKNESS + 0.07)
+
+    emblem_box("BookSpine", (0.0, -0.01), (0.04, 0.4), materials["leather"], thickness=SIGN_THICKNESS + 0.06)
+    emblem_box("BookRibbon", (0.0, -0.25), (0.045, 0.14), materials["red"])
+
+
+def emblem_leaf(materials: dict) -> None:
+    tilt = -35.0
+    center = (0.02, 0.04)
+    turn = math.radians(tilt)
+
+    def on_leaf(local: tuple) -> tuple:
+        """Leaf-local (across, along) position -> board offset."""
+        return (
+            center[0] + local[0] * math.cos(turn) - local[1] * math.sin(turn),
+            center[1] + local[0] * math.sin(turn) + local[1] * math.cos(turn),
+        )
+
+    body = emblem_disc("LeafBody", center, 0.17, materials["green"], sides=16)
+    body.scale = (1.75, 1.0, 1.0)
+    body.rotation_euler = (Euler((turn, 0.0, 0.0)).to_matrix() @ Euler((0.0, math.radians(90.0), 0.0)).to_matrix()).to_euler()
+
+    emblem_box("LeafStem", on_leaf((0.0, -0.33)), (0.04, 0.16), materials["wood_light"], degrees=tilt)
+    emblem_box("LeafRib", on_leaf((0.0, 0.0)), (0.03, 0.52), materials["cream"], degrees=tilt, thickness=SIGN_THICKNESS + 0.04)
+
+    for vein_index, vein_along in enumerate((-0.14, -0.02, 0.1)):
+        for side_name, side in (("Left", -1.0), ("Right", 1.0)):
+            emblem_box(f"LeafVein{side_name}{vein_index}", on_leaf((side * 0.06, vein_along + 0.04)), (0.02, 0.15), materials["cream"], degrees=tilt - side * 55.0, thickness=SIGN_THICKNESS + 0.04)
 
 def build_sign(shop: dict, materials: dict) -> None:
     board_y, board_z = SIGN_CENTER
@@ -563,8 +617,14 @@ SHOPS = {  # type -> awning/sign colour and the three builders
     "bakery": {"color": (0.8, 0.56, 0.2), "emblem": emblem_loaf, "goods": goods_bakery, "yard": yard_bakery},
     "tailor": {"color": (0.7, 0.3, 0.5), "emblem": emblem_spool, "goods": goods_tailor, "yard": yard_tailor},
     "jeweler": {"color": (0.1, 0.4, 0.4), "emblem": emblem_gem, "goods": goods_jeweler, "yard": yard_jeweler},
+    # sign-only types: no stall or yard builder yet, so only the sign is built for them
+    "general": {"color": (0.5, 0.4, 0.22), "emblem": emblem_sack_flask},
+    "bank": {"color": (0.2, 0.32, 0.18), "emblem": emblem_coin},
+    "bookshop": {"color": (0.38, 0.16, 0.3), "emblem": emblem_book},
+    "herbalist": {"color": (0.45, 0.58, 0.18), "emblem": emblem_leaf},
 }
 PIECES = {"sign": build_sign, "stall": build_stall, "yard": lambda shop, materials: shop["yard"](materials)}
+PIECE_NEEDS = {"sign": "emblem", "stall": "goods", "yard": "yard"}  # builder key a shop must define for each piece
 
 
 def build_shop_piece(shop_type: str, piece: str) -> Path:
@@ -588,5 +648,5 @@ if __name__ == "__main__":
     script_arguments = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
     for requested_shop in script_arguments or list(SHOPS):
-        for piece_name in PIECES:
+        for piece_name in (piece for piece in PIECES if PIECE_NEEDS[piece] in SHOPS[requested_shop]):
             print(f"BUILT {requested_shop} {piece_name} -> {build_shop_piece(requested_shop, piece_name)}")
