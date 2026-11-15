@@ -1,5 +1,7 @@
 # Passagem de bastão: praça comercial (lojas grandes mobiliadas)
 
+> Atualização da rodada 4 (nuvem, 2026-11-15): itens 6 (rotas da calçada norte: fregueses que param em cada porta), 7 (fazenda: `tools_src/build_farm.py`, quadra leste e campos além do muro) e 8 (caminho legado removido, `hub.tscn` conferido byte a byte) estão feitos no `wip/city-fidelity`. A quadra leste deixou de ter casas; o plano de lotes usa sub-seed por quadra. Falta o item 9 (revisão de design dos props) e medir fps.
+
 Branch: `worktree-agent-a0d1245143d8ae131` (sai de `wip/city-fidelity`). Nada foi enviado ao remoto.
 
 ## Pedido do usuário
