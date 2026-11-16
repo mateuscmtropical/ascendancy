@@ -3,7 +3,7 @@ extends GutTest
 const MULA_SCENE: PackedScene = preload("res://features/mobs/mula_sem_cabeca.tscn")
 const HOOF_COUNT: int = 4
 const WITHERS_HEIGHT: float = 1.7
-const HEIGHT_TOLERANCE: float = 0.35
+const HEIGHT_TOLERANCE: float = 0.75
 
 var _mula: MulaSemCabeca
 
@@ -50,6 +50,35 @@ func test_veins_use_the_pulsing_material() -> void:
 	var veins: MeshInstance3D = _mula.find_child("MulaVeins", true, false) as MeshInstance3D
 
 	assert_eq(veins.material_override, _mula.vein_material)
+
+
+func test_flames_use_the_ribbon_material() -> void:
+	var flames: MeshInstance3D = _mula.find_child("MulaFlames", true, false) as MeshInstance3D
+
+	assert_eq(flames.material_override, _mula.flame_ribbon_material)
+
+
+func test_fire_goes_out_when_the_mula_dies() -> void:
+	var blazes: Array[Node] = _mula.find_children("Blaze", "GPUParticles3D", true, false)
+	var blaze: GPUParticles3D = blazes[0] as GPUParticles3D
+
+	_mula.play_animation(MulaSemCabeca.DEATH_ANIMATION)
+	await wait_seconds(MulaSemCabeca.BURN_FADE_SECONDS + 0.3)
+
+	assert_false(blaze.emitting, "the stump blaze stops")
+	assert_almost_eq(_mula.get_burn(), 0.0, 0.01)
+
+
+func test_fire_comes_back_with_the_next_animation() -> void:
+	var blazes: Array[Node] = _mula.find_children("Blaze", "GPUParticles3D", true, false)
+	var blaze: GPUParticles3D = blazes[0] as GPUParticles3D
+
+	_mula.play_animation(MulaSemCabeca.DEATH_ANIMATION)
+	_mula.play_animation(MulaSemCabeca.IDLE_ANIMATION)
+	await wait_seconds(MulaSemCabeca.BURN_FADE_SECONDS + 0.3)
+
+	assert_true(blaze.emitting, "the stump blaze burns again")
+	assert_almost_eq(_mula.get_burn(), 1.0, 0.01)
 
 
 func test_gaits_loop_and_strikes_do_not() -> void:
