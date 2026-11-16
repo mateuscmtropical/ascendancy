@@ -13,6 +13,8 @@ const CAMERA_TARGETS: Dictionary[String, Vector3] = {
 	"MulaRun": Vector3(0.0, 1.25, 0.0),
 	"MulaScale": Vector3(0.0, 1.2, 1.0),
 	"MulaFootprints": Vector3(0.0, 0.5, -0.6),
+	"MulaFront": Vector3(0.0, 1.1, 0.0),
+	"MulaChest": Vector3(0.0, 0.95, 0.75),
 }
 const ANIMATION_BY_CAMERA: Dictionary[String, StringName] = {
 	"MulaRun": MulaSemCabeca.RUN_ANIMATION,
@@ -23,6 +25,8 @@ const ANIMATION_BY_CAMERA: Dictionary[String, StringName] = {
 const POSE_SECONDS_BY_CAMERA: Dictionary[String, float] = {
 	"MulaThreeQuarter": 0.3,
 }
+## Câmeras de frente: o aventureiro da escala ficaria na frente da mula.
+const CAMERAS_WITHOUT_ADVENTURER: Array[String] = ["MulaFront", "MulaChest"]
 ## Câmeras em que a mula anda para a frente (m/s), para as pegadas de lava ficarem no chão.
 const WALK_SPEED_BY_CAMERA: Dictionary[String, float] = {
 	"MulaFootprints": 1.3,
@@ -32,6 +36,7 @@ const WALK_START: float = -3.2
 var _walk_speed: float = 0.0
 
 @onready var _mula: MulaSemCabeca = $Mula
+@onready var _adventurer: Node3D = $Adventurer
 
 
 func _ready() -> void:
@@ -58,6 +63,7 @@ func _play_animation_of_camera(camera_name: String) -> void:
 	)
 
 	_mula.play_animation(animation_name)
+	_adventurer.visible = not CAMERAS_WITHOUT_ADVENTURER.has(camera_name)
 
 	if WALK_SPEED_BY_CAMERA.has(camera_name):
 		_walk_speed = WALK_SPEED_BY_CAMERA[camera_name]
