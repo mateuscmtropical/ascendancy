@@ -5,7 +5,7 @@ extends Node3D
 const CAMERA_ARGUMENT: String = "--camera="
 const ANIMATION_ARGUMENT: String = "--animation="
 const CAMERA_TARGETS: Dictionary[String, Vector3] = {
-	"MulaThreeQuarter": Vector3(0.0, 1.45, 0.0),
+	"MulaThreeQuarter": Vector3(0.0, 1.35, 0.0),
 	"MulaSide": Vector3(0.0, 1.3, 0.0),
 	"MulaBack": Vector3(0.0, 1.25, 0.0),
 	"MulaNeck": Vector3(0.0, 1.8, 0.95),

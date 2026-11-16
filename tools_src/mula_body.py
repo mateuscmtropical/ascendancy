@@ -22,11 +22,12 @@ RELIEF_RELAX = [(HOOF_TOP, 2)]
 SKIN_NOISE = 0.02  # ondulação orgânica da pele depois do remesh
 STUMP_HEIGHT = 1.75  # da base do osso do pescoço até a boca do toco, ao longo do osso
 STUMP_SEGMENTS = 40
-STUMP_RADII = (0.6, 0.71)  # meia largura (X) e meia espessura da boca do toco
+STUMP_RADII = (0.8, 0.8)  # meia largura (X) e meia espessura da boca do toco
 STUMP_WALL = 0.74  # fração do raio onde começa a parede do toco
 STUMP_PIT_DEPTH = 0.42
 STUMP_JAGS = (-0.1, -0.03, 0.0, 0.0, 0.06, 0.14, 0.26)  # lascas da borda, sorteadas por gomo
 STUMP_SEED = 7
+GIRTH_BOTTOM, GIRTH_TOP, TORSO_GIRTH = 2.2, 3.4, 1.16  # o tronco alarga acima das patas (ossos das patas não mudam)
 GAME_VERTICES = 15000
 CUT_TOLERANCE = 0.035
 EMBER_RIM_HEAT = 0.3
@@ -36,22 +37,22 @@ GROUND_CLEARANCE = 0.03  # sola do casco chata
 # Os volumes grandes dão a massa; os músculos ficam por cima, saltando só um pouco, para a junção virar sulco.
 MUSCLES = [
     # tronco
-    ((0.0, -1.3, 4.32), (0.0, 1.6, 4.48), 1.24, 1.02, (0.95, 1.0, 1.0)),  # barril das costelas até o flanco
-    ((0.0, -2.0, 4.25), (0.0, -1.9, 4.25), 1.05, 1.05, (1.0, 1.0, 1.12)),  # peito fundo
+    ((0.0, -1.3, 4.3), (0.0, 1.6, 4.48), 1.3, 1.04, (0.95, 1.0, 1.0)),  # barril das costelas até o flanco
+    ((0.0, -2.05, 4.2), (0.0, -1.9, 4.2), 1.18, 1.18, (1.0, 1.0, 1.14)),  # peito fundo
     ((0.0, 2.0, 4.6), (0.0, 2.5, 4.5), 0.95, 0.75, (1.0, 1.0, 1.0)),  # garupa
     ((0.0, -1.9, 5.35), (0.0, -1.2, 5.45), 0.45, 0.4, (0.7, 1.0, 1.0)),  # cernelha
     ((0.0, 2.75, 4.95), (0.0, 3.1, 4.8), 0.2, 0.13, (1.0, 1.0, 1.0)),  # sabugo do rabo
     # ombro e peito
-    ((0.9, -1.6, 5.0), (1.0, -2.3, 3.9), 0.52, 0.54, (0.7, 1.0, 1.0)),  # escápula
-    ((1.0, -1.2, 4.4), (0.98, -1.6, 3.4), 0.52, 0.42, (0.65, 1.0, 1.0)),  # tríceps
-    ((1.05, -2.45, 3.95), (0.95, -2.0, 3.3), 0.42, 0.38, (0.85, 1.0, 1.0)),  # ponta do ombro e braço
-    ((0.4, -2.8, 4.1), (0.45, -2.5, 3.4), 0.46, 0.36, (1.0, 0.9, 1.0)),  # peitoral
+    ((0.95, -1.6, 5.0), (1.06, -2.35, 3.85), 0.58, 0.6, (0.7, 1.0, 1.0)),  # escápula
+    ((1.05, -1.2, 4.4), (1.0, -1.6, 3.4), 0.58, 0.46, (0.65, 1.0, 1.0)),  # tríceps
+    ((1.08, -2.5, 3.95), (0.95, -2.0, 3.3), 0.46, 0.42, (0.85, 1.0, 1.0)),  # ponta do ombro e braço
+    ((0.42, -2.95, 4.1), (0.46, -2.6, 3.35), 0.5, 0.4, (1.0, 0.9, 1.0)),  # peitoral
     # pata dianteira
-    ((0.9, -1.9, 3.3), (0.87, -2.05, 1.85), 0.48, 0.26, (0.85, 1.0, 1.0)),  # antebraço
+    ((0.9, -1.9, 3.3), (0.87, -2.05, 1.85), 0.56, 0.29, (0.85, 1.0, 1.0)),  # antebraço
     ((1.02, -2.18, 3.0), (0.95, -2.16, 2.2), 0.26, 0.14, (0.8, 1.0, 1.0)),  # extensor
     ((0.86, -1.68, 3.0), (0.86, -1.9, 2.1), 0.26, 0.13, (0.8, 1.0, 1.0)),  # flexor
     ((0.87, -2.08, 1.74), (0.87, -2.06, 1.6), 0.3, 0.28, (0.9, 1.0, 1.0)),  # joelho
-    ((0.87, -2.02, 1.6), (0.87, -1.99, 0.72), 0.22, 0.21, (0.95, 1.0, 1.0)),  # canela
+    ((0.87, -2.02, 1.6), (0.87, -1.99, 0.72), 0.25, 0.235, (0.95, 1.0, 1.0)),  # canela
     ((0.87, -1.83, 1.55), (0.87, -1.81, 0.75), 0.12, 0.12, (1.0, 1.0, 1.0)),  # tendão
     ((0.87, -1.95, 0.68), (0.87, -1.93, 0.64), 0.28, 0.28, (0.92, 1.0, 1.0)),  # boleto
     ((0.87, -1.99, 0.6), (0.87, -2.13, 0.4), 0.22, 0.24, (1.0, 1.0, 1.0)),  # quartela
@@ -59,25 +60,25 @@ MUSCLES = [
     # anca e coxa
     ((0.7, 1.5, 5.0), (0.85, 2.3, 4.5), 0.68, 0.68, (0.8, 1.0, 1.0)),  # glúteo
     ((0.95, 1.15, 5.1), (0.95, 1.15, 5.1), 0.3, 0.3, (1.0, 1.0, 0.8)),  # ponta da anca
-    ((0.95, 1.7, 4.3), (0.92, 1.75, 3.35), 0.66, 0.45, (0.7, 1.0, 1.0)),  # quadríceps
+    ((0.95, 1.7, 4.3), (0.92, 1.75, 3.35), 0.72, 0.5, (0.7, 1.0, 1.0)),  # quadríceps
     ((0.8, 2.65, 4.5), (0.78, 2.75, 3.2), 0.55, 0.33, (0.8, 1.0, 1.0)),  # posterior da coxa
     ((0.9, 1.55, 3.25), (0.9, 1.55, 3.2), 0.36, 0.36, (0.85, 1.0, 1.0)),  # soldra
     # pata traseira
-    ((0.8, 2.15, 3.2), (0.75, 2.78, 2.42), 0.5, 0.24, (0.8, 1.0, 1.0)),  # perna
+    ((0.8, 2.15, 3.2), (0.75, 2.78, 2.42), 0.56, 0.27, (0.8, 1.0, 1.0)),  # perna
     ((0.75, 2.62, 3.05), (0.75, 3.0, 2.5), 0.18, 0.12, (1.0, 1.0, 1.0)),  # tendão do jarrete
     ((0.75, 2.84, 2.3), (0.75, 2.8, 2.14), 0.3, 0.27, (0.85, 1.0, 1.0)),  # jarrete
     ((0.75, 3.07, 2.46), (0.75, 3.05, 2.4), 0.15, 0.15, (1.0, 1.0, 1.0)),  # ponta do jarrete
-    ((0.75, 2.78, 2.1), (0.75, 2.66, 0.72), 0.23, 0.21, (0.95, 1.0, 1.0)),  # canela
+    ((0.75, 2.78, 2.1), (0.75, 2.66, 0.72), 0.26, 0.235, (0.95, 1.0, 1.0)),  # canela
     ((0.75, 2.96, 2.05), (0.75, 2.84, 0.75), 0.12, 0.12, (1.0, 1.0, 1.0)),  # tendão
     ((0.75, 2.69, 0.68), (0.75, 2.7, 0.64), 0.28, 0.28, (0.92, 1.0, 1.0)),  # boleto
     ((0.75, 2.64, 0.6), (0.75, 2.5, 0.4), 0.22, 0.24, (1.0, 1.0, 1.0)),  # quartela
     ((0.75, 2.53, 0.38), (0.75, 2.47, 0.1), 0.26, 0.38, (1.0, 1.1, 0.3)),  # casco
     # pescoço (segue o osso Neck) até acima do corte
-    ((0.0, -2.03, 4.67), (0.0, -4.16, 6.99), 1.05, 0.62, (0.85, 1.0, 1.0)),  # coluna do pescoço
-    ((0.0, -1.58, 5.29), (0.0, -3.79, 7.33), 0.4, 0.26, (0.6, 1.0, 1.0)),  # crista
-    ((0.0, -2.87, 4.51), (0.0, -4.51, 6.67), 0.36, 0.24, (1.0, 1.0, 1.0)),  # traqueia
-    ((0.66, -2.45, 4.76), (0.4, -4.31, 6.85), 0.36, 0.22, (1.0, 1.0, 1.0)),  # braquiocefálico
-    ((0.55, -1.94, 5.09), (0.36, -4.0, 7.14), 0.36, 0.23, (1.0, 1.0, 1.0)),  # esplênio
+    ((0.0, -2.03, 4.67), (0.0, -4.16, 6.99), 1.24, 0.74, (0.86, 1.0, 1.0)),  # coluna do pescoço
+    ((0.0, -1.52, 5.35), (0.0, -3.73, 7.4), 0.4, 0.26, (0.6, 1.0, 1.0)),  # crista
+    ((0.0, -2.93, 4.45), (0.0, -4.58, 6.6), 0.36, 0.24, (1.0, 1.0, 1.0)),  # traqueia
+    ((0.74, -2.45, 4.76), (0.48, -4.31, 6.85), 0.36, 0.22, (1.0, 1.0, 1.0)),  # braquiocefálico
+    ((0.62, -1.9, 5.13), (0.43, -3.96, 7.18), 0.36, 0.23, (1.0, 1.0, 1.0)),  # esplênio
 ]
 RIB_STARTS = [-0.85, -0.45, -0.05, 0.35, 0.75, 1.15]  # Y do alto de cada costela aparente
 RIB_HEIGHTS = [(5.0, 0.0), (4.4, 0.12), (3.8, 0.34)]  # (Z, recuo em Y) dos três pontos de cada costela
@@ -86,8 +87,9 @@ RIB_RELIEF = 0.04  # quanto a costela salta do barril
 # Vértebras saltadas ao longo da espinha (Y, Z, raio) e farrapos de carne pendurados (X, Y, Z do alto, comprimento).
 VERTEBRAE = [(-1.0, 5.56, 0.15), (-0.55, 5.55, 0.14), (-0.1, 5.54, 0.14), (0.35, 5.53, 0.14), (0.8, 5.52, 0.14), (1.25, 5.5, 0.14),
              (1.7, 5.5, 0.15), (2.15, 5.48, 0.14), (2.55, 5.3, 0.13)]
-TATTERS = [(0.3, -2.3, 3.3, 0.5), (-0.4, -2.0, 3.3, 0.7), (0.1, -1.3, 3.35, 0.45), (-0.15, -0.3, 3.4, 0.6), (0.35, 0.5, 3.6, 0.4),
-           (-0.3, 1.2, 3.7, 0.55), (0.95, -1.35, 3.3, 0.35), (-0.95, -1.35, 3.3, 0.5)]
+TATTERS = [(0.3, -2.3, 3.3, 0.7), (-0.4, -2.0, 3.3, 1.0), (0.1, -1.3, 3.3, 0.6), (-0.15, -0.3, 3.3, 0.85), (0.35, 0.5, 3.5, 0.55),
+           (-0.3, 1.2, 3.65, 0.75), (0.95, -1.35, 3.3, 0.5), (-0.95, -1.35, 3.3, 0.7), (0.5, -2.75, 3.5, 0.6), (-0.2, 0.1, 3.3, 0.4),
+           (0.3, 1.7, 3.8, 0.6), (-0.55, -2.6, 3.45, 0.45)]
 
 
 def rib_point(top_y: float, height: float, lean: float) -> tuple:
@@ -122,7 +124,7 @@ def relief_volumes() -> list:
     """Ribs, vertebrae and hanging tatters: the fine relief laid over the melted masses."""
     volumes = [copy for volume in rib_volumes() for copy in mirrored(volume)]
     volumes += [((0.0, y, z), (0.0, y, z), radius, radius, (0.7, 1.0, 0.8)) for y, z, radius in VERTEBRAE]
-    volumes += [((x, y, z), (x, y, z - length), 0.11, 0.03, (1.0, 1.0, 1.0)) for x, y, z, length in TATTERS]
+    volumes += [((x, y, z), (x, y, z - length), 0.14, 0.03, (1.0, 1.0, 1.0)) for x, y, z, length in TATTERS]
 
     return volumes
 
@@ -198,7 +200,10 @@ def sculpt_clay():
     skin.normal_update()
 
     for vertex in skin.verts:
+        girth_share = min(1.0, max(0.0, (vertex.co.z - GIRTH_BOTTOM) / (GIRTH_TOP - GIRTH_BOTTOM)))
+
         vertex.co += vertex.normal * noise.noise(vertex.co * 2.2) * SKIN_NOISE * min(1.0, vertex.co.z)
+        vertex.co.x *= 1.0 + (TORSO_GIRTH - 1.0) * girth_share
         vertex.co.z = max(vertex.co.z, GROUND_CLEARANCE)
 
     skin.to_mesh(skin_mesh)

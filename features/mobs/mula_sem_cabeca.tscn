@@ -9,7 +9,7 @@
 
 [sub_resource type="ShaderMaterial" id="vein_material"]
 shader = ExtResource("3_vein")
-shader_parameter/energy = 3.2
+shader_parameter/energy = 2.2
 
 [sub_resource type="FastNoiseLite" id="fire_noise"]
 frequency = 0.012
@@ -22,8 +22,8 @@ seamless = true
 noise = SubResource("fire_noise")
 
 [sub_resource type="Gradient" id="heat_gradient"]
-offsets = PackedFloat32Array(0, 0.2, 0.5, 0.8, 1)
-colors = PackedColorArray(0.12, 0.005, 0, 1, 0.75, 0.06, 0.005, 1, 1, 0.3, 0.02, 1, 1, 0.68, 0.14, 1, 1, 0.93, 0.6, 1)
+offsets = PackedFloat32Array(0, 0.22, 0.55, 0.85, 1)
+colors = PackedColorArray(0.1, 0.004, 0, 1, 0.6, 0.04, 0.004, 1, 1, 0.22, 0.015, 1, 1, 0.5, 0.07, 1, 1, 0.85, 0.42, 1)
 
 [sub_resource type="GradientTexture1D" id="heat_ramp"]
 gradient = SubResource("heat_gradient")
@@ -32,7 +32,8 @@ gradient = SubResource("heat_gradient")
 shader = ExtResource("4_flame")
 shader_parameter/noise_texture = SubResource("fire_noise_texture")
 shader_parameter/heat_ramp = SubResource("heat_ramp")
-shader_parameter/energy = 1.5
+shader_parameter/energy = 0.95
+shader_parameter/erosion = 1.25
 
 [sub_resource type="ShaderMaterial" id="smoke_material"]
 shader = ExtResource("5_smoke")
@@ -131,14 +132,14 @@ emission_sphere_radius = 0.07
 angle_min = -180.0
 angle_max = 180.0
 direction = Vector3(0, 0.1, -1)
-spread = 20.0
-initial_velocity_min = 0.3
-initial_velocity_max = 0.9
-gravity = Vector3(0, 0.9, 0)
+spread = 24.0
+initial_velocity_min = 0.15
+initial_velocity_max = 0.6
+gravity = Vector3(0, 1.0, 0)
 damping_min = 0.8
 damping_max = 1.4
-scale_min = 0.24
-scale_max = 0.44
+scale_min = 0.34
+scale_max = 0.6
 scale_curve = SubResource("flame_scale")
 color_ramp = SubResource("fade")
 turbulence_enabled = true
@@ -202,7 +203,7 @@ process_material = SubResource("smoke_process")
 draw_pass_1 = SubResource("smoke_quad")
 
 [node name="Blaze" type="GPUParticles3D" parent="FireTemplates/StumpFire"]
-amount = 70
+amount = 48
 lifetime = 1.0
 preprocess = 2.0
 visibility_aabb = AABB(-4, -4, -4, 8, 10, 8)
@@ -241,7 +242,7 @@ draw_pass_1 = SubResource("flame_quad")
 [node name="TailFire" type="Node3D" parent="FireTemplates"]
 
 [node name="Flames" type="GPUParticles3D" parent="FireTemplates/TailFire"]
-amount = 16
+amount = 12
 lifetime = 0.9
 preprocess = 2.0
 visibility_aabb = AABB(-5, -4, -5, 10, 9, 10)

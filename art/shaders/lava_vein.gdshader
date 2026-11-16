@@ -5,8 +5,8 @@ render_mode cull_back;
 // gravados por tools_src/build_mula_sem_cabeca.py. Brilha mais nos troncos e pulsa como batimento: a onda nasce no
 // toco e corre até as pontas.
 
-uniform vec3 trunk_color : source_color = vec3(1.0, 0.72, 0.22);
-uniform vec3 tip_color : source_color = vec3(1.0, 0.2, 0.02);
+uniform vec3 trunk_color : source_color = vec3(1.0, 0.6, 0.14);
+uniform vec3 tip_color : source_color = vec3(0.95, 0.13, 0.01);
 uniform float energy = 5.0;
 uniform float beats_per_second = 0.75;
 uniform float beat_travel = 2.2;

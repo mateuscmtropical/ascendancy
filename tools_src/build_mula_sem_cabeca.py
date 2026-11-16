@@ -50,7 +50,7 @@ TEXTURE_SIZE = 2048
 HIDE_GLOW_STRENGTH = 1.2
 
 VEIN_SEED = 11
-VEIN_ROOTS = 7  # troncos que nascem na borda do toco
+VEIN_ROOTS = 9  # troncos que nascem na borda do toco
 VEIN_TIPS = 420  # pontas espalhadas pelo corpo
 VEIN_FRONT_DENSITY = 2.4  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
 VEIN_FRONT_END = -0.9
@@ -60,8 +60,8 @@ VEIN_BRIDGES = 110  # pontas que alcançam um vaso vizinho e fecham a teia
 VEIN_BRIDGE_REACH = 9  # arestas que uma ponte pode atravessar
 VEIN_GROOVE_PULL = 4.0  # quanto o sulco entre músculos barateia o caminho
 VEIN_TIP_RADIUS = 0.007
-VEIN_TRUNK_RADIUS = 0.06
-VEIN_TRUNK_FLOW = 110.0  # ramos alimentados a partir dos quais o vaso já é tronco
+VEIN_TRUNK_RADIUS = 0.08
+VEIN_TRUNK_FLOW = 70.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
 
 LINK_RADIUS = 0.105
@@ -82,10 +82,10 @@ CHAIN_LOOPS = [
 CHAIN_ENDS = [(0, 2, -1.0, 7, "Shoulders"), (1, 0, 1.0, 4, "Shoulders"), (2, 0, -1.0, 6, "Torso"), (3, 0, 1.0, 5, "Hips"), (2, 0, 1.0, 3, "Torso")]
 # Marcadores de fogo: vazios presos aos ossos, que o jogo troca pelas partículas (prefixo do nome = tipo de fogo).
 STUMP_FIRE_DEPTH = 0.22  # a labareda nasce dentro da cratera do toco
-MANE_FIRE = [("Neck", 1.55, 0.72), ("Neck", 1.05, 0.86), ("Neck", 0.55, 1.0), ("Neck", 0.05, 1.12), ("Shoulders", -0.45, 1.2)]  # (osso, altura no pescoço, distância do eixo)
+MANE_FIRE = [("Neck", 1.55, 0.8), ("Neck", 1.05, 0.94), ("Neck", 0.55, 1.06), ("Neck", 0.05, 1.16), ("Shoulders", -0.45, 1.22)]  # (osso, altura no pescoço, distância do eixo)
 WITHERS_FIRE = [("Shoulders", Vector((0.0, -1.55, 5.82))), ("Shoulders", Vector((0.0, -1.05, 5.74)))]
 # Rabo de fogo: arco que sai do sabugo para trás e cai; cada ponto segue um osso do rabo (balança na animação).
-TAIL_FIRE = [("Tail1", Vector((0.0, 3.15, 4.85))), ("Tail1", Vector((0.0, 3.55, 4.74))), ("Tail2", Vector((0.0, 3.95, 4.5))), ("Tail2", Vector((0.0, 4.3, 4.15))),
+TAIL_FIRE = [("Tail1", Vector((0.0, 3.0, 4.95))), ("Tail1", Vector((0.0, 3.45, 4.8))), ("Tail2", Vector((0.0, 3.95, 4.5))), ("Tail2", Vector((0.0, 4.3, 4.15))),
              ("Tail3", Vector((0.0, 4.6, 3.72))), ("Tail3", Vector((0.0, 4.82, 3.25))), ("Tail4", Vector((0.0, 4.96, 2.75))), ("Tail4", Vector((0.0, 5.02, 2.25)))]
 HOOF_FIRE = {"FrontL": Vector((0.87, -2.13, 0.2)), "FrontR": Vector((-0.87, -2.13, 0.2)), "BackL": Vector((0.75, 2.5, 0.2)), "BackR": Vector((-0.75, 2.5, 0.2))}
 HOOF_REACH = 0.3  # raio em volta do marcador que decide qual osso carrega o casco
@@ -250,7 +250,7 @@ def lay_bridge(last: int, landing: int, came_from: dict, kept: dict, flow: dict)
 
 def vein_thickness(flow: int) -> float:
     """0 at a tip, 1 at a trunk."""
-    return min(1.0, (flow / VEIN_TRUNK_FLOW) ** 0.6)
+    return min(1.0, (flow / VEIN_TRUNK_FLOW) ** 0.55)
 
 
 def finish_skinned_object(name: str, edit_mesh, body_object, armature, materials: list):
@@ -356,8 +356,8 @@ def paint_bake_mask(mesh_object, tree: dict, ember_heat: dict) -> None:
 
     for edge in mesh.edges:
         first, second = edge.vertices
-        spill[first] = max(spill.get(first, 0.0), glow.get(second, 0.0) * 0.3)
-        spill[second] = max(spill.get(second, 0.0), glow.get(first, 0.0) * 0.3)
+        spill[first] = max(spill.get(first, 0.0), glow.get(second, 0.0) ** 2 * 0.7)
+        spill[second] = max(spill.get(second, 0.0), glow.get(first, 0.0) ** 2 * 0.7)
 
     leg = [sum(element.weight for element in vertex.groups if "Leg" in group_names[element.group] or "Foot" in group_names[element.group]) for vertex in mesh.vertices]
     mask = mesh.color_attributes.new("mask", "FLOAT_COLOR", "CORNER")
@@ -656,7 +656,7 @@ def build_bake_material(mesh_object) -> dict:
     links.new(bump.outputs[0], diffuse.inputs["Normal"])
 
     tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.5), math_node(nodes, links, "MULTIPLY", fibres, 0.5))
-    hide = color_ramp(nodes, links, tone, [(0.3, (0.014, 0.011, 0.011)), (0.5, (0.04, 0.025, 0.022)), (0.72, (0.095, 0.055, 0.045))])
+    hide = color_ramp(nodes, links, tone, [(0.3, (0.014, 0.011, 0.011)), (0.5, (0.04, 0.025, 0.022)), (0.72, (0.11, 0.052, 0.042))])
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.55), hide, (0.012, 0.01, 0.011))
     hide = mix(nodes, links, math_node(nodes, links, "SUBTRACT", 1.0, crackle), hide, (0.01, 0.006, 0.006))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.4), hide, (0.3, 0.03, 0.01))
@@ -664,7 +664,7 @@ def build_bake_material(mesh_object) -> dict:
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
     roughness_value = math_node(nodes, links, "MULTIPLY_ADD", grain, 0.4, clamp=True)
-    roughness_value.node.inputs[2].default_value = 0.42
+    roughness_value.node.inputs[2].default_value = 0.5
     combine = nodes.new("ShaderNodeCombineColor")
     links.new(roughness_value, combine.inputs[1])
 
