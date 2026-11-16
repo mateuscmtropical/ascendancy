@@ -548,6 +548,8 @@ FARM_ANIMALS = {  # cercado -> (modelo convertido por convert_farm_animals.py, q
     "pigs": ("res://art/town/farm/animals/pig.gltf", 5, 0.5),
 }
 FARM_ANIMAL_SEED = 5150
+FARM_ANIMAL_GAP = 1.6  # distância mínima entre bichos ao nascer, em comprimentos do corpo
+FARM_ANIMAL_TRIES = 60
 FARM_FIELD_PLOTS = {  # canteiro -> (cultura, min x, max x, min z, max z): fileiras correm ao longo de x
     "WheatNorth": ("wheat", 106.0, 146.0, -44.0, -26.0),
     "Corn": ("corn", 106.0, 126.0, -22.0, -4.0),
@@ -1460,6 +1462,18 @@ def add_farm(scene: SceneWriter) -> None:
     add_farm_animals(scene)
 
 
+def spread_points(generator: random.Random, area: tuple, count: int, gap: float) -> list:
+    """Points inside area (x, z, width, depth) at least gap apart (rejection sampling; gives up spacing after a few tries)."""
+    points = []
+
+    for _ in range(count):
+        candidates = [(generator.uniform(area[0], area[0] + area[2]), generator.uniform(area[1], area[1] + area[3])) for _ in range(FARM_ANIMAL_TRIES)]
+        spaced = [point for point in candidates if all(distance(point, taken) >= gap for taken in points)]
+        points.append(spaced[0] if spaced else candidates[0])
+
+    return points
+
+
 def add_farm_animals(scene: SceneWriter) -> None:
     script = scene.external_id("Script", "res://features/hub/farm_animal.gd")
     generator = random.Random(FARM_ANIMAL_SEED)
@@ -1475,9 +1489,9 @@ def add_farm_animals(scene: SceneWriter) -> None:
         min_x, max_x, min_z, max_z = FARM_PENS[pen]
         area = (min_x + FARM_ANIMAL_MARGIN, min_z + FARM_ANIMAL_MARGIN, max_x - min_x - 2.0 * FARM_ANIMAL_MARGIN, max_z - min_z - 2.0 * FARM_ANIMAL_MARGIN)
         model_id = scene.external_id("PackedScene", model)
+        spawn_points = spread_points(generator, area, count, FARM_ANIMAL_BODY[pen][2] * FARM_ANIMAL_GAP)
 
-        for index in range(count):
-            x, z = generator.uniform(area[0], area[0] + area[2]), generator.uniform(area[1], area[1] + area[3])
+        for index, (x, z) in enumerate(spawn_points):
             scene.add_node(f"{pen.title()}{index}", "FarmAnimals", "AnimatableBody3D", properties={
                 "position": vector(x, 0.03, z),
                 "rotation": vector(0.0, generator.uniform(-math.pi, math.pi), 0.0),

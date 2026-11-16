@@ -5287,7 +5287,7 @@ animation_offset_seconds = 0.0
 
 [node name="Cows0" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(87.219, 0.030, 5.698)
-rotation = Vector3(0.000, -2.466, 0.000)
+rotation = Vector3(0.000, 1.949, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5295,12 +5295,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("114_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
-wander_seed = 6156537
+wander_seed = 13988269
 body_size = Vector3(0.900, 1.400, 2.200)
 
 [node name="Cows1" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(83.681, 0.030, 15.227)
-rotation = Vector3(0.000, -1.265, 0.000)
+position = Vector3(84.291, 0.030, 20.858)
+rotation = Vector3(0.000, 0.638, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5308,12 +5308,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("114_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
-wander_seed = 894396553
+wander_seed = 504954191
 body_size = Vector3(0.900, 1.400, 2.200)
 
 [node name="Cows2" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(84.145, 0.030, 15.782)
-rotation = Vector3(0.000, -2.169, 0.000)
+position = Vector3(96.766, 0.030, 16.265)
+rotation = Vector3(0.000, -2.101, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5321,12 +5321,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("114_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
-wander_seed = 865711377
+wander_seed = 953990702
 body_size = Vector3(0.900, 1.400, 2.200)
 
 [node name="Cows3" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(83.571, 0.030, 15.362)
-rotation = Vector3(0.000, -0.773, 0.000)
+position = Vector3(98.198, 0.030, 23.781)
+rotation = Vector3(0.000, 2.358, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5334,12 +5334,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("114_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
-wander_seed = 174439977
+wander_seed = 379352014
 body_size = Vector3(0.900, 1.400, 2.200)
 
 [node name="Pigs0" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(91.771, 0.030, 34.420)
-rotation = Vector3(0.000, 0.999, 0.000)
+position = Vector3(87.980, 0.030, 38.086)
+rotation = Vector3(0.000, -0.656, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5347,12 +5347,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("115_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
-wander_seed = 724823827
+wander_seed = 500029480
 body_size = Vector3(0.600, 0.800, 1.200)
 
 [node name="Pigs1" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(90.840, 0.030, 33.883)
-rotation = Vector3(0.000, -2.562, 0.000)
+position = Vector3(96.169, 0.030, 34.297)
+rotation = Vector3(0.000, 1.740, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5360,12 +5360,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("115_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
-wander_seed = 381645810
+wander_seed = 837996492
 body_size = Vector3(0.600, 0.800, 1.200)
 
 [node name="Pigs2" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(95.777, 0.030, 35.667)
-rotation = Vector3(0.000, -1.131, 0.000)
+position = Vector3(96.477, 0.030, 39.377)
+rotation = Vector3(0.000, -0.443, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5373,12 +5373,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("115_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
-wander_seed = 862314575
+wander_seed = 801188445
 body_size = Vector3(0.600, 0.800, 1.200)
 
 [node name="Pigs3" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(90.852, 0.030, 41.665)
-rotation = Vector3(0.000, 0.312, 0.000)
+position = Vector3(97.798, 0.030, 41.101)
+rotation = Vector3(0.000, -1.305, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5386,12 +5386,12 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("115_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
-wander_seed = 85028151
+wander_seed = 591565649
 body_size = Vector3(0.600, 0.800, 1.200)
 
 [node name="Pigs4" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(92.748, 0.030, 34.767)
-rotation = Vector3(0.000, -2.578, 0.000)
+position = Vector3(91.420, 0.030, 40.128)
+rotation = Vector3(0.000, -2.875, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
@@ -5399,7 +5399,7 @@ script = ExtResource("113_ext")
 model_scene = ExtResource("115_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
-wander_seed = 675316160
+wander_seed = 743114111
 body_size = Vector3(0.600, 0.800, 1.200)
 
 [node name="Carriages" type="Node3D" parent="."]

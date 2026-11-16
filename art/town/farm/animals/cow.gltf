@@ -3680,7 +3680,6 @@
 	],
 	"materials":[
 		{
-			"alphaMode":"MASK",
 			"doubleSided":true,
 			"name":"White",
 			"pbrMetallicRoughness":{
@@ -3688,14 +3687,13 @@
 					0.800000011920929,
 					0.800000011920929,
 					0.800000011920929,
-					0
+					1
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.690034806728363
 			}
 		},
 		{
-			"alphaMode":"MASK",
 			"doubleSided":true,
 			"name":"Black",
 			"pbrMetallicRoughness":{
@@ -3703,14 +3701,13 @@
 					0.029097795486450195,
 					0.029097795486450195,
 					0.029097795486450195,
-					0
+					1
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.690034806728363
 			}
 		},
 		{
-			"alphaMode":"MASK",
 			"doubleSided":true,
 			"name":"Pink",
 			"pbrMetallicRoughness":{
@@ -3718,7 +3715,7 @@
 					0.8000000715255737,
 					0.17604881525039673,
 					0.21668972074985504,
-					0
+					1
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.690034806728363

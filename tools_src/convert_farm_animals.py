@@ -115,12 +115,29 @@ def rename_actions() -> dict:
     return kept
 
 
+def make_materials_opaque() -> None:
+    """The pack's FBX materials import with alpha 0, which glTF exports as MASK: the animal would be invisible."""
+    for material in bpy.data.materials:
+        shader = material.node_tree.nodes.get("Principled BSDF") if material.use_nodes else None
+
+        if shader is None:
+            continue
+
+        alpha_input = shader.inputs["Alpha"]
+
+        for link in list(alpha_input.links):
+            material.node_tree.links.remove(link)
+
+        alpha_input.default_value = 1.0
+
+
 def convert(animal: str, pack_dir: Path) -> dict:
     source = find_source(pack_dir, animal)
     output_path = OUTPUT_DIR / f"{animal}.gltf"
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     import_source(source)
+    make_materials_opaque()
     factor = normalize(animal)
     actions = rename_actions()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

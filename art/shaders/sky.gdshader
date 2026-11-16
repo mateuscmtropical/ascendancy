@@ -39,11 +39,26 @@ uniform float star_density : hint_range(0.0, 1.0) = 0.9;
 uniform vec3 galaxy_plane_normal = vec3(0.42, 0.3, 0.86);
 
 
-float hash_3d(vec3 point) {
-	point = fract(point * 0.3183099 + vec3(0.71, 0.113, 0.419));
-	point *= 17.0;
+// Hash inteiro da célula (exato): o hash de ponto flutuante dava valores diferentes para o mesmo canto
+// visto de células vizinhas, e as bordas das células apareciam como riscos retos nas nuvens.
+uint hash_cell(uvec3 cell) {
+	cell = cell * 1664525u + 1013904223u;
+	cell.x += cell.y * cell.z;
+	cell.y += cell.z * cell.x;
+	cell.z += cell.x * cell.y;
+	cell ^= cell >> 16u;
+	cell.x += cell.y * cell.z;
+	cell.y += cell.z * cell.x;
+	cell.z += cell.x * cell.y;
 
-	return fract(point.x * point.y * point.z * (point.x + point.y + point.z));
+	return cell.x ^ cell.y ^ cell.z;
+}
+
+
+float hash_3d(vec3 point) {
+	uvec3 cell = uvec3(ivec3(floor(point)));
+
+	return float(hash_cell(cell) >> 8u) / 16777216.0;
 }
 
 
@@ -165,7 +180,7 @@ vec3 night_sky(vec3 direction, float night_amount) {
 	vec3 band_color = mix(vec3(0.55, 0.62, 0.85), vec3(0.95, 0.85, 0.7), galaxy_band * 0.6);
 	float horizon_fade = smoothstep(0.0, 0.18, direction.y);
 
-	return (vec3(stars) + band_color * galaxy_band * 0.6 + vec3(0.8, 0.75, 0.95) * galaxies * 0.45)
+	return (vec3(stars) + band_color * galaxy_band * 0.42 + vec3(0.8, 0.75, 0.95) * galaxies * 0.45)
 		* night_amount * horizon_fade;
 }
 
@@ -193,9 +208,9 @@ float meteor_streak(vec3 direction, vec4 head, vec4 tail) {
 	float path_length = max(length(path), 0.0001);
 	float along = clamp(dot(direction - tail_direction, path) / (path_length * path_length), 0.0, 1.0);
 	vec3 closest = tail_direction + path * along;
-	float width = 0.0015 + 0.0025 * along;
+	float width = 0.0005 + 0.0011 * along;
 	float distance_to_line = length(direction - closest);
-	float line = smoothstep(width, 0.0, distance_to_line) + 0.35 * smoothstep(width * 4.0, 0.0, distance_to_line);
+	float line = smoothstep(width, 0.0, distance_to_line) + 0.25 * smoothstep(width * 3.0, 0.0, distance_to_line);
 
 	return line * along * along * head.w * 2.0 * step(0.0, direction.y);
 }

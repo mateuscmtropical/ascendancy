@@ -4,7 +4,7 @@ extends RefCounted
 ## partir do observador, sempre acima do horizonte) entre `start_seconds` e o fim da duração.
 
 ## Fração do caminho que a cauda ocupa atrás da cabeça.
-const TAIL_SHARE: float = 0.35
+const TAIL_SHARE: float = 0.45
 
 var start_seconds: float = 0.0
 var duration: float = 1.0

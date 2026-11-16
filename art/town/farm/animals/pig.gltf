@@ -2017,7 +2017,6 @@
 	],
 	"materials":[
 		{
-			"alphaMode":"MASK",
 			"doubleSided":true,
 			"name":"Material.003",
 			"pbrMetallicRoughness":{
@@ -2025,14 +2024,13 @@
 					0.6866853833198547,
 					0.3564002215862274,
 					0.37123775482177734,
-					0
+					1
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.690034806728363
 			}
 		},
 		{
-			"alphaMode":"MASK",
 			"doubleSided":true,
 			"name":"Material",
 			"pbrMetallicRoughness":{
@@ -2040,7 +2038,7 @@
 					0.20189817249774933,
 					0.08714307844638824,
 					0.04865839704871178,
-					0
+					1
 				],
 				"metallicFactor":0,
 				"roughnessFactor":0.690034806728363
