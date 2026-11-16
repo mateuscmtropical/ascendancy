@@ -22,13 +22,13 @@ MASS_RELAX = [(HOOF_TOP, 2)]  # (acima de Z, passadas): o tronco derrete mais qu
 RELIEF_RELAX = [(HOOF_TOP, 2)]
 SKIN_NOISE = 0.02  # ondulação orgânica da pele depois do remesh
 STUMP_SEGMENTS = 40
-STUMP_RADII = (0.64, 0.68)  # meia largura (X) e meia espessura da boca do toco
+STUMP_RADII = (0.86, 0.84)  # meia largura (X) e meia espessura da boca do toco
 STUMP_WALL = 0.74  # fração do raio onde começa a parede do toco
 STUMP_PIT_DEPTH = 0.42
 STUMP_JAGS = (-0.13, -0.06, -0.02, 0.0, 0.05, 0.1, 0.18)  # lascas da borda, sorteadas por gomo
 STUMP_SEED = 7
 GIRTH_BOTTOM, GIRTH_TOP, TORSO_GIRTH = 2.2, 3.4, 1.0  # o tronco alarga acima das patas (ossos das patas não mudam)
-GAME_VERTICES = 30000
+GAME_VERTICES = 12000
 CUT_TOLERANCE = 0.035
 EMBER_RIM_HEAT = 0.3
 GROUND_CLEARANCE = 0.03  # sola do casco chata
@@ -267,6 +267,7 @@ def cut_stump(body, stump: Stump) -> tuple:
     bpy.data.meshes.remove(old_mesh)
     bpy.data.meshes.remove(cutter.data)
 
+    drop_loose_pieces(cut_mesh)
     lighten(body)
     cut_mesh = body.data
     on_cut = {}
@@ -286,6 +287,31 @@ def cut_stump(body, stump: Stump) -> tuple:
             outside.add(second if first in on_cut else first)
 
     return sorted(outside, key=lambda index: stump.polar(cut_mesh.vertices[index].co)[1]), on_cut
+
+
+def drop_loose_pieces(mesh) -> None:
+    """Keep only the largest connected piece (what the cut leaves of the head goes away)."""
+    skin = bmesh.new()
+    skin.from_mesh(mesh)
+    unseen = set(skin.verts)
+    pieces = []
+
+    while unseen:
+        piece, front = set(), [unseen.pop()]
+
+        while front:
+            vertex = front.pop()
+            piece.add(vertex)
+            neighbours = [edge.other_vert(vertex) for edge in vertex.link_edges if edge.other_vert(vertex) in unseen]
+            unseen.difference_update(neighbours)
+            front.extend(neighbours)
+
+        pieces.append(piece)
+
+    largest = max(pieces, key=len)
+    bmesh.ops.delete(skin, geom=[vertex for vertex in skin.verts if vertex not in largest], context="VERTS")
+    skin.to_mesh(mesh)
+    skin.free()
 
 
 def lighten(body) -> None:
