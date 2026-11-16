@@ -1475,6 +1475,10 @@ FARMHANDS = {  # nome -> (corpo, cabelo, posição, para onde olha, animação)
     "Swineherd": ("villager_male", "grey", (90.0, 30.2), (93.0, 36.0), "ual2/Idle_FoldArms"),
 }
 FARM_ANIMAL_BODY = {"cows": (0.9, 1.4, 2.2), "pigs": (0.6, 0.8, 1.2)}
+FARM_PEN_PROPS = {  # cercado -> (x, z, raio) de abrigo, cochos e comedouro de feno (posições de build_farm.py): o bicho não anda por cima deles
+    "cows": ((90.5, 23.7, 2.5), (93.5, 23.7, 2.5), (96.5, 23.7, 2.5), (88.0, 5.6, 1.5), (85.5, 24.8, 1.6)),
+    "pigs": ((94.5, 39.9, 2.0), (97.5, 39.9, 2.0), (94.0, 32.2, 1.2), (88.0, 42.2, 1.4)),
+}
 CARRIAGE_HORSE = "res://art/town/farm/animals/horse.gltf"
 CARRIAGE_HARNESSED_HORSE = "res://art/town/farm/animals/horse_harness.gltf"  # coelheira, selim e argolas dos varais
 CARRIAGE_DRIVERS = (("villager_male", "brown"), ("villager_female", "black"))  # (corpo, cabelo) de cada condutor
@@ -1533,14 +1537,15 @@ def spread_points(generator: random.Random, area: tuple, count: int, gap: float,
 
 
 def pen_trunks(pen: str) -> tuple:
-    """(x, z, trunk radius) of the shade trees standing inside a pen."""
+    """(x, z, radius) of what the animals of a pen must walk around: the shade trees and FARM_PEN_PROPS."""
     min_x, max_x, min_z, max_z = FARM_PENS[pen]
-
-    return tuple(
+    trunks = tuple(
         (x, z, TRUNK_RADIUS[kind] * scale)
         for kind, _variant, x, z, scale in FARM_SHADE_TREES.values()
         if min_x < x < max_x and min_z < z < max_z
     )
+
+    return trunks + FARM_PEN_PROPS[pen]
 
 
 def check_shade_trees() -> None:

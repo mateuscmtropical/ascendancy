@@ -42,5 +42,5 @@ movie_writer/mjpeg_quality=1.0
 CFG
 trap 'rm -f override.cfg' EXIT
 
-timeout 600 "$GODOT" --path . --screen 0 --fixed-fps 30 --write-movie "$OUTPUT" "$SCENE" -- "${EXTRA_ARGUMENTS[@]}" 2>&1 | grep -E "ERROR|Movie" | grep -vE "$NOISE" || true
+timeout 1800 "$GODOT" --path . --screen 0 --fixed-fps 30 --write-movie "$OUTPUT" "$SCENE" -- "${EXTRA_ARGUMENTS[@]}" 2>&1 | grep -E "ERROR|Movie" | grep -vE "$NOISE" || true
 ls -la "$OUTPUT"

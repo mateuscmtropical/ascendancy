@@ -5520,7 +5520,7 @@ shape = SubResource("collider_tree_bloom")
 [node name="FarmAnimals" type="Node3D" parent="."]
 
 [node name="Cows0" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(87.219, 0.030, 5.698)
+position = Vector3(80.705, 0.030, 5.620)
 rotation = Vector3(0.000, 1.949, 0.000)
 collision_layer = 4
 collision_mask = 0
@@ -5531,7 +5531,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 13988269
 body_size = Vector3(0.900, 1.400, 2.200)
-obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24, 90.50, 23.70, 2.50, 93.50, 23.70, 2.50, 96.50, 23.70, 2.50, 88.00, 5.60, 1.50, 85.50, 24.80, 1.60)
 
 [node name="Cows1" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(84.291, 0.030, 20.858)
@@ -5545,7 +5545,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 504954191
 body_size = Vector3(0.900, 1.400, 2.200)
-obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24, 90.50, 23.70, 2.50, 93.50, 23.70, 2.50, 96.50, 23.70, 2.50, 88.00, 5.60, 1.50, 85.50, 24.80, 1.60)
 
 [node name="Cows2" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(96.766, 0.030, 16.265)
@@ -5559,10 +5559,10 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 953990702
 body_size = Vector3(0.900, 1.400, 2.200)
-obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24, 90.50, 23.70, 2.50, 93.50, 23.70, 2.50, 96.50, 23.70, 2.50, 88.00, 5.60, 1.50, 85.50, 24.80, 1.60)
 
 [node name="Cows3" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(98.198, 0.030, 23.781)
+position = Vector3(86.385, 0.030, 10.265)
 rotation = Vector3(0.000, 2.358, 0.000)
 collision_layer = 4
 collision_mask = 0
@@ -5573,7 +5573,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 379352014
 body_size = Vector3(0.900, 1.400, 2.200)
-obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24, 90.50, 23.70, 2.50, 93.50, 23.70, 2.50, 96.50, 23.70, 2.50, 88.00, 5.60, 1.50, 85.50, 24.80, 1.60)
 
 [node name="Pigs0" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(87.980, 0.030, 38.086)
@@ -5587,7 +5587,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 500029480
 body_size = Vector3(0.600, 0.800, 1.200)
-obstacles = PackedVector3Array(89.00, 35.20, 0.21)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21, 94.50, 39.90, 2.00, 97.50, 39.90, 2.00, 94.00, 32.20, 1.20, 88.00, 42.20, 1.40)
 
 [node name="Pigs1" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(96.169, 0.030, 34.297)
@@ -5601,10 +5601,10 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 837996492
 body_size = Vector3(0.600, 0.800, 1.200)
-obstacles = PackedVector3Array(89.00, 35.20, 0.21)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21, 94.50, 39.90, 2.00, 97.50, 39.90, 2.00, 94.00, 32.20, 1.20, 88.00, 42.20, 1.40)
 
 [node name="Pigs2" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(96.477, 0.030, 39.377)
+position = Vector3(96.055, 0.030, 36.219)
 rotation = Vector3(0.000, -0.443, 0.000)
 collision_layer = 4
 collision_mask = 0
@@ -5615,10 +5615,10 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 801188445
 body_size = Vector3(0.600, 0.800, 1.200)
-obstacles = PackedVector3Array(89.00, 35.20, 0.21)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21, 94.50, 39.90, 2.00, 97.50, 39.90, 2.00, 94.00, 32.20, 1.20, 88.00, 42.20, 1.40)
 
 [node name="Pigs3" type="AnimatableBody3D" parent="FarmAnimals"]
-position = Vector3(97.798, 0.030, 41.101)
+position = Vector3(90.501, 0.030, 35.745)
 rotation = Vector3(0.000, -1.305, 0.000)
 collision_layer = 4
 collision_mask = 0
@@ -5629,7 +5629,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 591565649
 body_size = Vector3(0.600, 0.800, 1.200)
-obstacles = PackedVector3Array(89.00, 35.20, 0.21)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21, 94.50, 39.90, 2.00, 97.50, 39.90, 2.00, 94.00, 32.20, 1.20, 88.00, 42.20, 1.40)
 
 [node name="Pigs4" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(91.420, 0.030, 40.128)
@@ -5643,7 +5643,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 743114111
 body_size = Vector3(0.600, 0.800, 1.200)
-obstacles = PackedVector3Array(89.00, 35.20, 0.21)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21, 94.50, 39.90, 2.00, 97.50, 39.90, 2.00, 94.00, 32.20, 1.20, 88.00, 42.20, 1.40)
 
 [node name="MulaSemCabeca" parent="." instance=ExtResource("122_ext")]
 position = Vector3(112.500, 0.000, 32.000)
