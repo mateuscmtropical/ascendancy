@@ -1,7 +1,7 @@
 {
  "source": "Horse.fbx",
  "withers_height": 1.7,
- "scale": 0.25854,
+ "scale": 0.25842,
  "animations": {
   "Death": "Armature|Armature|Death",
   "Idle": "Armature|Armature|Idle",
@@ -10,17 +10,17 @@
   "Walk": "Armature|Armature|Walk"
  },
  "proportions": {
-  "body_per_withers": 1.033,
-  "chest_depth_per_withers": 0.472,
+  "body_per_withers": 1.01,
+  "chest_depth_per_withers": 0.458,
   "ground_to_elbow_per_withers": 0.564,
-  "croup_per_withers": 0.992,
-  "neck_degrees": 60.0,
-  "neck_taper": 0.788,
-  "neck_per_body": 0.355,
-  "forearm_width_per_withers": 0.118,
-  "front_cannon_width_per_withers": 0.082,
-  "gaskin_width_per_withers": 0.161,
-  "hind_cannon_width_per_withers": 0.089
+  "croup_per_withers": 0.991,
+  "neck_degrees": 53.0,
+  "neck_taper": 0.772,
+  "neck_per_body": 0.279,
+  "forearm_width_per_withers": 0.09,
+  "front_cannon_width_per_withers": 0.053,
+  "gaskin_width_per_withers": 0.144,
+  "hind_cannon_width_per_withers": 0.068
  },
  "fire_markers": [
   "FireStump",
@@ -45,8 +45,8 @@
   "Chain2"
  ],
  "vertices": {
-  "Mula": 12001,
-  "MulaVeins": 8058,
+  "Mula": 20000,
+  "MulaVeins": 10326,
   "MulaChains": 2880,
   "MulaFlames": 1936
  }

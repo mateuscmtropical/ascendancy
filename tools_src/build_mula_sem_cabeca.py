@@ -52,6 +52,13 @@ HAIR_MATERIAL_INDEX = 1  # material escuro do pacote: crina, rabo e cascos
 HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima disto são crina/rabo
 HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
+RELIEF_CAGE = 0.05  # o bake do relevo parte desta distância da malha de jogo...
+RELIEF_REACH = 0.25  # ...e procura o cavalo inteiro até esta
+RELIEF_AMBIENT_SAMPLES = 32
+RELIEF_SHADE = 0.6  # quanto a oclusão do relevo escurece o couro
+WITHERS_Y = (-1.4, -1.0)
+HEADLESS_BONES = ("Head",)
+CHAIN_BONE_PREFIX = "Chain"
 HIDE_GLOW_STRENGTH = 3.0
 HIDE_HALO = 0.5  # quanto do brilho das veias vaza para o couro em volta
 FIBRE_DENSITY = 6.0  # fibras de músculo por unidade, atravessando a fibra
@@ -756,7 +763,7 @@ def build_chains(mesh_object, armature) -> tuple:
     randomizer = random.Random(3)
     loops = [chain_loop_points(surface, center, normal) for center, normal, _ in CHAIN_LOOPS]
     anchors = [max(loops[loop], key=lambda item: item[0][axis] * sign) for loop, axis, sign, _, _ in CHAIN_ENDS]
-    chain_bones = [f"Chain{index + 1}" for index in range(len(CHAIN_ENDS))]
+    chain_bones = [f"{CHAIN_BONE_PREFIX}{index + 1}" for index in range(len(CHAIN_ENDS))]
 
     bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = armature
@@ -924,12 +931,17 @@ def build_bake_material(mesh_object) -> dict:
     bulges = math_node(nodes, links, "SUBTRACT", 1.0, voronoi(nodes, links, coordinates, 1.1, "SMOOTH_F1"), clamp=True)
     crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 11.0, "DISTANCE_TO_EDGE"), 14.0, clamp=True)
 
-    height = math_node(nodes, links, "MULTIPLY", bulges, 0.1)
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.07))
+    height = math_node(nodes, links, "MULTIPLY", bulges, 0.0)
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.03))
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.0))
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.0))
 
+    relief_image = nodes.new("ShaderNodeTexImage")
+    relief = nodes.new("ShaderNodeNormalMap")
+    links.new(relief_image.outputs["Color"], relief.inputs["Color"])
+    ambient = nodes.new("ShaderNodeTexImage")
     bump = nodes.new("ShaderNodeBump")
+    links.new(relief.outputs[0], bump.inputs["Normal"])
     bump.inputs["Strength"].default_value = 1.0
     bump.inputs["Distance"].default_value = 0.3
     links.new(height, bump.inputs["Height"])
@@ -942,6 +954,13 @@ def build_bake_material(mesh_object) -> dict:
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.3), hide, (0.04, 0.012, 0.008))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.0), hide, (0.01, 0.006, 0.006))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.2), hide, (0.32, 0.02, 0.008))
+    shaded = nodes.new("ShaderNodeMix")
+    shaded.data_type = "RGBA"
+    shaded.blend_type = "MULTIPLY"
+    shaded.inputs["Factor"].default_value = RELIEF_SHADE
+    links.new(hide, shaded.inputs["A"])
+    links.new(ambient.outputs["Color"], shaded.inputs["B"])
+    hide = shaded.outputs["Result"]
     is_ember = math_node(nodes, links, "GREATER_THAN", ember, 0.05)
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
@@ -967,7 +986,87 @@ def build_bake_material(mesh_object) -> dict:
     mesh_object.data.materials.clear()
     mesh_object.data.materials.append(material)
 
-    return {"material": material, "emission": emission, "diffuse": diffuse, "hide": hide, "roughness": combine.outputs[0], "glow": glow}
+    return {"material": material, "emission": emission, "diffuse": diffuse, "relief": relief_image, "ambient": ambient, "hide": hide, "roughness": combine.outputs[0], "glow": glow}
+
+
+def move_bones(armature, is_moved) -> None:
+    """Put the pack skeleton inside the anatomy of the mula: every bone `is_moved` picks goes through the same move
+    as the skin, and the leg bones land on the joints of the real mesh."""
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = armature
+    armature.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    places = {bone.name: (stretched(bone.head), stretched(bone.tail)) for bone in armature.data.edit_bones if is_moved(bone.name)}
+    places.update({name: ends for name, ends in mula_base.leg_bones().items() if name in places})
+
+    for bone in armature.data.edit_bones:
+        bone.head, bone.tail = places.get(bone.name, (bone.head.copy(), bone.tail.copy()))
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def skin_to_skeleton(mesh_object, armature, pack_horse) -> None:
+    """Blender's automatic weights on the real mesh, for the bones that carry skin on the pack horse."""
+    skinning = {group.name for group in pack_horse.vertex_groups}
+
+    for bone in armature.data.bones:
+        bone.use_deform = bone.name in skinning and bone.name not in HEADLESS_BONES
+
+    move_bones(armature, lambda name: True)
+    working_places = [vertex.co.copy() for vertex in mesh_object.data.vertices]
+
+    for vertex in mesh_object.data.vertices:
+        vertex.co = stretched(vertex.co)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    mesh_object.select_set(True)
+    armature.select_set(True)
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.parent_set(type="ARMATURE_AUTO")
+
+    for vertex, place in zip(mesh_object.data.vertices, working_places):
+        vertex.co = place
+
+    loose = sum(1 for vertex in mesh_object.data.vertices if not vertex.groups)
+
+    if loose:
+        raise RuntimeError(f"automatic weights left {loose} vertices without a bone")
+
+
+def bake_relief(mesh_object, setup: dict) -> None:
+    """Muscle relief of the full-resolution horse onto the game mesh: its tangent normal map goes under the bump
+    of the hide and its ambient occlusion darkens the hide colour."""
+    high = mula_base.load_body()
+    nodes = setup["material"].node_tree.nodes
+    bake_settings = bpy.context.scene.render.bake
+    passes = {"NORMAL": ("relief", (0.5, 0.5, 1.0, 1.0), 1), "AO": ("ambient", (1.0, 1.0, 1.0, 1.0), RELIEF_AMBIENT_SAMPLES)}
+
+    for polygon in high.data.polygons:
+        polygon.use_smooth = True
+
+    bpy.ops.object.select_all(action="DESELECT")
+    high.select_set(True)
+    mesh_object.select_set(True)
+    bpy.context.view_layer.objects.active = mesh_object
+    bake_settings.use_selected_to_active = True
+    bake_settings.use_clear = False  # where the stump has no horse above it the flat fill stays
+    bake_settings.cage_extrusion = RELIEF_CAGE
+    bake_settings.max_ray_distance = RELIEF_REACH
+
+    for bake_type, (key, fill, samples) in passes.items():
+        image = bpy.data.images.new(f"mula_relief_{key}", TEXTURE_SIZE, TEXTURE_SIZE, alpha=False)
+        image.colorspace_settings.name = "Non-Color"
+        image.generated_color = fill
+        target = nodes.new("ShaderNodeTexImage")
+        target.image = image
+        nodes.active = target
+        bpy.context.scene.cycles.samples = samples
+        bpy.ops.object.bake(type=bake_type, margin=8)
+        nodes.remove(target)
+        setup[key].image = image
+
+    bake_settings.use_selected_to_active = False
+    bpy.data.objects.remove(high)
 
 
 def bake(setup: dict, name: str, source, color_space: str = "sRGB"):
@@ -1036,8 +1135,8 @@ def rename_actions() -> dict:
     return kept
 
 
-FRONT_WIDEN = 0.75  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
-HIND_WIDEN = 1.14
+FRONT_WIDEN = 0.575  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
+HIND_WIDEN = 0.89
 FRONT_WIDEN_Y = (-0.9, -1.6)  # de onde até onde o alargamento da frente entra
 HIND_WIDEN_Y = (1.0, 1.7)
 NECK_NARROW_Z = (5.0, 5.8)  # o pescoço fica de fora
@@ -1076,16 +1175,7 @@ def stretch_proportions(armature, mesh_objects: list, marker_names: list) -> Non
         for vertex in mesh_object.data.vertices:
             vertex.co = stretched(vertex.co)
 
-    bpy.ops.object.select_all(action="DESELECT")
-    bpy.context.view_layer.objects.active = armature
-    armature.select_set(True)
-    bpy.ops.object.mode_set(mode="EDIT")
-
-    for bone in armature.data.edit_bones:
-        bone.head = stretched(bone.head)
-        bone.tail = stretched(bone.tail)
-
-    bpy.ops.object.mode_set(mode="OBJECT")
+    move_bones(armature, lambda name: name.startswith(CHAIN_BONE_PREFIX))  # the rest moved before the skinning
 
     for foot, leg_tip in FOOT_FOLLOWS.items():
         follow = armature.pose.bones[foot].constraints.new("COPY_LOCATION")
@@ -1098,14 +1188,17 @@ def stretch_proportions(armature, mesh_objects: list, marker_names: list) -> Non
         bpy.data.objects[name].matrix_world = armature.matrix_world @ Matrix.Translation(stretched(position))
 
 
+def withers_of(mesh_object) -> float:
+    """Height of the top line over the shoulder blades, behind the rise of the neck."""
+    return max(vertex.co.z for vertex in mesh_object.data.vertices if WITHERS_Y[0] < vertex.co.y < WITHERS_Y[1])
+
+
 def measure_proportions(mesh_object) -> dict:
     """Horse proportions read off the rest-pose mesh, as shares of the withers height, to check against the targets
     of a 1.7 m horse: body ~1.0-1.05, chest depth ~0.45, ground to elbow ~0.55, neck 55-65 degrees, top ~0.6 of the
     base, ~0.4 of the body long."""
     vertices = [vertex.co for vertex in mesh_object.data.vertices]
-    group_names = {group.index: group.name for group in mesh_object.vertex_groups}
-    back = [vertex.co.z for vertex in mesh_object.data.vertices if any(group_names[element.group] in ("Torso", "Hips") and element.weight > 0.5 for element in vertex.groups)]
-    withers = max(back)
+    withers = withers_of(mesh_object)
     neck_base, neck_mouth = stretched(Vector(mula_body.NECK_BASE)), stretched(Vector(mula_body.NECK_MOUTH))
     neck_axis = (neck_mouth - neck_base).normalized()
     neck_length = (neck_mouth - neck_base).length
@@ -1152,9 +1245,7 @@ def write_silhouette(mesh_object, path: Path) -> None:
 
 def scale_to_withers(mesh_object) -> float:
     """Hang everything under a scaled root (the FBX actions animate the armature object, so it cannot be scaled)."""
-    group_names = {group.index: group.name for group in mesh_object.vertex_groups}
-    back = [vertex.co.z for vertex in mesh_object.data.vertices if any(group_names[element.group] in ("Torso", "Hips") and element.weight > 0.5 for element in vertex.groups)]
-    factor = WITHERS_HEIGHT / max(back)
+    factor = WITHERS_HEIGHT / withers_of(mesh_object)
     root = bpy.data.objects.new("MulaSemCabeca", None)
 
     bpy.context.scene.collection.objects.link(root)
@@ -1190,10 +1281,8 @@ def build(source: Path, silhouette: Path | None = None) -> dict:
     strip_hair(pack_horse)
     mesh_object = mula_base.load_body(stretched)
     rim, ember_heat = mula_body.cut_stump(mesh_object, stump)
-    mula_body.transfer_weights(mesh_object, pack_horse)
+    skin_to_skeleton(mesh_object, armature, pack_horse)
     bpy.data.objects.remove(pack_horse)
-    mesh_object.parent = armature
-    mesh_object.modifiers.new("Armature", "ARMATURE").object = armature
 
     tree = grow_vein_tree(mesh_object.data, rim, set(ember_heat))
     veins = build_veins(mesh_object, armature, tree)
@@ -1202,11 +1291,14 @@ def build(source: Path, silhouette: Path | None = None) -> dict:
     crest = crest_points(BVHTree.FromObject(mesh_object, bpy.context.evaluated_depsgraph_get()), stump)
     fire_markers = add_fire_markers(mesh_object, armature, stump, crest)
     flames = build_flames(mesh_object, armature, stump, crest)
+    actions = rename_actions()
+    stretch_proportions(armature, [mesh_object, veins, chains, flames], fire_markers)
     unwrap(mesh_object)
 
     bpy.context.scene.render.engine = "CYCLES"
-    bpy.context.scene.cycles.samples = 1
     setup = build_bake_material(mesh_object)
+    bake_relief(mesh_object, setup)
+    bpy.context.scene.cycles.samples = 1
     images = {
         "hide": bake(setup, "mula_sem_cabeca_hide", setup["hide"]),
         "glow": bake(setup, "mula_sem_cabeca_glow", setup["glow"]),
@@ -1218,8 +1310,6 @@ def build(source: Path, silhouette: Path | None = None) -> dict:
     mesh_object.data.color_attributes.remove(mesh_object.data.color_attributes["neck"])
     mesh_object.name = "Mula"
 
-    actions = rename_actions()
-    stretch_proportions(armature, [mesh_object, veins, chains, flames], fire_markers)
     proportions = measure_proportions(mesh_object)
 
     if silhouette is not None:
