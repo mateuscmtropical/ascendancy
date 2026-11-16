@@ -117,7 +117,7 @@ TAIL_BONES = ["Tail1", "Tail2", "Tail3"]
 # tronco alongado entre os dois pares de patas.
 LEG_STRETCH = 1.35
 LEG_STRETCH_FLOOR, LEG_STRETCH_TOP = 0.75, 3.14
-TRUNK_STRETCH = 1.08
+TRUNK_STRETCH = 0.93
 TRUNK_STRETCH_REACH = 1.5
 FOOT_FOLLOWS = {"FrontFoot.L": "FrontLowLeg.L_end", "FrontFoot.R": "FrontLowLeg.R_end", "BackFoot.L": "BackLowLeg.L_end", "BackFoot.R": "BackLowLeg.R_end"}
 
@@ -1065,6 +1065,49 @@ def stretch_proportions(armature, mesh_objects: list, marker_names: list) -> Non
         bpy.data.objects[name].matrix_world = armature.matrix_world @ Matrix.Translation(stretched(position))
 
 
+def measure_proportions(mesh_object) -> dict:
+    """Horse proportions read off the rest-pose mesh, as shares of the withers height, to check against the targets
+    of a 1.7 m horse: body ~1.0-1.05, chest depth ~0.45, ground to elbow ~0.55, neck 55-65 degrees, top ~0.6 of the
+    base, ~0.4 of the body long."""
+    vertices = [vertex.co for vertex in mesh_object.data.vertices]
+    group_names = {group.index: group.name for group in mesh_object.vertex_groups}
+    back = [vertex.co.z for vertex in mesh_object.data.vertices if any(group_names[element.group] in ("Torso", "Hips") and element.weight > 0.5 for element in vertex.groups)]
+    withers = max(back)
+    neck_base, neck_mouth = stretched(Vector(mula_body.NECK_BASE)), stretched(Vector(mula_body.NECK_MOUTH))
+    neck_axis = (neck_mouth - neck_base).normalized()
+    neck_length = (neck_mouth - neck_base).length
+    trunk = [position.y for position in vertices if 0.55 * withers < position.z < 0.8 * withers]
+    girth = [position.z for position in vertices if abs(position.x) < 0.3 and -1.6 < position.y < -1.0]
+
+    def neck_width(share: float) -> float:
+        slab = [abs(position.x) for position in vertices if abs((position - neck_base).dot(neck_axis) - share * neck_length) < 0.12 and position.y < neck_base.y + 1.0]
+
+        return 2.0 * max(slab)
+
+    body_length = max(trunk) - min(trunk)
+
+    return {
+        "body_per_withers": round(body_length / withers, 3),
+        "chest_depth_per_withers": round((max(girth) - min(girth)) / withers, 3),
+        "ground_to_elbow_per_withers": round(min(girth) / withers, 3),
+        "croup_per_withers": round(max(position.z for position in vertices if position.y > 1.5) / withers, 3),
+        "neck_degrees": round(math.degrees(math.atan2(neck_axis.z, -neck_axis.y)), 1),
+        "neck_taper": round(neck_width(0.92) / neck_width(0.3), 3),
+        "neck_per_body": round(neck_length / body_length, 3),
+    }
+
+
+def write_silhouette(mesh_object, path: Path) -> None:
+    """Side view of the rest-pose mesh as flat polygons (head to the left, withers height = 1), for the overlay
+    against the concept silhouette."""
+    vertices = mesh_object.data.vertices
+    group_names = {group.index: group.name for group in mesh_object.vertex_groups}
+    withers = max(vertex.co.z for vertex in vertices if any(group_names[element.group] in ("Torso", "Hips") and element.weight > 0.5 for element in vertex.groups))
+    polygons = [[(round(vertices[index].co.y / withers, 4), round(vertices[index].co.z / withers, 4)) for index in polygon.vertices] for polygon in mesh_object.data.polygons]
+
+    path.write_text(json.dumps(polygons), encoding="utf-8")
+
+
 def scale_to_withers(mesh_object) -> float:
     """Hang everything under a scaled root (the FBX actions animate the armature object, so it cannot be scaled)."""
     group_names = {group.index: group.name for group in mesh_object.vertex_groups}
@@ -1092,7 +1135,7 @@ def stamp_buffer_hash(gltf_path: Path) -> None:
     gltf_path.write_text(json.dumps(document, indent="\t"), encoding="utf-8", newline="\n")
 
 
-def build(source: Path) -> dict:
+def build(source: Path, silhouette: Path | None = None) -> dict:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     import_source(source)
     make_materials_opaque()
@@ -1134,13 +1177,18 @@ def build(source: Path) -> dict:
 
     actions = rename_actions()
     stretch_proportions(armature, [mesh_object, veins, chains, flames], fire_markers)
+    proportions = measure_proportions(mesh_object)
+
+    if silhouette is not None:
+        write_silhouette(mesh_object, silhouette)
+
     factor = scale_to_withers(mesh_object)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(OUTPUT), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True,
                               export_animation_mode="ACTIONS", export_force_sampling=True, export_vertex_color="NONE")
     stamp_buffer_hash(OUTPUT)
 
-    sidecar = {"source": source.name, "withers_height": WITHERS_HEIGHT, "scale": round(factor, 5), "animations": actions,
+    sidecar = {"source": source.name, "withers_height": WITHERS_HEIGHT, "scale": round(factor, 5), "animations": actions, "proportions": proportions,
                "fire_markers": fire_markers, "hanging_chains": chain_bones,
                "vertices": {scene_object.name: len(scene_object.data.vertices) for scene_object in (mesh_object, veins, chains, flames)}}
     OUTPUT.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8", newline="\n")
@@ -1152,4 +1200,6 @@ if __name__ == "__main__":
     arguments = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     source_path = Path(arguments[arguments.index("--source") + 1]) if "--source" in arguments else SOURCE
 
-    print(f"BUILT mula_sem_cabeca: {build(source_path)}")
+    silhouette_path = Path(arguments[arguments.index("--silhouette") + 1]) if "--silhouette" in arguments else None
+
+    print(f"BUILT mula_sem_cabeca: {build(source_path, silhouette_path)}")
