@@ -45,12 +45,15 @@ func count_hot_marks() -> int:
 	return _pool.count_hot_marks(_now_seconds, cooling_seconds)
 
 
-## Nova marca de `size` metros no ponto do chão; `flame_share` é a altura da chaminha em
-## relação ao tamanho (0 = só a mancha, como nos pingos).
-func stamp(ground_position: Vector3, size: float, flame_share: float) -> void:
+## Nova marca de `size` metros no ponto do chão, virada para `heading` (radianos em Y).
+## `flame_share` é a altura da chaminha em relação ao tamanho (0 = sem chama, como nos pingos)
+## e `horseshoe` escolhe a forma: 1 ferradura, 0 mancha.
+func stamp(
+	ground_position: Vector3, size: float, heading: float, flame_share: float, horseshoe: float
+) -> void:
 	var slot: int = _pool.claim_slot(_now_seconds)
-	var birth: Color = Color(_now_seconds, randf(), 0.0, 0.0)
-	var turned: Basis = Basis(Vector3.UP, randf() * TAU).scaled(Vector3.ONE * size)
+	var birth: Color = Color(_now_seconds, randf(), horseshoe, 0.0)
+	var turned: Basis = Basis(Vector3.UP, heading).scaled(Vector3.ONE * size)
 	var standing: Basis = Basis.IDENTITY.scaled(Vector3.ONE * size * flame_share)
 	var lifted_position: Vector3 = ground_position + Vector3.UP * GROUND_LIFT
 

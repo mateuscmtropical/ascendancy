@@ -19,6 +19,10 @@ const ANIMATION_BY_CAMERA: Dictionary[String, StringName] = {
 	"MulaThreeQuarter": MulaSemCabeca.RUN_ANIMATION,
 	"MulaFootprints": MulaSemCabeca.WALK_ANIMATION,
 }
+## Câmeras que param a animação num quadro (segundos).
+const POSE_SECONDS_BY_CAMERA: Dictionary[String, float] = {
+	"MulaThreeQuarter": 0.3,
+}
 ## Câmeras em que a mula anda para a frente (m/s), para as pegadas de lava ficarem no chão.
 const WALK_SPEED_BY_CAMERA: Dictionary[String, float] = {
 	"MulaFootprints": 1.3,
@@ -58,3 +62,17 @@ func _play_animation_of_camera(camera_name: String) -> void:
 	if WALK_SPEED_BY_CAMERA.has(camera_name):
 		_walk_speed = WALK_SPEED_BY_CAMERA[camera_name]
 		_mula.position.z = WALK_START
+
+	if POSE_SECONDS_BY_CAMERA.has(camera_name):
+		_freeze_pose_at(animation_name, POSE_SECONDS_BY_CAMERA[camera_name])
+
+
+## Congela a animação num quadro: pose de ataque para a conferência com a folha de conceito.
+func _freeze_pose_at(animation_name: StringName, seconds: float) -> void:
+	var player: AnimationPlayer = (
+		_mula.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	)
+
+	player.play(animation_name, 0.0)
+	player.seek(seconds, true)
+	player.speed_scale = 0.0

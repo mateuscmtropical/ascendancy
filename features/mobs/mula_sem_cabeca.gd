@@ -51,8 +51,10 @@ const HOOF_MARKER_PATTERN: String = "FireHoof*"
 const STUMP_MARKER_NAME: String = "FireStump"
 const HOOF_CONTACT_HEIGHT: float = 0.1
 const HOOF_LIFT_HEIGHT: float = 0.17
-const FOOTPRINT_SIZE: float = 0.42
-const FOOTPRINT_FLAME_SHARE: float = 0.8
+const FOOTPRINT_SIZE: float = 0.36
+const FOOTPRINT_FLAME_SHARE: float = 0.4
+const HORSESHOE: float = 1.0
+const STAIN: float = 0.0
 ## Pingos de lava do toco: de tempos em tempos uma manchinha no chão embaixo dele.
 const DRIP_STAIN_SIZE: float = 0.16
 const DRIP_STAIN_SECONDS: float = 0.4
@@ -234,7 +236,13 @@ func _leave_footprints() -> void:
 
 		if has_landed:
 			_hoof_is_down[hoof_index] = 1
-			_stamp_lava_under(hoof_position, FOOTPRINT_SIZE, FOOTPRINT_FLAME_SHARE)
+			_lava_marks.stamp(
+				_ground_under(hoof_position),
+				FOOTPRINT_SIZE,
+				global_rotation.y,
+				FOOTPRINT_FLAME_SHARE,
+				HORSESHOE
+			)
 
 
 func _leave_drip_stains(delta: float) -> void:
@@ -246,10 +254,14 @@ func _leave_drip_stains(delta: float) -> void:
 		return
 
 	_seconds_to_drip_stain = DRIP_STAIN_SECONDS
-	_stamp_lava_under(_stump_marker.global_position + scatter, DRIP_STAIN_SIZE, 0.0)
+	_lava_marks.stamp(
+		_ground_under(_stump_marker.global_position + scatter),
+		DRIP_STAIN_SIZE,
+		randf() * TAU,
+		0.0,
+		STAIN
+	)
 
 
-func _stamp_lava_under(source_position: Vector3, size: float, flame_share: float) -> void:
-	var ground_position: Vector3 = Vector3(source_position.x, global_position.y, source_position.z)
-
-	_lava_marks.stamp(ground_position, size, flame_share)
+func _ground_under(source_position: Vector3) -> Vector3:
+	return Vector3(source_position.x, global_position.y, source_position.z)
