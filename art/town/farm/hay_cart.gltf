@@ -3,9 +3,6 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0"
  },
- "extensionsUsed": [
-  "KHR_materials_emissive_strength"
- ],
  "scene": 0,
  "scenes": [
   {
@@ -62,26 +59,16 @@
   },
   {
    "doubleSided": true,
-   "emissiveFactor": [
-    1,
-    0.701169490814209,
-    0.3586539030075073
-   ],
-   "extensions": {
-    "KHR_materials_emissive_strength": {
-     "emissiveStrength": 2.200000047683716
-    }
-   },
-   "name": "M_TownGlowWarm",
+   "name": "M_FarmLantern",
    "pbrMetallicRoughness": {
     "baseColorFactor": [
-     1,
-     0.701169490814209,
-     0.3586539030075073,
+     0.5924380421638489,
+     0.46474114060401917,
+     0.2590273320674896,
      1
     ],
     "metallicFactor": 0,
-    "roughnessFactor": 0.4000000059604645
+    "roughnessFactor": 0.20000000298023224
    }
   },
   {
@@ -366,12 +353,12 @@
    "max": [
     1.0600000619888306,
     1.8200000524520874,
-    1.4000000953674316
+    1.6800000667572021
    ],
    "min": [
     0.9000000357627869,
     1.600000023841858,
-    1.2400000095367432
+    1.5199999809265137
    ],
    "type": "VEC3"
   },
