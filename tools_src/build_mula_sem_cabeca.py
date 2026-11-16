@@ -52,7 +52,7 @@ HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima dis
 HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
 HIDE_GLOW_STRENGTH = 3.0
-HIDE_HALO = 0.7  # quanto do brilho das veias vaza para o couro em volta
+HIDE_HALO = 0.75  # quanto do brilho das veias vaza para o couro em volta
 FIBRE_DENSITY = 6.0  # fibras de músculo por unidade, atravessando a fibra
 NECK_FIBRE_TILT = math.radians(-23.0)  # o pescoço sobe inclinado para a frente: as fibras acompanham
 
@@ -75,12 +75,14 @@ VEIN_TIP_RADIUS = 0.006
 VEIN_TRUNK_RADIUS = 0.1
 VEIN_TRUNK_FLOW = 30.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
+VEIN_HALO_RINGS = 1  # anéis de vértices além do primeiro que o halo alcança
+VEIN_HALO_FADE = 0.6
 VEIN_SINK = 0.55  # fração do raio que o vaso afunda no couro: fica rente, como fenda de lava, não como cano
 
-LINK_RADIUS = 0.18
-LINK_WIRE = 0.062
+LINK_RADIUS = 0.15
+LINK_WIRE = 0.05
 LINK_STRETCH = 1.5
-LINK_SPACING = 0.42
+LINK_SPACING = 0.35
 LINK_SEGMENTS = 10
 LINK_WIRE_SIDES = 5
 HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
@@ -467,8 +469,17 @@ def paint_bake_mask(mesh_object, tree: dict, ember_heat: dict) -> None:
 
     for edge in mesh.edges:
         first, second = edge.vertices
-        spill[first] = max(spill.get(first, 0.0), glow.get(second, 0.0) ** 2 * 0.45)
-        spill[second] = max(spill.get(second, 0.0), glow.get(first, 0.0) ** 2 * 0.45)
+        spill[first] = max(spill.get(first, 0.0), glow.get(second, 0.0) ** 2 * 0.62)
+        spill[second] = max(spill.get(second, 0.0), glow.get(first, 0.0) ** 2 * 0.62)
+
+    # halo largo em volta dos vasos grossos: o brilho segue para os anéis seguintes de vértices, cada vez mais fraco
+    for _ in range(VEIN_HALO_RINGS):
+        reached = {vertex: heat for vertex, heat in spill.items() if vertex not in glow}
+
+        for edge in mesh.edges:
+            first, second = edge.vertices
+            spill[first] = max(spill.get(first, 0.0), reached.get(second, 0.0) * VEIN_HALO_FADE)
+            spill[second] = max(spill.get(second, 0.0), reached.get(first, 0.0) * VEIN_HALO_FADE)
 
     leg = [sum(element.weight for element in vertex.groups if "Leg" in group_names[element.group] or "Foot" in group_names[element.group]) for vertex in mesh.vertices]
     neck = [sum(element.weight for element in vertex.groups if group_names[element.group] == "Neck") for vertex in mesh.vertices]
@@ -1024,11 +1035,16 @@ def rename_actions() -> dict:
     return kept
 
 
-FRONT_WIDEN = 1.3  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
-HIND_WIDEN = 1.15
+FRONT_WIDEN = 1.22  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
+HIND_WIDEN = 1.12
 FRONT_WIDEN_Y = (-0.9, -1.6)  # de onde até onde o alargamento da frente entra
 HIND_WIDEN_Y = (1.0, 1.7)
 NECK_NARROW_Z = (5.0, 5.8)  # o pescoço fica de fora
+
+
+HOCK_BACK = 0.4  # o jarrete recua: a pata traseira faz ângulo em vez de descer reta
+HOCK_BACK_Y = (1.6, 2.2)
+HOCK_BACK_Z = (0.75, 2.3, 3.4)  # boleto parado, jarrete no máximo, soldra parada
 
 
 def ramp(start: float, end: float, value: float) -> float:
@@ -1044,8 +1060,9 @@ def stretched(position: Vector) -> Vector:
     front = ramp(*FRONT_WIDEN_Y, position.y) * (1.0 - ramp(*NECK_NARROW_Z, position.z))
     hind = ramp(*HIND_WIDEN_Y, position.y)
     widen = 1.0 + (FRONT_WIDEN - 1.0) * front + (HIND_WIDEN - 1.0) * hind
+    hock = ramp(*HOCK_BACK_Y, position.y) * min(ramp(HOCK_BACK_Z[0], HOCK_BACK_Z[1], position.z), 1.0 - ramp(HOCK_BACK_Z[1], HOCK_BACK_Z[2], position.z))
 
-    return Vector((position.x * widen, position.y + trunk * (TRUNK_STRETCH - 1.0), position.z + (leg - LEG_STRETCH_FLOOR) * (LEG_STRETCH - 1.0)))
+    return Vector((position.x * widen, position.y + trunk * (TRUNK_STRETCH - 1.0) + hock * HOCK_BACK, position.z + (leg - LEG_STRETCH_FLOOR) * (LEG_STRETCH - 1.0)))
 
 
 def stretch_proportions(armature, mesh_objects: list, marker_names: list) -> None:
@@ -1092,7 +1109,7 @@ def measure_proportions(mesh_object) -> dict:
     neck_axis = (neck_mouth - neck_base).normalized()
     neck_length = (neck_mouth - neck_base).length
     trunk = [position.y for position in vertices if 0.55 * withers < position.z < 0.8 * withers]
-    girth = [position.z for position in vertices if abs(position.x) < 0.3 and -1.6 < position.y < -1.0]
+    girth = [position.z for position in vertices if abs(position.x) < 0.25 and -1.75 < position.y < -1.5]  # faixa sem farrapos pendurados
 
     def neck_width(share: float) -> float:
         slab = [abs(position.x) for position in vertices if abs((position - neck_base).dot(neck_axis) - share * neck_length) < 0.12 and position.y < neck_base.y + 1.0]

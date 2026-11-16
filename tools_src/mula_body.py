@@ -1,9 +1,9 @@
 """Sculpted body of the "Mula sem cabeça" (library of tools_src/build_mula_sem_cabeca.py).
 
-The CC0 pack horse is too low-poly to read as flesh, so the body is rebuilt: every muscle of MUSCLES is a tapered,
-squashed chain of spheres placed over the horse's skeleton (pack units, ~3.4 per metre, Z up, head to -Y); a voxel
-remesh fuses them into one skin whose creases between volumes read as muscle separations; the neck is cut by a
-jagged solid that also digs the ember pit; skin weights come from the nearest point of the pack horse.
+The CC0 pack horse is too low-poly to read as flesh, so the body is rebuilt in separate parts (mula_parts.PARTS:
+lofts of cross sections over the horse's skeleton, in pack units, ~3.4 per metre, Z up, head to -Y); a voxel remesh
+fuses them into one skin whose creases between parts read as muscle separations; ribs, vertebrae and tatters go on
+top; the neck is cut by a jagged solid that also digs the ember pit; skin weights are painted part by part.
 """
 
 import math
@@ -11,13 +11,14 @@ import random
 
 import bmesh
 import bpy
+import mula_parts
 from mathutils import Vector, noise
 from mathutils.bvhtree import BVHTree
 from mathutils.interpolate import poly_3d_calc
 
 VOXEL_SIZE = 0.045
 HOOF_TOP = 0.42
-MASS_RELAX = [(HOOF_TOP, 2), (2.4, 2), (3.1, 3)]  # (acima de Z, passadas): o tronco derrete mais que as patas
+MASS_RELAX = [(HOOF_TOP, 2)]  # (acima de Z, passadas): o tronco derrete mais que as patas
 RELIEF_RELAX = [(HOOF_TOP, 2)]
 SKIN_NOISE = 0.02  # ondulação orgânica da pele depois do remesh
 STUMP_SEGMENTS = 40
@@ -26,7 +27,7 @@ STUMP_WALL = 0.74  # fração do raio onde começa a parede do toco
 STUMP_PIT_DEPTH = 0.42
 STUMP_JAGS = (-0.13, -0.06, -0.02, 0.0, 0.05, 0.1, 0.18)  # lascas da borda, sorteadas por gomo
 STUMP_SEED = 7
-GIRTH_BOTTOM, GIRTH_TOP, TORSO_GIRTH = 2.2, 3.4, 1.05  # o tronco alarga acima das patas (ossos das patas não mudam)
+GIRTH_BOTTOM, GIRTH_TOP, TORSO_GIRTH = 2.2, 3.4, 1.0  # o tronco alarga acima das patas (ossos das patas não mudam)
 GAME_VERTICES = 30000
 CUT_TOLERANCE = 0.035
 EMBER_RIM_HEAT = 0.3
@@ -34,55 +35,6 @@ GROUND_CLEARANCE = 0.03  # sola do casco chata
 
 # Cada volume: (ponto inicial, ponto final, raio inicial, raio final, achatamento XYZ). X != 0 é espelhado.
 # Os volumes grandes dão a massa; os músculos ficam por cima, saltando só um pouco, para a junção virar sulco.
-MUSCLES = [
-    # tronco
-    ((0.0, -1.6, 4.25), (0.0, 1.5, 4.72), 1.32, 0.66, (1.0, 1.0, 1.0)),  # barril das costelas até o flanco: barriga recolhida
-    ((0.0, -2.45, 4.2), (0.0, -1.9, 4.15), 1.4, 1.44, (1.22, 1.0, 1.0)),  # peito fundo e largo
-    ((0.5, 0.7, 4.7), (0.75, 1.6, 4.6), 0.56, 0.6, (0.8, 1.0, 1.0)),  # flanco, do barril à coxa
-    ((0.0, 1.9, 4.42), (0.0, 2.5, 4.25), 0.98, 0.78, (1.0, 1.0, 1.0)),  # garupa
-    ((0.0, -2.1, 5.42), (0.0, -1.0, 5.3), 0.66, 0.42, (0.75, 1.0, 1.0)),  # cernelha
-    ((0.0, -1.0, 5.2), (0.0, 0.5, 4.95), 0.36, 0.34, (0.9, 1.0, 1.0)),  # lombo: a linha das costas cede atrás da cernelha
-    ((0.0, 0.5, 4.95), (0.0, 1.9, 5.02), 0.34, 0.38, (0.9, 1.0, 1.0)),  # e sobe para a garupa
-    ((0.42, -0.9, 5.08), (0.44, 1.5, 4.92), 0.4, 0.4, (1.0, 1.0, 0.9)),  # longo dorsal: cordão de músculo de cada lado da espinha
-    ((0.0, 2.75, 4.95), (0.0, 3.1, 4.8), 0.2, 0.13, (1.0, 1.0, 1.0)),  # sabugo do rabo
-    # ombro e peito
-    ((1.0, -1.45, 4.9), (1.3, -2.4, 3.95), 0.78, 1.04, (0.95, 1.0, 1.0)),  # escápula: globo da espádua
-    ((1.14, -1.1, 4.3), (1.12, -1.6, 3.5), 0.72, 0.6, (0.85, 1.0, 1.0)),  # tríceps
-    ((1.22, -2.6, 3.9), (1.0, -2.05, 3.3), 0.52, 0.44, (0.9, 1.0, 1.0)),  # ponta do ombro e braço
-    ((0.6, -3.25, 4.3), (0.6, -2.75, 3.4), 0.8, 0.54, (1.0, 0.9, 1.0)),  # peitoral
-    # pata dianteira
-    ((0.92, -1.9, 3.3), (0.87, -2.06, 1.9), 0.88, 0.32, (0.85, 1.0, 1.0)),  # antebraço grosso que afina até o joelho
-    ((1.0, -2.36, 3.0), (0.93, -2.24, 2.2), 0.34, 0.16, (0.8, 1.0, 1.0)),  # extensor
-    ((0.86, -1.5, 3.0), (0.86, -1.84, 2.1), 0.34, 0.15, (0.8, 1.0, 1.0)),  # flexor
-    ((0.87, -2.12, 1.78), (0.87, -2.1, 1.6), 0.43, 0.36, (0.9, 1.0, 1.0)),  # joelho ossudo
-    ((0.87, -2.02, 1.55), (0.87, -1.99, 0.74), 0.17, 0.15, (0.95, 1.0, 1.0)),  # canela
-    ((0.87, -1.86, 1.5), (0.87, -1.84, 0.78), 0.08, 0.08, (1.0, 1.0, 1.0)),  # tendão
-    ((0.87, -1.95, 0.68), (0.87, -1.93, 0.64), 0.31, 0.31, (0.95, 1.0, 1.0)),  # boleto
-    ((0.87, -1.99, 0.6), (0.87, -2.13, 0.42), 0.19, 0.22, (1.0, 1.0, 1.0)),  # quartela
-    ((0.87, -2.1, 0.4), (0.87, -2.18, 0.1), 0.26, 0.37, (1.0, 1.1, 0.3)),  # casco
-    # anca e coxa
-    ((0.74, 1.5, 4.55), (0.9, 2.3, 4.2), 0.9, 0.92, (0.95, 1.0, 1.0)),  # glúteo: um globo de cada lado da garupa
-    ((1.0, 1.1, 4.95), (1.0, 1.1, 4.95), 0.3, 0.3, (1.0, 1.0, 0.8)),  # ponta da anca
-    ((0.95, 1.65, 4.3), (0.92, 1.75, 3.35), 0.86, 0.56, (0.85, 1.0, 1.0)),  # quadríceps
-    ((0.8, 2.7, 4.5), (0.78, 2.85, 3.2), 0.68, 0.4, (0.85, 1.0, 1.0)),  # posterior da coxa
-    ((0.9, 1.55, 3.25), (0.9, 1.55, 3.2), 0.34, 0.34, (0.85, 1.0, 1.0)),  # soldra
-    # pata traseira
-    ((0.8, 2.15, 3.2), (0.75, 2.78, 2.42), 0.92, 0.34, (0.85, 1.0, 1.0)),  # perna
-    ((0.75, 2.62, 3.05), (0.75, 3.0, 2.5), 0.16, 0.11, (1.0, 1.0, 1.0)),  # tendão do jarrete
-    ((0.75, 2.84, 2.3), (0.75, 2.8, 2.14), 0.45, 0.36, (0.88, 1.0, 1.0)),  # jarrete
-    ((0.75, 3.05, 2.46), (0.75, 3.03, 2.4), 0.14, 0.14, (1.0, 1.0, 1.0)),  # ponta do jarrete
-    ((0.75, 2.78, 2.1), (0.75, 2.66, 0.74), 0.18, 0.15, (0.95, 1.0, 1.0)),  # canela
-    ((0.75, 2.92, 2.05), (0.75, 2.8, 0.78), 0.08, 0.08, (1.0, 1.0, 1.0)),  # tendão
-    ((0.75, 2.69, 0.68), (0.75, 2.7, 0.64), 0.31, 0.31, (0.95, 1.0, 1.0)),  # boleto
-    ((0.75, 2.64, 0.6), (0.75, 2.5, 0.42), 0.19, 0.22, (1.0, 1.0, 1.0)),  # quartela
-    ((0.75, 2.53, 0.4), (0.75, 2.45, 0.1), 0.26, 0.37, (1.0, 1.1, 0.3)),  # casco
-    # pescoço: cone grosso e mais em pé que o osso Neck, da cernelha e do peito até acima do corte
-    ((0.0, -2.2, 4.5), (0.0, -4.15, 7.9), 1.3, 0.64, (1.0, 1.0, 1.0)),  # coluna do pescoço: tronco grosso, quase a prumo
-    ((0.0, -1.5, 5.4), (0.0, -3.5, 7.9), 0.38, 0.12, (0.6, 1.0, 1.0)),  # crista
-    ((0.0, -3.2, 4.5), (0.0, -4.55, 7.6), 0.36, 0.12, (1.0, 1.0, 1.0)),  # traqueia
-    ((0.95, -2.6, 4.5), (0.42, -4.1, 7.75), 0.34, 0.12, (1.0, 1.0, 1.0)),  # braquiocefálico
-    ((0.7, -1.9, 5.1), (0.34, -3.75, 7.9), 0.32, 0.1, (1.0, 1.0, 1.0)),  # esplênio
-]
 # Eixo do toco: da base do pescoço esculpido até a boca do corte (o pescoço da mula é mais longo e mais em pé que o
 # do cavalo do pacote; a pele continua seguindo o osso Neck pelos pesos).
 NECK_BASE = (0.0, -2.5, 5.0)
@@ -92,21 +44,19 @@ RIB_HEIGHTS = [(5.0, 0.0), (4.4, 0.12), (3.8, 0.34)]  # (Z, recuo em Y) dos trê
 RIB_RADIUS = 0.1
 RIB_RELIEF = -0.03  # quanto a costela salta do barril
 # Vértebras saltadas ao longo da espinha (Y, Z, raio) e farrapos de carne pendurados (X, Y, Z do alto, comprimento).
-VERTEBRAE = [(-1.0, 5.56, 0.15), (-0.55, 5.5, 0.14), (-0.1, 5.4, 0.14), (0.35, 5.3, 0.14), (0.8, 5.27, 0.14), (1.25, 5.3, 0.14),
-             (1.7, 5.34, 0.15), (2.15, 5.28, 0.14), (2.55, 5.05, 0.13)]
-TATTERS = [(0.3, -2.3, 3.6, 0.7), (-0.4, -2.0, 3.6, 1.0), (0.1, -1.3, 3.6, 0.6), (-0.15, -0.3, 3.6, 0.85), (0.35, 0.5, 4.0, 0.55),
-           (-0.3, 1.2, 4.3, 0.75), (0.95, -1.35, 3.6, 0.5), (-0.95, -1.35, 3.6, 0.7), (0.5, -2.75, 3.8, 0.6), (-0.2, 0.1, 3.6, 0.4),
-           (0.3, 1.7, 4.4, 0.6), (-0.55, -2.6, 3.75, 0.45)]
+# Vértebras saltadas ao longo da espinha (Y, raio) e farrapos de carne pendurados da barriga (X, Y, comprimento).
+VERTEBRAE = [(-0.55, 0.14), (-0.1, 0.14), (0.35, 0.14), (0.8, 0.14), (1.25, 0.14), (1.7, 0.15), (2.15, 0.14), (2.55, 0.13)]
+VERTEBRA_SINK = 0.06  # quanto do nó fica dentro do dorso
+TATTERS = [(0.3, -2.3, 0.7), (-0.4, -2.0, 1.0), (0.1, -1.3, 0.6), (-0.15, -0.3, 0.85), (0.35, 0.5, 0.55), (-0.3, 1.2, 0.75),
+           (0.5, -1.35, 0.5), (-0.5, -1.35, 0.7), (0.4, -2.6, 0.6), (-0.2, 0.1, 0.4), (0.3, 1.7, 0.6), (-0.45, -2.5, 0.45)]
+TATTER_ROOT = 0.12  # quanto o farrapo nasce dentro da barriga
 
 
 def rib_point(top_y: float, height: float, lean: float) -> tuple:
-    """Point of a rib on the barrel (first volume of MUSCLES), RIB_RELIEF proud of it."""
-    start, end, start_radius, end_radius, squash = MUSCLES[0]
+    """Point of a rib on the trunk box, RIB_RELIEF proud of it."""
     y = top_y + lean
-    share = (y - start[1]) / (end[1] - start[1])
-    radius = start_radius + (end_radius - start_radius) * share
-    center_z = start[2] + (end[2] - start[2]) * share
-    reach = math.sqrt(max(0.0, radius * radius - (height - center_z) ** 2)) * squash[0]
+    center_z, half_width, half_depth = mula_parts.trunk_section(y)
+    reach = half_width * math.sqrt(max(0.0, 1.0 - ((height - center_z) / half_depth) ** 2))
 
     return (reach + RIB_RELIEF - RIB_RADIUS, y, height)
 
@@ -130,8 +80,11 @@ def mirrored(volume: tuple) -> list:
 def relief_volumes() -> list:
     """Ribs, vertebrae and hanging tatters: the fine relief laid over the melted masses."""
     volumes = [copy for volume in rib_volumes() for copy in mirrored(volume)]
-    volumes += [((0.0, y, z), (0.0, y, z), radius, radius, (0.7, 1.0, 0.8)) for y, z, radius in VERTEBRAE]
-    volumes += [((x, y, z), (x, y, z - length), 0.14, 0.03, (1.0, 1.0, 1.0)) for x, y, z, length in TATTERS]
+    backs = {y: mula_parts.trunk_section(y) for y in [y for y, _ in VERTEBRAE] + [y for _, y, _ in TATTERS]}
+    spine = [(y, backs[y][0] + backs[y][2] - VERTEBRA_SINK, radius) for y, radius in VERTEBRAE]
+    volumes += [((0.0, y, z), (0.0, y, z), radius, radius, (0.7, 1.0, 0.8)) for y, z, radius in spine]
+    volumes += [((x, y, backs[y][0] - backs[y][2] + TATTER_ROOT), (x, y, backs[y][0] - backs[y][2] + TATTER_ROOT - length), 0.14, 0.03, (1.0, 1.0, 1.0))
+                for x, y, length in TATTERS]
 
     return volumes
 
@@ -152,7 +105,7 @@ def add_volume(clay, volume: tuple) -> None:
             vertex.co = Vector((vertex.co.x * squash[0], vertex.co.y * squash[1], vertex.co.z * squash[2])) + center
 
 
-def fuse(volumes: list, base=None):
+def fuse(volumes: list, base=None, lofts: tuple = ()):
     """New mesh: the volumes (plus `base`, an already fused mesh) made one skin by a voxel remesh."""
     clay = bmesh.new()
 
@@ -162,6 +115,11 @@ def fuse(volumes: list, base=None):
 
     for volume in volumes:
         add_volume(clay, volume)
+
+    for sections in lofts:
+        mula_parts.add_loft(clay, sections)
+
+    bmesh.ops.recalc_face_normals(clay, faces=clay.faces[:])
 
     rough_mesh = bpy.data.meshes.new("MulaClay")
     clay.to_mesh(rough_mesh)
@@ -197,7 +155,7 @@ def relax(mesh, passes_by_height: list) -> None:
 
 def sculpt_clay():
     """Object with the masses fused and melted together, then the fine relief on top; still whole (neck not cut)."""
-    masses = fuse([copy for volume in MUSCLES for copy in mirrored(volume)])
+    masses = fuse([], lofts=mula_parts.all_parts())
     relax(masses, MASS_RELAX)
     skin_mesh = fuse(relief_volumes(), masses)
     relax(skin_mesh, RELIEF_RELAX)
@@ -346,27 +304,5 @@ def lighten(body) -> None:
 
 
 def transfer_weights(body, source_object) -> None:
-    """Vertex groups of the pack horse onto the sculpted body, by nearest surface point; Head goes to Neck."""
-    source = source_object.data
-    surface = BVHTree.FromPolygons([vertex.co for vertex in source.vertices], [polygon.vertices[:] for polygon in source.polygons])
-    group_names = [group.name for group in source_object.vertex_groups]
-    neck = group_names.index("Neck")
-    head = {index for index, name in enumerate(group_names) if name.startswith("Head")}
-    source_weights = [{(neck if element.group in head else element.group): element.weight for element in vertex.groups} for vertex in source.vertices]
-    groups = [body.vertex_groups.new(name=name) for name in group_names]
-
-    for vertex in body.data.vertices:
-        location, _, polygon_index, _ = surface.find_nearest(vertex.co)
-        corners = source.polygons[polygon_index].vertices
-        shares = poly_3d_calc([source.vertices[corner].co for corner in corners], location)
-        blended = {}
-
-        for corner, share in zip(corners, shares):
-            for group, weight in source_weights[corner].items():
-                blended[group] = blended.get(group, 0.0) + weight * share
-
-        total = sum(blended.values())
-
-        for group, weight in blended.items():
-            if weight / total > 0.01:
-                groups[group].add([vertex.index], weight / total, "REPLACE")
+    """Vertex groups named after the pack horse's, weighed part by part (see mula_parts.paint_weights)."""
+    mula_parts.paint_weights(body, [group.name for group in source_object.vertex_groups])
