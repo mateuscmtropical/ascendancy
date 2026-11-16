@@ -131,3 +131,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0, 1.4, 8.0)
 fov = 50
 far = 600.0
 metadata/look_at = Vector3(0, 0.8, 0)
+
+[node name="CowFrontEye" type="Camera3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.4, 1.2, 0.5)
+fov = 38
+far = 600.0
+
+[node name="PigFrontEye" type="Camera3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -0.5, 0.55, 0.3)
+fov = 38
+far = 600.0
+
+[node name="HorseFrontEye" type="Camera3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.3, 1.65, 0.5)
+fov = 38
+far = 600.0

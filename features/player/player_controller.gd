@@ -42,6 +42,12 @@ const DOUBLE_TAP_SECONDS: float = 0.3
 const MOUSE_SENSITIVITY: float = 0.0025
 const PITCH_MIN: float = -1.1
 const PITCH_MAX: float = 0.45
+## Degrau que o personagem sobe andando, sem pular: meio-fio, soleira, borda do terreiro.
+const STEP_HEIGHT: float = 0.2
+## Abaixo disto a normal do obstáculo é parede (degrau); acima, rampa que o move_and_slide já sobe.
+const STEP_WALL_MAX_NORMAL_Y: float = 0.7
+## Antecipação do teste do degrau, para o corpo encostar na borda já levantando.
+const STEP_PROBE_SECONDS: float = 0.08
 
 @export var is_input_enabled: bool = true
 
@@ -132,12 +138,55 @@ func _walk(input_vector: Vector2, delta: float) -> void:
 		velocity.y = JUMP_VELOCITY
 		stance = Stance.AIRBORNE
 
+	if is_grounded:
+		climb_step(Vector3(velocity.x, 0.0, velocity.z) * STEP_PROBE_SECONDS)
+
 	move_and_slide()
 
 	# NPCs desviam do jogador prevendo para onde ele vai.
 	_avoidance_obstacle.velocity = Vector3(velocity.x, 0.0, velocity.z)
 	_turn_model_toward(move_direction, delta)
 	_apply_stance(stance)
+
+
+## Sobe o corpo até o topo do degrau à frente, se o deslocamento horizontal motion bate numa
+## parede baixa (até STEP_HEIGHT) com chão firme em cima. Devolve se subiu.
+func climb_step(motion: Vector3) -> bool:
+	var step_top: float = _step_top_ahead(motion)
+
+	if step_top <= safe_margin:
+		return false
+
+	global_position.y += step_top
+
+	return true
+
+
+func _step_top_ahead(motion: Vector3) -> float:
+	var blocking_hit: KinematicCollision3D = KinematicCollision3D.new()
+	var landing_hit: KinematicCollision3D = KinematicCollision3D.new()
+	var lift: Vector3 = Vector3.UP * STEP_HEIGHT
+	var raised: Transform3D = global_transform.translated(lift)
+	var is_blocked_by_wall: bool = (
+		motion.length_squared() > 0.000001
+		and test_move(global_transform, motion, blocking_hit)
+		and blocking_hit.get_normal().y <= STEP_WALL_MAX_NORMAL_Y
+	)
+	var is_clear_above: bool = (
+		is_blocked_by_wall
+		and not test_move(global_transform, lift)
+		and not test_move(raised, motion)
+	)
+	var has_firm_landing: bool = (
+		is_clear_above
+		and test_move(raised.translated(motion), -lift, landing_hit)
+		and landing_hit.get_normal().y >= cos(floor_max_angle)
+	)
+
+	if not has_firm_landing:
+		return 0.0
+
+	return STEP_HEIGHT - landing_hit.get_travel().length()
 
 
 func _fly(input_vector: Vector2, delta: float) -> void:
