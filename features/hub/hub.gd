@@ -17,9 +17,17 @@ const HAIR_BY_CHOICE: Dictionary[CharacterSelect.Choice, Color] = {
 	CharacterSelect.Choice.MALE: Color(0.29, 0.2, 0.15),
 	CharacterSelect.Choice.FEMALE: Color(0.62, 0.36, 0.2),
 }
+## De noite o vitral visto de dentro quase apaga: só sobra o luar fraco atrás do vidro.
+const NIGHT_GLASS_GLOW: float = 0.08
+const GLASS_MATERIAL_MARK: String = "Glass"
+## Abaixo disso os feixes somem: escondidos não custam nada (somar alfa 0 ainda custa overdraw).
+const MIN_SHAFT_SUNLIGHT: float = 0.01
 
 var _shader_sun_direction: Vector3 = Vector3.ZERO
+var _shader_sunlight: float = -1.0
 var _is_playing: bool = false
+## Material de vidro da catedral -> brilho (emissão) dele em pleno sol.
+var _glass_day_glow: Dictionary[StandardMaterial3D, float] = {}
 
 @onready var _player: PlayerController = $Player
 @onready var _character_select: CharacterSelect = $CharacterSelect
@@ -29,6 +37,8 @@ var _is_playing: bool = false
 @onready var _sun: DirectionalLight3D = $Sun
 @onready var _settings_menu: SettingsMenu = $SettingsMenu
 @onready var _day_night: DayNightCycle = $DayNight
+@onready var _cathedral: Node3D = $Buildings/Cathedral
+@onready var _light_shafts: Node3D = _cathedral.find_child("LightShafts", true, false)
 
 
 func _ready() -> void:
@@ -38,6 +48,7 @@ func _ready() -> void:
 	_character_select.choice_previewed.connect(preview_choice)
 	_character_select.choice_confirmed.connect(start_playing)
 	_settings_menu.visibility_changed.connect(_follow_settings_menu)
+	_collect_cathedral_glass()
 
 	if CINEMATIC_ARGUMENT in arguments:
 		show_scenery()
@@ -53,15 +64,25 @@ func _ready() -> void:
 	open_character_select()
 
 
-## Feixes dos vitrais (art/shaders/light_shaft.gdshader) seguem o sol: o shader lê a direção dele.
+## Feixes dos vitrais (art/shaders/light_shaft.gdshader) seguem o sol, não a luz direcional (que
+## de noite vira a lua), e somem com a força dele: de noite e no eclipse não há feixe.
 func _process(_delta: float) -> void:
-	var sun_direction: Vector3 = -_sun.global_basis.z
+	var sun_direction: Vector3 = -_day_night.sun_direction_now
+	var sunlight: float = _day_night.sunlight
 
-	if sun_direction.is_equal_approx(_shader_sun_direction):
+	if not sun_direction.is_equal_approx(_shader_sun_direction):
+		_shader_sun_direction = sun_direction
+		RenderingServer.global_shader_parameter_set(&"sun_direction", sun_direction)
+
+	if is_equal_approx(sunlight, _shader_sunlight):
 		return
 
-	_shader_sun_direction = sun_direction
-	RenderingServer.global_shader_parameter_set(&"sun_direction", sun_direction)
+	_shader_sunlight = sunlight
+	RenderingServer.global_shader_parameter_set(&"sunlight", sunlight)
+	_dim_cathedral_glass(sunlight)
+
+	if _light_shafts:
+		_light_shafts.visible = sunlight > MIN_SHAFT_SUNLIGHT
 
 
 func open_character_select() -> void:
@@ -116,3 +137,35 @@ func _read_character_name(arguments: PackedStringArray) -> String:
 			return argument.trim_prefix(CHARACTER_ARGUMENT)
 
 	return ""
+
+
+func _collect_cathedral_glass() -> void:
+	var meshes: Array[Node] = _cathedral.find_children("*", "MeshInstance3D", true, false)
+
+	for mesh in meshes:
+		_collect_glass_of(mesh as MeshInstance3D)
+
+
+func _collect_glass_of(mesh: MeshInstance3D) -> void:
+	if mesh.mesh == null:
+		return
+
+	for surface in mesh.mesh.get_surface_count():
+		var material: StandardMaterial3D = (
+			mesh.mesh.surface_get_material(surface) as StandardMaterial3D
+		)
+
+		if material == null or not material.emission_enabled:
+			continue
+
+		if not material.resource_name.contains(GLASS_MATERIAL_MARK):
+			continue
+
+		_glass_day_glow[material] = material.emission_energy_multiplier
+
+
+func _dim_cathedral_glass(sunlight: float) -> void:
+	var glow_share: float = lerpf(NIGHT_GLASS_GLOW, 1.0, sunlight)
+
+	for material in _glass_day_glow:
+		material.emission_energy_multiplier = _glass_day_glow[material] * glow_share

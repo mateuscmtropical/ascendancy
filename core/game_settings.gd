@@ -49,36 +49,36 @@ const SECTION_BY_SETTING: Dictionary[Setting, Section] = {
 }
 const LABEL_BY_SETTING: Dictionary[Setting, String] = {
 	Setting.MONITOR: "Monitor",
-	Setting.WINDOW_MODE: "Window mode",
-	Setting.RESOLUTION: "Window size",
+	Setting.WINDOW_MODE: "Modo de janela",
+	Setting.RESOLUTION: "Tamanho da janela",
 	Setting.VSYNC: "V-Sync",
-	Setting.MAX_FPS: "Frame rate limit",
-	Setting.RENDER_SCALE: "Render scale",
-	Setting.MSAA: "Anti-aliasing (MSAA)",
-	Setting.FXAA: "Edge smoothing (FXAA)",
-	Setting.SHADOWS: "Shadow quality",
-	Setting.AMBIENT_OCCLUSION: "Ambient occlusion",
-	Setting.INDIRECT_LIGHT: "Indirect light",
-	Setting.GLOW: "Glow",
-	Setting.MASTER_VOLUME: "Master volume",
-	Setting.AMBIENT_VOLUME: "Ambience",
-	Setting.EFFECTS_VOLUME: "Effects",
-	Setting.MUSIC_VOLUME: "Music",
+	Setting.MAX_FPS: "Limite de FPS",
+	Setting.RENDER_SCALE: "Escala de renderização",
+	Setting.MSAA: "Antisserrilhado (MSAA)",
+	Setting.FXAA: "Suavizar bordas (FXAA)",
+	Setting.SHADOWS: "Qualidade das sombras",
+	Setting.AMBIENT_OCCLUSION: "Oclusão de ambiente",
+	Setting.INDIRECT_LIGHT: "Luz indireta",
+	Setting.GLOW: "Brilho",
+	Setting.MASTER_VOLUME: "Volume geral",
+	Setting.AMBIENT_VOLUME: "Ambiente",
+	Setting.EFFECTS_VOLUME: "Efeitos",
+	Setting.MUSIC_VOLUME: "Música",
 }
 ## Cada lista tem constante tipada própria: lista solta dentro do dicionário constante
 ## fica sem tipo e chega vazia ao OptionButton.
-const OFF_ON: PackedStringArray = ["Off", "On"]
+const OFF_ON: PackedStringArray = ["Desligado", "Ligado"]
 const WINDOW_MODE_LABELS: PackedStringArray = [
-	"Windowed", "Borderless fullscreen", "Exclusive fullscreen"
+	"Janela", "Tela cheia sem borda", "Tela cheia exclusiva"
 ]
 const RESOLUTION_LABELS: PackedStringArray = [
 	"1280 x 720", "1600 x 900", "1920 x 1080", "2560 x 1440", "3840 x 2160"
 ]
-const VSYNC_LABELS: PackedStringArray = ["Off", "On", "Adaptive", "Mailbox"]
-const MAX_FPS_LABELS: PackedStringArray = ["Unlimited", "30", "60", "120", "144", "165", "240"]
+const VSYNC_LABELS: PackedStringArray = ["Desligado", "Ligado", "Adaptativo", "Mailbox"]
+const MAX_FPS_LABELS: PackedStringArray = ["Sem limite", "30", "60", "120", "144", "165", "240"]
 const RENDER_SCALE_LABELS: PackedStringArray = ["50%", "67%", "77%", "85%", "100%"]
-const MSAA_LABELS: PackedStringArray = ["Off", "2x", "4x", "8x"]
-const SHADOW_LABELS: PackedStringArray = ["Low", "Medium", "High", "Ultra"]
+const MSAA_LABELS: PackedStringArray = ["Desligado", "2x", "4x", "8x"]
+const SHADOW_LABELS: PackedStringArray = ["Baixa", "Média", "Alta", "Ultra"]
 const VOLUME_LABELS: PackedStringArray = [
 	"0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"
 ]
@@ -171,8 +171,8 @@ var _appliers: Dictionary[Setting, Callable] = {
 	Setting.GLOW: _apply_glow,
 	Setting.MASTER_VOLUME: _apply_volume.bind(&"Master"),
 	Setting.AMBIENT_VOLUME: _apply_volume.bind(&"Ambient"),
-	Setting.EFFECTS_VOLUME: _apply_volume.bind(&"Effects"),
-	Setting.MUSIC_VOLUME: _apply_volume.bind(&"Music"),
+	Setting.EFFECTS_VOLUME: _apply_volume.bind(&"Efeitos"),
+	Setting.MUSIC_VOLUME: _apply_volume.bind(&"Música"),
 }
 
 
