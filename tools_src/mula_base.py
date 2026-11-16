@@ -36,6 +36,14 @@ CHEST_REACH_METRES = 0.28
 CHEST_FILL = 0.18  # ...by this share of their distance to the middle plane, fading out with distance
 TAIL_START_Y, TAIL_SHORTEN, TAIL_DROOP = 0.72, 0.5, 0.6  # the model's dock sticks straight out
 UNSTRETCH_PASSES = 12
+# Muscle added to the legs, on the source mesh (metres): (is front leg, axis low point, axis high point, share of
+# extra girth at the middle of the span). The skin swells away from the axis, most at mid-span, nothing at the ends.
+LEG_MUSCLES = [
+    (True, Vector((0.107, -0.44, 0.50)), Vector((0.107, -0.40, 0.92)), 0.4),  # forearm
+    (False, Vector((0.141, 0.68, 0.55)), Vector((0.141, 0.47, 0.90)), 0.4),  # gaskin
+    (False, Vector((0.141, 0.47, 0.84)), Vector((0.141, 0.45, 1.22)), 0.16),  # thigh
+]
+LEG_MUSCLE_REACH = (0.16, 0.3)  # metres from the axis: full swell within the first, none beyond the second
 # Joints of the left legs on the source mesh (metres): where the leg leaves the trunk, knee or hock, hoof.
 FRONT_JOINTS = (Vector((0.107, -0.40, 0.92)), Vector((0.107, -0.44, 0.50)), Vector((0.107, -0.50, 0.03)))
 HIND_JOINTS = (Vector((0.141, 0.45, 0.92)), Vector((0.141, 0.68, 0.55)), Vector((0.141, 0.60, 0.03)))
@@ -43,8 +51,28 @@ GIRDLE_X = 0.035  # the short bone that carries each leg starts this far from th
 FOOT_LENGTH = 0.2
 
 
+def muscled(position: Vector) -> Vector:
+    """A point of the source mesh with the leg muscles filled out."""
+    filled = position.copy()
+    side = 1.0 if position.x > 0.0 else -1.0
+
+    for is_front, low, high, girth in LEG_MUSCLES:
+        span = (position.z - low.z) / (high.z - low.z)
+
+        if (position.y < 0.0) != is_front or not 0.0 < span < 1.0:
+            continue
+
+        on_axis = low.lerp(high, span)
+        away = Vector((position.x - on_axis.x * side, position.y - on_axis.y, 0.0))
+        fade = min(1.0, max(0.0, (LEG_MUSCLE_REACH[1] - away.length) / (LEG_MUSCLE_REACH[1] - LEG_MUSCLE_REACH[0])))
+        filled += away * girth * math.sin(math.pi * span) ** 2 * fade
+
+    return filled
+
+
 def to_pack_units(position: Vector) -> Vector:
-    """A point of the source mesh (metres) bulked, with the neck swollen, in pack units."""
+    """A point of the source mesh (metres) with its legs muscled and its neck swollen, in pack units."""
+    position = muscled(position)
     axis = (NECK_MOUTH_METRES - NECK_BASE_METRES).normalized()
     along = (position - NECK_BASE_METRES).dot(axis)
     swell = min(1.0, max(0.0, (along - NECK_SWELL_START) / (NECK_SWELL_END - NECK_SWELL_START))) if position.y < 0.0 else 0.0

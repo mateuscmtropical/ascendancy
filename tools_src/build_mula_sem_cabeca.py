@@ -55,7 +55,8 @@ TEXTURE_SIZE = 2048
 RELIEF_CAGE = 0.05  # o bake do relevo parte desta distância da malha de jogo...
 RELIEF_REACH = 0.25  # ...e procura o cavalo inteiro até esta
 RELIEF_AMBIENT_SAMPLES = 32
-RELIEF_SHADE = 0.6  # quanto a oclusão do relevo escurece o couro
+RELIEF_STRENGTH = 2.2  # o relevo muscular entra mais forte que na malha inteira
+RELIEF_SHADE = 0.75  # quanto a oclusão do relevo escurece o couro
 WITHERS_Y = (-1.4, -1.0)
 HEADLESS_BONES = ("Head",)
 CHAIN_BONE_PREFIX = "Chain"
@@ -929,15 +930,16 @@ def build_bake_material(mesh_object) -> dict:
     fibres = mix(nodes, links, neck_channels.outputs[0], mix(nodes, links, leg, body_fibres, leg_fibres), neck_fibres)
     ridges = math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "ABSOLUTE", math_node(nodes, links, "SUBTRACT", fibres, 0.5), 0.0), 4.0, clamp=True)
     bulges = math_node(nodes, links, "SUBTRACT", 1.0, voronoi(nodes, links, coordinates, 1.1, "SMOOTH_F1"), clamp=True)
-    crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 11.0, "DISTANCE_TO_EDGE"), 14.0, clamp=True)
+    crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 15.0, "DISTANCE_TO_EDGE"), 9.0, clamp=True)
 
     height = math_node(nodes, links, "MULTIPLY", bulges, 0.0)
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.03))
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.0))
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.0))
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.008))
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.03))
 
     relief_image = nodes.new("ShaderNodeTexImage")
     relief = nodes.new("ShaderNodeNormalMap")
+    relief.inputs["Strength"].default_value = RELIEF_STRENGTH
     links.new(relief_image.outputs["Color"], relief.inputs["Color"])
     ambient = nodes.new("ShaderNodeTexImage")
     bump = nodes.new("ShaderNodeBump")
@@ -949,10 +951,10 @@ def build_bake_material(mesh_object) -> dict:
     links.new(bump.outputs[0], diffuse.inputs["Normal"])
 
     # couro cor de vinho queimado: fundo do sulco quase preto, crista da fibra em carne escura
-    tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.35), math_node(nodes, links, "MULTIPLY", ridges, 0.65))
+    tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.55), math_node(nodes, links, "MULTIPLY", ridges, 0.45))
     hide = color_ramp(nodes, links, tone, [(0.15, (0.022, 0.007, 0.005)), (0.45, (0.085, 0.024, 0.016)), (0.8, (0.2, 0.055, 0.035))])
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.3), hide, (0.04, 0.012, 0.008))
-    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.0), hide, (0.01, 0.006, 0.006))
+    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.25), hide, (0.01, 0.006, 0.006))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.2), hide, (0.32, 0.02, 0.008))
     shaded = nodes.new("ShaderNodeMix")
     shaded.data_type = "RGBA"
@@ -965,8 +967,8 @@ def build_bake_material(mesh_object) -> dict:
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
     # carne úmida: brilha mais na crista da fibra, fosca no sulco carbonizado
-    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.2, clamp=True)
-    roughness_value.node.inputs[2].default_value = 0.42
+    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", crackle, -0.2, clamp=True)
+    roughness_value.node.inputs[2].default_value = 0.62
     combine = nodes.new("ShaderNodeCombineColor")
     links.new(roughness_value, combine.inputs[1])
 
