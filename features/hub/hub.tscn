@@ -1,4 +1,4 @@
-[gd_scene load_steps=151 format=3]
+[gd_scene load_steps=156 format=3]
 
 [ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
 [ext_resource type="Texture2D" path="res://art/town/textures/T_RockTrim_BaseColor.png" id="2_ext"]
@@ -113,13 +113,18 @@
 [ext_resource type="PackedScene" path="res://art/town/farm/farm_yard.gltf" id="111_ext"]
 [ext_resource type="PackedScene" path="res://art/town/farm/farm_fields.gltf" id="112_ext"]
 [ext_resource type="Script" path="res://features/hub/farm_animal.gd" id="113_ext"]
-[ext_resource type="Script" path="res://features/hub/carriage.gd" id="114_ext"]
-[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="115_ext"]
-[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="116_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="117_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="118_ext"]
-[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="119_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="120_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/cow.gltf" id="114_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/pig.gltf" id="115_ext"]
+[ext_resource type="Script" path="res://features/hub/carriage.gd" id="116_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="117_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse.gltf" id="118_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="119_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="120_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="121_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="122_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="123_ext"]
+[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="124_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="125_ext"]
 
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -5278,7 +5283,150 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
-[node name="Player" parent="." instance=ExtResource("115_ext")]
+[node name="FarmAnimals" type="Node3D" parent="."]
+
+[node name="Cows0" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(87.219, 0.030, 5.698)
+rotation = Vector3(0.000, -2.466, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("114_ext")
+pen = Rect2(78.50, 5.50, 20.50, 21.00)
+walk_speed = 0.55
+wander_seed = 6156537
+body_size = Vector3(0.900, 1.400, 2.200)
+
+[node name="Cows1" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(83.681, 0.030, 15.227)
+rotation = Vector3(0.000, -1.265, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("114_ext")
+pen = Rect2(78.50, 5.50, 20.50, 21.00)
+walk_speed = 0.55
+wander_seed = 894396553
+body_size = Vector3(0.900, 1.400, 2.200)
+
+[node name="Cows2" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(84.145, 0.030, 15.782)
+rotation = Vector3(0.000, -2.169, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("114_ext")
+pen = Rect2(78.50, 5.50, 20.50, 21.00)
+walk_speed = 0.55
+wander_seed = 865711377
+body_size = Vector3(0.900, 1.400, 2.200)
+
+[node name="Cows3" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(83.571, 0.030, 15.362)
+rotation = Vector3(0.000, -0.773, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("114_ext")
+pen = Rect2(78.50, 5.50, 20.50, 21.00)
+walk_speed = 0.55
+wander_seed = 174439977
+body_size = Vector3(0.900, 1.400, 2.200)
+
+[node name="Pigs0" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(91.771, 0.030, 34.420)
+rotation = Vector3(0.000, 0.999, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("115_ext")
+pen = Rect2(86.50, 32.50, 12.50, 9.50)
+walk_speed = 0.5
+wander_seed = 724823827
+body_size = Vector3(0.600, 0.800, 1.200)
+
+[node name="Pigs1" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(90.840, 0.030, 33.883)
+rotation = Vector3(0.000, -2.562, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("115_ext")
+pen = Rect2(86.50, 32.50, 12.50, 9.50)
+walk_speed = 0.5
+wander_seed = 381645810
+body_size = Vector3(0.600, 0.800, 1.200)
+
+[node name="Pigs2" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(95.777, 0.030, 35.667)
+rotation = Vector3(0.000, -1.131, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("115_ext")
+pen = Rect2(86.50, 32.50, 12.50, 9.50)
+walk_speed = 0.5
+wander_seed = 862314575
+body_size = Vector3(0.600, 0.800, 1.200)
+
+[node name="Pigs3" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(90.852, 0.030, 41.665)
+rotation = Vector3(0.000, 0.312, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("115_ext")
+pen = Rect2(86.50, 32.50, 12.50, 9.50)
+walk_speed = 0.5
+wander_seed = 85028151
+body_size = Vector3(0.600, 0.800, 1.200)
+
+[node name="Pigs4" type="AnimatableBody3D" parent="FarmAnimals"]
+position = Vector3(92.748, 0.030, 34.767)
+rotation = Vector3(0.000, -2.578, 0.000)
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("113_ext")
+model_scene = ExtResource("115_ext")
+pen = Rect2(86.50, 32.50, 12.50, 9.50)
+walk_speed = 0.5
+wander_seed = 675316160
+body_size = Vector3(0.600, 0.800, 1.200)
+
+[node name="Carriages" type="Node3D" parent="."]
+
+[node name="Carriage0" type="AnimatableBody3D" parent="Carriages"]
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("116_ext")
+wagon_scene = ExtResource("117_ext")
+horse_scene = ExtResource("118_ext")
+route = PackedVector3Array(68.00, -0.12, 47.00, 67.62, -0.12, 49.62, 66.50, -0.12, 51.50, 64.62, -0.12, 52.62, 62.00, -0.12, 53.00, -62.00, -0.12, 53.00, -64.62, -0.12, 52.62, -66.50, -0.12, 51.50, -67.62, -0.12, 49.62, -68.00, -0.12, 47.00, -68.00, -0.12, -45.00, -67.62, -0.12, -47.62, -66.50, -0.12, -49.50, -64.62, -0.12, -50.62, -62.00, -0.12, -51.00, -20.02, -0.12, -51.00, -18.01, -0.12, -50.98, -16.00, -0.12, -50.90, -14.00, -0.12, -50.78, -12.00, -0.12, -50.60, -12.00, -0.12, -50.60, -10.00, -0.12, -50.40, -8.00, -0.12, -50.21, -6.00, -0.12, -50.03, -4.00, -0.12, -49.85, -4.00, -0.12, -49.85, -2.00, -0.12, -49.72, 0.00, -0.12, -49.67, 2.00, -0.12, -49.72, 4.00, -0.12, -49.85, 4.00, -0.12, -49.85, 6.00, -0.12, -50.03, 8.00, -0.12, -50.21, 10.00, -0.12, -50.40, 12.00, -0.12, -50.60, 12.00, -0.12, -50.60, 14.00, -0.12, -50.78, 16.00, -0.12, -50.90, 18.01, -0.12, -50.98, 20.02, -0.12, -51.00, 62.00, -0.12, -51.00, 64.62, -0.12, -50.62, 66.50, -0.12, -49.50, 67.62, -0.12, -47.62, 68.00, -0.12, -45.00)
+speed = 1.3
+start_distance = 0.00
+
+[node name="Carriage1" type="AnimatableBody3D" parent="Carriages"]
+collision_layer = 4
+collision_mask = 0
+sync_to_physics = false
+script = ExtResource("116_ext")
+wagon_scene = ExtResource("119_ext")
+horse_scene = ExtResource("118_ext")
+route = PackedVector3Array(68.00, -0.12, 47.00, 67.62, -0.12, 49.62, 66.50, -0.12, 51.50, 64.62, -0.12, 52.62, 62.00, -0.12, 53.00, -62.00, -0.12, 53.00, -64.62, -0.12, 52.62, -66.50, -0.12, 51.50, -67.62, -0.12, 49.62, -68.00, -0.12, 47.00, -68.00, -0.12, -45.00, -67.62, -0.12, -47.62, -66.50, -0.12, -49.50, -64.62, -0.12, -50.62, -62.00, -0.12, -51.00, -20.02, -0.12, -51.00, -18.01, -0.12, -50.98, -16.00, -0.12, -50.90, -14.00, -0.12, -50.78, -12.00, -0.12, -50.60, -12.00, -0.12, -50.60, -10.00, -0.12, -50.40, -8.00, -0.12, -50.21, -6.00, -0.12, -50.03, -4.00, -0.12, -49.85, -4.00, -0.12, -49.85, -2.00, -0.12, -49.72, 0.00, -0.12, -49.67, 2.00, -0.12, -49.72, 4.00, -0.12, -49.85, 4.00, -0.12, -49.85, 6.00, -0.12, -50.03, 8.00, -0.12, -50.21, 10.00, -0.12, -50.40, 12.00, -0.12, -50.60, 12.00, -0.12, -50.60, 14.00, -0.12, -50.78, 16.00, -0.12, -50.90, 18.01, -0.12, -50.98, 20.02, -0.12, -51.00, 62.00, -0.12, -51.00, 64.62, -0.12, -50.62, 66.50, -0.12, -49.50, 67.62, -0.12, -47.62, 68.00, -0.12, -45.00)
+speed = 1.3
+start_distance = 235.41
+
+[node name="Player" parent="." instance=ExtResource("120_ext")]
 position = Vector3(-38.400, 0.000, -13.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -5288,7 +5436,7 @@ rotation = Vector3(-0.120, 1.837, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
-script = ExtResource("116_ext")
+script = ExtResource("121_ext")
 
 [node name="Key0" type="Marker3D" parent="CinematicTour"]
 position = Vector3(-90.000, 28.000, -30.000)
@@ -5318,10 +5466,10 @@ rotation = Vector3(0.114, -1.571, 0.000)
 position = Vector3(-90.000, 4.000, -57.000)
 rotation = Vector3(-0.011, -1.571, 0.000)
 
-[node name="CharacterSelect" parent="." instance=ExtResource("117_ext")]
+[node name="CharacterSelect" parent="." instance=ExtResource("122_ext")]
 
-[node name="FpsCounter" parent="." instance=ExtResource("118_ext")]
+[node name="FpsCounter" parent="." instance=ExtResource("123_ext")]
 
-[node name="SettingsMenu" parent="." instance=ExtResource("119_ext")]
+[node name="SettingsMenu" parent="." instance=ExtResource("124_ext")]
 
-[node name="HubAudio" parent="." instance=ExtResource("120_ext")]
+[node name="HubAudio" parent="." instance=ExtResource("125_ext")]
