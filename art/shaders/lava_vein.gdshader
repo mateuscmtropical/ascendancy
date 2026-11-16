@@ -22,11 +22,11 @@ void fragment() {
 	float wave = 0.5 + 0.5 * sin(TAU * (TIME * beats_per_second - distance_from_stump * beat_travel));
 	float beat = pow(wave, 5.0);
 	float core = pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 1.5);
-	float strength = mix(0.25, 1.0, thickness) * mix(1.0, 0.45, distance_from_stump) * mix(0.22, 1.0, core * core);
+	float strength = mix(0.25, 1.0, thickness) * mix(1.0, 0.45, distance_from_stump) * mix(0.12, 1.0, core * core);
 	vec3 lava = mix(tip_color, trunk_color, clamp(thickness * 0.7 + beat * 0.35 + core * 0.2 - 0.2, 0.0, 1.0));
 
 	// vaso grosso: miolo amarelo de lava viva, borda laranja
-	lava = mix(lava, core_color, smoothstep(0.45, 0.9, thickness) * core * core);
+	lava = mix(lava, core_color, smoothstep(0.45, 0.9, thickness) * pow(core, 6.0));
 
 	ALBEDO = vec3(0.03, 0.01, 0.005);
 	ROUGHNESS = 0.45;

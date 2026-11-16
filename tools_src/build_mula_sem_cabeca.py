@@ -52,7 +52,7 @@ HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima dis
 HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
 HIDE_GLOW_STRENGTH = 3.0
-HIDE_HALO = 0.3  # quanto do brilho das veias vaza para o couro em volta
+HIDE_HALO = 0.7  # quanto do brilho das veias vaza para o couro em volta
 FIBRE_DENSITY = 6.0  # fibras de músculo por unidade, atravessando a fibra
 NECK_FIBRE_TILT = math.radians(-23.0)  # o pescoço sobe inclinado para a frente: as fibras acompanham
 
@@ -75,7 +75,7 @@ VEIN_TIP_RADIUS = 0.006
 VEIN_TRUNK_RADIUS = 0.1
 VEIN_TRUNK_FLOW = 30.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
-VEIN_SINK = 0.3  # fração do raio que o vaso afunda no couro: fica rente, como fenda de lava, não como cano
+VEIN_SINK = 0.55  # fração do raio que o vaso afunda no couro: fica rente, como fenda de lava, não como cano
 
 LINK_RADIUS = 0.18
 LINK_WIRE = 0.062
@@ -1024,13 +1024,28 @@ def rename_actions() -> dict:
     return kept
 
 
+FRONT_WIDEN = 1.3  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
+HIND_WIDEN = 1.15
+FRONT_WIDEN_Y = (-0.9, -1.6)  # de onde até onde o alargamento da frente entra
+HIND_WIDEN_Y = (1.0, 1.7)
+NECK_NARROW_Z = (5.0, 5.8)  # o pescoço fica de fora
+
+
+def ramp(start: float, end: float, value: float) -> float:
+    return min(1.0, max(0.0, (value - start) / (end - start)))
+
+
 def stretched(position: Vector) -> Vector:
     """Where a point of the pack-proportioned mula lands once it is stretched: the legs lengthen between fetlock and
-    shoulder/hip joint (hooves stay, everything above rides up) and the trunk lengthens between the leg pairs."""
+    shoulder/hip joint (hooves stay, everything above rides up), the trunk lengthens between the leg pairs and each
+    leg pair spreads sideways with the body around it."""
     trunk = min(TRUNK_STRETCH_REACH, max(-TRUNK_STRETCH_REACH, position.y))
     leg = min(LEG_STRETCH_TOP, max(LEG_STRETCH_FLOOR, position.z))
+    front = ramp(*FRONT_WIDEN_Y, position.y) * (1.0 - ramp(*NECK_NARROW_Z, position.z))
+    hind = ramp(*HIND_WIDEN_Y, position.y)
+    widen = 1.0 + (FRONT_WIDEN - 1.0) * front + (HIND_WIDEN - 1.0) * hind
 
-    return Vector((position.x, position.y + trunk * (TRUNK_STRETCH - 1.0), position.z + (leg - LEG_STRETCH_FLOOR) * (LEG_STRETCH - 1.0)))
+    return Vector((position.x * widen, position.y + trunk * (TRUNK_STRETCH - 1.0), position.z + (leg - LEG_STRETCH_FLOOR) * (LEG_STRETCH - 1.0)))
 
 
 def stretch_proportions(armature, mesh_objects: list, marker_names: list) -> None:
@@ -1086,6 +1101,11 @@ def measure_proportions(mesh_object) -> dict:
 
     body_length = max(trunk) - min(trunk)
 
+    def leg_width(is_front: bool, height_share: float) -> float:
+        slab = [position.y for position in vertices if position.x > 0.3 and (position.y < -0.5) == is_front and abs(position.z - height_share * withers) < 0.1]
+
+        return round((max(slab) - min(slab)) / withers, 3)
+
     return {
         "body_per_withers": round(body_length / withers, 3),
         "chest_depth_per_withers": round((max(girth) - min(girth)) / withers, 3),
@@ -1094,6 +1114,10 @@ def measure_proportions(mesh_object) -> dict:
         "neck_degrees": round(math.degrees(math.atan2(neck_axis.z, -neck_axis.y)), 1),
         "neck_taper": round(neck_width(0.92) / neck_width(0.3), 3),
         "neck_per_body": round(neck_length / body_length, 3),
+        "forearm_width_per_withers": leg_width(True, 0.42),
+        "front_cannon_width_per_withers": leg_width(True, 0.16),
+        "gaskin_width_per_withers": leg_width(False, 0.42),
+        "hind_cannon_width_per_withers": leg_width(False, 0.16),
     }
 
 
