@@ -1,0 +1,104 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="1_capture"]
+[ext_resource type="PackedScene" path="res://features/mobs/mula_sem_cabeca.tscn" id="2_mula"]
+[ext_resource type="Script" path="res://tests/shots/mula_shots.gd" id="3_shots"]
+[ext_resource type="PackedScene" path="res://features/player/character_model.tscn" id="4_model"]
+[ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="5_adventurer"]
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 1
+background_color = Color(0.025, 0.03, 0.045, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.42, 0.42, 0.5, 1)
+ambient_light_energy = 0.45
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.55
+glow_bloom = 0.05
+glow_hdr_threshold = 1.1
+fog_enabled = true
+fog_light_color = Color(0.07, 0.075, 0.1, 1)
+fog_density = 0.018
+
+[sub_resource type="FastNoiseLite" id="ground_noise"]
+noise_type = 2
+frequency = 0.012
+fractal_octaves = 4
+cellular_return_type = 1
+
+[sub_resource type="NoiseTexture2D" id="ground_albedo"]
+seamless = true
+noise = SubResource("ground_noise")
+
+[sub_resource type="NoiseTexture2D" id="ground_normal"]
+seamless = true
+as_normal_map = true
+bump_strength = 2.0
+noise = SubResource("ground_noise")
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.11, 0.105, 0.11, 1)
+albedo_texture = SubResource("ground_albedo")
+roughness = 0.9
+normal_enabled = true
+normal_texture = SubResource("ground_normal")
+uv1_scale = Vector3(10, 10, 10)
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+material = SubResource("ground_material")
+size = Vector2(80, 80)
+
+[node name="MulaShots" type="Node3D"]
+script = ExtResource("3_shots")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Moon" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.74, 0.5, -0.45, 0, 0.67, 0.74, 0.67, 0.55, -0.5, 0, 0, 0)
+light_color = Color(0.8, 0.84, 0.95, 1)
+light_energy = 0.4
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh")
+
+[node name="Mula" parent="." instance=ExtResource("2_mula")]
+
+[node name="Adventurer" parent="." instance=ExtResource("4_model")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.2, 0, 3.1)
+body_scene = ExtResource("5_adventurer")
+
+[node name="MulaThreeQuarter" type="Camera3D" parent="."]
+position = Vector3(4.2, 0.8, 2.9)
+fov = 42.0
+current = true
+
+[node name="MulaSide" type="Camera3D" parent="."]
+position = Vector3(5.6, 1.2, 0.2)
+fov = 40.0
+
+[node name="MulaBack" type="Camera3D" parent="."]
+position = Vector3(1.5, 1.3, -5.0)
+fov = 42.0
+
+[node name="MulaNeck" type="Camera3D" parent="."]
+position = Vector3(-1.5, 2.3, 2.6)
+fov = 42.0
+
+[node name="MulaHooves" type="Camera3D" parent="."]
+position = Vector3(-1.5, 0.45, 2.3)
+fov = 42.0
+
+[node name="MulaRun" type="Camera3D" parent="."]
+position = Vector3(-4.4, 1.0, 2.9)
+fov = 42.0
+
+[node name="MulaScale" type="Camera3D" parent="."]
+position = Vector3(7.2, 1.3, 1.0)
+fov = 40.0
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("1_capture")
+seconds_before_capture = 2.5

@@ -1,0 +1,46 @@
+{
+ "source": "Horse.glb",
+ "withers_height": 1.7,
+ "scale": 0.30193,
+ "animations": {
+  "Death": "Armature|Armature|Death",
+  "Idle": "Armature|Armature|Idle",
+  "Attack": "Armature|Armature|Jump",
+  "Run": "Armature|Armature|Run",
+  "Walk": "Armature|Armature|Walk"
+ },
+ "fire_markers": [
+  "FireStump",
+  "FireMane_1",
+  "FireMane_2",
+  "FireMane_3",
+  "FireMane_4",
+  "FireMane_5",
+  "FireMane_6",
+  "FireMane_7",
+  "FireTail_1",
+  "FireTail_2",
+  "FireTail_3",
+  "FireTail_4",
+  "FireTail_5",
+  "FireTail_6",
+  "FireTail_7",
+  "FireTail_8",
+  "FireHoof_FrontL",
+  "FireHoof_FrontR",
+  "FireHoof_BackL",
+  "FireHoof_BackR"
+ ],
+ "hanging_chains": [
+  "Chain1",
+  "Chain2",
+  "Chain3",
+  "Chain4",
+  "Chain5"
+ ],
+ "vertices": {
+  "Mula": 15001,
+  "MulaVeins": 20784,
+  "MulaChains": 6800
+ }
+}
