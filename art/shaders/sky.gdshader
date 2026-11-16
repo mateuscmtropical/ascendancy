@@ -3,6 +3,10 @@ shader_type sky;
 // sol quente, noite escura sem poluição luminosa com estrelas densas, a faixa da Via Láctea, duas
 // galáxias distantes e a lua; nuvens que andam devagar; estrelas cadentes e eclipses vindos de
 // features/sky/day_night_cycle.gd. Tudo na direção do olhar (EYEDIR), sem textura.
+// Desempenho: o Godot refaz a radiância (luz ambiente e reflexo vindos do céu) sempre que um uniform
+// do material muda ou o shader lê TIME. Por isso o tempo que move nuvens e estrelas é o global
+// sky_time (não suja o material) e o script só reescreve sol, lua e quantidades quando a mudança
+// aparece. Partes invisíveis no pixel (céu noturno de dia, lua longe, nuvem sem cobertura) pulam.
 
 const int METEOR_SLOTS = 8;
 const int CLOUD_OCTAVES = 5;
@@ -18,12 +22,14 @@ uniform vec3 ground_color : source_color = vec3(0.35, 0.42, 0.33);
 uniform vec3 cloud_color : source_color = vec3(1.0, 1.0, 1.0);
 uniform vec3 moon_color : source_color = vec3(0.92, 0.94, 1.0);
 
-// Estado do céu (day_night_cycle.gd escreve a cada quadro).
+// Tempo de jogo em segundos (global de project.godot, day_night_cycle.gd escreve a cada quadro).
+global uniform float sky_time;
+
+// Estado do céu (day_night_cycle.gd escreve quando muda o bastante para aparecer).
 uniform vec3 sun_direction = vec3(0.0, 0.7, 0.7);
 uniform vec3 moon_direction = vec3(0.0, -0.7, -0.7);
 uniform float day_amount : hint_range(0.0, 1.0) = 1.0;
 uniform float twilight_amount : hint_range(0.0, 1.0) = 0.0;
-uniform float cloud_time = 0.0;
 uniform float solar_eclipse : hint_range(0.0, 1.0) = 0.0;
 uniform float lunar_eclipse : hint_range(0.0, 1.0) = 0.0;
 // Estrela cadente: xyz = direção da cabeça / da ponta da cauda, w = brilho (0 = vaga livre).
@@ -37,6 +43,8 @@ uniform float cloud_scale = 1.6;
 uniform vec2 cloud_wind = vec2(0.012, 0.004);
 uniform float star_density : hint_range(0.0, 1.0) = 0.9;
 uniform vec3 galaxy_plane_normal = vec3(0.42, 0.3, 0.86);
+// Além deste ângulo (radianos) do centro da lua o brilho dela é menor que 1e-5: nem calcula.
+uniform float moon_reach = 0.3;
 
 
 // Hash inteiro da célula (exato): o hash de ponto flutuante dava valores diferentes para o mesmo canto
@@ -124,6 +132,10 @@ vec3 sun_disc(vec3 direction) {
 
 
 vec3 moon_disc(vec3 direction, float night_amount) {
+	if (dot(direction, moon_direction) < cos(moon_reach)) {
+		return vec3(0.0);
+	}
+
 	float angle = acos(clamp(dot(direction, moon_direction), -1.0, 1.0));
 	float disc = 1.0 - smoothstep(moon_size * 0.92, moon_size, angle);
 	vec3 surface_point = (direction - moon_direction) / moon_size;
@@ -173,7 +185,11 @@ float distant_galaxy(vec3 direction, vec3 center, vec3 axis, float size) {
 
 
 vec3 night_sky(vec3 direction, float night_amount) {
-	float stars = star_field(direction, TIME);
+	if (night_amount <= 0.0 || direction.y <= 0.0) {
+		return vec3(0.0);
+	}
+
+	float stars = star_field(direction, sky_time);
 	float galaxy_band = milky_way(direction);
 	float galaxies = distant_galaxy(direction, vec3(-0.5, 0.62, 0.6), vec3(1.0, 0.3, 0.2), 0.035)
 		+ distant_galaxy(direction, vec3(0.7, 0.45, -0.55), vec3(0.2, 1.0, 0.4), 0.025) * 0.7;
@@ -186,8 +202,12 @@ vec3 night_sky(vec3 direction, float night_amount) {
 
 
 vec4 cloud_layer(vec3 direction, float sun_height) {
-	vec2 plane = direction.xz / max(direction.y, 0.06) * cloud_scale + cloud_wind * cloud_time;
-	float shape = fractal_noise(vec3(plane, cloud_time * 0.01), CLOUD_OCTAVES);
+	if (cloud_coverage <= 0.0 || direction.y <= 0.02) {
+		return vec4(0.0);
+	}
+
+	vec2 plane = direction.xz / max(direction.y, 0.06) * cloud_scale + cloud_wind * sky_time;
+	float shape = fractal_noise(vec3(plane, sky_time * 0.01), CLOUD_OCTAVES);
 	float density = smoothstep(1.0 - cloud_coverage, 1.0 - cloud_coverage + 0.1, shape);
 	float thick = smoothstep(0.55, 0.85, shape);
 	float toward_sun = max(dot(direction, sun_direction), 0.0);
@@ -236,7 +256,9 @@ void sky() {
 		float meteors = 0.0;
 
 		for (int slot = 0; slot < METEOR_SLOTS; slot++) {
-			meteors += meteor_streak(direction, meteor_heads[slot], meteor_tails[slot]);
+			if (meteor_heads[slot].w > 0.0) {
+				meteors += meteor_streak(direction, meteor_heads[slot], meteor_tails[slot]);
+			}
 		}
 
 		color += heavens + moon_disc(direction, max(night_amount, 0.35)) + sun_disc(direction);

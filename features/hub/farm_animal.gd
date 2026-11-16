@@ -4,7 +4,8 @@ extends AnimatableBody3D
 ## ponto do cercado. Sem navmesh: anda em linha reta dentro do retângulo `pen` (x, z), que fica
 ## afastado da cerca. O sorteio usa a semente própria, então cada bicho repete o mesmo passeio.
 ## Antes de sair vira no lugar para o alvo; acelera e freia devagar, e o passo da animação acompanha
-## a velocidade (sem patinar). Modelo sem animação de andar fica pastando no lugar.
+## a velocidade (sem patinar). Modelo sem animação de andar fica pastando no lugar. Troncos de
+## árvore no cercado (`obstacles`) ficam fora do caminho: o bicho só escolhe alvo com linha livre.
 
 enum Mood { GRAZING, TURNING, WALKING }
 
@@ -34,6 +35,8 @@ const MIN_ANIMATION_SPEED: float = 0.4
 @export var wander_seed: int = 1
 ## Caixa de colisão (largura, altura, comprimento) que o jogador não atravessa.
 @export var body_size: Vector3 = Vector3(0.8, 1.3, 2.0)
+## Troncos no cercado: (x, z, raio) de cada um.
+@export var obstacles: PackedVector3Array = PackedVector3Array()
 
 var _generator: RandomNumberGenerator = RandomNumberGenerator.new()
 var _mood: Mood = Mood.GRAZING
@@ -73,9 +76,14 @@ func _physics_process(delta: float) -> void:
 	mood_step.call(delta)
 
 
-## Próximo ponto do passeio: dentro do cercado e longe o bastante de onde o bicho está.
+## Próximo ponto do passeio: dentro do cercado, longe o bastante de onde o bicho está e com a linha
+## reta até ele livre dos obstáculos (folga `clearance` além do raio). Sem nenhum, fica onde está.
 static func pick_wander_target(
-	area: Rect2, from: Vector2, generator: RandomNumberGenerator
+	area: Rect2,
+	from: Vector2,
+	generator: RandomNumberGenerator,
+	blockers: PackedVector3Array = PackedVector3Array(),
+	clearance: float = 0.0
 ) -> Vector2:
 	var candidate: Vector2 = from
 
@@ -85,10 +93,27 @@ static func pick_wander_target(
 			generator.randf_range(area.position.y, area.end.y)
 		)
 
-		if candidate.distance_to(from) >= MIN_WANDER_DISTANCE:
+		if candidate.distance_to(from) < MIN_WANDER_DISTANCE:
+			continue
+
+		if is_path_clear(from, candidate, blockers, clearance):
 			return candidate
 
-	return candidate
+	return from
+
+
+## Verdadeiro se o segmento `from`-`target` passa a mais de raio + `clearance` de cada obstáculo.
+static func is_path_clear(
+	from: Vector2, target: Vector2, blockers: PackedVector3Array, clearance: float
+) -> bool:
+	for blocker in blockers:
+		var center: Vector2 = Vector2(blocker.x, blocker.y)
+		var closest: Vector2 = Geometry2D.get_closest_point_to_segment(center, from, target)
+
+		if closest.distance_to(center) < blocker.z + clearance:
+			return false
+
+	return true
 
 
 ## Um passo em linha reta, sem passar do alvo.
@@ -123,7 +148,13 @@ func _graze(delta: float) -> void:
 
 		return
 
-	_target = pick_wander_target(pen, ground_position, _generator)
+	_target = pick_wander_target(pen, ground_position, _generator, obstacles, body_size.z / 2.0)
+
+	if _target == ground_position:
+		_start_grazing()
+
+		return
+
 	_mood = Mood.TURNING
 	_play(_walk_animation, MIN_ANIMATION_SPEED)
 

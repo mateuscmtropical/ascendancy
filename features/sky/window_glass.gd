@@ -4,15 +4,19 @@ extends RefCounted
 ## acendem à noite: M_TownGlass (janelas das casas e janelas altas, tools_src/build_town_houses.py)
 ## vira art/materials/window_glass.tres, e M_TownShopfront (vitrines das lojas grandes,
 ## tools_src/build_market_shops.py) vira art/materials/shopfront_glass.tres. O vidro dos móveis
-## (M_TownVitrine: estojos, frascos) fica como está.
+## (M_TownVitrine: estojos, frascos) fica como está. As janelas da fazenda (M_FarmGlass,
+## tools_src/build_farm.py) acendem todas juntas: o sorteio por vidraça deixava a casa em xadrez.
 
 const GLASS_MATERIAL_NAME: String = "M_TownGlass"
 const SHOPFRONT_MATERIAL_NAME: String = "M_TownShopfront"
+const FARM_GLASS_MATERIAL_NAME: String = "M_FarmGlass"
 const NIGHT_GLASS: Material = preload("res://art/materials/window_glass.tres")
 const SHOPFRONT_GLASS: Material = preload("res://art/materials/shopfront_glass.tres")
+const FARM_GLASS: Material = preload("res://art/materials/farm_window_glass.tres")
 const NIGHT_MATERIAL_BY_NAME: Dictionary[String, Material] = {
 	GLASS_MATERIAL_NAME: NIGHT_GLASS,
 	SHOPFRONT_MATERIAL_NAME: SHOPFRONT_GLASS,
+	FARM_GLASS_MATERIAL_NAME: FARM_GLASS,
 }
 
 

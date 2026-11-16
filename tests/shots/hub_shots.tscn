@@ -189,3 +189,58 @@ position = Vector3(140.000, 2.000, 0.000)
 rotation = Vector3(0.062, 1.571, 0.000)
 fov = 70.0
 far = 2000.0
+
+[node name="WheatEye" type="Camera3D" parent="."]
+position = Vector3(112.000, 1.600, -22.000)
+rotation = Vector3(-0.058, -0.876, 0.000)
+fov = 60.0
+
+[node name="WheatCloseEye" type="Camera3D" parent="."]
+position = Vector3(110.000, 1.600, -23.200)
+rotation = Vector3(-0.286, -0.827, 0.000)
+fov = 60.0
+
+[node name="CornEye" type="Camera3D" parent="."]
+position = Vector3(125.600, 1.600, -3.400)
+rotation = Vector3(-0.043, -0.770, 0.000)
+fov = 60.0
+
+[node name="CabbageEye" type="Camera3D" parent="."]
+position = Vector3(110.000, 1.600, -3.600)
+rotation = Vector3(-0.292, -0.598, 0.000)
+fov = 60.0
+
+[node name="CarrotEye" type="Camera3D" parent="."]
+position = Vector3(110.000, 1.600, 3.600)
+rotation = Vector3(-0.362, -2.508, 0.000)
+fov = 60.0
+
+[node name="MeadowEye" type="Camera3D" parent="."]
+position = Vector3(125.500, 1.600, 21.000)
+rotation = Vector3(-0.105, -2.385, 0.000)
+fov = 60.0
+
+[node name="LaneEye" type="Camera3D" parent="."]
+position = Vector3(103.500, 1.600, 0.000)
+rotation = Vector3(-0.074, -1.580, 0.000)
+fov = 60.0
+
+[node name="YardPropsEye" type="Camera3D" parent="."]
+position = Vector3(91.000, 1.600, -17.500)
+rotation = Vector3(-0.146, -1.272, 0.000)
+fov = 60.0
+
+[node name="BarrowEye" type="Camera3D" parent="."]
+position = Vector3(86.600, 1.500, -12.600)
+rotation = Vector3(-0.427, 2.222, 0.000)
+fov = 60.0
+
+[node name="ProduceEye" type="Camera3D" parent="."]
+position = Vector3(90.300, 1.500, -19.600)
+rotation = Vector3(-0.460, 0.866, 0.000)
+fov = 60.0
+
+[node name="YardCartEye" type="Camera3D" parent="."]
+position = Vector3(93.600, 1.600, -11.500)
+rotation = Vector3(-0.138, -0.920, 0.000)
+fov = 60.0
