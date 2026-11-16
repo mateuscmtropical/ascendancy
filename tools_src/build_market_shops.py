@@ -50,6 +50,11 @@ CHIMNEY_CLEARANCE = 1.0  # janela do fundo não abre a menos disto do eixo de um
 WALL_PROP_REACH = 0.8  # móvel a menos disto de uma parede conta como encostado nela (checagem das janelas)
 COLLIDER_MAX_HEIGHT = 2.4
 PLINTH_HEIGHT = 0.5
+BLIND_ARCH_MIN_SILL = 2.8  # janela com peitoril a partir disto ganha arco cego embaixo (a base da parede não fica nua)
+BLIND_ARCH_BASE_GAP = 0.35  # do topo do embasamento ao pé do arco cego
+BLIND_ARCH_TOP_GAP = 0.5  # do topo do arco cego ao peitoril da janela de cima
+BLIND_ARCH_FRAME = 0.12
+BLIND_ARCH_SHADE = 0.82  # painel do arco: a cor da parede um pouco mais escura
 FLOOR_TOP = 0.05  # acima do calçamento da quadra, para o piso do salão não brigar com ele
 FILL_PITCH = 2.5  # passo da grade de ilhas com que fill_floor enche o chão livre
 FILL_AISLE = 0.55
@@ -268,6 +273,17 @@ def flat_window(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None
     b.box((opening.u - 0.02, -0.085, opening.bottom), (opening.u + 0.02, -0.07, opening.spring), "paint", town.WHITE, frame=frame)
 
 
+def blind_arch(b: Builder, room: Room, frame: Matrix, window: Opening) -> None:
+    """Round-headed blind arch under a high window: a moulded frame and a darker panel standing proud of it."""
+    house = room.house
+    bottom = PLINTH_HEIGHT + BLIND_ARCH_BASE_GAP
+    arch = Opening(window.u, window.width, bottom, window.bottom - BLIND_ARCH_TOP_GAP - bottom, "round")
+    panel_tint = tuple(channel * BLIND_ARCH_SHADE for channel in house.wall_tint)
+
+    b.prism(arch.outline(BLIND_ARCH_FRAME), -0.08, 0.0, "trim", house.trim_tint, frame=frame, uv=("band", *town.TRIM_SMOOTH_BAND, 1.0))
+    b.prism(arch.outline(), -0.1, -0.08, house.wall_material, panel_tint, frame=frame)
+
+
 def dress_street_wall(b: Builder, room: Room, frame: Matrix, length: float, openings: list) -> None:
     """What makes a street wall read as a facade: stone plinth between the doors, a string course under the upper
     storey, and on tall halls a second tier of arched windows over the shop windows."""
@@ -284,6 +300,10 @@ def dress_street_wall(b: Builder, room: Room, frame: Matrix, length: float, open
 
     if len(house.storeys) > 1:
         b.box((0.0, -0.1, room.storey - 0.22), (length, 0.0, room.storey), "trim", house.trim_tint, frame=frame, uv=("band", *town.TRIM_SMOOTH_BAND, 1.0))
+
+    for window in vitrines:
+        if window.bottom >= BLIND_ARCH_MIN_SILL:
+            blind_arch(b, room, frame, window)
 
     if tier_height < 1.2:
         return
