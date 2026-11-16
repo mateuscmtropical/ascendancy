@@ -1,7 +1,7 @@
 {
  "source": "Horse.glb",
  "withers_height": 1.7,
- "scale": 0.30193,
+ "scale": 0.30173,
  "animations": {
   "Death": "Armature|Armature|Death",
   "Idle": "Armature|Armature|Idle",
@@ -22,10 +22,6 @@
   "FireTail_2",
   "FireTail_3",
   "FireTail_4",
-  "FireTail_5",
-  "FireTail_6",
-  "FireTail_7",
-  "FireTail_8",
   "FireHoof_FrontL",
   "FireHoof_FrontR",
   "FireHoof_BackL",
@@ -40,7 +36,8 @@
  ],
  "vertices": {
   "Mula": 15001,
-  "MulaVeins": 20784,
-  "MulaChains": 6800
+  "MulaVeins": 16530,
+  "MulaChains": 7050,
+  "MulaFlames": 1584
  }
 }

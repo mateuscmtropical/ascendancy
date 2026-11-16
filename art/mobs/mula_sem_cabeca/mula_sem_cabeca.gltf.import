@@ -39,7 +39,14 @@ import_script/path="res://features/audio/tag_ground_surfaces.gd"
 materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
-_subresources={}
+_subresources={
+"meshes": {
+"MulaFlames": {
+"generate/lods": 2,
+"generate/shadow_meshes": 2
+}
+}
+}
 gltf/naming_version=2
 gltf/embedded_image_handling=1
 gltf/texture_map_mode=1

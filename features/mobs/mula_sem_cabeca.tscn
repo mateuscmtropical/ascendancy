@@ -6,10 +6,12 @@
 [ext_resource type="Shader" path="res://art/shaders/flame.gdshader" id="4_flame"]
 [ext_resource type="Shader" path="res://art/shaders/smoke.gdshader" id="5_smoke"]
 [ext_resource type="Shader" path="res://art/shaders/ember_spark.gdshader" id="6_spark"]
+[ext_resource type="Shader" path="res://art/shaders/flame_ribbon.gdshader" id="7_ribbon"]
 
 [sub_resource type="ShaderMaterial" id="vein_material"]
 shader = ExtResource("3_vein")
-shader_parameter/energy = 2.2
+shader_parameter/energy = 2.1
+shader_parameter/trunk_color = Color(1, 0.42, 0.07, 1)
 
 [sub_resource type="FastNoiseLite" id="fire_noise"]
 frequency = 0.012
@@ -32,8 +34,14 @@ gradient = SubResource("heat_gradient")
 shader = ExtResource("4_flame")
 shader_parameter/noise_texture = SubResource("fire_noise_texture")
 shader_parameter/heat_ramp = SubResource("heat_ramp")
-shader_parameter/energy = 0.95
+shader_parameter/energy = 0.5
 shader_parameter/erosion = 1.25
+
+[sub_resource type="ShaderMaterial" id="flame_ribbon_material"]
+shader = ExtResource("7_ribbon")
+shader_parameter/noise_texture = SubResource("fire_noise_texture")
+shader_parameter/heat_ramp = SubResource("heat_ramp")
+shader_parameter/energy = 0.9
 
 [sub_resource type="ShaderMaterial" id="smoke_material"]
 shader = ExtResource("5_smoke")
@@ -186,6 +194,7 @@ turbulence_influence_max = 0.3
 [node name="MulaSemCabeca" type="Node3D"]
 script = ExtResource("1_script")
 vein_material = SubResource("vein_material")
+flame_ribbon_material = SubResource("flame_ribbon_material")
 
 [node name="Model" parent="." instance=ExtResource("2_model")]
 
@@ -203,8 +212,8 @@ process_material = SubResource("smoke_process")
 draw_pass_1 = SubResource("smoke_quad")
 
 [node name="Blaze" type="GPUParticles3D" parent="FireTemplates/StumpFire"]
-amount = 48
-lifetime = 1.0
+amount = 16
+lifetime = 0.9
 preprocess = 2.0
 visibility_aabb = AABB(-4, -4, -4, 8, 10, 8)
 process_material = SubResource("stump_flame_process")
@@ -222,7 +231,7 @@ draw_pass_1 = SubResource("spark_quad")
 [node name="Light" type="OmniLight3D" parent="FireTemplates/StumpFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 light_color = Color(1, 0.48, 0.14, 1)
-light_energy = 2.4
+light_energy = 1.5
 omni_range = 7.0
 omni_attenuation = 1.4
 distance_fade_enabled = true
@@ -232,7 +241,7 @@ distance_fade_length = 10.0
 [node name="ManeFire" type="Node3D" parent="FireTemplates"]
 
 [node name="Flames" type="GPUParticles3D" parent="FireTemplates/ManeFire"]
-amount = 14
+amount = 4
 lifetime = 0.6
 preprocess = 2.0
 visibility_aabb = AABB(-3, -3, -3, 6, 8, 6)
@@ -242,7 +251,7 @@ draw_pass_1 = SubResource("flame_quad")
 [node name="TailFire" type="Node3D" parent="FireTemplates"]
 
 [node name="Flames" type="GPUParticles3D" parent="FireTemplates/TailFire"]
-amount = 12
+amount = 4
 lifetime = 0.9
 preprocess = 2.0
 visibility_aabb = AABB(-5, -4, -5, 10, 9, 10)
@@ -260,7 +269,7 @@ draw_pass_1 = SubResource("spark_quad")
 [node name="HoofFire" type="Node3D" parent="FireTemplates"]
 
 [node name="Flames" type="GPUParticles3D" parent="FireTemplates/HoofFire"]
-amount = 18
+amount = 6
 lifetime = 0.6
 preprocess = 2.0
 visibility_aabb = AABB(-3, -2, -3, 6, 6, 6)
@@ -278,7 +287,7 @@ draw_pass_1 = SubResource("spark_quad")
 [node name="Light" type="OmniLight3D" parent="FireTemplates/HoofFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
 light_color = Color(1, 0.42, 0.1, 1)
-light_energy = 0.55
+light_energy = 0.4
 omni_range = 2.2
 distance_fade_enabled = true
 distance_fade_begin = 25.0
