@@ -20,6 +20,7 @@ func before_each() -> void:
 func after_each() -> void:
 	Input.action_release(&"move_forward")
 	Input.action_release(&"sprint")
+	Input.action_release(&"jump")
 
 
 func test_player_jogs_forward_away_from_camera() -> void:
@@ -59,3 +60,30 @@ func test_disabled_input_keeps_player_still() -> void:
 	await wait_physics_frames(30)
 
 	assert_almost_eq(_player.global_position.distance_to(start), 0.0, 0.01)
+
+
+func test_jump_is_short_and_snappy() -> void:
+	var peak_height: float = 0.0
+
+	await wait_physics_frames(10)
+	Input.action_press(&"jump")
+	await wait_physics_frames(2)
+	Input.action_release(&"jump")
+
+	for frame in 40:
+		await wait_physics_frames(1)
+		peak_height = maxf(peak_height, _player.global_position.y)
+
+	assert_between(peak_height, 0.9, 1.4, "jump reaches about head-bump height")
+	assert_true(_player.is_on_floor(), "back on the ground within ~0.7 s")
+
+
+func test_flying_holds_altitude_without_gravity() -> void:
+	var start_height: float
+
+	_player.global_position.y = 5.0
+	_player.set_flying(true)
+	await wait_physics_frames(30)
+	start_height = _player.global_position.y
+
+	assert_almost_eq(start_height, 5.0, 0.05, "no gravity while flying")

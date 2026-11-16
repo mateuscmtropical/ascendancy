@@ -1,68 +1,200 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="PackedScene" path="res://art/town/fountain_large.gltf" id="1_model"]
 
-[sub_resource type="StandardMaterial3D" id="droplet_material"]
+[ext_resource type="AudioStream" path="res://art/audio/fountain_loop.wav" id="9_water"]
+[sub_resource type="Gradient" id="soft_dot_gradient"]
+offsets = PackedFloat32Array(0, 0.3, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.55, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="soft_dot"]
+gradient = SubResource("soft_dot_gradient")
+width = 64
+height = 64
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="mist_material"]
 transparency = 1
 cull_mode = 2
 shading_mode = 0
 vertex_color_use_as_albedo = true
-albedo_color = Color(0.88, 0.96, 1, 0.4)
+albedo_color = Color(0.92, 0.97, 1, 0.8)
+albedo_texture = SubResource("soft_dot")
 billboard_mode = 3
 billboard_keep_scale = true
+proximity_fade_enabled = true
+proximity_fade_distance = 0.15
 
-[sub_resource type="QuadMesh" id="droplet_mesh"]
-material = SubResource("droplet_material")
-size = Vector2(0.035, 0.11)
+[sub_resource type="QuadMesh" id="mist_mesh"]
+material = SubResource("mist_material")
+size = Vector2(1, 1)
 
-[sub_resource type="ParticleProcessMaterial" id="upper_overflow"]
+[sub_resource type="Gradient" id="mist_fade_gradient"]
+offsets = PackedFloat32Array(0, 0.2, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.7, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="mist_fade"]
+gradient = SubResource("mist_fade_gradient")
+
+[sub_resource type="Curve" id="mist_growth_curve"]
+_data = [Vector2(0, 0.45), 0.0, 0.0, 0, 0, Vector2(0.4, 1), 0.0, 0.0, 0, 0, Vector2(1, 1.5), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="mist_growth"]
+curve = SubResource("mist_growth_curve")
+
+[sub_resource type="ParticleProcessMaterial" id="crown_spray"]
 emission_shape = 6
 emission_ring_axis = Vector3(0, 1, 0)
 emission_ring_height = 0.01
-emission_ring_radius = 1.0
-emission_ring_inner_radius = 0.94
-direction = Vector3(0, -1, 0)
-spread = 5.0
-initial_velocity_min = 0.0
-initial_velocity_max = 0.2
-radial_velocity_min = 0.35
-radial_velocity_max = 0.6
-gravity = Vector3(0, -9.8, 0)
-scale_min = 0.7
-scale_max = 1.3
+emission_ring_radius = 0.74
+emission_ring_inner_radius = 0.66
+direction = Vector3(0, 1, 0)
+spread = 35.0
+initial_velocity_min = 0.2
+initial_velocity_max = 0.7
+gravity = Vector3(0, -1.5, 0)
+scale_min = 0.05
+scale_max = 0.1
+scale_curve = SubResource("mist_growth")
+color_ramp = SubResource("mist_fade")
 
-[sub_resource type="ParticleProcessMaterial" id="lower_overflow"]
+[sub_resource type="ParticleProcessMaterial" id="upper_splash"]
 emission_shape = 6
 emission_ring_axis = Vector3(0, 1, 0)
 emission_ring_height = 0.01
-emission_ring_radius = 2.08
-emission_ring_inner_radius = 2.02
-direction = Vector3(0, -1, 0)
-spread = 5.0
-initial_velocity_min = 0.0
-initial_velocity_max = 0.2
-radial_velocity_min = 0.35
-radial_velocity_max = 0.6
-gravity = Vector3(0, -9.8, 0)
-scale_min = 0.7
-scale_max = 1.3
+emission_ring_radius = 1.04
+emission_ring_inner_radius = 0.98
+direction = Vector3(0, 1, 0)
+spread = 40.0
+initial_velocity_min = 0.25
+initial_velocity_max = 0.8
+gravity = Vector3(0, -1.8, 0)
+scale_min = 0.06
+scale_max = 0.12
+scale_curve = SubResource("mist_growth")
+color_ramp = SubResource("mist_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="middle_splash"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.01
+emission_ring_radius = 1.73
+emission_ring_inner_radius = 1.66
+direction = Vector3(0, 1, 0)
+spread = 40.0
+initial_velocity_min = 0.25
+initial_velocity_max = 0.85
+gravity = Vector3(0, -1.9, 0)
+scale_min = 0.07
+scale_max = 0.14
+scale_curve = SubResource("mist_growth")
+color_ramp = SubResource("mist_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="lower_splash"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.01
+emission_ring_radius = 2.77
+emission_ring_inner_radius = 2.69
+direction = Vector3(0, 1, 0)
+spread = 40.0
+initial_velocity_min = 0.3
+initial_velocity_max = 0.9
+gravity = Vector3(0, -2.0, 0)
+scale_min = 0.09
+scale_max = 0.18
+scale_curve = SubResource("mist_growth")
+color_ramp = SubResource("mist_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="basin_jet_splash"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.01
+emission_ring_radius = 4.33
+emission_ring_inner_radius = 4.28
+direction = Vector3(0, 1, 0)
+spread = 35.0
+initial_velocity_min = 0.3
+initial_velocity_max = 1.0
+gravity = Vector3(0, -2.2, 0)
+scale_min = 0.09
+scale_max = 0.18
+scale_curve = SubResource("mist_growth")
+color_ramp = SubResource("mist_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="apex_mist"]
+emission_shape = 1
+emission_sphere_radius = 0.12
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 0.1
+initial_velocity_max = 0.4
+gravity = Vector3(0, -0.6, 0)
+scale_min = 0.05
+scale_max = 0.1
+scale_curve = SubResource("mist_growth")
+color_ramp = SubResource("mist_fade")
 
 [node name="FountainLarge" type="Node3D"]
 
 [node name="Model" parent="." instance=ExtResource("1_model")]
 
-[node name="UpperOverflow" type="GPUParticles3D" parent="."]
-position = Vector3(0, 3.58, 0)
-amount = 220
-lifetime = 0.55
-visibility_aabb = AABB(-3, -3, -3, 6, 4, 6)
-process_material = SubResource("upper_overflow")
-draw_pass_1 = SubResource("droplet_mesh")
+[node name="CrownSpray" type="GPUParticles3D" parent="."]
+position = Vector3(0, 4.92, 0)
+amount = 60
+lifetime = 0.8
+visibility_aabb = AABB(-2, -1, -2, 4, 3, 4)
+process_material = SubResource("crown_spray")
+draw_pass_1 = SubResource("mist_mesh")
 
-[node name="LowerOverflow" type="GPUParticles3D" parent="."]
-position = Vector3(0, 2.36, 0)
-amount = 420
-lifetime = 0.65
-visibility_aabb = AABB(-3, -3, -3, 6, 4, 6)
-process_material = SubResource("lower_overflow")
-draw_pass_1 = SubResource("droplet_mesh")
+[node name="UpperSplash" type="GPUParticles3D" parent="."]
+position = Vector3(0, 4.31, 0)
+amount = 90
+lifetime = 0.8
+visibility_aabb = AABB(-2, -1, -2, 4, 3, 4)
+process_material = SubResource("upper_splash")
+draw_pass_1 = SubResource("mist_mesh")
+
+[node name="MiddleSplash" type="GPUParticles3D" parent="."]
+position = Vector3(0, 3.29, 0)
+amount = 130
+lifetime = 0.8
+visibility_aabb = AABB(-3, -1, -3, 6, 3, 6)
+process_material = SubResource("middle_splash")
+draw_pass_1 = SubResource("mist_mesh")
+
+[node name="LowerSplash" type="GPUParticles3D" parent="."]
+position = Vector3(0, 0.45, 0)
+amount = 220
+lifetime = 0.9
+visibility_aabb = AABB(-4, -1, -4, 8, 3, 8)
+process_material = SubResource("lower_splash")
+draw_pass_1 = SubResource("mist_mesh")
+
+[node name="BasinJetSplash" type="GPUParticles3D" parent="."]
+position = Vector3(0, 0.45, 0)
+amount = 160
+lifetime = 0.9
+visibility_aabb = AABB(-6, -1, -6, 12, 3, 12)
+process_material = SubResource("basin_jet_splash")
+draw_pass_1 = SubResource("mist_mesh")
+
+[node name="ApexMist" type="GPUParticles3D" parent="."]
+position = Vector3(0, 6.5, 0)
+amount = 30
+lifetime = 1.2
+visibility_aabb = AABB(-2, -2, -2, 4, 4, 4)
+process_material = SubResource("apex_mist")
+draw_pass_1 = SubResource("mist_mesh")
+
+[node name="WaterSound" type="AudioStreamPlayer3D" parent="."]
+position = Vector3(0, 1.2, 0)
+stream = ExtResource("9_water")
+volume_db = -12.0
+unit_size = 3.0
+max_distance = 45.0
+autoplay = true
+bus = &"Ambient"

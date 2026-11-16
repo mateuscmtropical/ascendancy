@@ -28,7 +28,17 @@
 		},
 		{
 			"mesh":1,
-			"name":"PlanterRim",
+			"name":"PlanterCathedralStone",
+			"rotation":[
+				0,
+				0.1950903683900833,
+				0,
+				0.9807853698730469
+			]
+		},
+		{
+			"mesh":2,
+			"name":"PlanterCathedralTrim",
 			"rotation":[
 				0,
 				0.1950903683900833,
@@ -42,18 +52,8 @@
 			]
 		},
 		{
-			"mesh":2,
-			"name":"PlanterWall",
-			"rotation":[
-				0,
-				0.1950903683900833,
-				0,
-				0.9807853698730469
-			]
-		},
-		{
 			"mesh":3,
-			"name":"Soil",
+			"name":"PlanterSoil",
 			"rotation":[
 				0,
 				0.1950903683900833,
@@ -65,7 +65,7 @@
 	"materials":[
 		{
 			"doubleSided":true,
-			"name":"M_CathedralTrim",
+			"name":"M_CathedralStone",
 			"normalTexture":{
 				"index":0
 			},
@@ -79,7 +79,7 @@
 		},
 		{
 			"doubleSided":true,
-			"name":"M_CathedralStone",
+			"name":"M_CathedralTrim",
 			"normalTexture":{
 				"index":2
 			},
@@ -119,7 +119,7 @@
 			]
 		},
 		{
-			"name":"PlanterRim",
+			"name":"PlanterWall",
 			"primitives":[
 				{
 					"attributes":{
@@ -133,7 +133,7 @@
 			]
 		},
 		{
-			"name":"PlanterWall",
+			"name":"PlanterRim",
 			"primitives":[
 				{
 					"attributes":{
@@ -182,16 +182,6 @@
 	"images":[
 		{
 			"mimeType":"image/png",
-			"name":"T_Plaster_Normal",
-			"uri":"textures/T_Plaster_Normal.png"
-		},
-		{
-			"mimeType":"image/png",
-			"name":"T_CathedralTrim_BaseColor",
-			"uri":"textures/T_CathedralTrim_BaseColor.png"
-		},
-		{
-			"mimeType":"image/png",
 			"name":"T_Brick_Normal",
 			"uri":"textures/T_Brick_Normal.png"
 		},
@@ -199,6 +189,16 @@
 			"mimeType":"image/png",
 			"name":"T_CathedralStone_BaseColor",
 			"uri":"textures/T_CathedralStone_BaseColor.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"T_Plaster_Normal",
+			"uri":"textures/T_Plaster_Normal.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"T_CathedralTrim_BaseColor",
+			"uri":"textures/T_CathedralTrim_BaseColor.png"
 		}
 	],
 	"accessors":[
@@ -235,14 +235,14 @@
 			"componentType":5126,
 			"count":96,
 			"max":[
-				1.3600000143051147,
-				0.07999999821186066,
-				1.3600000143051147
+				1.2999999523162842,
+				0.5,
+				1.2999999523162842
 			],
 			"min":[
-				-1.3600000143051147,
+				-1.2999999523162842,
 				0,
-				-1.3600000143051147
+				-1.2999999523162842
 			],
 			"type":"VEC3"
 		},
@@ -269,14 +269,14 @@
 			"componentType":5126,
 			"count":96,
 			"max":[
-				1.2999999523162842,
-				0.5,
-				1.2999999523162842
+				1.3600000143051147,
+				0.07999999821186066,
+				1.3600000143051147
 			],
 			"min":[
-				-1.2999999523162842,
+				-1.3600000143051147,
 				0,
-				-1.2999999523162842
+				-1.3600000143051147
 			],
 			"type":"VEC3"
 		},

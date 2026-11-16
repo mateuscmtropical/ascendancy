@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://features/player/player_controller.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://features/player/character_model.tscn" id="2_model"]
 [ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="3_body"]
+[ext_resource type="Script" path="res://features/audio/footstep_player.gd" id="4_footsteps"]
 
 [sub_resource type="CapsuleShape3D" id="capsule"]
 radius = 0.32
@@ -36,3 +37,13 @@ fov = 60.0
 
 [node name="AvoidanceObstacle" type="NavigationObstacle3D" parent="."]
 radius = 0.5
+
+[node name="Footsteps" type="AudioStreamPlayer3D" parent="."]
+volume_db = -6.0
+max_polyphony = 2
+bus = &"Effects"
+script = ExtResource("4_footsteps")
+
+[node name="GroundProbe" type="RayCast3D" parent="Footsteps"]
+position = Vector3(0, 0.3, 0)
+target_position = Vector3(0, -0.9, 0)

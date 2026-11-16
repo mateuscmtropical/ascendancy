@@ -9,6 +9,8 @@ enum PatrolState { WALKING, PAUSED }
 const CHARACTER_MODEL_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const WALK_ANIMATION: StringName = &"ual1/Walk"
 const TURN_SPEED: float = 6.0
+## Folga de 2,5 m em volta do corpo: cobre a sombra (sol a 45°), que entra na tela antes dele.
+const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5.0, 3.5, 5.0))
 
 @export var body_scene: PackedScene
 @export var hair_color: Color = Color("4a3426")
@@ -23,6 +25,8 @@ var _model: CharacterModel
 var _patrol_state: PatrolState = PatrolState.WALKING
 var _target_index: int = 0
 var _pause_left: float = 0.0
+## Subida por metro andado até o próximo ponto do caminho (escadas e rampas da navmesh).
+var _climb_per_meter: float = 0.0
 var _patrol_steps: Dictionary[PatrolState, Callable] = {
 	PatrolState.WALKING: _walk_toward_target,
 	PatrolState.PAUSED: _wait_at_target,
@@ -41,6 +45,7 @@ func _ready() -> void:
 	_model.start_animation = WALK_ANIMATION if is_walking else idle_animation
 	_model.start_offset_seconds = animation_offset_seconds
 	add_child(_model)
+	_stop_animating_off_screen()
 
 	_navigation_agent.avoidance_enabled = is_walking
 	_obstacle.avoidance_enabled = not is_walking
@@ -66,9 +71,19 @@ static func next_route_index(current_index: int, route_size: int) -> int:
 	return (current_index + 1) % route_size
 
 
+## Animação e skinning são o maior custo de CPU da praça; fora da câmera o modelo para de
+## processar (o NPC segue andando) e retoma do mesmo ponto do ciclo ao voltar para a tela.
+func _stop_animating_off_screen() -> void:
+	var animation_culling: VisibleOnScreenEnabler3D = VisibleOnScreenEnabler3D.new()
+
+	animation_culling.aabb = ANIMATION_CULLING_BOUNDS
+	_model.add_child(animation_culling)
+
+
 func _walk_toward_target(_delta: float) -> void:
 	var next_point: Vector3
 	var direction: Vector3
+	var horizontal_distance: float
 
 	if _navigation_agent.is_navigation_finished():
 		_arrive_at_target()
@@ -77,6 +92,8 @@ func _walk_toward_target(_delta: float) -> void:
 
 	next_point = _navigation_agent.get_next_path_position()
 	direction = next_point - global_position
+	horizontal_distance = Vector2(direction.x, direction.z).length()
+	_climb_per_meter = direction.y / horizontal_distance if horizontal_distance > 0.05 else 0.0
 	direction.y = 0.0
 	_navigation_agent.velocity = direction.normalized() * walk_speed
 
@@ -84,11 +101,12 @@ func _walk_toward_target(_delta: float) -> void:
 ## Chamado pelo avoidance com a velocidade que não bate em ninguém.
 func _move_with_safe_velocity(safe_velocity: Vector3) -> void:
 	var delta: float = get_physics_process_delta_time()
+	var horizontal_speed: float = Vector2(safe_velocity.x, safe_velocity.z).length()
 
 	if _patrol_state == PatrolState.PAUSED:
 		return
 
-	velocity = Vector3(safe_velocity.x, 0.0, safe_velocity.z)
+	velocity = Vector3(safe_velocity.x, horizontal_speed * _climb_per_meter, safe_velocity.z)
 	move_and_slide()
 
 	if velocity.length() < 0.05:

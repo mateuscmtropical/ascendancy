@@ -35,6 +35,10 @@ window/size/borderless=true
 window/size/window_width_override=64
 window/size/window_height_override=64
 window/stretch/mode="viewport"
+
+[editor]
+
+movie_writer/mjpeg_quality=1.0
 CFG
 trap 'rm -f override.cfg' EXIT
 

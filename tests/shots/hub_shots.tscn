@@ -7,41 +7,185 @@
 
 [node name="Hub" parent="." instance=ExtResource("1_hub")]
 
-[node name="PlazaOverview" type="Camera3D" parent="."]
-position = Vector3(0, 9, 42)
-rotation = Vector3(-0.2, 0, 0)
+[node name="CityOverview" type="Camera3D" parent="."]
+position = Vector3(-100.000, 38.000, 34.000)
+rotation = Vector3(-0.287, -1.216, 0.000)
 fov = 60.0
 
-[node name="FountainEye" type="Camera3D" parent="."]
-position = Vector3(9, 1.6, 14)
-rotation = Vector3(0.05, 0.6, 0)
+[node name="SpawnEye" type="Camera3D" parent="."]
+position = Vector3(-37.400, 1.800, -13.000)
+rotation = Vector3(-0.050, -1.571, 0.000)
+fov = 65.0
+
+[node name="CoretoEye" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -20.000)
+rotation = Vector3(0.058, 2.099, 0.000)
+fov = 60.0
+
+[node name="FacadeFar" type="Camera3D" parent="."]
+position = Vector3(-12.000, 1.600, 0.000)
+rotation = Vector3(0.363, -1.571, 0.000)
 fov = 60.0
 
 [node name="CathedralEye" type="Camera3D" parent="."]
-position = Vector3(0, 1.6, -4)
-rotation = Vector3(0.38, 0, 0)
+position = Vector3(5.000, 1.600, 2.000)
+rotation = Vector3(0.795, -1.418, 0.000)
 fov = 70.0
 
-[node name="MarketEye" type="Camera3D" parent="."]
-position = Vector3(4, 1.6, 19)
-rotation = Vector3(-0.08, -2.0, 0)
+[node name="NaveEye" type="Camera3D" parent="."]
+position = Vector3(22.000, 2.650, 0.000)
+rotation = Vector3(0.066, -1.571, 0.000)
+fov = 70.0
+
+[node name="AltarEye" type="Camera3D" parent="."]
+position = Vector3(40.000, 2.650, 2.500)
+rotation = Vector3(0.214, -1.342, 0.000)
+fov = 65.0
+
+[node name="CalcadaoEye" type="Camera3D" parent="."]
+position = Vector3(0.500, 1.600, 44.000)
+rotation = Vector3(0.012, 0.007, 0.000)
 fov = 60.0
 
 [node name="AvenueEye" type="Camera3D" parent="."]
-position = Vector3(-16, 1.6, 30)
-rotation = Vector3(-0.02, -0.2, 0)
+position = Vector3(-62.000, 1.600, -55.000)
+rotation = Vector3(0.023, -1.522, 0.000)
 fov = 60.0
 
-[node name="BenchEye" type="Camera3D" parent="."]
-position = Vector3(-14.5, 1.5, -9.5)
-rotation = Vector3(-0.14, 1.88, 0)
-fov = 55.0
+[node name="StreetEye" type="Camera3D" parent="."]
+position = Vector3(-60.000, 1.600, -64.000)
+rotation = Vector3(0.024, -1.511, 0.000)
+fov = 60.0
 
-[node name="SitterSide" type="Camera3D" parent="."]
-position = Vector3(-19.2, 0.9, -5.2)
-rotation = Vector3(-0.05, 0, 0)
-fov = 50.0
+[node name="FountainEye" type="Camera3D" parent="."]
+position = Vector3(-24.000, 1.600, 8.000)
+rotation = Vector3(0.047, 0.896, 0.000)
+fov = 60.0
+
+[node name="CoretoClose" type="Camera3D" parent="."]
+position = Vector3(-43.500, 2.000, -16.500)
+rotation = Vector3(0.000, 2.176, 0.000)
+fov = 65.0
+
+[node name="SaintsClose" type="Camera3D" parent="."]
+position = Vector3(12.500, 2.200, 7.000)
+rotation = Vector3(0.023, -2.210, 0.000)
+fov = 65.0
+
+[node name="LawnEye" type="Camera3D" parent="."]
+position = Vector3(-20.000, 1.600, -30.000)
+rotation = Vector3(-0.048, 2.481, 0.000)
+fov = 65.0
 
 [node name="ShotCapture" type="Node" parent="."]
 script = ExtResource("2_capture")
 seconds_before_capture = 3.0
+
+[node name="ShopsEye" type="Camera3D" parent="."]
+position = Vector3(-67.500, 1.700, 9.000)
+rotation = Vector3(0.060, 1.050, 0.000)
+fov = 65.0
+
+[node name="ShopClose" type="Camera3D" parent="."]
+position = Vector3(-70.500, 1.700, -3.000)
+rotation = Vector3(0.050, 1.900, 0.000)
+fov = 60.0
+
+[node name="SmithDoor" type="Camera3D" parent="."]
+position = Vector3(-69.500, 1.600, -18.400)
+rotation = Vector3(0.000, 1.571, 0.000)
+fov = 65.0
+
+[node name="SmithInterior" type="Camera3D" parent="."]
+position = Vector3(-76.000, 1.600, -18.400)
+rotation = Vector3(-0.050, 1.571, 0.000)
+fov = 75.0
+
+[node name="CrucifixClose" type="Camera3D" parent="."]
+position = Vector3(40.000, 2.650, 2.500)
+rotation = Vector3(0.225, -1.372, 0.000)
+fov = 16.0
+
+[node name="BranchMouth" type="Camera3D" parent="."]
+position = Vector3(-4.000, 4.000, 30.000)
+rotation = Vector3(-0.160, 0.960, 0.000)
+fov = 70.0
+
+[node name="BranchMouthTop" type="Camera3D" parent="."]
+position = Vector3(-14.000, 30.000, 24.000)
+rotation = Vector3(-1.571, 0.000, 0.000)
+fov = 60.0
+
+[node name="AerialTop" type="Camera3D" parent="."]
+position = Vector3(0.000, 150.000, -4.000)
+rotation = Vector3(-1.571, 0.000, 0.000)
+fov = 60.0
+
+[node name="ApseSide" type="Camera3D" parent="."]
+position = Vector3(43.000, 3.200, -8.000)
+rotation = Vector3(0.050, -2.098, 0.000)
+fov = 70.0
+
+[node name="TopDown" type="Camera3D" parent="."]
+position = Vector3(0.000, 70.000, -4.000)
+rotation = Vector3(-1.571, 0.000, 0.000)
+projection = 1
+size = 196.0
+far = 200.0
+
+[node name="FarmEye" type="Camera3D" parent="."]
+position = Vector3(70.000, 1.600, -6.000)
+rotation = Vector3(0.033, -0.838, 0.000)
+fov = 60.0
+
+[node name="FarmYardEye" type="Camera3D" parent="."]
+position = Vector3(83.000, 1.600, -3.000)
+rotation = Vector3(0.017, -0.519, 0.000)
+fov = 60.0
+
+[node name="PastureEye" type="Camera3D" parent="."]
+position = Vector3(79.500, 1.600, 2.600)
+rotation = Vector3(-0.035, -2.322, 0.000)
+fov = 60.0
+
+[node name="PigstyEye" type="Camera3D" parent="."]
+position = Vector3(84.000, 1.600, 29.000)
+rotation = Vector3(-0.073, -2.214, 0.000)
+fov = 60.0
+
+[node name="FieldsEye" type="Camera3D" parent="."]
+position = Vector3(104.500, 1.700, -1.000)
+rotation = Vector3(-0.041, -0.842, 0.000)
+fov = 60.0
+
+[node name="FieldsSouthEye" type="Camera3D" parent="."]
+position = Vector3(104.500, 1.700, 2.000)
+rotation = Vector3(-0.046, -2.169, 0.000)
+fov = 60.0
+
+[node name="FarmAerial" type="Camera3D" parent="."]
+position = Vector3(58.000, 40.000, 30.000)
+rotation = Vector3(-0.622, -1.003, 0.000)
+fov = 60.0
+
+[node name="SkyEye" type="Camera3D" parent="."]
+position = Vector3(-30.000, 1.700, -6.000)
+rotation = Vector3(0.233, -1.844, 0.000)
+fov = 70.0
+
+[node name="SkyWest" type="Camera3D" parent="."]
+position = Vector3(40.000, 1.700, -20.000)
+rotation = Vector3(0.152, 2.034, 0.000)
+fov = 70.0
+
+[node name="SkyOpen" type="Camera3D" parent="."]
+position = Vector3(125.000, 1.700, -30.000)
+rotation = Vector3(0.429, -3.142, 0.000)
+fov = 70.0
+far = 2000.0
+
+[node name="SkySunset" type="Camera3D" parent="."]
+position = Vector3(140.000, 2.000, 0.000)
+rotation = Vector3(0.062, 1.571, 0.000)
+fov = 70.0
+far = 2000.0
