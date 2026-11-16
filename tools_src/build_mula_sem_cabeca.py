@@ -52,6 +52,14 @@ HAIR_MATERIAL_INDEX = 1  # material escuro do pacote: crina, rabo e cascos
 HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima disto são crina/rabo
 HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
+CRACK_PLATE_SCALE = 1.9  # células por unidade do pacote (~15 cm de placa)
+CRACK_FINE_SCALE = 6.0
+CRACK_BEND = 0.35  # quanto o ruído entorta as placas
+CRACK_WIDTH, CRACK_FINE_WIDTH, CRACK_SCORCH_WIDTH = 0.035, 0.045, 0.2  # em células
+CRACK_FINE_SHARE = 0.7  # as rachaduras finas brilham menos que as das placas
+CRACK_LIT_SCALE, CRACK_LIT_THRESHOLD, CRACK_LIT_SHARPNESS = 1.3, 0.52, 7.0  # só parte da rede está acesa
+CRACK_DEPTH = 0.12  # profundidade da fenda no relevo
+CRACK_HEAT_BOOST = 0.5  # perto do toco a rede acende toda
 RELIEF_CAGE = 0.05  # o bake do relevo parte desta distância da malha de jogo...
 RELIEF_REACH = 0.25  # ...e procura o cavalo inteiro até esta
 RELIEF_AMBIENT_SAMPLES = 32
@@ -67,7 +75,7 @@ NECK_FIBRE_TILT = math.radians(-23.0)  # o pescoço sobe inclinado para a frente
 
 VEIN_SEED = 11
 VEIN_ROOTS = 9  # troncos que nascem na borda do toco
-VEIN_TIPS = 60  # pontas espalhadas pelo corpo
+VEIN_TIPS = 24  # pontas espalhadas pelo corpo
 VEIN_FRONT_DENSITY = 6.0  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
 VEIN_FRONT_END = -0.9
 VEIN_SHIN_TIPS = 8  # pontas extras nas canelas e cascos
@@ -75,13 +83,13 @@ VEIN_SHIN_TOP = 1.6
 VEIN_BRIDGES = 12  # pontas que alcançam um vaso vizinho e fecham a teia
 VEIN_BRIDGE_REACH = 9  # arestas que uma ponte pode atravessar
 VEIN_GROOVE_PULL = 4.0  # quanto o sulco entre músculos barateia o caminho
-VEIN_WEB_REACH = 4.0  # até esta distância do toco (pela pele) os vasos fecham células poligonais
+VEIN_WEB_REACH = 1.2  # até esta distância do toco (pela pele) os vasos fecham células poligonais
 VEIN_WEB_SPACING = 1.25  # distância entre os nós da teia
 VEIN_WEB_LINKS = 3  # vizinhos a que cada nó se liga
 VEIN_WEB_DETOUR = 2.4  # caminho mais longo que isto vezes a reta entre dois nós não vira vaso
 VEIN_WEB_THICKNESS = (1.0, 0.25)  # grossura dos vasos da teia: junto ao toco, no fim do alcance
-VEIN_TIP_RADIUS = 0.006
-VEIN_TRUNK_RADIUS = 0.1
+VEIN_TIP_RADIUS = 0.004
+VEIN_TRUNK_RADIUS = 0.04
 VEIN_TRUNK_FLOW = 30.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
 VEIN_HALO_RINGS = 1  # anéis de vértices além do primeiro que o halo alcança
@@ -901,6 +909,45 @@ def color_ramp(nodes, links, factor, stops: list):
     return node.outputs[0]
 
 
+def vector_math(nodes, links, operation: str, first, second=None):
+    """Vector math node over sockets (or a plain 3-tuple for the second input); returns the output socket."""
+    node = nodes.new("ShaderNodeVectorMath")
+    node.operation = operation
+    links.new(first, node.inputs[0])
+
+    if isinstance(second, float):
+        node.inputs[3].default_value = second
+    elif isinstance(second, tuple):
+        node.inputs[1].default_value = second
+    elif second is not None:
+        links.new(second, node.inputs[1])
+
+    return node.outputs[0]
+
+
+def crack_network(nodes, links, coordinates, heat):
+    """Fine web of lava cracks over the hide: cells of ~CRACK_PLATE_SCALE with thinner cracks inside them, on
+    coordinates bent by noise so the plates are irregular. Returns (glow: lit cracks, hotter where `heat` is high;
+    groove: every crack, lit or not, for the normal map; scorch: soft darkening around the wide cracks)."""
+    bend_vector = nodes.new("ShaderNodeTexNoise")
+    bend_vector.inputs["Scale"].default_value = 1.8
+    bend_vector.inputs["Detail"].default_value = 2.0
+    links.new(coordinates, bend_vector.inputs["Vector"])
+    offset = vector_math(nodes, links, "SUBTRACT", bend_vector.outputs["Color"], (0.5, 0.5, 0.5))
+    bent = vector_math(nodes, links, "ADD", coordinates, vector_math(nodes, links, "SCALE", offset, CRACK_BEND))
+    plate_edge = voronoi(nodes, links, bent, CRACK_PLATE_SCALE, "DISTANCE_TO_EDGE")
+    fine_edge = voronoi(nodes, links, bent, CRACK_FINE_SCALE, "DISTANCE_TO_EDGE")
+    wide = math_node(nodes, links, "SUBTRACT", 1.0, math_node(nodes, links, "MULTIPLY", plate_edge, 1.0 / CRACK_WIDTH, clamp=True))
+    thin = math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, math_node(nodes, links, "MULTIPLY", fine_edge, 1.0 / CRACK_FINE_WIDTH, clamp=True)), CRACK_FINE_SHARE)
+    cracks = math_node(nodes, links, "MAXIMUM", wide, thin)
+    lit_noise = noise(nodes, links, coordinates, CRACK_LIT_SCALE, 2.0)
+    lit = math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", lit_noise, CRACK_LIT_THRESHOLD), CRACK_LIT_SHARPNESS)
+    lit = math_node(nodes, links, "ADD", lit, math_node(nodes, links, "MULTIPLY", heat, CRACK_HEAT_BOOST), clamp=True)
+    scorch = math_node(nodes, links, "SUBTRACT", 1.0, math_node(nodes, links, "MULTIPLY", plate_edge, 1.0 / CRACK_SCORCH_WIDTH, clamp=True))
+
+    return math_node(nodes, links, "MULTIPLY", cracks, lit), cracks, scorch
+
+
 def build_bake_material(mesh_object) -> dict:
     """Procedural charred hide. Returns the material, the two shaders to bake through (emission for colour data,
     diffuse with bump for the normal map) and the colour sockets for hide, roughness and glow."""
@@ -930,12 +977,11 @@ def build_bake_material(mesh_object) -> dict:
     fibres = mix(nodes, links, neck_channels.outputs[0], mix(nodes, links, leg, body_fibres, leg_fibres), neck_fibres)
     ridges = math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "ABSOLUTE", math_node(nodes, links, "SUBTRACT", fibres, 0.5), 0.0), 4.0, clamp=True)
     bulges = math_node(nodes, links, "SUBTRACT", 1.0, voronoi(nodes, links, coordinates, 1.1, "SMOOTH_F1"), clamp=True)
-    crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 15.0, "DISTANCE_TO_EDGE"), 9.0, clamp=True)
+    crack_glow, groove, scorch = crack_network(nodes, links, coordinates, vein_glow)
 
-    height = math_node(nodes, links, "MULTIPLY", bulges, 0.0)
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.03))
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.008))
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.03))
+    height = math_node(nodes, links, "MULTIPLY", bulges, 0.1)
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.07))
+    height = math_node(nodes, links, "SUBTRACT", height, math_node(nodes, links, "MULTIPLY", groove, CRACK_DEPTH))
 
     relief_image = nodes.new("ShaderNodeTexImage")
     relief = nodes.new("ShaderNodeNormalMap")
@@ -951,10 +997,10 @@ def build_bake_material(mesh_object) -> dict:
     links.new(bump.outputs[0], diffuse.inputs["Normal"])
 
     # couro cor de vinho queimado: fundo do sulco quase preto, crista da fibra em carne escura
-    tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.55), math_node(nodes, links, "MULTIPLY", ridges, 0.45))
+    tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.35), math_node(nodes, links, "MULTIPLY", ridges, 0.65))
     hide = color_ramp(nodes, links, tone, [(0.15, (0.022, 0.007, 0.005)), (0.45, (0.085, 0.024, 0.016)), (0.8, (0.2, 0.055, 0.035))])
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.3), hide, (0.04, 0.012, 0.008))
-    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.25), hide, (0.01, 0.006, 0.006))
+    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", scorch, 0.55), hide, (0.012, 0.004, 0.003))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.2), hide, (0.32, 0.02, 0.008))
     shaded = nodes.new("ShaderNodeMix")
     shaded.data_type = "RGBA"
@@ -967,12 +1013,12 @@ def build_bake_material(mesh_object) -> dict:
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
     # carne úmida: brilha mais na crista da fibra, fosca no sulco carbonizado
-    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", crackle, -0.2, clamp=True)
-    roughness_value.node.inputs[2].default_value = 0.62
+    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.2, clamp=True)
+    roughness_value.node.inputs[2].default_value = 0.42
     combine = nodes.new("ShaderNodeCombineColor")
     links.new(roughness_value, combine.inputs[1])
 
-    hide_glow = math_node(nodes, links, "MULTIPLY", vein_glow, HIDE_HALO)  # só as veias brilham: o couro guarda um halo fraco
+    hide_glow = math_node(nodes, links, "MAXIMUM", math_node(nodes, links, "MULTIPLY", vein_glow, HIDE_HALO), crack_glow)
     ember_cracks = math_node(nodes, links, "SUBTRACT", 1.0, math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 6.0, "DISTANCE_TO_EDGE"), 7.0, clamp=True))
     ember_glow = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", ember, 0.45), math_node(nodes, links, "MULTIPLY", ember_cracks, 0.55), clamp=True)
     hoof_crust = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 5.0, "DISTANCE_TO_EDGE"), 3.2, clamp=True)
