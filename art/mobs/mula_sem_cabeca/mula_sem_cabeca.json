@@ -1,7 +1,7 @@
 {
- "source": "Horse.fbx",
+ "source": "Horse.glb",
  "withers_height": 1.7,
- "scale": 0.29712,
+ "scale": 0.30194,
  "animations": {
   "Death": "Armature|Armature|Death",
   "Idle": "Armature|Armature|Idle",
@@ -9,35 +9,38 @@
   "Run": "Armature|Armature|Run",
   "Walk": "Armature|Armature|Walk"
  },
- "attachment_bones": {
-  "neck_stump": "Head",
-  "mane": [
-   "Neck",
-   "Shoulders"
-  ],
-  "tail": [
-   "Tail1",
-   "Tail2",
-   "Tail3",
-   "Tail4"
-  ],
-  "hooves": [
-   "FrontFoot.L",
-   "FrontFoot.R",
-   "BackFoot.L",
-   "BackFoot.R"
-  ],
-  "hanging_chains": [
-   "Chain1",
-   "Chain2",
-   "Chain3",
-   "Chain4",
-   "Chain5"
-  ]
- },
+ "fire_markers": [
+  "FireStump",
+  "FireMane_1",
+  "FireMane_2",
+  "FireMane_3",
+  "FireMane_4",
+  "FireMane_5",
+  "FireMane_6",
+  "FireMane_7",
+  "FireTail_1",
+  "FireTail_2",
+  "FireTail_3",
+  "FireTail_4",
+  "FireTail_5",
+  "FireTail_6",
+  "FireTail_7",
+  "FireTail_8",
+  "FireHoof_FrontL",
+  "FireHoof_FrontR",
+  "FireHoof_BackL",
+  "FireHoof_BackR"
+ ],
+ "hanging_chains": [
+  "Chain1",
+  "Chain2",
+  "Chain3",
+  "Chain4",
+  "Chain5"
+ ],
  "vertices": {
-  "Mula": 4010,
-  "MulaVeins": 7962,
-  "MulaChains": 5800
+  "Mula": 15001,
+  "MulaVeins": 22020,
+  "MulaChains": 6300
  }
 }

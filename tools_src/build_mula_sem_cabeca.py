@@ -1,21 +1,25 @@
-"""Build the "Mula sem cabeça" mob (Brazilian folklore, public domain) from the CC0 Quaternius horse
-(tools/vendor/animals/FBX/Horse.fbx) -> art/mobs/mula_sem_cabeca/mula_sem_cabeca.gltf (+ textures, + JSON sidecar).
+"""Build the "Mula sem cabeça" mob (Brazilian folklore, public domain) over the skeleton and animations of the CC0
+Quaternius horse (tools/vendor/animals/FBX/Horse.fbx) -> art/mobs/mula_sem_cabeca/mula_sem_cabeca.gltf (+ textures,
++ JSON sidecar).
 
 Realistic on purpose (the mob is meant to look out of this world next to the rest of the game). Steps:
-  1. import the horse; delete head, mane and tail; close the neck with a sunken ember stump; subdivide; jag the rim;
-  2. lava veins (object MulaVeins): a shortest-path tree over the body's edge graph, rooted at the stump rim, with
-     random edge costs so the paths meander and merge like blood vessels; each vessel is a raised tube whose radius
-     follows how many branches it feeds (thick trunks at the neck, thin tips at the hooves). UV.x = distance from
-     the stump (0..1), UV.y = thickness (0..1): art/shaders/lava_vein.gdshader pulses along it;
+  1. import the horse and keep only its skeleton, actions and skin weights; the body itself is sculpted by
+     tools_src/mula_body.py (muscle volumes fused by voxel remesh, neck cut by a jagged solid with an ember pit);
+  2. lava veins (object MulaVeins): a shortest-path tree over the body's edge graph, rooted around the neck cut,
+     with random edge costs that are cheaper along the grooves between muscles, so the vessels meander, merge and
+     run where real ones would; some tips bridge to a neighbouring vessel. Each vessel is a raised tube whose
+     radius follows how many branches it feeds (thick trunks at the neck, thin tips at the hooves). UV.x =
+     distance from the stump (0..1), UV.y = thickness (0..1): art/shaders/lava_vein.gdshader pulses along it;
   3. broken iron chains (object MulaChains): link loops wrapped around neck, girth and flank by ray casting the
      body, plus hanging broken ends skinned to new Chain<n> bones that the game sways;
-  4. bake charred hide (albedo, normal with muscle bulges/fibres, roughness) and the glow the veins cast on the
-     hide (emission) from 3D procedural nodes, seamless over UV islands;
-  5. rename the actions the mob plays; scale so the withers stand WITHERS_HEIGHT metres; export.
-The fire itself (stump blaze, mane, hooves, tail, smoke, sparks) is particles in features/mobs/mula_sem_cabeca.tscn.
+  4. fire markers: empties parented to bones (FireStump, FireMane_<n>, FireTail_<n>, FireHoof_<leg>) where
+     features/mobs/mula_sem_cabeca.tscn hangs its particles;
+  5. bake charred hide (albedo, normal with muscle bulges/fibres, roughness) and the glow of veins, neck embers
+     and hooves on the hide (emission) from 3D procedural nodes, seamless over UV islands;
+  6. rename the actions the mob plays; scale so the withers stand WITHERS_HEIGHT metres; export.
 
 Usage:
-  blender -b --factory-startup -P tools_src/build_mula_sem_cabeca.py
+  blender -b --factory-startup -P tools_src/build_mula_sem_cabeca.py -- [--source <Horse.fbx|.glb>]
 """
 
 import heapq
@@ -31,6 +35,7 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import mula_body  # noqa: E402
 from convert_farm_animals import import_source, make_materials_opaque  # noqa: E402
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -39,19 +44,24 @@ OUTPUT = PROJECT_DIR / "art" / "mobs" / "mula_sem_cabeca" / "mula_sem_cabeca.glt
 WITHERS_HEIGHT = 1.7  # metros
 ACTION_NAMES = {"idle": "Idle", "walk": "Walk", "run": "Run", "jump": "Attack", "death": "Death"}
 HAIR_MATERIAL_INDEX = 1  # material escuro do pacote: crina, rabo e cascos
-HOOF_TOP = 1.0  # unidades do FBX (~3 por metro); faces escuras acima disto são crina/rabo
-EMBER_MATERIAL_INDEX = 2
-STUMP_HEIGHT = 1.15  # unidades do FBX da base do osso do pescoço até a boca do toco (o corte é esticado até aqui)
+HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima disto são crina/rabo
+HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
-HIDE_GLOW_STRENGTH = 1.5
+HIDE_GLOW_STRENGTH = 1.2
 
 VEIN_SEED = 11
 VEIN_ROOTS = 7  # troncos que nascem na borda do toco
-VEIN_TIPS = 230  # pontas espalhadas pelo corpo
-VEIN_HOOF_TIPS = 40  # pontas extras nas canelas/cascos
-VEIN_TIP_RADIUS = 0.011
-VEIN_TRUNK_RADIUS = 0.05
-VEIN_TRUNK_FLOW = 45.0  # ramos alimentados a partir dos quais o vaso já é tronco
+VEIN_TIPS = 420  # pontas espalhadas pelo corpo
+VEIN_FRONT_DENSITY = 2.4  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
+VEIN_FRONT_END = -0.9
+VEIN_SHIN_TIPS = 50  # pontas extras nas canelas e cascos
+VEIN_SHIN_TOP = 1.6
+VEIN_BRIDGES = 110  # pontas que alcançam um vaso vizinho e fecham a teia
+VEIN_BRIDGE_REACH = 9  # arestas que uma ponte pode atravessar
+VEIN_GROOVE_PULL = 4.0  # quanto o sulco entre músculos barateia o caminho
+VEIN_TIP_RADIUS = 0.007
+VEIN_TRUNK_RADIUS = 0.06
+VEIN_TRUNK_FLOW = 110.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
 
 LINK_RADIUS = 0.105
@@ -60,6 +70,7 @@ LINK_STRETCH = 1.5
 LINK_SPACING = 0.25
 LINK_SEGMENTS = 10
 LINK_WIRE_SIDES = 5
+HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
 # (centro, normal do plano, osso) em unidades do FBX: colar na base do pescoço, colar torto, barrigueira, flanco
 CHAIN_LOOPS = [
     (Vector((0.0, -2.75, 5.3)), Vector((0.0, -0.68, 0.74)), "Shoulders"),
@@ -69,106 +80,76 @@ CHAIN_LOOPS = [
 ]
 # (laço, eixo, sentido, elos pendurados, osso pai): o pedaço partido pende do ponto do laço mais extremo no eixo
 CHAIN_ENDS = [(0, 2, -1.0, 7, "Shoulders"), (1, 0, 1.0, 4, "Shoulders"), (2, 0, -1.0, 6, "Torso"), (3, 0, 1.0, 5, "Hips"), (2, 0, 1.0, 3, "Torso")]
-ATTACHMENT_BONES = {"neck_stump": "Head", "mane": ["Neck", "Shoulders"], "tail": ["Tail1", "Tail2", "Tail3", "Tail4"],
-                    "hooves": ["FrontFoot.L", "FrontFoot.R", "BackFoot.L", "BackFoot.R"]}
+# Marcadores de fogo: vazios presos aos ossos, que o jogo troca pelas partículas (prefixo do nome = tipo de fogo).
+STUMP_FIRE_DEPTH = 0.22  # a labareda nasce dentro da cratera do toco
+MANE_FIRE = [("Neck", 1.55, 0.72), ("Neck", 1.05, 0.86), ("Neck", 0.55, 1.0), ("Neck", 0.05, 1.12), ("Shoulders", -0.45, 1.2)]  # (osso, altura no pescoço, distância do eixo)
+WITHERS_FIRE = [("Shoulders", Vector((0.0, -1.55, 5.82))), ("Shoulders", Vector((0.0, -1.05, 5.74)))]
+# Rabo de fogo: arco que sai do sabugo para trás e cai; cada ponto segue um osso do rabo (balança na animação).
+TAIL_FIRE = [("Tail1", Vector((0.0, 3.15, 4.85))), ("Tail1", Vector((0.0, 3.55, 4.74))), ("Tail2", Vector((0.0, 3.95, 4.5))), ("Tail2", Vector((0.0, 4.3, 4.15))),
+             ("Tail3", Vector((0.0, 4.6, 3.72))), ("Tail3", Vector((0.0, 4.82, 3.25))), ("Tail4", Vector((0.0, 4.96, 2.75))), ("Tail4", Vector((0.0, 5.02, 2.25)))]
+HOOF_FIRE = {"FrontL": Vector((0.87, -2.13, 0.2)), "FrontR": Vector((-0.87, -2.13, 0.2)), "BackL": Vector((0.75, 2.5, 0.2)), "BackR": Vector((-0.75, 2.5, 0.2))}
+HOOF_REACH = 0.3  # raio em volta do marcador que decide qual osso carrega o casco
 
 
-def group_weight(vertex, deform_layer, group_indices: dict, names) -> float:
-    return sum(vertex[deform_layer].get(group_indices[name], 0.0) for name in names if name in group_indices)
-
-
-def behead(mesh_object, neck_base: Vector, neck_direction: Vector) -> None:
-    """Delete head, mane and tail; cut the neck straight across; fill stray holes; stretch the stump and close it
-    with a sunken cap (EMBER_MATERIAL_INDEX)."""
-    mesh = mesh_object.data
-    group_indices = {group.name: group.index for group in mesh_object.vertex_groups}
+def strip_hair(mesh_object) -> None:
+    """Weld the pack horse and drop mane and tail: what is left only lends its skin weights to the sculpted body."""
     edit_mesh = bmesh.new()
 
-    edit_mesh.from_mesh(mesh)
-    deform_layer = edit_mesh.verts.layers.deform.verify()
-
-    hair_faces = [face for face in edit_mesh.faces if face.material_index == HAIR_MATERIAL_INDEX and face.calc_center_median().z > HOOF_TOP]
+    edit_mesh.from_mesh(mesh_object.data)
+    bmesh.ops.remove_doubles(edit_mesh, verts=edit_mesh.verts[:], dist=0.0005)
+    hair_faces = [face for face in edit_mesh.faces if face.material_index == HAIR_MATERIAL_INDEX and face.calc_center_median().z > HAIR_FLOOR]
     bmesh.ops.delete(edit_mesh, geom=hair_faces, context="FACES")
-    head_vertices = [vertex for vertex in edit_mesh.verts if group_weight(vertex, deform_layer, group_indices, ["Head"]) > 0.5]
-    bmesh.ops.delete(edit_mesh, geom=head_vertices, context="VERTS")
-    bmesh.ops.delete(edit_mesh, geom=[vertex for vertex in edit_mesh.verts if not vertex.link_faces], context="VERTS")
-
-    hole = [vertex for edge in edit_mesh.edges if edge.is_boundary for vertex in edge.verts if group_weight(vertex, deform_layer, group_indices, ["Neck", "Shoulders"]) > 0.5]
-    cut_height = min((vertex.co - neck_base).dot(neck_direction) for vertex in hole) - 0.05
-    cut = bmesh.ops.bisect_plane(edit_mesh, geom=edit_mesh.verts[:] + edit_mesh.edges[:] + edit_mesh.faces[:], dist=0.0001,
-                                 plane_co=neck_base + neck_direction * cut_height, plane_no=neck_direction, clear_outer=True)
-    neck_edges = [element for element in cut["geom_cut"] if isinstance(element, bmesh.types.BMEdge)]
-    other_edges = [edge for edge in edit_mesh.edges if edge.is_boundary and edge not in neck_edges]
-    print(f"MULA cut height {cut_height:.2f}, hair faces {len(hair_faces)}, head verts {len(head_vertices)}, neck rim edges {len(neck_edges)}, other hole edges {len(other_edges)}")
-    bmesh.ops.holes_fill(edit_mesh, edges=other_edges, sides=0)
-
-    rim_vertices = list({vertex for edge in neck_edges for vertex in edge.verts})
-
-    for vertex in rim_vertices:
-        vertex.co += neck_direction * (STUMP_HEIGHT - cut_height)
-
-    center = sum((vertex.co for vertex in rim_vertices), Vector()) / len(rim_vertices)
-    inner = {}
-
-    for vertex in rim_vertices:
-        inner[vertex] = edit_mesh.verts.new(vertex.co.lerp(center, 0.3) - neck_direction * 0.25)
-        inner[vertex][deform_layer][group_indices["Neck"]] = 1.0
-
-    pit = edit_mesh.verts.new(center - neck_direction * 0.55)
-    pit[deform_layer][group_indices["Neck"]] = 1.0
-
-    for edge in neck_edges:
-        first, second = edge.verts
-        wall = edit_mesh.faces.new((first, second, inner[second], inner[first]))
-        floor = edit_mesh.faces.new((inner[first], inner[second], pit))
-        wall.material_index = EMBER_MATERIAL_INDEX
-        floor.material_index = EMBER_MATERIAL_INDEX
-
-    bmesh.ops.recalc_face_normals(edit_mesh, faces=edit_mesh.faces[:])
-    edit_mesh.to_mesh(mesh)
+    edit_mesh.to_mesh(mesh_object.data)
     edit_mesh.free()
 
 
-def subdivide(mesh_object) -> None:
-    bpy.context.view_layer.objects.active = mesh_object
-    mesh_object.select_set(True)
-    modifier = mesh_object.modifiers.new("Smooth", "SUBSURF")
-    modifier.levels = 2
-    bpy.ops.object.modifier_move_to_index(modifier=modifier.name, index=0)
-    bpy.ops.object.modifier_apply(modifier=modifier.name)
-    bpy.ops.object.shade_smooth()
+def groove_depths(mesh, neighbours: dict) -> list:
+    """Per vertex: how far its neighbours rise above it along its normal, in edge lengths (> 0 in a groove)."""
+    depths = []
+
+    for vertex in mesh.vertices:
+        around = [mesh.vertices[neighbour].co for neighbour in neighbours.get(vertex.index, [])]
+
+        if not around:
+            depths.append(0.0)
+            continue
+
+        middle = sum(around, Vector()) / len(around)
+        reach = sum((position - vertex.co).length for position in around) / len(around)
+        depths.append((middle - vertex.co).dot(vertex.normal) / reach)
+
+    return depths
 
 
-def roughen_rim(mesh, neck_direction: Vector) -> tuple:
-    """Jag the stump rim; returns (rim vertex indices, vertex indices inside the ember cap)."""
-    ember_vertices = {index for polygon in mesh.polygons if polygon.material_index == EMBER_MATERIAL_INDEX for index in polygon.vertices}
-    hide_vertices = {index for polygon in mesh.polygons if polygon.material_index != EMBER_MATERIAL_INDEX for index in polygon.vertices}
-    rim = sorted(ember_vertices & hide_vertices)
-    randomizer = random.Random(7)
+def weighted_sample(randomizer, population: list, weights: list, count: int) -> list:
+    """`count` different items, likelier the heavier (Efraimidis-Spirakis keys)."""
+    keys = [randomizer.random() ** (1.0 / weight) for weight in weights]
+    order = sorted(range(len(population)), key=keys.__getitem__, reverse=True)
 
-    for index in rim:
-        mesh.vertices[index].co += neck_direction * randomizer.choice((-0.1, 0.0, 0.12, 0.3))
-
-    mesh.update()
-
-    return rim, ember_vertices - set(rim)
+    return [population[index] for index in order[:count]]
 
 
 def grow_vein_tree(mesh, rim: list, blocked: set) -> dict:
-    """Shortest-path tree from VEIN_ROOTS rim vertices over the edge graph with random edge costs, kept only where
-    it leads to a sampled tip. Returns {"parent": {vertex: parent or None}, "flow": {vertex: tips fed},
+    """Shortest-path tree from VEIN_ROOTS rim vertices over the edge graph, kept only where it leads to a sampled
+    tip. Edge costs are random (the paths meander and merge like blood vessels) and cheaper along grooves (the
+    vessels run between the muscles). Some tips then reach across to a neighbouring vessel, closing a web.
+    Returns {"parent": {vertex: parent or None}, "bridges": [(vertex, vertex)], "flow": {vertex: tips fed},
     "distance": {vertex: path length from the stump}}."""
     randomizer = random.Random(VEIN_SEED)
     positions = [vertex.co.copy() for vertex in mesh.vertices]
+    open_edges = [edge.vertices[:] for edge in mesh.edges if edge.vertices[0] not in blocked and edge.vertices[1] not in blocked]
+    adjacent = {}
+
+    for first, second in open_edges:
+        adjacent.setdefault(first, []).append(second)
+        adjacent.setdefault(second, []).append(first)
+
+    depths = groove_depths(mesh, adjacent)
     neighbours = {}
 
-    for edge in mesh.edges:
-        first, second = edge.vertices
-
-        if first in blocked or second in blocked:
-            continue
-
-        cost = (positions[first] - positions[second]).length * randomizer.uniform(0.5, 2.2)
+    for first, second in open_edges:
+        groove = min(2.5, max(0.3, 1.0 - VEIN_GROOVE_PULL * (depths[first] + depths[second]) * 0.5))
+        cost = (positions[first] - positions[second]).length * randomizer.uniform(0.6, 2.0) * groove
         neighbours.setdefault(first, []).append((second, cost))
         neighbours.setdefault(second, []).append((first, cost))
 
@@ -190,8 +171,9 @@ def grow_vein_tree(mesh, rim: list, blocked: set) -> dict:
                 heapq.heappush(queue, (cost + edge_cost, neighbour))
 
     reachable = sorted(set(parent) - set(rim))
-    low = [vertex for vertex in reachable if positions[vertex].z < 1.6]
-    tips = randomizer.sample(reachable, VEIN_TIPS) + randomizer.sample(low, min(VEIN_HOOF_TIPS, len(low)))
+    density = [VEIN_FRONT_DENSITY if positions[vertex].y < VEIN_FRONT_END else 1.0 for vertex in reachable]
+    low = [vertex for vertex in reachable if positions[vertex].z < VEIN_SHIN_TOP]
+    tips = weighted_sample(randomizer, reachable, density, VEIN_TIPS) + randomizer.sample(low, min(VEIN_SHIN_TIPS, len(low)))
     flow = {}
 
     for tip in tips:
@@ -201,17 +183,74 @@ def grow_vein_tree(mesh, rim: list, blocked: set) -> dict:
             flow[vertex] = flow.get(vertex, 0) + 1
             vertex = parent[vertex]
 
-    distance = {}
+    kept = {vertex: parent[vertex] for vertex in flow}
+    bridges = [bridge for bridge in (bridge_from(tip, kept, flow, adjacent) for tip in randomizer.sample(tips, VEIN_BRIDGES)) if bridge]
+    distance = {vertex: 0.0 for vertex in roots}
 
-    for vertex in sorted(flow, key=cost_to.get):
-        distance[vertex] = 0.0 if parent[vertex] is None else distance[parent[vertex]] + (positions[vertex] - positions[parent[vertex]]).length
+    for vertex in kept:
+        trail = []
 
-    return {"parent": {vertex: parent[vertex] for vertex in flow}, "flow": flow, "distance": distance}
+        while vertex not in distance:
+            trail.append(vertex)
+            vertex = kept[vertex]
+
+        for walked in reversed(trail):
+            distance[walked] = distance[kept[walked]] + (positions[walked] - positions[kept[walked]]).length
+
+    return {"parent": kept, "bridges": bridges, "flow": flow, "distance": distance}
+
+
+def bridge_from(tip: int, kept: dict, flow: dict, adjacent: dict):
+    """Grow a thin vessel from a tip over bare hide to the nearest vessel that is not its own branch; the new
+    vertices join `kept`/`flow` and the pair that closes the loop is returned (None when nothing is in reach)."""
+    own_branch = set()
+    vertex = tip
+
+    while vertex is not None and len(own_branch) < VEIN_BRIDGE_REACH * 2:
+        own_branch.add(vertex)
+        vertex = kept[vertex]
+
+    came_from = {tip: None}
+    frontier = [tip]
+
+    for _ in range(VEIN_BRIDGE_REACH):
+        following = []
+
+        for vertex in frontier:
+            for neighbour in adjacent.get(vertex, []):
+                if neighbour in came_from or neighbour in own_branch:
+                    continue
+
+                came_from[neighbour] = vertex
+
+                if neighbour in kept:
+                    return lay_bridge(vertex, neighbour, came_from, kept, flow)
+
+                following.append(neighbour)
+
+        frontier = following
+
+    return None
+
+
+def lay_bridge(last: int, landing: int, came_from: dict, kept: dict, flow: dict) -> tuple:
+    path = []
+    vertex = last
+
+    while came_from[vertex] is not None:
+        path.append(vertex)
+        vertex = came_from[vertex]
+
+    for vertex in path:
+        kept[vertex] = came_from[vertex]
+        flow[vertex] = 1
+
+    return (last, landing)
 
 
 def vein_thickness(flow: int) -> float:
     """0 at a tip, 1 at a trunk."""
-    return min(1.0, math.sqrt(flow / VEIN_TRUNK_FLOW))
+    return min(1.0, (flow / VEIN_TRUNK_FLOW) ** 0.6)
 
 
 def finish_skinned_object(name: str, edit_mesh, body_object, armature, materials: list):
@@ -243,10 +282,12 @@ def build_veins(mesh_object, armature, tree: dict):
     longest = max(distance.values())
     links = {vertex: [] for vertex in parent}
 
-    for vertex, above in parent.items():
-        if above is not None:
-            links[vertex].append(above)
-            links[above].append(vertex)
+    branches = [(vertex, above) for vertex, above in parent.items() if above is not None]
+    segments = list({frozenset(pair): pair for pair in branches + tree["bridges"]}.values())
+
+    for vertex, above in segments:
+        links[vertex].append(above)
+        links[above].append(vertex)
 
     positions = {vertex: mesh.vertices[vertex].co.copy() for vertex in parent}
 
@@ -284,10 +325,7 @@ def build_veins(mesh_object, armature, tree: dict):
         rings[vertex] = ring
         ring_uv[vertex] = (distance[vertex] / longest, thickness)
 
-    for vertex, above in parent.items():
-        if above is None:
-            continue
-
+    for vertex, above in segments:
         for step in range(VEIN_SIDES):
             following = (step + 1) % VEIN_SIDES
             face = tube.faces.new((rings[vertex][step], rings[vertex][following], rings[above][following], rings[above][step]))
@@ -308,29 +346,70 @@ def build_veins(mesh_object, armature, tree: dict):
     return finish_skinned_object("MulaVeins", tube, mesh_object, armature, [material])
 
 
-def paint_bake_mask(mesh_object, tree: dict) -> None:
-    """Corner colour for the bake: R = glow the veins cast on the hide, G = ember cap, A = leg (fibres run down)."""
+def paint_bake_mask(mesh_object, tree: dict, ember_heat: dict) -> None:
+    """Corner colour for the bake: R = glow the veins cast on the hide, G = ember of the neck cut, B = hoof,
+    A = leg (fibres run down)."""
     mesh = mesh_object.data
     group_names = {group.index: group.name for group in mesh_object.vertex_groups}
-    glow = {vertex: 0.35 + 0.65 * vein_thickness(flow) for vertex, flow in tree["flow"].items()}
+    glow = {vertex: 0.25 + 0.75 * vein_thickness(flow) for vertex, flow in tree["flow"].items()}
     spill = dict(glow)
 
     for edge in mesh.edges:
         first, second = edge.vertices
-        spill[first] = max(spill.get(first, 0.0), glow.get(second, 0.0) * 0.45)
-        spill[second] = max(spill.get(second, 0.0), glow.get(first, 0.0) * 0.45)
+        spill[first] = max(spill.get(first, 0.0), glow.get(second, 0.0) * 0.3)
+        spill[second] = max(spill.get(second, 0.0), glow.get(first, 0.0) * 0.3)
 
     leg = [sum(element.weight for element in vertex.groups if "Leg" in group_names[element.group] or "Foot" in group_names[element.group]) for vertex in mesh.vertices]
     mask = mesh.color_attributes.new("mask", "FLOAT_COLOR", "CORNER")
 
-    for polygon in mesh.polygons:
-        ember = 1.0 if polygon.material_index == EMBER_MATERIAL_INDEX else 0.0
+    for loop in mesh.loops:
+        vertex = loop.vertex_index
+        ember = ember_heat.get(vertex, 0.0)
+        hoof = min(1.0, max(0.0, (mula_body.HOOF_TOP - mesh.vertices[vertex].co.z) / HOOF_BLEND))
+        mask.data[loop.index].color = (spill.get(vertex, 0.0), ember, hoof, min(1.0, leg[vertex]))
 
-        for loop_index in polygon.loop_indices:
-            vertex = mesh.loops[loop_index].vertex_index
-            mask.data[loop_index].color = (spill.get(vertex, 0.0), ember, 0.0, min(1.0, leg[vertex]))
 
-        polygon.material_index = 0
+def add_marker(armature, name: str, bone: str, position: Vector) -> str:
+    """Empty at `position` (armature space) that follows `bone`; the game hangs fire on it."""
+    marker = bpy.data.objects.new(name, None)
+
+    bpy.context.scene.collection.objects.link(marker)
+    marker.parent = armature
+    marker.parent_type = "BONE"
+    marker.parent_bone = bone
+    bpy.context.view_layer.update()
+    marker.matrix_world = armature.matrix_world @ Matrix.Translation(position)
+
+    return name
+
+
+def strongest_bone(mesh_object, position: Vector, reach: float) -> str:
+    """Bone that carries most of the skin within `reach` of a point."""
+    group_names = [group.name for group in mesh_object.vertex_groups]
+    totals = {}
+
+    for vertex in mesh_object.data.vertices:
+        if (vertex.co - position).length > reach:
+            continue
+
+        for element in vertex.groups:
+            totals[element.group] = totals.get(element.group, 0.0) + element.weight
+
+    return group_names[max(totals, key=totals.get)]
+
+
+def add_fire_markers(mesh_object, armature, stump) -> list:
+    """FireStump in the neck pit, FireMane_<n> down the crest to the withers, FireTail_<n> along the arc of the
+    tail, FireHoof_<leg> on each hoof (on whichever bone moves that hoof)."""
+    mouth = stump.origin + stump.axis * (mula_body.STUMP_HEIGHT - STUMP_FIRE_DEPTH)
+    crest = [(bone, stump.origin + stump.axis * height + stump.crest * reach) for bone, height, reach in MANE_FIRE] + WITHERS_FIRE
+    names = [add_marker(armature, "FireStump", "Neck", mouth)]
+
+    names += [add_marker(armature, f"FireMane_{index + 1}", bone, position) for index, (bone, position) in enumerate(crest)]
+    names += [add_marker(armature, f"FireTail_{index + 1}", bone, position) for index, (bone, position) in enumerate(TAIL_FIRE)]
+    names += [add_marker(armature, f"FireHoof_{leg}", strongest_bone(mesh_object, position, HOOF_REACH), position) for leg, position in HOOF_FIRE.items()]
+
+    return names
 
 
 def chain_loop_points(surface, center: Vector, normal: Vector) -> list:
@@ -433,7 +512,7 @@ def build_chains(mesh_object, armature) -> tuple:
             tangent = (points[(index + 1) % len(points)][0] - points[index - 1][0]).normalized()
             lies_flat = index % 2 == 0
             lifted = point + outward * (0.0 if lies_flat else LINK_RADIUS * 0.45)
-            add_link(chain, deform_layer, group_indices[bone], link_matrix(lifted, tangent, outward, lies_flat), -outward, randomizer.random() < 0.6)
+            add_link(chain, deform_layer, group_indices[bone], link_matrix(lifted, tangent, outward, lies_flat), -outward, randomizer.random() < HOT_LINK_SHARE)
 
     down = Vector((0.0, 0.0, -1.0))
 
@@ -456,8 +535,8 @@ def build_chains(mesh_object, armature) -> tuple:
         shader.inputs["Roughness"].default_value = 0.5
 
     hot_shader = hot_iron.node_tree.nodes["Principled BSDF"]
-    hot_shader.inputs["Emission Color"].default_value = (1.0, 0.22, 0.03, 1.0)
-    hot_shader.inputs["Emission Strength"].default_value = 2.0
+    hot_shader.inputs["Emission Color"].default_value = (1.0, 0.16, 0.02, 1.0)
+    hot_shader.inputs["Emission Strength"].default_value = 1.1
 
     return finish_skinned_object("MulaChains", chain, mesh_object, armature, [iron, hot_iron]), chain_bones
 
@@ -554,7 +633,7 @@ def build_bake_material(mesh_object) -> dict:
     mask.attribute_name = "mask"
     channels = nodes.new("ShaderNodeSeparateColor")
     links.new(mask.outputs["Color"], channels.inputs[0])
-    vein_glow, ember, leg = channels.outputs[0], channels.outputs[1], mask.outputs["Alpha"]
+    vein_glow, ember, hoof, leg = channels.outputs[0], channels.outputs[1], channels.outputs[2], mask.outputs["Alpha"]
 
     grain = noise(nodes, links, coordinates, 5.0, 5.0)
     blotch = noise(nodes, links, coordinates, 1.4, 2.0)
@@ -577,11 +656,12 @@ def build_bake_material(mesh_object) -> dict:
     links.new(bump.outputs[0], diffuse.inputs["Normal"])
 
     tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.5), math_node(nodes, links, "MULTIPLY", fibres, 0.5))
-    hide = color_ramp(nodes, links, tone, [(0.3, (0.022, 0.013, 0.013)), (0.5, (0.07, 0.03, 0.026)), (0.72, (0.17, 0.075, 0.055))])
+    hide = color_ramp(nodes, links, tone, [(0.3, (0.014, 0.011, 0.011)), (0.5, (0.04, 0.025, 0.022)), (0.72, (0.095, 0.055, 0.045))])
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.55), hide, (0.012, 0.01, 0.011))
     hide = mix(nodes, links, math_node(nodes, links, "SUBTRACT", 1.0, crackle), hide, (0.01, 0.006, 0.006))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.4), hide, (0.3, 0.03, 0.01))
-    hide = mix(nodes, links, ember, hide, (0.25, 0.04, 0.01))
+    is_ember = math_node(nodes, links, "GREATER_THAN", ember, 0.05)
+    hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
     roughness_value = math_node(nodes, links, "MULTIPLY_ADD", grain, 0.4, clamp=True)
     roughness_value.node.inputs[2].default_value = 0.42
@@ -589,8 +669,13 @@ def build_bake_material(mesh_object) -> dict:
     links.new(roughness_value, combine.inputs[1])
 
     hide_glow = math_node(nodes, links, "MULTIPLY", vein_glow, math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.6), 0.5))
-    ember_glow = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.9), 0.3, clamp=True)
-    glow = color_ramp(nodes, links, mix(nodes, links, ember, hide_glow, ember_glow),
+    ember_cracks = math_node(nodes, links, "SUBTRACT", 1.0, math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 6.0, "DISTANCE_TO_EDGE"), 7.0, clamp=True))
+    ember_glow = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", ember, 0.45), math_node(nodes, links, "MULTIPLY", ember_cracks, 0.55), clamp=True)
+    hoof_cracks = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 5.0, "DISTANCE_TO_EDGE"), 9.0, clamp=True)
+    hoof_glow = math_node(nodes, links, "MULTIPLY", hoof, math_node(nodes, links, "MULTIPLY_ADD", math_node(nodes, links, "SUBTRACT", 1.0, hoof_cracks), 0.62))
+    hoof_glow.node.inputs[2].default_value = 0.3
+    hide_glow = math_node(nodes, links, "MAXIMUM", hide_glow, hoof_glow)
+    glow = color_ramp(nodes, links, mix(nodes, links, is_ember, hide_glow, ember_glow),
                       [(0.0, (0.0, 0.0, 0.0)), (0.45, (0.1, 0.005, 0.0)), (0.8, (0.5, 0.07, 0.005)), (1.0, (1.0, 0.45, 0.08))])
 
     emission = nodes.new("ShaderNodeEmission")
@@ -684,24 +769,29 @@ def scale_to_withers(mesh_object) -> float:
     return factor
 
 
-def build() -> dict:
+def build(source: Path) -> dict:
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    import_source(SOURCE)
+    import_source(source)
     make_materials_opaque()
 
-    mesh_object = next(scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "MESH")
+    pack_horse = next(scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "MESH")
     armature = next(scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "ARMATURE")
     neck_bone = armature.data.bones["Neck"]
-    neck_direction = (neck_bone.tail_local - neck_bone.head_local).normalized()
+    stump = mula_body.Stump(neck_bone.head_local.copy(), neck_bone.tail_local - neck_bone.head_local)
 
-    mesh_object.data.color_attributes.remove(mesh_object.data.color_attributes[0])
-    behead(mesh_object, neck_bone.head_local.copy(), neck_direction)
-    subdivide(mesh_object)
-    rim, ember_vertices = roughen_rim(mesh_object.data, neck_direction)
-    tree = grow_vein_tree(mesh_object.data, rim, ember_vertices)
+    strip_hair(pack_horse)
+    mesh_object = mula_body.sculpt_clay()
+    rim, ember_heat = mula_body.cut_stump(mesh_object, stump)
+    mula_body.transfer_weights(mesh_object, pack_horse)
+    bpy.data.objects.remove(pack_horse)
+    mesh_object.parent = armature
+    mesh_object.modifiers.new("Armature", "ARMATURE").object = armature
+
+    tree = grow_vein_tree(mesh_object.data, rim, set(ember_heat))
     veins = build_veins(mesh_object, armature, tree)
     chains, chain_bones = build_chains(mesh_object, armature)
-    paint_bake_mask(mesh_object, tree)
+    paint_bake_mask(mesh_object, tree, ember_heat)
+    fire_markers = add_fire_markers(mesh_object, armature, stump)
     unwrap(mesh_object)
 
     bpy.context.scene.render.engine = "CYCLES"
@@ -723,8 +813,8 @@ def build() -> dict:
     bpy.ops.export_scene.gltf(filepath=str(OUTPUT), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True,
                               export_animation_mode="ACTIONS", export_force_sampling=True, export_vertex_color="NONE")
 
-    sidecar = {"source": SOURCE.name, "withers_height": WITHERS_HEIGHT, "scale": round(factor, 5), "animations": actions,
-               "attachment_bones": {**ATTACHMENT_BONES, "hanging_chains": chain_bones},
+    sidecar = {"source": source.name, "withers_height": WITHERS_HEIGHT, "scale": round(factor, 5), "animations": actions,
+               "fire_markers": fire_markers, "hanging_chains": chain_bones,
                "vertices": {scene_object.name: len(scene_object.data.vertices) for scene_object in (mesh_object, veins, chains)}}
     OUTPUT.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8", newline="\n")
 
@@ -732,4 +822,7 @@ def build() -> dict:
 
 
 if __name__ == "__main__":
-    print(f"BUILT mula_sem_cabeca: {build()}")
+    arguments = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    source_path = Path(arguments[arguments.index("--source") + 1]) if "--source" in arguments else SOURCE
+
+    print(f"BUILT mula_sem_cabeca: {build(source_path)}")

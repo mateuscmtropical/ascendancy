@@ -2,9 +2,9 @@ class_name MulaSemCabeca
 extends Node3D
 ## Mula sem cabeça (folclore brasileiro): visual do mob, sem IA nem combate.
 ## O modelo vem de tools_src/build_mula_sem_cabeca.py. Aqui: toca a animação em laço, troca o
-## material das veias pelo shader que pulsa, pendura o fogo nos ossos (cada filho de FireTemplates
-## é copiado para um BoneAttachment3D), balança as pontas de corrente partida e faz as luzes do
-## fogo tremerem.
+## material das veias pelo shader que pulsa, pendura o fogo nos marcadores Fire* que o modelo traz
+## presos aos ossos (cada um recebe a cópia do filho de FireTemplates do seu tipo), balança as
+## pontas de corrente partida e faz as luzes do fogo tremerem.
 
 const IDLE_ANIMATION: StringName = &"Idle"
 const WALK_ANIMATION: StringName = &"Walk"
@@ -13,15 +13,14 @@ const ATTACK_ANIMATION: StringName = &"Attack"
 const DEATH_ANIMATION: StringName = &"Death"
 const LOOPING_ANIMATIONS: Array[StringName] = [IDLE_ANIMATION, WALK_ANIMATION, RUN_ANIMATION]
 const ANIMATION_BLEND_SECONDS: float = 0.25
-## Osso -> filho de FireTemplates copiado para ele.
-const FIRE_BY_BONE: Dictionary[String, String] = {
-	"Neck": "NeckFire",
-	"Shoulders": "WithersFire",
-	"Tail1": "TailFire",
-	"FrontFoot.L": "HoofFire",
-	"FrontFoot.R": "HoofFire",
-	"BackFoot.L": "HoofFire",
-	"BackFoot.R": "HoofFire",
+const FIRE_MARKER_PATTERN: String = "Fire*"
+const FIRE_MARKER_NUMBER_SEPARATOR: String = "_"
+## Tipo do marcador (nome até o "_") -> filho de FireTemplates copiado para ele.
+const FIRE_TEMPLATE_BY_MARKER_KIND: Dictionary[String, String] = {
+	"FireStump": "StumpFire",
+	"FireMane": "ManeFire",
+	"FireTail": "TailFire",
+	"FireHoof": "HoofFire",
 }
 const CHAIN_BONES: Array[String] = ["Chain1", "Chain2", "Chain3", "Chain4", "Chain5"]
 ## Balanço das correntes (radianos) conforme o passo.
@@ -58,7 +57,7 @@ func _ready() -> void:
 	_veins.material_override = vein_material
 
 	_loop_gait_animations()
-	_hang_fire_on_bones()
+	_hang_fire_on_markers()
 	_collect_chain_bones()
 	play_animation(start_animation)
 
@@ -83,26 +82,29 @@ func _loop_gait_animations() -> void:
 
 
 ## O esqueleto vem na escala do pacote (o modelo é reduzido pelo nó raiz); o fogo é desenhado
-## em metros, então cada cópia desfaz a escala do osso.
-func _hang_fire_on_bones() -> void:
-	var bone_scale: Vector3 = _skeleton.global_basis.get_scale() / global_basis.get_scale()
+## em metros, então cada cópia desfaz a escala do marcador.
+func _hang_fire_on_markers() -> void:
+	var markers: Array[Node] = _skeleton.find_children(FIRE_MARKER_PATTERN, "Node3D", true, false)
 
-	for bone_name in FIRE_BY_BONE:
-		var attachment: BoneAttachment3D = BoneAttachment3D.new()
-		var template: Node3D = _fire_templates.get_node(FIRE_BY_BONE[bone_name]) as Node3D
-		var fire: Node3D = template.duplicate() as Node3D
-
-		attachment.name = "Fire" + bone_name.replace(".", "")
-		_skeleton.add_child(attachment)
-		attachment.bone_name = bone_name
-		fire.scale = Vector3.ONE / bone_scale
-		attachment.add_child(fire)
+	for marker in markers:
+		_hang_fire_on_marker(marker as Node3D)
 
 	_fire_templates.queue_free()
 
 	for light in _skeleton.find_children("*", "OmniLight3D", true, false):
 		_fire_lights.append(light as OmniLight3D)
 		_fire_light_energies.append((light as OmniLight3D).light_energy)
+
+
+func _hang_fire_on_marker(marker: Node3D) -> void:
+	var marker_kind: String = marker.name.get_slice(FIRE_MARKER_NUMBER_SEPARATOR, 0)
+	var template_name: String = FIRE_TEMPLATE_BY_MARKER_KIND[marker_kind]
+	var template: Node3D = _fire_templates.get_node(template_name) as Node3D
+	var fire: Node3D = template.duplicate() as Node3D
+	var marker_scale: Vector3 = marker.global_basis.get_scale() / global_basis.get_scale()
+
+	fire.scale = Vector3.ONE / marker_scale
+	marker.add_child(fire)
 
 
 func _collect_chain_bones() -> void:

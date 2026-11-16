@@ -23,9 +23,9 @@ fog_density = 0.018
 
 [sub_resource type="FastNoiseLite" id="ground_noise"]
 noise_type = 2
-frequency = 0.03
-fractal_octaves = 3
-cellular_return_type = 3
+frequency = 0.012
+fractal_octaves = 4
+cellular_return_type = 1
 
 [sub_resource type="NoiseTexture2D" id="ground_albedo"]
 seamless = true
@@ -34,16 +34,16 @@ noise = SubResource("ground_noise")
 [sub_resource type="NoiseTexture2D" id="ground_normal"]
 seamless = true
 as_normal_map = true
-bump_strength = 5.0
+bump_strength = 2.0
 noise = SubResource("ground_noise")
 
 [sub_resource type="StandardMaterial3D" id="ground_material"]
-albedo_color = Color(0.2, 0.19, 0.2, 1)
+albedo_color = Color(0.11, 0.105, 0.11, 1)
 albedo_texture = SubResource("ground_albedo")
-roughness = 0.75
+roughness = 0.9
 normal_enabled = true
 normal_texture = SubResource("ground_normal")
-uv1_scale = Vector3(14, 14, 14)
+uv1_scale = Vector3(10, 10, 10)
 
 [sub_resource type="PlaneMesh" id="ground_mesh"]
 material = SubResource("ground_material")
@@ -71,32 +71,32 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.2, 0, 3.1)
 body_scene = ExtResource("5_adventurer")
 
 [node name="MulaThreeQuarter" type="Camera3D" parent="."]
-position = Vector3(-3.3, 1.5, 3.9)
+position = Vector3(-2.7, 0.75, 3.6)
 fov = 42.0
 current = true
 
 [node name="MulaSide" type="Camera3D" parent="."]
-position = Vector3(5.8, 1.3, 0.2)
+position = Vector3(5.6, 1.2, 0.2)
 fov = 40.0
 
 [node name="MulaBack" type="Camera3D" parent="."]
-position = Vector3(1.4, 1.5, -5.2)
+position = Vector3(1.5, 1.3, -5.0)
 fov = 42.0
 
 [node name="MulaNeck" type="Camera3D" parent="."]
-position = Vector3(-1.4, 2.25, 2.5)
+position = Vector3(-1.5, 2.3, 2.6)
 fov = 42.0
 
 [node name="MulaHooves" type="Camera3D" parent="."]
-position = Vector3(-1.7, 0.5, 2.3)
+position = Vector3(-1.5, 0.45, 2.3)
 fov = 42.0
 
 [node name="MulaRun" type="Camera3D" parent="."]
-position = Vector3(-4.4, 1.2, 2.6)
+position = Vector3(-4.4, 1.0, 2.9)
 fov = 42.0
 
 [node name="MulaScale" type="Camera3D" parent="."]
-position = Vector3(7.0, 1.3, 1.0)
+position = Vector3(7.2, 1.3, 1.0)
 fov = 40.0
 
 [node name="ShotCapture" type="Node" parent="."]
