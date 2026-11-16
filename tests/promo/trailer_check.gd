@@ -1,8 +1,10 @@
 extends Node
 ## Roda o trailer sem janela e aponta, plano a plano, câmera dentro de coisa, ator fora do chão
-## caminhável (atravessando sebe, banco, parede), ator fora do quadro, tampado ou pequeno demais.
+## caminhável (atravessando sebe, banco, parede), ator fora do quadro, tampado ou pequeno demais,
+## Mula, moradores e bichos da fazenda enfiados em colisão do mundo. Câmera baixa só é conferida
+## contra a navmesh fora dos planos da Mula (o pasto além do muro não tem navmesh).
 ## Uso: tools/Godot_v4.7.2-stable_win64_console.exe --headless --path . --fixed-fps 30
-##   res://tests/promo/trailer_check.tscn
+##   res://tests/promo/trailer_check.tscn (ou full_check.tscn)
 
 enum Problem {
 	CAMERA_INSIDE_SOLID,
@@ -12,6 +14,9 @@ enum Problem {
 	ACTOR_HIDDEN,
 	ACTOR_TOO_SMALL,
 	ACTOR_TOUCHES_RESIDENT,
+	MULA_IN_SOLID,
+	RESIDENT_IN_SOLID,
+	ANIMAL_IN_SOLID,
 }
 
 const PROBLEM_NAMES: Dictionary[Problem, String] = {
@@ -22,8 +27,13 @@ const PROBLEM_NAMES: Dictionary[Problem, String] = {
 	Problem.ACTOR_HIDDEN: "ator tampado por colisão",
 	Problem.ACTOR_TOO_SMALL: "ator pequeno demais no quadro",
 	Problem.ACTOR_TOUCHES_RESIDENT: "ator encostando em morador",
+	Problem.MULA_IN_SOLID: "Mula dentro de colisão (cerca, muro, feno?)",
+	Problem.RESIDENT_IN_SOLID: "morador à vista dentro de colisão",
+	Problem.ANIMAL_IN_SOLID: "bicho à vista dentro de colisão",
 }
 const WARMUP_FRAMES: int = 3
+## Sem chão até aqui embaixo, o ponto está no alto (voo): conta como chão a esta distância.
+const GROUND_SEARCH_DEPTH: float = 6.0
 const WORLD_COLLISION_MASK: int = 1
 const CAMERA_RADIUS: float = 0.25
 const LOW_CAMERA_HEIGHT: float = 1.25
@@ -33,6 +43,12 @@ const ACTOR_HEAD_HEIGHT: float = 1.75
 const ACTOR_CHEST_HEIGHT: float = 1.3
 const ACTOR_MIN_SCREEN_FRACTION: float = 0.12
 const RESIDENT_CLEARANCE: float = 0.65
+const MULA_RADIUS: float = 0.5
+const MULA_CENTER_HEIGHT: float = 1.0
+const RESIDENT_RADIUS: float = 0.3
+const RESIDENT_CENTER_HEIGHT: float = 1.0
+const ANIMAL_RADIUS: float = 0.35
+const ANIMAL_CENTER_HEIGHT: float = 0.8
 
 @export var director: TrailerDirector
 
@@ -42,6 +58,8 @@ var _problem_frames: Dictionary[String, int] = {}
 var _problem_details: Dictionary[String, String] = {}
 var _camera_probe: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 var _residents: Array[Node] = []
+var _animals: Array[Node] = []
+var _body_probe: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
 
 func _ready() -> void:
@@ -51,7 +69,10 @@ func _ready() -> void:
 	_camera_probe.shape = probe_sphere
 	_camera_probe.collision_mask = WORLD_COLLISION_MASK
 	process_priority = 100
+	_body_probe.shape = SphereShape3D.new()
+	_body_probe.collision_mask = WORLD_COLLISION_MASK
 	_residents = director.hub.find_children("*", "WalkingNpc", true, false)
+	_animals = director.hub.find_children("*", "FarmAnimal", true, false)
 
 
 func _process(_delta: float) -> void:
@@ -63,7 +84,12 @@ func _process(_delta: float) -> void:
 		return
 
 	_frames_by_shot[shot_index] = _frames_by_shot.get(shot_index, 0) + 1
+
+	if director.shots[shot_index]["camera"] == TrailerShots.CameraKind.SELECT:
+		return
+
 	_check_camera(shot_index)
+	_check_bodies(shot_index)
 
 	if director.actor.visible:
 		_check_actor(shot_index)
@@ -108,9 +134,79 @@ func _check_camera(shot_index: int) -> void:
 
 	if (
 		height_above_ground < LOW_CAMERA_HEIGHT
+		and not director.shots[shot_index].has("mula")
 		and _distance_to_walkway(eye) > CAMERA_WALKWAY_TOLERANCE
 	):
 		_report(shot_index, Problem.CAMERA_IN_SCENERY)
+
+
+## Mula, moradores e bichos à vista não podem estar dentro de colisão do mundo (cerca, prop).
+func _check_bodies(shot_index: int) -> void:
+	if director.shots[shot_index].has("mula"):
+		_report_if_inside_solid(
+			shot_index,
+			Problem.MULA_IN_SOLID,
+			director.mula.global_position,
+			MULA_RADIUS,
+			MULA_CENTER_HEIGHT
+		)
+
+	for resident: Node3D in _residents:
+		_report_if_seen_inside_solid(
+			shot_index, Problem.RESIDENT_IN_SOLID, resident, RESIDENT_RADIUS, RESIDENT_CENTER_HEIGHT
+		)
+
+	for animal: Node3D in _animals:
+		_report_if_seen_inside_solid(
+			shot_index, Problem.ANIMAL_IN_SOLID, animal, ANIMAL_RADIUS, ANIMAL_CENTER_HEIGHT
+		)
+
+
+func _report_if_seen_inside_solid(
+	shot_index: int, problem: Problem, body: Node3D, radius: float, center_height: float
+) -> void:
+	var center: Vector3 = body.global_position + Vector3.UP * center_height
+
+	if not director.camera.is_position_in_frustum(center):
+		return
+
+	_report_if_inside_solid(shot_index, problem, body.global_position, radius, center_height)
+
+
+func _report_if_inside_solid(
+	shot_index: int, problem: Problem, feet: Vector3, radius: float, center_height: float
+) -> void:
+	var space: PhysicsDirectSpaceState3D = director.camera.get_world_3d().direct_space_state
+	var touching: Array[Dictionary]
+
+	(_body_probe.shape as SphereShape3D).radius = radius
+	_body_probe.transform = Transform3D(Basis(), feet + Vector3.UP * center_height)
+	touching = space.intersect_shape(_body_probe, 1)
+
+	if not touching.is_empty():
+		_report(
+			shot_index,
+			problem,
+			(
+				"em %s/%s %s"
+				% [
+					touching[0]["collider"].get_parent().name,
+					touching[0]["collider"].name,
+					_describe_collider(touching[0]["collider"], feet)
+				]
+			)
+		)
+
+
+## Onde está o corpo e a caixa do colisor (para achar o que ele é na cena).
+func _describe_collider(collider: CollisionObject3D, feet: Vector3) -> String:
+	var shape_node: CollisionShape3D = collider.find_child("*", false, false) as CollisionShape3D
+	var box: AABB = shape_node.shape.get_debug_mesh().get_aabb() if shape_node else AABB()
+
+	return (
+		"(corpo em %s, colisor em %s tamanho %s)"
+		% [feet.snappedf(0.1), collider.global_position.snappedf(0.1), box.size.snappedf(0.1)]
+	)
 
 
 func _check_actor(shot_index: int) -> void:
@@ -165,11 +261,11 @@ func _distance_to_walkway(point: Vector3) -> float:
 func _ground_height_below(point: Vector3) -> float:
 	var space: PhysicsDirectSpaceState3D = director.camera.get_world_3d().direct_space_state
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		point + Vector3.UP * 0.5, point + Vector3.DOWN * 6.0, WORLD_COLLISION_MASK
+		point + Vector3.UP * 0.5, point + Vector3.DOWN * GROUND_SEARCH_DEPTH, WORLD_COLLISION_MASK
 	)
 	var hit: Dictionary = space.intersect_ray(query)
 
-	return hit["position"].y if hit else point.y
+	return hit["position"].y if hit else point.y - GROUND_SEARCH_DEPTH
 
 
 func _is_blocked(from: Vector3, to: Vector3) -> bool:
