@@ -477,16 +477,17 @@ class PlantBatch:
     def triangle_count(self) -> int:
         return sum(len(shape.triangles) for shapes in self.parts.values() for shape in shapes)
 
-    def flush(self) -> None:
+    def flush(self, name_prefix: str = "Plants") -> None:
+        """Turn what was stamped so far into objects named name_prefix<n> (one per material and tint)."""
         for (material, tint), shapes in self.parts.items():
-            self._link(merged(shapes), material, tint)
+            self._link(merged(shapes), material, tint, name_prefix)
 
         self.parts = {}
 
-    def _link(self, shape: Shape, material: str, tint: str) -> None:
+    def _link(self, shape: Shape, material: str, tint: str, name_prefix: str) -> None:
         builder = self.builder
         builder.count += 1
-        mesh = bpy.data.meshes.new(f"Plants{builder.count}")
+        mesh = bpy.data.meshes.new(f"{name_prefix}{builder.count}")
         corner_vertices = shape.triangles.ravel()
 
         mesh.vertices.add(len(shape.vertices))

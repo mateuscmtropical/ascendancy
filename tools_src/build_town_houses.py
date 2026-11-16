@@ -396,23 +396,26 @@ class Builder:
 
     # -- finish --
 
-    def finish(self, output_path: Path, sidecar: dict) -> dict:
-        visible = [scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "MESH" and not scene_object.name.endswith("-colonly")]
+    def finish(self, output_path: Path, sidecar: dict, separate: tuple = ()) -> dict:
+        """Join every visible part into one mesh and export. Parts whose name starts with a `separate` prefix stay
+        objects of their own (the scene gives them a visibility range: the crops of one plot)."""
+        everything = [scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "MESH" and not scene_object.name.endswith("-colonly")]
         colliders = [scene_object for scene_object in bpy.context.scene.objects if scene_object.name.endswith("-colonly")]
 
-        for mesh_object in visible:
+        for mesh_object in everything:
             map_uvs(mesh_object)
             paint_vertex_colors(mesh_object)
 
-        unify_materials(visible)
-        visible = untinted_first(visible)
+        unify_materials(everything)
+        apart = [scene_object for scene_object in everything if separate and scene_object.name.startswith(separate)]
+        visible = untinted_first([scene_object for scene_object in everything if scene_object not in apart])
 
         with bpy.context.temp_override(active_object=visible[0], selected_editable_objects=visible):
             bpy.ops.object.join()
 
         building = visible[0]
         building.name = self.name
-        corners = [vertex.co for vertex in building.data.vertices] + [vertex.co for collider in colliders for vertex in collider.data.vertices]
+        corners = [vertex.co for part in [building, *apart, *colliders] for vertex in part.data.vertices]
         minimum = [min(corner[axis] for corner in corners) for axis in range(3)]
         maximum = [max(corner[axis] for corner in corners) for axis in range(3)]
         godot_minimum = [minimum[0], minimum[2], -maximum[1]]

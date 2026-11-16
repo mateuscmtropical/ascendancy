@@ -117,6 +117,10 @@ FENCE_WOOD = "9A6B45"
 WATER = "5A8FA8"
 BURLAP = "C8A878"
 CROP_CARD_MATERIAL = "M_FarmCrops"
+# As plantas de cada canteiro e trilha viram malhas soltas Crops<n> (a cena para de desenhar cada canteiro de longe);
+# as dos props ficam na malha principal, que assim traz M_FarmCrops antes: o importador do Godot desliga a cor de
+# vértice do material que aparece pela primeira vez como superfície 0 de uma malha.
+CROPS_PREFIX = "Crops"
 WORLD_TILE["hay"] = 1.1  # metros por repetição da palha
 FARM_TEXTURES = {}  # pintadas uma vez por execução
 
@@ -213,7 +217,7 @@ def finish_model(b: Builder, name: str, sidecar: dict) -> dict:
     """Flush the plants, export, and turn the card material into alpha-scissor (Blender writes it as BLEND)."""
     path = FARM_DIR / f"{name}.gltf"
     b.plants.flush()
-    result = b.finish(path, sidecar)
+    result = b.finish(path, sidecar, separate=(CROPS_PREFIX,))
     document = json.loads(path.read_text(encoding="utf-8"))
     cards = [material for material in document["materials"] if material["name"] == CROP_CARD_MATERIAL]
 
@@ -630,9 +634,21 @@ CART_WHEEL_RADIUS = 0.64
 SEAT_HEIGHT = 1.46
 SEAT_Y = -1.02  # centro do assento: Blender -Y é a frente da carroça (+Z no Godot)
 HORSE_OFFSET = 3.9  # Carriage.horse_offset: do eixo às patas do cavalo
-HARNESS_HEIGHT = 1.15  # argolas do arreio no flanco do cavalo, onde as pontas dos varais chegam
-HORSE_SHOULDER_AHEAD = 0.6  # do centro do cavalo até o ombro
-HORSE_HALF_WIDTH = 0.33
+HARNESS_SIDECAR = FARM_DIR / "animals" / "horse_harness.json"
+HARNESS_RING = (0.275, 1.149, 0.241)  # argola direita do arreio no cavalo (Godot: x lado, y altura, z à frente)
+SHAFT_CLEARANCE = 0.07  # o varal passa por fora da argola, encostado no flanco
+HORSE_RUMP_BEHIND = 0.95  # da origem do cavalo até a garupa: ali os varais já correm na altura dos flancos
+
+
+def harness_ring() -> tuple:
+    """Right harness ring of the horse (x out, height, ahead of the hooves), from the converted harness sidecar
+    (convert_farm_animals.py) when it exists: the shaft tips always meet the rings the horse really wears."""
+    if not HARNESS_SIDECAR.exists():
+        return HARNESS_RING
+
+    rings = json.loads(HARNESS_SIDECAR.read_text(encoding="utf-8")).get("harness_rings", [HARNESS_RING])
+
+    return tuple(max(rings, key=lambda ring: ring[0]))
 
 
 def cart_body(b: Builder, frame: Matrix) -> None:
@@ -685,9 +701,11 @@ def cart_shafts(b: Builder, frame: Matrix, hitched: bool) -> None:
     """The pair of shafts. Hitched: they rise from the bed to the harness rings on the horse's flanks, one each
     side of the horse standing HORSE_OFFSET ahead, with a cross bar behind its tail. Parked: level, on a trestle."""
     dark, iron = srgb(WOOD["media"]), srgb("4A4448")
-    spread = HORSE_HALF_WIDTH + 0.14
+    ring_x, ring_height, ring_ahead = harness_ring()
+    tip_x = ring_x + SHAFT_CLEARANCE
+    rump_y = -(HORSE_OFFSET - HORSE_RUMP_BEHIND)
     lines = {
-        True: [(0.56, -CART_HALF_LENGTH + 0.3, CART_FLOOR - 0.05), (0.54, -2.1, CART_FLOOR + 0.1), (spread + 0.02, -3.2, HARNESS_HEIGHT - 0.1), (spread, -(HORSE_OFFSET + HORSE_SHOULDER_AHEAD), HARNESS_HEIGHT)],
+        True: [(0.56, -CART_HALF_LENGTH + 0.3, CART_FLOOR - 0.05), (0.54, -2.1, CART_FLOOR + 0.1), (tip_x + 0.1, rump_y, ring_height - 0.06), (tip_x, -(HORSE_OFFSET + ring_ahead) - 0.12, ring_height)],
         False: [(0.56, -CART_HALF_LENGTH + 0.3, CART_FLOOR - 0.05), (0.52, -2.1, CART_FLOOR - 0.08), (0.48, -3.5, CART_FLOOR - 0.1)],
     }[hitched]
     tip = lines[-1]
@@ -1011,21 +1029,21 @@ def hay_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
 
 
 def build_plot(b: Builder, name: str, plot: tuple) -> None:
+    """One plot; its plants are flushed into meshes of their own (Crops<n>), so the scene can stop drawing a plot
+    from afar (visibility range) without the whole farm's batch going with it."""
     crop = plot[0]
     seed = SEED + len(name) * 7
     pastures = {"meadow": meadow_field, "hayfield": hay_field}
+    sowers = {"wheat": lambda: wheat_field(b, plot, OUTSIDE_GROUND, seed)}
 
     if crop in pastures:
         pastures[crop](b, plot, OUTSIDE_GROUND, seed)
+        b.plants.flush(CROPS_PREFIX)
         return
 
     plot_bed(b, plot, OUTSIDE_GROUND, RIDGE_SPACING[crop], BED_TINT[crop])
-
-    if crop == "wheat":
-        wheat_field(b, plot, OUTSIDE_GROUND, seed)
-        return
-
-    plant_crop(b, crop, plot, OUTSIDE_GROUND, seed)
+    sowers.get(crop, lambda: plant_crop(b, crop, plot, OUTSIDE_GROUND, seed))()
+    b.plants.flush(CROPS_PREFIX)
 
 
 # ---------- buildings ----------
@@ -1326,6 +1344,28 @@ FIELD_FOOTPATHS = (  # trilhas de pé: ao longo do muro (norte e sul) e a cabece
 )
 
 
+TRACK_EDGE_SHARE = 1.4  # bordas onduladas do dirt_track chegam a ~1,35 x meia largura do centro
+
+
+def rectangle_gap(point: tuple, rectangle: tuple) -> float:
+    """Distance from a world point (x, z) to a rectangle (min x, max x, min z, max z); 0 inside."""
+    min_x, max_x, min_z, max_z = rectangle
+
+    return math.hypot(max(min_x - point[0], 0.0, point[0] - max_x), max(min_z - point[1], 0.0, point[1] - max_z))
+
+
+def check_plots_clear_of_tracks() -> None:
+    """No crop plot reaches a lane or footpath, wobbling edges included (the carrots once grew on the path)."""
+    tracks = [(FIELD_LANE, 1.9)] + [(footpath, 0.85) for footpath in FIELD_FOOTPATHS]
+    samples = [(tuple(center), half_width) for points, half_width in tracks for center in smooth_path(points, 0.5)[0]]
+    plots = {name: plot[1:] for name, plot in FARM_FIELD_PLOTS.items()}
+    plots["KitchenGarden"] = KITCHEN_GARDEN[1:]
+    crossing = sorted({name for name, rectangle in plots.items() for center, half_width in samples if rectangle_gap(center, rectangle) < half_width * TRACK_EDGE_SHARE})
+
+    if crossing:
+        raise SystemExit(f"canteiros sobre caminho: {crossing}")
+
+
 def build_farm_fields() -> dict:
     """Crop plots, meadows, the lane out of the town gate, footpaths, gate posts and the outer fence, in world
     coordinates. No plot touches a track: the lane keeps 1.8 m of verge each side, the footpaths 1.4 m."""
@@ -1334,12 +1374,15 @@ def build_farm_fields() -> dict:
     gate_x = min_x - TOWN_GATE_DEPTH
     track_top = OUTSIDE_GROUND + 0.02
 
+    check_plots_clear_of_tracks()
+
     b.collider(world(gate_x, 3.0, track_top - 0.08), world(max_x, -3.0, track_top), name="Path")
     b.collider(world(min_x + 0.6, max_z - 1.0, track_top - 0.08), world(min_x + 3.6, min_z + 1.0, track_top), name="Path")
     dirt_track(b, FIELD_LANE, track_top, SEED + 72)
 
     for index, footpath in enumerate(FIELD_FOOTPATHS):
         dirt_track(b, footpath, track_top, SEED + 73 + index, half_width=0.85, cart_ruts=False)
+        b.plants.flush(CROPS_PREFIX)
 
     for name, plot in FARM_FIELD_PLOTS.items():
         build_plot(b, name, plot)
