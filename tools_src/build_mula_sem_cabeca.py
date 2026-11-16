@@ -39,6 +39,7 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import mula_base  # noqa: E402
 import mula_body  # noqa: E402
 from convert_farm_animals import import_source, make_materials_opaque  # noqa: E402
 
@@ -52,7 +53,7 @@ HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima dis
 HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
 HIDE_GLOW_STRENGTH = 3.0
-HIDE_HALO = 0.75  # quanto do brilho das veias vaza para o couro em volta
+HIDE_HALO = 0.5  # quanto do brilho das veias vaza para o couro em volta
 FIBRE_DENSITY = 6.0  # fibras de músculo por unidade, atravessando a fibra
 NECK_FIBRE_TILT = math.radians(-23.0)  # o pescoço sobe inclinado para a frente: as fibras acompanham
 
@@ -88,8 +89,8 @@ LINK_WIRE_SIDES = 5
 HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
 # (centro, normal do plano, osso) em unidades do FBX: colar na base do pescoço, colar torto, barrigueira, flanco
 CHAIN_LOOPS = [
-    (Vector((0.0, -2.75, 5.3)), Vector((0.0, -0.68, 0.74)), "Shoulders"),
-    (Vector((0.0, -2.55, 4.9)), Vector((0.25, -0.9, 0.35)), "Shoulders"),
+    (Vector((0.0, -2.5, 5.25)), Vector((0.0, -0.7, 0.7)), "Shoulders"),
+    (Vector((0.0, -2.2, 4.5)), Vector((0.25, -0.9, 0.35)), "Shoulders"),
 ]
 # (laço, eixo, sentido, elos pendurados, osso pai): o pedaço partido pende do ponto do laço mais extremo no eixo
 CHAIN_ENDS = [(0, 2, -1.0, 4, "Shoulders"), (1, 0, 1.0, 3, "Shoulders")]
@@ -119,7 +120,7 @@ TAIL_BONES = ["Tail1", "Tail2", "Tail3"]
 # tronco alongado entre os dois pares de patas.
 LEG_STRETCH = 1.35
 LEG_STRETCH_FLOOR, LEG_STRETCH_TOP = 0.75, 3.14
-TRUNK_STRETCH = 0.93
+TRUNK_STRETCH = 1.073
 TRUNK_STRETCH_REACH = 1.5
 FOOT_FOLLOWS = {"FrontFoot.L": "FrontLowLeg.L_end", "FrontFoot.R": "FrontLowLeg.R_end", "BackFoot.L": "BackLowLeg.L_end", "BackFoot.R": "BackLowLeg.R_end"}
 
@@ -535,7 +536,7 @@ def crest_points(surface, stump) -> list:
         location, _, _, _ = surface.ray_cast(Vector((0.0, y, 9.0)), Vector((0.0, 0.0, -1.0)))
         points.append(("Shoulders", location))
 
-    return points
+    return [(bone, location) for bone, location in points if location is not None]  # a ray past the hide finds nothing
 
 
 def add_fire_markers(mesh_object, armature, stump, crest: list) -> list:
@@ -923,7 +924,7 @@ def build_bake_material(mesh_object) -> dict:
     bulges = math_node(nodes, links, "SUBTRACT", 1.0, voronoi(nodes, links, coordinates, 1.1, "SMOOTH_F1"), clamp=True)
     crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 11.0, "DISTANCE_TO_EDGE"), 14.0, clamp=True)
 
-    height = math_node(nodes, links, "MULTIPLY", bulges, 0.3)
+    height = math_node(nodes, links, "MULTIPLY", bulges, 0.1)
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.07))
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.0))
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.0))
@@ -1035,14 +1036,14 @@ def rename_actions() -> dict:
     return kept
 
 
-FRONT_WIDEN = 1.22  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
-HIND_WIDEN = 1.12
+FRONT_WIDEN = 0.75  # o peito, as espáduas e as patas dianteiras abrem para os lados (peito de touro)
+HIND_WIDEN = 1.14
 FRONT_WIDEN_Y = (-0.9, -1.6)  # de onde até onde o alargamento da frente entra
 HIND_WIDEN_Y = (1.0, 1.7)
 NECK_NARROW_Z = (5.0, 5.8)  # o pescoço fica de fora
 
 
-HOCK_BACK = 0.4  # o jarrete recua: a pata traseira faz ângulo em vez de descer reta
+HOCK_BACK = 0.0  # o jarrete recua: a pata traseira faz ângulo em vez de descer reta
 HOCK_BACK_Y = (1.6, 2.2)
 HOCK_BACK_Z = (0.75, 2.3, 3.4)  # boleto parado, jarrete no máximo, soldra parada
 
@@ -1108,7 +1109,7 @@ def measure_proportions(mesh_object) -> dict:
     neck_base, neck_mouth = stretched(Vector(mula_body.NECK_BASE)), stretched(Vector(mula_body.NECK_MOUTH))
     neck_axis = (neck_mouth - neck_base).normalized()
     neck_length = (neck_mouth - neck_base).length
-    trunk = [position.y for position in vertices if 0.55 * withers < position.z < 0.8 * withers]
+    trunk = [position.y for position in vertices if 0.55 * withers < position.z < 0.8 * withers and abs(position.x) > 0.2]  # sem a cauda
     girth = [position.z for position in vertices if abs(position.x) < 0.25 and -1.75 < position.y < -1.5]  # faixa sem farrapos pendurados
 
     def neck_width(share: float) -> float:
@@ -1183,10 +1184,11 @@ def build(source: Path, silhouette: Path | None = None) -> dict:
 
     pack_horse = next(scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "MESH")
     armature = next(scene_object for scene_object in bpy.context.scene.objects if scene_object.type == "ARMATURE")
+    mula_body.NECK_BASE, mula_body.NECK_MOUTH = mula_base.neck_axis(stretched)
     stump = mula_body.Stump()
 
     strip_hair(pack_horse)
-    mesh_object = mula_body.sculpt_clay()
+    mesh_object = mula_base.load_body(stretched)
     rim, ember_heat = mula_body.cut_stump(mesh_object, stump)
     mula_body.transfer_weights(mesh_object, pack_horse)
     bpy.data.objects.remove(pack_horse)
