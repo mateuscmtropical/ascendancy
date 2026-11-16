@@ -1,0 +1,133 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/cow.gltf" id="cow_x"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/pig.gltf" id="pig_x"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse.gltf" id="horse_x"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="harness_x"]
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="capture_x"]
+[ext_resource type="Script" path="res://tests/shots/animal_lineup.gd" id="lineup_x"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.361, 0.561, 0.82, 1)
+sky_horizon_color = Color(0.78, 0.89, 0.95, 1)
+sky_curve = 0.12
+ground_horizon_color = Color(0.78, 0.89, 0.95, 1)
+ground_bottom_color = Color(0.35, 0.42, 0.33, 1)
+sun_angle_max = 20.0
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_color = Color(0.663, 0.784, 0.941, 1)
+ambient_light_sky_contribution = 0.75
+tonemap_mode = 2
+tonemap_exposure = 0.95
+tonemap_white = 1.4
+ssao_enabled = true
+ssao_radius = 1.4
+ssao_intensity = 1.6
+ssil_enabled = true
+glow_enabled = true
+glow_intensity = 0.35
+glow_bloom = 0.05
+glow_blend_mode = 1
+glow_hdr_threshold = 1.0
+fog_enabled = true
+fog_light_color = Color(0.78, 0.87, 0.95, 1)
+fog_density = 0.0016
+fog_sun_scatter = 0.25
+fog_aerial_perspective = 0.35
+adjustment_enabled = true
+adjustment_saturation = 1.08
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+size = Vector2(400, 200)
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.42, 0.62, 0.3, 1)
+roughness = 1.0
+
+[node name="AnimalLineup" type="Node3D"]
+script = ExtResource("lineup_x")
+
+[node name="Capture" type="Node" parent="."]
+script = ExtResource("capture_x")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.78, 0.55, 0)
+light_color = Color(1, 0.902, 0.769, 1)
+light_energy = 1.35
+shadow_enabled = true
+shadow_blur = 1.5
+directional_shadow_mode = 1
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh")
+surface_material_override/0 = SubResource("ground_material")
+
+[node name="Cow" parent="." instance=ExtResource("cow_x")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -6, 0, 0)
+
+[node name="Pig" parent="." instance=ExtResource("pig_x")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2.5, 0, 0)
+
+[node name="Horse" parent="." instance=ExtResource("horse_x")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1.5, 0, 0)
+
+[node name="HorseHarness" parent="." instance=ExtResource("harness_x")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.5, 0, 0)
+
+[node name="SideEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 1.1, 13)
+fov = 52
+far = 600.0
+metadata/look_at = Vector3(-0.2, 0.8, 0)
+
+[node name="CowHeadEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 1.1, 1.6)
+fov = 38
+far = 600.0
+metadata/look_at = Vector3(-4.9, 1.0, 0)
+
+[node name="PigHeadEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 0.5, 1.3)
+fov = 40
+far = 600.0
+metadata/look_at = Vector3(-1.8, 0.4, 0)
+
+[node name="HorseHeadEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 1.55, 1.9)
+fov = 36
+far = 600.0
+metadata/look_at = Vector3(2.8, 1.45, 0)
+
+[node name="PigSideEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.5, 3.2)
+fov = 35
+far = 600.0
+metadata/look_at = Vector3(-2.5, 0.35, 0)
+
+[node name="HarnessEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 1.1, 4.0)
+fov = 38
+far = 600.0
+metadata/look_at = Vector3(5.5, 1.0, 0)
+
+[node name="HarnessFrontEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.0, 1.2, 1.5)
+fov = 36
+far = 600.0
+metadata/look_at = Vector3(5.5, 1.1, 0.0)
+
+[node name="ThreeQuarterEye" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0, 1.4, 8.0)
+fov = 50
+far = 600.0
+metadata/look_at = Vector3(0, 0.8, 0)
