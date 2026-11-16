@@ -244,3 +244,7 @@ fov = 60.0
 position = Vector3(93.600, 1.600, -11.500)
 rotation = Vector3(-0.138, -0.920, 0.000)
 fov = 60.0
+
+[node name="MulaMeadow" type="Camera3D" parent="."]
+transform = Transform3D(-0.7071, 0.0499, -0.7053, 0.0000, 0.9975, 0.0705, 0.7071, 0.0499, -0.7053, 106.0, 2.3, 20.0)
+fov = 50.0

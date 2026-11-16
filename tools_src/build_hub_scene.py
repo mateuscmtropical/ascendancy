@@ -567,6 +567,7 @@ FARM_SHADE_TREES = {  # nome -> (tipo em PLANT_MODELS, variante, x, z, escala): 
 }
 CANOPY_RADIUS = {"tree_old": 8.0, "tree_bloom": 4.9}  # maior alcance da copa em escala 1 (medido nos glTF de build_trees.py)
 KITCHEN_GARDEN = ("garden", 77.0, 86.0, -28.5, -20.0)  # horta ao lado da casa do fazendeiro
+MULA = {"position": (112.5, 32.0), "rotation": math.pi}  # x, z no pasto além do muro, de frente para a estradinha
 
 
 # ---------- town plan: lots, archetypes and shops (seções C e D) ----------
@@ -1831,6 +1832,11 @@ adjustment_saturation = 1.08''')
     })
 
 
+def add_mula(scene: SceneWriter) -> None:
+    """The Mula sem cabeça (features/mobs/mula_sem_cabeca.tscn) standing in the meadow beyond the farm gate."""
+    place(scene, "MulaSemCabeca", ".", "res://features/mobs/mula_sem_cabeca.tscn", grounded(*MULA["position"]), MULA["rotation"])
+
+
 def build_hub_scene() -> str:
     scene = SceneWriter()
     script_id = scene.external_id("Script", "res://features/hub/hub.gd")
@@ -1849,6 +1855,7 @@ def build_hub_scene() -> str:
     add_backdrop(scene)
     add_townsfolk(scene, benches)
     add_farm(scene)
+    add_mula(scene)
     add_carriages(scene)
     add_distance_fades(scene)
     add_player_and_cameras(scene)
