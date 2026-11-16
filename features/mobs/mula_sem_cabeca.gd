@@ -52,7 +52,7 @@ const STUMP_MARKER_NAME: String = "FireStump"
 const HOOF_CONTACT_HEIGHT: float = 0.1
 const HOOF_LIFT_HEIGHT: float = 0.17
 const FOOTPRINT_SIZE: float = 0.36
-const FOOTPRINT_FLAME_SHARE: float = 0.4
+const FOOTPRINT_FLAME_SHARE: float = 0.2
 const HORSESHOE: float = 1.0
 const STAIN: float = 0.0
 ## Pingos de lava do toco: de tempos em tempos uma manchinha no chão embaixo dele.
