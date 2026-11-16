@@ -5433,6 +5433,39 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
+[node name="CowOak" parent="Farm" instance=ExtResource("79_ext")]
+position = Vector3(83.000, 0.030, 12.000)
+rotation = Vector3(0.000, 58.100, 0.000)
+scale = Vector3(0.600, 0.600, 0.600)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/CowOak" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/CowOak/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_old_tree")
+
+[node name="CowBloom" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(94.500, 0.030, 12.500)
+rotation = Vector3(0.000, 66.150, 0.000)
+scale = Vector3(0.800, 0.800, 0.800)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/CowBloom" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/CowBloom/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_tree_bloom")
+
+[node name="PigBloom" parent="Farm" instance=ExtResource("82_ext")]
+position = Vector3(89.000, 0.030, 35.200)
+rotation = Vector3(0.000, 62.300, 0.000)
+scale = Vector3(0.700, 0.700, 0.700)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/PigBloom" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/PigBloom/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_tree_bloom")
+
 [node name="FarmAnimals" type="Node3D" parent="."]
 
 [node name="Cows0" type="AnimatableBody3D" parent="FarmAnimals"]
@@ -5447,6 +5480,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 13988269
 body_size = Vector3(0.900, 1.400, 2.200)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
 
 [node name="Cows1" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(84.291, 0.030, 20.858)
@@ -5460,6 +5494,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 504954191
 body_size = Vector3(0.900, 1.400, 2.200)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
 
 [node name="Cows2" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(96.766, 0.030, 16.265)
@@ -5473,6 +5508,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 953990702
 body_size = Vector3(0.900, 1.400, 2.200)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
 
 [node name="Cows3" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(98.198, 0.030, 23.781)
@@ -5486,6 +5522,7 @@ pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 379352014
 body_size = Vector3(0.900, 1.400, 2.200)
+obstacles = PackedVector3Array(83.00, 12.00, 0.51, 94.50, 12.50, 0.24)
 
 [node name="Pigs0" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(87.980, 0.030, 38.086)
@@ -5499,6 +5536,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 500029480
 body_size = Vector3(0.600, 0.800, 1.200)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21)
 
 [node name="Pigs1" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(96.169, 0.030, 34.297)
@@ -5512,6 +5550,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 837996492
 body_size = Vector3(0.600, 0.800, 1.200)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21)
 
 [node name="Pigs2" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(96.477, 0.030, 39.377)
@@ -5525,6 +5564,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 801188445
 body_size = Vector3(0.600, 0.800, 1.200)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21)
 
 [node name="Pigs3" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(97.798, 0.030, 41.101)
@@ -5538,6 +5578,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 591565649
 body_size = Vector3(0.600, 0.800, 1.200)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21)
 
 [node name="Pigs4" type="AnimatableBody3D" parent="FarmAnimals"]
 position = Vector3(91.420, 0.030, 40.128)
@@ -5551,6 +5592,7 @@ pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 743114111
 body_size = Vector3(0.600, 0.800, 1.200)
+obstacles = PackedVector3Array(89.00, 35.20, 0.21)
 
 [node name="Carriages" type="Node3D" parent="."]
 
@@ -5563,7 +5605,7 @@ wagon_scene = ExtResource("123_ext")
 horse_scene = ExtResource("124_ext")
 driver_body = ExtResource("110_ext")
 driver_hair_color = Color(0.320, 0.210, 0.140, 1)
-driver_seat = Vector3(0.000, 0.720, 1.450)
+driver_seat = Vector3(0.000, 1.010, 1.020)
 route = PackedVector3Array(68.00, -0.12, 47.00, 67.62, -0.12, 49.62, 66.50, -0.12, 51.50, 64.62, -0.12, 52.62, 62.00, -0.12, 53.00, -62.00, -0.12, 53.00, -64.62, -0.12, 52.62, -66.50, -0.12, 51.50, -67.62, -0.12, 49.62, -68.00, -0.12, 47.00, -68.00, -0.12, -45.00, -67.62, -0.12, -47.62, -66.50, -0.12, -49.50, -64.62, -0.12, -50.62, -62.00, -0.12, -51.00, -20.02, -0.12, -51.00, -18.01, -0.12, -50.98, -16.00, -0.12, -50.90, -14.00, -0.12, -50.78, -12.00, -0.12, -50.60, -12.00, -0.12, -50.60, -10.00, -0.12, -50.40, -8.00, -0.12, -50.21, -6.00, -0.12, -50.03, -4.00, -0.12, -49.85, -4.00, -0.12, -49.85, -2.00, -0.12, -49.72, 0.00, -0.12, -49.67, 2.00, -0.12, -49.72, 4.00, -0.12, -49.85, 4.00, -0.12, -49.85, 6.00, -0.12, -50.03, 8.00, -0.12, -50.21, 10.00, -0.12, -50.40, 12.00, -0.12, -50.60, 12.00, -0.12, -50.60, 14.00, -0.12, -50.78, 16.00, -0.12, -50.90, 18.01, -0.12, -50.98, 20.02, -0.12, -51.00, 62.00, -0.12, -51.00, 64.62, -0.12, -50.62, 66.50, -0.12, -49.50, 67.62, -0.12, -47.62, 68.00, -0.12, -45.00)
 speed = 1.3
 start_distance = 0.00
@@ -5577,7 +5619,7 @@ wagon_scene = ExtResource("125_ext")
 horse_scene = ExtResource("124_ext")
 driver_body = ExtResource("112_ext")
 driver_hair_color = Color(0.080, 0.070, 0.070, 1)
-driver_seat = Vector3(0.000, 0.720, 1.450)
+driver_seat = Vector3(0.000, 1.010, 1.020)
 route = PackedVector3Array(68.00, -0.12, 47.00, 67.62, -0.12, 49.62, 66.50, -0.12, 51.50, 64.62, -0.12, 52.62, 62.00, -0.12, 53.00, -62.00, -0.12, 53.00, -64.62, -0.12, 52.62, -66.50, -0.12, 51.50, -67.62, -0.12, 49.62, -68.00, -0.12, 47.00, -68.00, -0.12, -45.00, -67.62, -0.12, -47.62, -66.50, -0.12, -49.50, -64.62, -0.12, -50.62, -62.00, -0.12, -51.00, -20.02, -0.12, -51.00, -18.01, -0.12, -50.98, -16.00, -0.12, -50.90, -14.00, -0.12, -50.78, -12.00, -0.12, -50.60, -12.00, -0.12, -50.60, -10.00, -0.12, -50.40, -8.00, -0.12, -50.21, -6.00, -0.12, -50.03, -4.00, -0.12, -49.85, -4.00, -0.12, -49.85, -2.00, -0.12, -49.72, 0.00, -0.12, -49.67, 2.00, -0.12, -49.72, 4.00, -0.12, -49.85, 4.00, -0.12, -49.85, 6.00, -0.12, -50.03, 8.00, -0.12, -50.21, 10.00, -0.12, -50.40, 12.00, -0.12, -50.60, 12.00, -0.12, -50.60, 14.00, -0.12, -50.78, 16.00, -0.12, -50.90, 18.01, -0.12, -50.98, 20.02, -0.12, -51.00, 62.00, -0.12, -51.00, 64.62, -0.12, -50.62, 66.50, -0.12, -49.50, 67.62, -0.12, -47.62, 68.00, -0.12, -45.00)
 speed = 1.3
 start_distance = 235.41

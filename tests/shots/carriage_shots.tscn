@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="1_ext"]
 [ext_resource type="Script" path="res://features/hub/carriage.gd" id="2_ext"]
 [ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="3_ext"]
 [ext_resource type="PackedScene" path="res://art/town/farm/animals/horse.gltf" id="4_ext"]
 [ext_resource type="PackedScene" path="res://art/characters/villager_male.gltf" id="5_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="6_ext"]
 
 [sub_resource type="Environment" id="1_env"]
 background_mode = 1
@@ -35,6 +36,15 @@ script = ExtResource("2_ext")
 wagon_scene = ExtResource("3_ext")
 horse_scene = ExtResource("4_ext")
 driver_body = ExtResource("5_ext")
+driver_seat = Vector3(0, 1.01, 1.02)
+
+[node name="HayCart" type="AnimatableBody3D" parent="."]
+position = Vector3(-4.5, 0, 0)
+script = ExtResource("2_ext")
+wagon_scene = ExtResource("6_ext")
+horse_scene = ExtResource("4_ext")
+driver_body = ExtResource("5_ext")
+driver_seat = Vector3(0, 1.01, 1.02)
 
 [node name="ShotCapture" type="Node" parent="."]
 script = ExtResource("1_ext")
@@ -49,3 +59,8 @@ fov = 60.0
 position = Vector3(5.5, 3.0, 9.5)
 rotation = Vector3(-0.19, 0.633, 0.0)
 fov = 60.0
+
+[node name="SeatClose" type="Camera3D" parent="."]
+position = Vector3(4.2, 1.7, 2.6)
+rotation = Vector3(-0.08, 1.5708, 0.0)
+fov = 50.0

@@ -551,13 +551,21 @@ FARM_ANIMAL_SEED = 5150
 FARM_ANIMAL_GAP = 1.6  # distância mínima entre bichos ao nascer, em comprimentos do corpo
 FARM_ANIMAL_TRIES = 60
 FARM_FIELD_PLOTS = {  # canteiro -> (cultura, min x, max x, min z, max z): fileiras correm ao longo de x
-    "WheatNorth": ("wheat", 106.0, 146.0, -44.0, -26.0),
-    "Corn": ("corn", 106.0, 126.0, -22.0, -4.0),
-    "CabbageNorth": ("cabbage", 129.0, 146.0, -22.0, -4.0),
-    "Carrot": ("carrot", 106.0, 124.0, 4.0, 20.0),
-    "WheatSouth": ("wheat", 127.0, 146.0, 4.0, 20.0),
-    "Meadow": ("meadow", 106.0, 146.0, 24.0, 44.0),
+    # Uma faixa por cultura: horta (repolho, cenoura) junto do portão, grãos adiante, trigo na faixa do fundo,
+    # feno ao sul. A estradinha (z = 0) fica com 1,8 m de margem de cada lado e as trilhas com 1,4 m.
+    "Wheat": ("wheat", 108.0, 147.0, -44.0, -24.0),
+    "Cabbage": ("cabbage", 108.0, 124.0, -19.0, -5.0),
+    "Corn": ("corn", 127.0, 147.0, -19.0, -5.0),
+    "Carrot": ("carrot", 108.0, 124.0, 5.0, 19.0),
+    "HayField": ("hayfield", 127.0, 147.0, 5.0, 19.0),
+    "Meadow": ("meadow", 108.0, 147.0, 23.0, 44.0),
 }
+FARM_SHADE_TREES = {  # nome -> (tipo em PLANT_MODELS, variante, x, z, escala): sombra nos pastos, copa inteira dentro da cerca
+    "CowOak": ("tree_old", 2, 83.0, 12.0, 0.6),
+    "CowBloom": ("tree_bloom", 0, 94.5, 12.5, 0.8),
+    "PigBloom": ("tree_bloom", 1, 89.0, 35.2, 0.7),
+}
+CANOPY_RADIUS = {"tree_old": 8.0, "tree_bloom": 4.9}  # maior alcance da copa em escala 1 (medido nos glTF de build_trees.py)
 KITCHEN_GARDEN = ("garden", 77.0, 86.0, -28.5, -20.0)  # horta ao lado da casa do fazendeiro
 
 
@@ -1460,7 +1468,8 @@ FARM_ANIMAL_BODY = {"cows": (0.9, 1.4, 2.2), "pigs": (0.6, 0.8, 1.2)}
 CARRIAGE_HORSE = "res://art/town/farm/animals/horse.gltf"
 CARRIAGE_HARNESSED_HORSE = "res://art/town/farm/animals/horse_harness.gltf"  # coelheira, selim e argolas dos varais
 CARRIAGE_DRIVERS = (("villager_male", "brown"), ("villager_female", "black"))  # (corpo, cabelo) de cada condutor
-CARRIAGE_DRIVER_SEAT = (0.0, 0.72, 1.45)  # origem do condutor sentado (quadril ~0,45 m acima) na borda da frente da caixa
+CARRIAGE_DRIVER_SEAT = (0.0, 0.72, 1.45)  # sem o marcador driver_seat no sidecar: borda da frente da caixa
+CARRIAGE_HIP_HEIGHT = 0.45  # do quadril do condutor sentado até a origem do modelo dele
 CARRIAGE_WAGONS = ("res://art/town/farm/farm_wagon.gltf", "res://art/town/farm/hay_cart.gltf")
 CARRIAGE_SPEED = 1.3
 CARRIAGE_CORNER_RADIUS = 6.0
@@ -1491,19 +1500,53 @@ def add_farm(scene: SceneWriter) -> None:
     for name, (body, hair, position, target, animation) in FARMHANDS.items():
         npc(scene, name, body, hair, stand(position, facing_yaw(position, target), animation, 0.0, height=0.03))
 
+    check_shade_trees()
+
+    for name, (kind, variant, x, z, scale) in FARM_SHADE_TREES.items():
+        place(scene, name, "Farm", plant_models(kind)[variant], (x, 0.03, z), rotation_y=x * 0.7, scale=scale)
+
     add_farm_animals(scene)
 
 
-def spread_points(generator: random.Random, area: tuple, count: int, gap: float) -> list:
-    """Points inside area (x, z, width, depth) at least gap apart (rejection sampling; gives up spacing after a few tries)."""
+def spread_points(generator: random.Random, area: tuple, count: int, gap: float, trunks: tuple = ()) -> list:
+    """Points inside area (x, z, width, depth) at least gap apart and half a gap off every trunk (x, z, radius)
+    (rejection sampling; gives up spacing after a few tries, never the trunks)."""
     points = []
 
     for _ in range(count):
         candidates = [(generator.uniform(area[0], area[0] + area[2]), generator.uniform(area[1], area[1] + area[3])) for _ in range(FARM_ANIMAL_TRIES)]
-        spaced = [point for point in candidates if all(distance(point, taken) >= gap for taken in points)]
-        points.append(spaced[0] if spaced else candidates[0])
+        free = [point for point in candidates if all(distance(point, trunk[:2]) >= trunk[2] + gap / 2.0 for trunk in trunks)]
+        spaced = [point for point in free if all(distance(point, taken) >= gap for taken in points)]
+        points.append((spaced or free)[0])
 
     return points
+
+
+def pen_trunks(pen: str) -> tuple:
+    """(x, z, trunk radius) of the shade trees standing inside a pen."""
+    min_x, max_x, min_z, max_z = FARM_PENS[pen]
+
+    return tuple(
+        (x, z, TRUNK_RADIUS[kind] * scale)
+        for kind, _variant, x, z, scale in FARM_SHADE_TREES.values()
+        if min_x < x < max_x and min_z < z < max_z
+    )
+
+
+def check_shade_trees() -> None:
+    """Every shade tree stands inside a pen with its roots and its whole canopy inside the fence."""
+    pens = {pen: rectangle for pen, rectangle in FARM_PENS.items()}
+    problems = []
+
+    for name, (kind, _variant, x, z, scale) in FARM_SHADE_TREES.items():
+        reach = max(ROOT_CLEARANCE.get(kind, TRUNK_RADIUS[kind]), CANOPY_RADIUS[kind]) * scale
+        inside = [pen for pen, (min_x, max_x, min_z, max_z) in pens.items() if min_x + reach <= x <= max_x - reach and min_z + reach <= z <= max_z - reach]
+
+        if not inside:
+            problems.append(name)
+
+    if problems:
+        raise SystemExit(f"árvores de sombra com a copa sobre a cerca ou fora dos pastos: {problems}")
 
 
 def add_farm_animals(scene: SceneWriter) -> None:
@@ -1521,7 +1564,9 @@ def add_farm_animals(scene: SceneWriter) -> None:
         min_x, max_x, min_z, max_z = FARM_PENS[pen]
         area = (min_x + FARM_ANIMAL_MARGIN, min_z + FARM_ANIMAL_MARGIN, max_x - min_x - 2.0 * FARM_ANIMAL_MARGIN, max_z - min_z - 2.0 * FARM_ANIMAL_MARGIN)
         model_id = scene.external_id("PackedScene", model)
-        spawn_points = spread_points(generator, area, count, FARM_ANIMAL_BODY[pen][2] * FARM_ANIMAL_GAP)
+        trunks = pen_trunks(pen)
+        spawn_points = spread_points(generator, area, count, FARM_ANIMAL_BODY[pen][2] * FARM_ANIMAL_GAP, trunks)
+        trunk_text = ", ".join(f"{x:.2f}, {z:.2f}, {radius:.2f}" for x, z, radius in trunks)
 
         for index, (x, z) in enumerate(spawn_points):
             scene.add_node(f"{pen.title()}{index}", "FarmAnimals", "AnimatableBody3D", properties={
@@ -1536,6 +1581,7 @@ def add_farm_animals(scene: SceneWriter) -> None:
                 "walk_speed": f"{speed}",
                 "wander_seed": f"{generator.randrange(1, 1 << 30)}",
                 "body_size": vector(*FARM_ANIMAL_BODY[pen]),
+                "obstacles": f"PackedVector3Array({trunk_text})",
             })
 
 
@@ -1565,6 +1611,16 @@ def quadratic_point(start: tuple, control: tuple, end: tuple, amount: float) -> 
     return tuple(rest * rest * start[axis] + 2.0 * rest * amount * control[axis] + amount * amount * end[axis] for axis in range(2))
 
 
+def driver_seat(wagon: str) -> tuple:
+    """Origin of the seated driver: the wagon's driver_seat marker (top of the bench) lowered to the hips."""
+    seat = model_sidecar(wagon).get("markers", {}).get("driver_seat")
+
+    if not seat:
+        return CARRIAGE_DRIVER_SEAT
+
+    return seat[0], round(seat[1] - CARRIAGE_HIP_HEIGHT, 3), seat[2]
+
+
 def add_carriages(scene: SceneWriter) -> None:
     """Horse-drawn wagons rolling slowly round the street loop, half a lap apart."""
     script = scene.external_id("Script", "res://features/hub/carriage.gd")
@@ -1590,7 +1646,7 @@ def add_carriages(scene: SceneWriter) -> None:
             "horse_scene": f'ExtResource("{scene.external_id("PackedScene", horse)}")',
             "driver_body": f'ExtResource("{scene.external_id("PackedScene", f"res://art/characters/{driver_body}.gltf")}")',
             "driver_hair_color": color(HAIR_COLORS[driver_hair]),
-            "driver_seat": vector(*CARRIAGE_DRIVER_SEAT),
+            "driver_seat": vector(*driver_seat(wagon)),
             "route": f"PackedVector3Array({route_text})",
             "speed": f"{CARRIAGE_SPEED}",
             "start_distance": f"{lap * index / len(CARRIAGE_WAGONS):.2f}",

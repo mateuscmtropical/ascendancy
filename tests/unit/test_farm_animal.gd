@@ -3,6 +3,8 @@ extends GutTest
 const PEN: Rect2 = Rect2(78.5, 5.5, 20.0, 21.0)
 const WANDER_SEED: int = 4242
 const PICKS: int = 50
+const TRUNK: Vector3 = Vector3(88.5, 15.5, 0.7)
+const CLEARANCE: float = 1.0
 
 
 func test_wander_targets_stay_inside_the_pen() -> void:
@@ -35,6 +37,35 @@ func test_wander_target_is_a_real_walk_away() -> void:
 	target = FarmAnimal.pick_wander_target(PEN, from, generator)
 
 	assert_gte(target.distance_to(from), FarmAnimal.MIN_WANDER_DISTANCE)
+
+
+func test_wander_paths_keep_clear_of_trunks() -> void:
+	var generator: RandomNumberGenerator = RandomNumberGenerator.new()
+	var trunks: PackedVector3Array = PackedVector3Array([TRUNK])
+	var from: Vector2 = Vector2(80.0, 7.0)
+	var target: Vector2
+
+	generator.seed = WANDER_SEED
+
+	for pick in PICKS:
+		target = FarmAnimal.pick_wander_target(PEN, from, generator, trunks, CLEARANCE)
+
+		assert_true(
+			FarmAnimal.is_path_clear(from, target, trunks, CLEARANCE),
+			"walk %s -> %s clear of the trunk" % [from, target]
+		)
+		from = target
+
+
+func test_path_through_a_trunk_is_blocked() -> void:
+	var trunks: PackedVector3Array = PackedVector3Array([TRUNK])
+	var west: Vector2 = Vector2(TRUNK.x - 5.0, TRUNK.y)
+	var east: Vector2 = Vector2(TRUNK.x + 5.0, TRUNK.y)
+	var north_east: Vector2 = Vector2(TRUNK.x + 5.0, TRUNK.y - 4.0)
+	var north_west: Vector2 = Vector2(TRUNK.x - 5.0, TRUNK.y - 4.0)
+
+	assert_false(FarmAnimal.is_path_clear(west, east, trunks, CLEARANCE))
+	assert_true(FarmAnimal.is_path_clear(north_west, north_east, trunks, CLEARANCE))
 
 
 func test_step_never_overshoots_the_target() -> void:
