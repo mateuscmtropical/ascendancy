@@ -57,28 +57,28 @@ NECK_FIBRE_TILT = math.radians(-23.0)  # o pescoço sobe inclinado para a frente
 
 VEIN_SEED = 11
 VEIN_ROOTS = 9  # troncos que nascem na borda do toco
-VEIN_TIPS = 150  # pontas espalhadas pelo corpo
-VEIN_FRONT_DENSITY = 1.2  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
+VEIN_TIPS = 70  # pontas espalhadas pelo corpo
+VEIN_FRONT_DENSITY = 4.0  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
 VEIN_FRONT_END = -0.9
-VEIN_SHIN_TIPS = 36  # pontas extras nas canelas e cascos
+VEIN_SHIN_TIPS = 14  # pontas extras nas canelas e cascos
 VEIN_SHIN_TOP = 1.6
-VEIN_BRIDGES = 40  # pontas que alcançam um vaso vizinho e fecham a teia
+VEIN_BRIDGES = 12  # pontas que alcançam um vaso vizinho e fecham a teia
 VEIN_BRIDGE_REACH = 9  # arestas que uma ponte pode atravessar
 VEIN_GROOVE_PULL = 4.0  # quanto o sulco entre músculos barateia o caminho
-VEIN_WEB_REACH = 3.6  # até esta distância do toco (pela pele) os vasos fecham células poligonais
-VEIN_WEB_SPACING = 0.85  # distância entre os nós da teia
+VEIN_WEB_REACH = 4.6  # até esta distância do toco (pela pele) os vasos fecham células poligonais
+VEIN_WEB_SPACING = 1.0  # distância entre os nós da teia
 VEIN_WEB_LINKS = 3  # vizinhos a que cada nó se liga
 VEIN_WEB_DETOUR = 2.4  # caminho mais longo que isto vezes a reta entre dois nós não vira vaso
-VEIN_WEB_THICKNESS = (0.85, 0.22)  # grossura dos vasos da teia: junto ao toco, no fim do alcance
-VEIN_TIP_RADIUS = 0.01
-VEIN_TRUNK_RADIUS = 0.052
+VEIN_WEB_THICKNESS = (1.0, 0.4)  # grossura dos vasos da teia: junto ao toco, no fim do alcance
+VEIN_TIP_RADIUS = 0.008
+VEIN_TRUNK_RADIUS = 0.075
 VEIN_TRUNK_FLOW = 30.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
 
-LINK_RADIUS = 0.105
-LINK_WIRE = 0.03
+LINK_RADIUS = 0.14
+LINK_WIRE = 0.046
 LINK_STRETCH = 1.5
-LINK_SPACING = 0.25
+LINK_SPACING = 0.32
 LINK_SEGMENTS = 10
 LINK_WIRE_SIDES = 5
 HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
@@ -86,8 +86,8 @@ HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
 CHAIN_LOOPS = [
     (Vector((0.0, -2.75, 5.3)), Vector((0.0, -0.68, 0.74)), "Shoulders"),
     (Vector((0.0, -2.55, 4.9)), Vector((0.25, -0.9, 0.35)), "Shoulders"),
-    (Vector((0.0, -0.75, 3.9)), Vector((0.18, 1.0, 0.12)), "Torso"),
-    (Vector((0.0, 1.15, 3.9)), Vector((-0.22, 1.0, -0.15)), "Hips"),
+    (Vector((0.0, -0.75, 4.4)), Vector((0.18, 1.0, 0.12)), "Torso"),
+    (Vector((0.0, 1.15, 4.8)), Vector((-0.22, 1.0, -0.15)), "Hips"),
 ]
 # (laço, eixo, sentido, elos pendurados, osso pai): o pedaço partido pende do ponto do laço mais extremo no eixo
 CHAIN_ENDS = [(0, 2, -1.0, 7, "Shoulders"), (1, 0, 1.0, 4, "Shoulders"), (2, 0, -1.0, 6, "Torso"), (3, 0, 1.0, 5, "Hips"), (2, 0, 1.0, 3, "Torso")]
@@ -109,8 +109,17 @@ FLAME_SEED = 5
 FLAME_SEGMENTS = 10
 FLAME_SLIVER = 0.002  # meia largura real da tira (só para o triângulo não ser degenerado)
 FLAME_WIND = Vector((0.0, 1.0, 0.0))  # as línguas deitam para trás, como num bicho que avança
-STUMP_TONGUES, MANE_TONGUES, TAIL_TONGUES, HOOF_TONGUES = 12, 18, 22, 5
+STUMP_TONGUES, MANE_TONGUES, TAIL_TONGUES, HOOF_TONGUES = 12, 18, 22, 9
+HOOF_FLAME_CLIMB = 1.3  # até onde, acima do casco, nascem línguas subindo pela canela
 TAIL_BONES = ["Tail1", "Tail2", "Tail3"]
+
+# Proporção esticada no fim (stretch_proportions): patas alongadas entre o boleto e a articulação do ombro/anca,
+# tronco alongado entre os dois pares de patas.
+LEG_STRETCH = 1.35
+LEG_STRETCH_FLOOR, LEG_STRETCH_TOP = 0.75, 3.14
+TRUNK_STRETCH = 1.2
+TRUNK_STRETCH_REACH = 1.5
+FOOT_FOLLOWS = {"FrontFoot.L": "FrontLowLeg.L_end", "FrontFoot.R": "FrontLowLeg.R_end", "BackFoot.L": "BackLowLeg.L_end", "BackFoot.R": "BackLowLeg.R_end"}
 
 
 def strip_hair(mesh_object) -> None:
@@ -591,10 +600,12 @@ def hoof_tongues(randomizer, mesh_object) -> list:
 
         for index in range(HOOF_TONGUES):
             angle = 2.0 * math.pi * index / HOOF_TONGUES + randomizer.uniform(-0.4, 0.4)
-            length = randomizer.uniform(0.8, 1.7)
-            root = position + Vector((math.cos(angle) * 0.3, math.sin(angle) * 0.34, -0.08))
+            climb = HOOF_FLAME_CLIMB * randomizer.random() * (index % 2)  # metade nasce no casco, metade canela acima
+            reach = 0.3 if climb == 0.0 else 0.17
+            length = randomizer.uniform(1.0, 2.0)
+            root = position + Vector((math.cos(angle) * reach, math.sin(angle) * reach, climb - 0.08))
             middle = root + Vector((math.cos(angle) * 0.1, math.sin(angle) * 0.1, length * 0.5))
-            tip = position + Vector((0.0, 0.0, length)) + FLAME_WIND * length * randomizer.uniform(0.1, 0.4) + scatter(randomizer, 0.12)
+            tip = position + Vector((0.0, 0.0, climb + length)) + FLAME_WIND * length * randomizer.uniform(0.1, 0.4) + scatter(randomizer, 0.12)
             tongues.append({"curve": (root, middle, tip), "bones": [bone], "width": randomizer.uniform(0.4, 0.62)})
 
     return tongues
@@ -639,6 +650,11 @@ def build_flames(mesh_object, armature, stump, crest: list):
     """Object MulaFlames: every tongue of the stump blaze, mane, tail and hooves as a ribbon skinned to its bone."""
     randomizer = random.Random(FLAME_SEED)
     tongues = stump_tongues(randomizer, stump) + mane_tongues(randomizer, crest) + tail_tongues(randomizer) + hoof_tongues(randomizer, mesh_object)
+
+    for bone in TAIL_BONES:  # o cavalo do pacote não pinta todos os ossos do rabo
+        if bone not in mesh_object.vertex_groups:
+            mesh_object.vertex_groups.new(name=bone)
+
     groups = {group.name: group.index for group in mesh_object.vertex_groups}
     flames = bmesh.new()
     layers = {"deform": flames.verts.layers.deform.verify(), "uv": flames.loops.layers.uv.new("UVMap"), "seed": flames.loops.layers.uv.new("Seed")}
@@ -896,30 +912,30 @@ def build_bake_material(mesh_object) -> dict:
     bulges = math_node(nodes, links, "SUBTRACT", 1.0, voronoi(nodes, links, coordinates, 1.1, "SMOOTH_F1"), clamp=True)
     crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 11.0, "DISTANCE_TO_EDGE"), 14.0, clamp=True)
 
-    height = math_node(nodes, links, "MULTIPLY", bulges, 0.2)
+    height = math_node(nodes, links, "MULTIPLY", bulges, 0.3)
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.6))
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.1))
     height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.1))
 
     bump = nodes.new("ShaderNodeBump")
     bump.inputs["Strength"].default_value = 1.0
-    bump.inputs["Distance"].default_value = 0.2
+    bump.inputs["Distance"].default_value = 0.3
     links.new(height, bump.inputs["Height"])
     diffuse = nodes.new("ShaderNodeBsdfDiffuse")
     links.new(bump.outputs[0], diffuse.inputs["Normal"])
 
     # couro cor de vinho queimado: fundo do sulco quase preto, crista da fibra em carne escura
     tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.35), math_node(nodes, links, "MULTIPLY", ridges, 0.65))
-    hide = color_ramp(nodes, links, tone, [(0.15, (0.012, 0.007, 0.008)), (0.45, (0.07, 0.024, 0.022)), (0.8, (0.2, 0.06, 0.05))])
-    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.4), hide, (0.014, 0.01, 0.011))
+    hide = color_ramp(nodes, links, tone, [(0.15, (0.04, 0.016, 0.016)), (0.45, (0.17, 0.055, 0.045)), (0.8, (0.4, 0.13, 0.095))])
+    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.3), hide, (0.03, 0.014, 0.014))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.7), hide, (0.01, 0.006, 0.006))
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.45), hide, (0.32, 0.02, 0.008))
     is_ember = math_node(nodes, links, "GREATER_THAN", ember, 0.05)
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
     # carne úmida: brilha mais na crista da fibra, fosca no sulco carbonizado
-    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.22, clamp=True)
-    roughness_value.node.inputs[2].default_value = 0.62
+    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.24, clamp=True)
+    roughness_value.node.inputs[2].default_value = 0.52
     combine = nodes.new("ShaderNodeCombineColor")
     links.new(roughness_value, combine.inputs[1])
 
@@ -1007,6 +1023,47 @@ def rename_actions() -> dict:
     return kept
 
 
+def stretched(position: Vector) -> Vector:
+    """Where a point of the pack-proportioned mula lands once it is stretched: the legs lengthen between fetlock and
+    shoulder/hip joint (hooves stay, everything above rides up) and the trunk lengthens between the leg pairs."""
+    trunk = min(TRUNK_STRETCH_REACH, max(-TRUNK_STRETCH_REACH, position.y))
+    leg = min(LEG_STRETCH_TOP, max(LEG_STRETCH_FLOOR, position.z))
+
+    return Vector((position.x, position.y + trunk * (TRUNK_STRETCH - 1.0), position.z + (leg - LEG_STRETCH_FLOOR) * (LEG_STRETCH - 1.0)))
+
+
+def stretch_proportions(armature, mesh_objects: list, marker_names: list) -> None:
+    """The pack horse is short in the leg and in the back; the mula stands tall. Stretch skin, bones and fire
+    markers. The leg bones keep their animated rotations, so the longer legs reach further than the pack's foot
+    bones were keyed for: each foot bone now follows the tip of its leg."""
+    markers = {name: bpy.data.objects[name].matrix_world.translation.copy() for name in marker_names}
+
+    for mesh_object in mesh_objects:
+        for vertex in mesh_object.data.vertices:
+            vertex.co = stretched(vertex.co)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = armature
+    armature.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+
+    for bone in armature.data.edit_bones:
+        bone.head = stretched(bone.head)
+        bone.tail = stretched(bone.tail)
+
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    for foot, leg_tip in FOOT_FOLLOWS.items():
+        follow = armature.pose.bones[foot].constraints.new("COPY_LOCATION")
+        follow.target = armature
+        follow.subtarget = leg_tip
+
+    bpy.context.view_layer.update()
+
+    for name, position in markers.items():
+        bpy.data.objects[name].matrix_world = armature.matrix_world @ Matrix.Translation(stretched(position))
+
+
 def scale_to_withers(mesh_object) -> float:
     """Hang everything under a scaled root (the FBX actions animate the armature object, so it cannot be scaled)."""
     group_names = {group.index: group.name for group in mesh_object.vertex_groups}
@@ -1075,6 +1132,7 @@ def build(source: Path) -> dict:
     mesh_object.name = "Mula"
 
     actions = rename_actions()
+    stretch_proportions(armature, [mesh_object, veins, chains, flames], fire_markers)
     factor = scale_to_withers(mesh_object)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(OUTPUT), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_yup=True,
