@@ -51,34 +51,36 @@ HAIR_MATERIAL_INDEX = 1  # material escuro do pacote: crina, rabo e cascos
 HAIR_FLOOR = 1.0  # unidades do pacote (~3,4 por metro); faces escuras acima disto são crina/rabo
 HOOF_BLEND = 0.25  # faixa em que o casco em brasa vira couro
 TEXTURE_SIZE = 2048
-HIDE_GLOW_STRENGTH = 0.8
-FIBRE_DENSITY = 13.0  # fibras de músculo por unidade, atravessando a fibra
+HIDE_GLOW_STRENGTH = 2.0
+HIDE_HALO = 0.3  # quanto do brilho das veias vaza para o couro em volta
+FIBRE_DENSITY = 6.0  # fibras de músculo por unidade, atravessando a fibra
 NECK_FIBRE_TILT = math.radians(-23.0)  # o pescoço sobe inclinado para a frente: as fibras acompanham
 
 VEIN_SEED = 11
 VEIN_ROOTS = 9  # troncos que nascem na borda do toco
-VEIN_TIPS = 70  # pontas espalhadas pelo corpo
-VEIN_FRONT_DENSITY = 4.0  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
+VEIN_TIPS = 60  # pontas espalhadas pelo corpo
+VEIN_FRONT_DENSITY = 6.0  # pescoço, peito e ombros (Y < VEIN_FRONT_END) têm mais pontas que o resto
 VEIN_FRONT_END = -0.9
-VEIN_SHIN_TIPS = 14  # pontas extras nas canelas e cascos
+VEIN_SHIN_TIPS = 8  # pontas extras nas canelas e cascos
 VEIN_SHIN_TOP = 1.6
 VEIN_BRIDGES = 12  # pontas que alcançam um vaso vizinho e fecham a teia
 VEIN_BRIDGE_REACH = 9  # arestas que uma ponte pode atravessar
 VEIN_GROOVE_PULL = 4.0  # quanto o sulco entre músculos barateia o caminho
-VEIN_WEB_REACH = 4.6  # até esta distância do toco (pela pele) os vasos fecham células poligonais
+VEIN_WEB_REACH = 4.0  # até esta distância do toco (pela pele) os vasos fecham células poligonais
 VEIN_WEB_SPACING = 1.0  # distância entre os nós da teia
 VEIN_WEB_LINKS = 3  # vizinhos a que cada nó se liga
 VEIN_WEB_DETOUR = 2.4  # caminho mais longo que isto vezes a reta entre dois nós não vira vaso
 VEIN_WEB_THICKNESS = (1.0, 0.4)  # grossura dos vasos da teia: junto ao toco, no fim do alcance
 VEIN_TIP_RADIUS = 0.008
-VEIN_TRUNK_RADIUS = 0.075
+VEIN_TRUNK_RADIUS = 0.078
 VEIN_TRUNK_FLOW = 30.0  # ramos alimentados a partir dos quais o vaso já é tronco
 VEIN_SIDES = 6
+VEIN_SINK = 0.3  # fração do raio que o vaso afunda no couro: fica rente, como fenda de lava, não como cano
 
-LINK_RADIUS = 0.14
-LINK_WIRE = 0.046
+LINK_RADIUS = 0.15
+LINK_WIRE = 0.05
 LINK_STRETCH = 1.5
-LINK_SPACING = 0.32
+LINK_SPACING = 0.35
 LINK_SEGMENTS = 10
 LINK_WIRE_SIDES = 5
 HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
@@ -86,11 +88,9 @@ HOT_LINK_SHARE = 0.35  # elos dos laços que encostam em veia e ficam em brasa
 CHAIN_LOOPS = [
     (Vector((0.0, -2.75, 5.3)), Vector((0.0, -0.68, 0.74)), "Shoulders"),
     (Vector((0.0, -2.55, 4.9)), Vector((0.25, -0.9, 0.35)), "Shoulders"),
-    (Vector((0.0, -0.75, 4.4)), Vector((0.18, 1.0, 0.12)), "Torso"),
-    (Vector((0.0, 1.15, 4.8)), Vector((-0.22, 1.0, -0.15)), "Hips"),
 ]
 # (laço, eixo, sentido, elos pendurados, osso pai): o pedaço partido pende do ponto do laço mais extremo no eixo
-CHAIN_ENDS = [(0, 2, -1.0, 7, "Shoulders"), (1, 0, 1.0, 4, "Shoulders"), (2, 0, -1.0, 6, "Torso"), (3, 0, 1.0, 5, "Hips"), (2, 0, 1.0, 3, "Torso")]
+CHAIN_ENDS = [(0, 2, -1.0, 5, "Shoulders"), (1, 0, 1.0, 4, "Shoulders")]
 # Marcadores de fogo: vazios presos aos ossos, que o jogo troca pelas partículas (prefixo do nome = tipo de fogo).
 STUMP_FIRE_DEPTH = 0.22  # a labareda nasce dentro da cratera do toco
 MANE_HEIGHTS = [1.9, 1.35, 0.8, 0.25, -0.3]  # alturas no eixo do toco onde a crina de fogo pega na crista
@@ -415,7 +415,7 @@ def build_veins(mesh_object, armature, tree: dict):
         tangent = (positions[links[vertex][0]] - position).normalized()
         side = tangent.cross(normal).normalized()
         up = side.cross(tangent)
-        center = location + normal * radius * 0.3
+        center = location - normal * radius * VEIN_SINK
         weights = {element.group: element.weight for element in mesh.vertices[vertex].groups}
         ring = []
 
@@ -901,7 +901,7 @@ def build_bake_material(mesh_object) -> dict:
     neck_channels = nodes.new("ShaderNodeSeparateColor")
     links.new(neck_mask.outputs["Color"], neck_channels.inputs[0])
 
-    grain = noise(nodes, links, coordinates, 5.0, 5.0)
+    grain = noise(nodes, links, coordinates, 2.2, 1.0)
     blotch = noise(nodes, links, coordinates, 1.4, 2.0)
     # fibras de músculo: ruído esticado ao longo do corpo, das patas e do pescoço, dobrado em cristas finas
     body_fibres = noise(nodes, links, coordinates, 1.0, 4.0, (FIBRE_DENSITY, 0.9, FIBRE_DENSITY))
@@ -913,9 +913,9 @@ def build_bake_material(mesh_object) -> dict:
     crackle = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 11.0, "DISTANCE_TO_EDGE"), 14.0, clamp=True)
 
     height = math_node(nodes, links, "MULTIPLY", bulges, 0.3)
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.6))
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.1))
-    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.1))
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", ridges, 0.07))
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", crackle, 0.0))
+    height = math_node(nodes, links, "ADD", height, math_node(nodes, links, "MULTIPLY", grain, 0.0))
 
     bump = nodes.new("ShaderNodeBump")
     bump.inputs["Strength"].default_value = 1.0
@@ -926,25 +926,26 @@ def build_bake_material(mesh_object) -> dict:
 
     # couro cor de vinho queimado: fundo do sulco quase preto, crista da fibra em carne escura
     tone = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.35), math_node(nodes, links, "MULTIPLY", ridges, 0.65))
-    hide = color_ramp(nodes, links, tone, [(0.15, (0.04, 0.016, 0.016)), (0.45, (0.17, 0.055, 0.045)), (0.8, (0.4, 0.13, 0.095))])
+    hide = color_ramp(nodes, links, tone, [(0.15, (0.012, 0.006, 0.006)), (0.45, (0.05, 0.018, 0.016)), (0.8, (0.13, 0.04, 0.032))])
     hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", blotch, 0.3), hide, (0.03, 0.014, 0.014))
-    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.7), hide, (0.01, 0.006, 0.006))
-    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.45), hide, (0.32, 0.02, 0.008))
+    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", math_node(nodes, links, "SUBTRACT", 1.0, crackle), 0.0), hide, (0.01, 0.006, 0.006))
+    hide = mix(nodes, links, math_node(nodes, links, "MULTIPLY", vein_glow, 0.2), hide, (0.32, 0.02, 0.008))
     is_ember = math_node(nodes, links, "GREATER_THAN", ember, 0.05)
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
     # carne úmida: brilha mais na crista da fibra, fosca no sulco carbonizado
-    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.24, clamp=True)
-    roughness_value.node.inputs[2].default_value = 0.52
+    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.2, clamp=True)
+    roughness_value.node.inputs[2].default_value = 0.42
     combine = nodes.new("ShaderNodeCombineColor")
     links.new(roughness_value, combine.inputs[1])
 
-    hide_glow = math_node(nodes, links, "MULTIPLY", vein_glow, math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", grain, 0.6), 0.5))
+    hide_glow = math_node(nodes, links, "MULTIPLY", vein_glow, HIDE_HALO)  # só as veias brilham: o couro guarda um halo fraco
     ember_cracks = math_node(nodes, links, "SUBTRACT", 1.0, math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 6.0, "DISTANCE_TO_EDGE"), 7.0, clamp=True))
     ember_glow = math_node(nodes, links, "ADD", math_node(nodes, links, "MULTIPLY", ember, 0.45), math_node(nodes, links, "MULTIPLY", ember_cracks, 0.55), clamp=True)
     hoof_cracks = math_node(nodes, links, "MULTIPLY", voronoi(nodes, links, coordinates, 5.0, "DISTANCE_TO_EDGE"), 9.0, clamp=True)
-    hoof_glow = math_node(nodes, links, "MULTIPLY", hoof, math_node(nodes, links, "MULTIPLY_ADD", math_node(nodes, links, "SUBTRACT", 1.0, hoof_cracks), 0.62))
-    hoof_glow.node.inputs[2].default_value = 0.3
+    # casco de lava: todo derretido e claro, com placas de crosta um pouco mais escuras entre as fendas
+    hoof_glow = math_node(nodes, links, "MULTIPLY", hoof, math_node(nodes, links, "MULTIPLY_ADD", math_node(nodes, links, "SUBTRACT", 1.0, hoof_cracks), 0.12))
+    hoof_glow.node.inputs[2].default_value = 0.88
     hide_glow = math_node(nodes, links, "MAXIMUM", hide_glow, hoof_glow)
     glow = color_ramp(nodes, links, mix(nodes, links, is_ember, hide_glow, ember_glow),
                       [(0.0, (0.0, 0.0, 0.0)), (0.45, (0.1, 0.003, 0.0)), (0.8, (0.5, 0.05, 0.004)), (1.0, (1.0, 0.4, 0.07))])

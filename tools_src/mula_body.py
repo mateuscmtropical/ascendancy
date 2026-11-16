@@ -15,19 +15,19 @@ from mathutils import Vector, noise
 from mathutils.bvhtree import BVHTree
 from mathutils.interpolate import poly_3d_calc
 
-VOXEL_SIZE = 0.055
+VOXEL_SIZE = 0.045
 HOOF_TOP = 0.42
-MASS_RELAX = [(HOOF_TOP, 3), (2.4, 5), (3.1, 8)]  # (acima de Z, passadas): o tronco derrete mais que as patas
+MASS_RELAX = [(HOOF_TOP, 2), (2.4, 2), (3.1, 3)]  # (acima de Z, passadas): o tronco derrete mais que as patas
 RELIEF_RELAX = [(HOOF_TOP, 2)]
 SKIN_NOISE = 0.02  # ondulação orgânica da pele depois do remesh
 STUMP_SEGMENTS = 40
-STUMP_RADII = (0.8, 0.72)  # meia largura (X) e meia espessura da boca do toco
+STUMP_RADII = (0.98, 1.02)  # meia largura (X) e meia espessura da boca do toco
 STUMP_WALL = 0.74  # fração do raio onde começa a parede do toco
 STUMP_PIT_DEPTH = 0.42
-STUMP_JAGS = (-0.08, -0.03, 0.0, 0.0, 0.04, 0.09, 0.16)  # lascas da borda, sorteadas por gomo
+STUMP_JAGS = (-0.13, -0.06, -0.02, 0.0, 0.05, 0.1, 0.18)  # lascas da borda, sorteadas por gomo
 STUMP_SEED = 7
 GIRTH_BOTTOM, GIRTH_TOP, TORSO_GIRTH = 2.2, 3.4, 1.05  # o tronco alarga acima das patas (ossos das patas não mudam)
-GAME_VERTICES = 15000
+GAME_VERTICES = 30000
 CUT_TOLERANCE = 0.035
 EMBER_RIM_HEAT = 0.3
 GROUND_CLEARANCE = 0.03  # sola do casco chata
@@ -36,8 +36,8 @@ GROUND_CLEARANCE = 0.03  # sola do casco chata
 # Os volumes grandes dão a massa; os músculos ficam por cima, saltando só um pouco, para a junção virar sulco.
 MUSCLES = [
     # tronco
-    ((0.0, -1.6, 4.35), (0.0, 1.5, 4.82), 1.3, 0.7, (1.0, 1.0, 1.0)),  # barril das costelas até o flanco: barriga recolhida
-    ((0.0, -2.4, 4.35), (0.0, -1.9, 4.3), 1.3, 1.36, (1.08, 1.0, 1.06)),  # peito fundo e largo
+    ((0.0, -1.6, 4.35), (0.0, 1.5, 4.72), 1.46, 0.92, (1.0, 1.0, 1.0)),  # barril das costelas até o flanco: barriga recolhida
+    ((0.0, -2.4, 4.35), (0.0, -1.9, 4.3), 1.46, 1.54, (1.08, 1.0, 1.06)),  # peito fundo e largo
     ((0.5, 0.7, 4.85), (0.75, 1.6, 4.75), 0.6, 0.62, (0.8, 1.0, 1.0)),  # flanco, do barril à coxa
     ((0.0, 1.9, 4.72), (0.0, 2.5, 4.5), 1.0, 0.78, (1.0, 1.0, 1.0)),  # garupa
     ((0.0, -2.1, 5.42), (0.0, -1.0, 5.3), 0.66, 0.42, (0.75, 1.0, 1.0)),  # cernelha
@@ -45,47 +45,47 @@ MUSCLES = [
     ((0.0, 0.5, 5.12), (0.0, 1.9, 5.3), 0.34, 0.38, (0.9, 1.0, 1.0)),  # e sobe para a garupa
     ((0.0, 2.75, 4.95), (0.0, 3.1, 4.8), 0.2, 0.13, (1.0, 1.0, 1.0)),  # sabugo do rabo
     # ombro e peito
-    ((0.86, -1.45, 5.05), (1.06, -2.45, 3.8), 0.7, 0.74, (0.62, 1.0, 1.0)),  # escápula
-    ((1.04, -1.15, 4.4), (1.0, -1.65, 3.4), 0.6, 0.46, (0.62, 1.0, 1.0)),  # tríceps
+    ((0.84, -1.45, 5.0), (1.02, -2.4, 3.9), 0.8, 0.96, (0.82, 1.0, 1.0)),  # escápula: globo da espádua
+    ((1.02, -1.1, 4.4), (1.0, -1.6, 3.45), 0.62, 0.5, (0.78, 1.0, 1.0)),  # tríceps
     ((1.06, -2.6, 3.9), (0.95, -2.05, 3.3), 0.5, 0.44, (0.85, 1.0, 1.0)),  # ponta do ombro e braço
-    ((0.46, -3.1, 4.3), (0.5, -2.65, 3.45), 0.64, 0.44, (1.0, 0.9, 1.0)),  # peitoral
+    ((0.5, -3.1, 4.3), (0.52, -2.65, 3.45), 0.7, 0.48, (1.0, 0.9, 1.0)),  # peitoral
     # pata dianteira
-    ((0.9, -1.9, 3.3), (0.87, -2.06, 1.9), 0.46, 0.2, (0.85, 1.0, 1.0)),  # antebraço
+    ((0.92, -1.9, 3.3), (0.87, -2.06, 1.9), 0.58, 0.2, (0.9, 1.0, 1.0)),  # antebraço grosso que afina até o joelho
     ((1.0, -2.2, 3.0), (0.93, -2.16, 2.2), 0.24, 0.12, (0.8, 1.0, 1.0)),  # extensor
     ((0.86, -1.66, 3.0), (0.86, -1.9, 2.1), 0.24, 0.11, (0.8, 1.0, 1.0)),  # flexor
-    ((0.87, -2.1, 1.76), (0.87, -2.08, 1.6), 0.27, 0.24, (0.9, 1.0, 1.0)),  # joelho
-    ((0.87, -2.02, 1.55), (0.87, -1.99, 0.74), 0.15, 0.14, (0.95, 1.0, 1.0)),  # canela
+    ((0.87, -2.12, 1.78), (0.87, -2.1, 1.6), 0.31, 0.27, (0.95, 1.0, 1.0)),  # joelho ossudo
+    ((0.87, -2.02, 1.55), (0.87, -1.99, 0.74), 0.14, 0.13, (0.95, 1.0, 1.0)),  # canela
     ((0.87, -1.86, 1.5), (0.87, -1.84, 0.78), 0.08, 0.08, (1.0, 1.0, 1.0)),  # tendão
-    ((0.87, -1.95, 0.68), (0.87, -1.93, 0.64), 0.23, 0.23, (0.92, 1.0, 1.0)),  # boleto
+    ((0.87, -1.95, 0.68), (0.87, -1.93, 0.64), 0.26, 0.26, (0.95, 1.0, 1.0)),  # boleto
     ((0.87, -1.99, 0.6), (0.87, -2.13, 0.42), 0.19, 0.22, (1.0, 1.0, 1.0)),  # quartela
     ((0.87, -2.1, 0.4), (0.87, -2.18, 0.1), 0.26, 0.37, (1.0, 1.1, 0.3)),  # casco
     # anca e coxa
-    ((0.68, 1.45, 5.0), (0.85, 2.3, 4.5), 0.72, 0.7, (0.8, 1.0, 1.0)),  # glúteo
+    ((0.62, 1.5, 4.95), (0.8, 2.3, 4.45), 0.9, 0.86, (0.95, 1.0, 1.0)),  # glúteo: um globo de cada lado da garupa
     ((0.95, 1.1, 5.1), (0.95, 1.1, 5.1), 0.3, 0.3, (1.0, 1.0, 0.8)),  # ponta da anca
-    ((0.95, 1.65, 4.3), (0.92, 1.75, 3.35), 0.7, 0.46, (0.7, 1.0, 1.0)),  # quadríceps
+    ((0.95, 1.65, 4.3), (0.92, 1.75, 3.35), 0.86, 0.56, (0.85, 1.0, 1.0)),  # quadríceps
     ((0.8, 2.65, 4.5), (0.78, 2.75, 3.2), 0.56, 0.33, (0.8, 1.0, 1.0)),  # posterior da coxa
     ((0.9, 1.55, 3.25), (0.9, 1.55, 3.2), 0.34, 0.34, (0.85, 1.0, 1.0)),  # soldra
     # pata traseira
-    ((0.8, 2.15, 3.2), (0.75, 2.78, 2.42), 0.46, 0.2, (0.8, 1.0, 1.0)),  # perna
+    ((0.8, 2.15, 3.2), (0.75, 2.78, 2.42), 0.62, 0.22, (0.88, 1.0, 1.0)),  # perna
     ((0.75, 2.62, 3.05), (0.75, 3.0, 2.5), 0.16, 0.11, (1.0, 1.0, 1.0)),  # tendão do jarrete
-    ((0.75, 2.84, 2.3), (0.75, 2.8, 2.14), 0.28, 0.24, (0.85, 1.0, 1.0)),  # jarrete
+    ((0.75, 2.84, 2.3), (0.75, 2.8, 2.14), 0.31, 0.26, (0.9, 1.0, 1.0)),  # jarrete
     ((0.75, 3.05, 2.46), (0.75, 3.03, 2.4), 0.14, 0.14, (1.0, 1.0, 1.0)),  # ponta do jarrete
-    ((0.75, 2.78, 2.1), (0.75, 2.66, 0.74), 0.16, 0.14, (0.95, 1.0, 1.0)),  # canela
+    ((0.75, 2.78, 2.1), (0.75, 2.66, 0.74), 0.15, 0.13, (0.95, 1.0, 1.0)),  # canela
     ((0.75, 2.92, 2.05), (0.75, 2.8, 0.78), 0.08, 0.08, (1.0, 1.0, 1.0)),  # tendão
-    ((0.75, 2.69, 0.68), (0.75, 2.7, 0.64), 0.23, 0.23, (0.92, 1.0, 1.0)),  # boleto
+    ((0.75, 2.69, 0.68), (0.75, 2.7, 0.64), 0.26, 0.26, (0.95, 1.0, 1.0)),  # boleto
     ((0.75, 2.64, 0.6), (0.75, 2.5, 0.42), 0.19, 0.22, (1.0, 1.0, 1.0)),  # quartela
     ((0.75, 2.53, 0.4), (0.75, 2.45, 0.1), 0.26, 0.37, (1.0, 1.1, 0.3)),  # casco
     # pescoço: cone grosso e mais em pé que o osso Neck, da cernelha e do peito até acima do corte
-    ((0.0, -2.0, 4.6), (0.0, -3.5, 7.85), 1.42, 0.6, (0.9, 1.0, 1.0)),  # coluna do pescoço: cone largo na base
-    ((0.0, -1.5, 5.3), (0.0, -3.15, 7.9), 0.42, 0.18, (0.6, 1.0, 1.0)),  # crista
-    ((0.0, -3.0, 4.6), (0.0, -3.85, 7.7), 0.4, 0.18, (1.0, 1.0, 1.0)),  # traqueia
-    ((0.9, -2.5, 4.5), (0.36, -3.6, 7.7), 0.34, 0.16, (1.0, 1.0, 1.0)),  # braquiocefálico
-    ((0.72, -1.9, 5.1), (0.32, -3.3, 7.85), 0.34, 0.16, (1.0, 1.0, 1.0)),  # esplênio
+    ((0.0, -2.05, 4.6), (0.0, -2.8, 7.9), 1.45, 0.98, (0.92, 1.0, 1.0)),  # coluna do pescoço: tronco grosso, quase a prumo
+    ((0.0, -1.3, 5.3), (0.0, -1.95, 7.9), 0.42, 0.2, (0.6, 1.0, 1.0)),  # crista
+    ((0.0, -3.1, 4.6), (0.0, -3.6, 7.85), 0.42, 0.22, (1.0, 1.0, 1.0)),  # traqueia
+    ((1.0, -2.5, 4.5), (0.62, -3.1, 7.85), 0.4, 0.22, (1.0, 1.0, 1.0)),  # braquiocefálico
+    ((0.8, -1.8, 5.1), (0.6, -2.4, 7.9), 0.4, 0.22, (1.0, 1.0, 1.0)),  # esplênio
 ]
 # Eixo do toco: da base do pescoço esculpido até a boca do corte (o pescoço da mula é mais longo e mais em pé que o
 # do cavalo do pacote; a pele continua seguindo o osso Neck pelos pesos).
 NECK_BASE = (0.0, -2.4, 5.2)
-NECK_MOUTH = (0.0, -3.32, 7.25)
+NECK_MOUTH = (0.0, -2.75, 7.35)
 RIB_STARTS = [-0.85, -0.45, -0.05, 0.35, 0.75, 1.15]  # Y do alto de cada costela aparente
 RIB_HEIGHTS = [(5.0, 0.0), (4.4, 0.12), (3.8, 0.34)]  # (Z, recuo em Y) dos três pontos de cada costela
 RIB_RADIUS = 0.1

@@ -23,7 +23,8 @@ const FIRE_TEMPLATE_BY_MARKER_KIND: Dictionary[String, String] = {
 	"FireTail": "TailFire",
 	"FireHoof": "HoofFire",
 }
-const CHAIN_BONES: Array[String] = ["Chain1", "Chain2", "Chain3", "Chain4", "Chain5"]
+## Ossos das pontas de corrente partida (quantos houver: o gerador decide).
+const CHAIN_BONE_PREFIX: String = "Chain"
 ## Balanço das correntes (radianos) conforme o passo.
 const CHAIN_SWAY_BY_ANIMATION: Dictionary[StringName, float] = {
 	IDLE_ANIMATION: 0.07,
@@ -44,6 +45,19 @@ const BURN_BY_ANIMATION: Dictionary[StringName, float] = {DEATH_ANIMATION: 0.0}
 const BURN_FADE_SECONDS: float = 1.6
 ## Morta, a lava das veias ainda fica em brasa fraca.
 const VEIN_BURN_WHEN_DEAD: float = 0.18
+## Pegadas: o casco "pisa" quando o marcador desce abaixo de HOOF_CONTACT_HEIGHT (metros acima
+## do chão da mula) e só pisa de novo depois de subir acima de HOOF_LIFT_HEIGHT.
+const HOOF_MARKER_PATTERN: String = "FireHoof*"
+const STUMP_MARKER_NAME: String = "FireStump"
+const HOOF_CONTACT_HEIGHT: float = 0.1
+const HOOF_LIFT_HEIGHT: float = 0.17
+const FOOTPRINT_SIZE: float = 0.42
+const FOOTPRINT_FLAME_SHARE: float = 0.8
+## Pingos de lava do toco: de tempos em tempos uma manchinha no chão embaixo dele.
+const DRIP_STAIN_SIZE: float = 0.16
+const DRIP_STAIN_SECONDS: float = 0.4
+const DRIP_STAIN_SPREAD: float = 0.3
+const MIN_BURN_TO_MARK: float = 0.5
 
 @export var start_animation: StringName = IDLE_ANIMATION
 @export var vein_material: ShaderMaterial
@@ -58,6 +72,10 @@ var _chain_bone_indices: PackedInt32Array = PackedInt32Array()
 var _chain_rest_rotations: Array[Quaternion] = []
 var _fire_lights: Array[OmniLight3D] = []
 var _fire_light_energies: PackedFloat32Array = PackedFloat32Array()
+var _hoof_markers: Array[Node3D] = []
+var _hoof_is_down: PackedByteArray = PackedByteArray()
+var _stump_marker: Node3D
+var _seconds_to_drip_stain: float = 0.0
 
 @onready var _skeleton: Skeleton3D = $Model.find_child("Skeleton3D") as Skeleton3D
 @onready
@@ -65,6 +83,7 @@ var _animation_player: AnimationPlayer = $Model.find_child("AnimationPlayer") as
 @onready var _veins: MeshInstance3D = $Model.find_child("MulaVeins") as MeshInstance3D
 @onready var _flames: MeshInstance3D = $Model.find_child("MulaFlames") as MeshInstance3D
 @onready var _fire_templates: Node3D = $FireTemplates
+@onready var _lava_marks: LavaMarks = $LavaMarks
 
 
 func _ready() -> void:
@@ -75,6 +94,7 @@ func _ready() -> void:
 	_loop_gait_animations()
 	_hang_fire_on_markers()
 	_collect_chain_bones()
+	_collect_lava_sources()
 	play_animation(start_animation)
 
 
@@ -83,6 +103,10 @@ func _process(delta: float) -> void:
 
 	_sway_chains()
 	_flicker_lights()
+
+	if _burn > MIN_BURN_TO_MARK:
+		_leave_footprints()
+		_leave_drip_stains(delta)
 
 
 func play_animation(animation_name: StringName) -> void:
@@ -154,14 +178,12 @@ func _hang_fire_on_marker(marker: Node3D) -> void:
 
 
 func _collect_chain_bones() -> void:
-	for bone_name in CHAIN_BONES:
-		var bone_index: int = _skeleton.find_bone(bone_name)
-		var rest_rotation: Quaternion = (
-			_skeleton.get_bone_rest(bone_index).basis.get_rotation_quaternion()
-		)
-
-		_chain_bone_indices.append(bone_index)
-		_chain_rest_rotations.append(rest_rotation)
+	for bone_index in _skeleton.get_bone_count():
+		if _skeleton.get_bone_name(bone_index).begins_with(CHAIN_BONE_PREFIX):
+			_chain_bone_indices.append(bone_index)
+			_chain_rest_rotations.append(
+				_skeleton.get_bone_rest(bone_index).basis.get_rotation_quaternion()
+			)
 
 
 func _sway_chains() -> void:
@@ -189,3 +211,45 @@ func _flicker_lights() -> void:
 		_fire_lights[light_index].light_energy = (
 			_fire_light_energies[light_index] * flicker * _burn
 		)
+
+
+## Marcadores dos cascos e do toco, para as marcas de lava no chão.
+func _collect_lava_sources() -> void:
+	for marker in _skeleton.find_children(HOOF_MARKER_PATTERN, "Node3D", true, false):
+		_hoof_markers.append(marker as Node3D)
+		_hoof_is_down.append(1)
+
+	_stump_marker = _skeleton.find_child(STUMP_MARKER_NAME, true, false) as Node3D
+
+
+func _leave_footprints() -> void:
+	for hoof_index in _hoof_markers.size():
+		var hoof_position: Vector3 = _hoof_markers[hoof_index].global_position
+		var height: float = hoof_position.y - global_position.y
+		var was_down: bool = _hoof_is_down[hoof_index] == 1
+		var has_landed: bool = not was_down and height < HOOF_CONTACT_HEIGHT
+
+		if was_down and height > HOOF_LIFT_HEIGHT:
+			_hoof_is_down[hoof_index] = 0
+
+		if has_landed:
+			_hoof_is_down[hoof_index] = 1
+			_stamp_lava_under(hoof_position, FOOTPRINT_SIZE, FOOTPRINT_FLAME_SHARE)
+
+
+func _leave_drip_stains(delta: float) -> void:
+	var scatter: Vector3 = Vector3(randf() - 0.5, 0.0, randf() - 0.5) * 2.0 * DRIP_STAIN_SPREAD
+
+	_seconds_to_drip_stain -= delta
+
+	if _seconds_to_drip_stain > 0.0:
+		return
+
+	_seconds_to_drip_stain = DRIP_STAIN_SECONDS
+	_stamp_lava_under(_stump_marker.global_position + scatter, DRIP_STAIN_SIZE, 0.0)
+
+
+func _stamp_lava_under(source_position: Vector3, size: float, flame_share: float) -> void:
+	var ground_position: Vector3 = Vector3(source_position.x, global_position.y, source_position.z)
+
+	_lava_marks.stamp(ground_position, size, flame_share)
