@@ -10,8 +10,9 @@
 
 [sub_resource type="ShaderMaterial" id="vein_material"]
 shader = ExtResource("3_vein")
-shader_parameter/energy = 2.1
-shader_parameter/trunk_color = Color(1, 0.42, 0.07, 1)
+shader_parameter/energy = 1.7
+shader_parameter/trunk_color = Color(1, 0.3, 0.04, 1)
+shader_parameter/tip_color = Color(0.8, 0.07, 0.01, 1)
 
 [sub_resource type="FastNoiseLite" id="fire_noise"]
 frequency = 0.012
@@ -46,6 +47,8 @@ shader_parameter/energy = 0.9
 [sub_resource type="ShaderMaterial" id="smoke_material"]
 shader = ExtResource("5_smoke")
 shader_parameter/noise_texture = SubResource("fire_noise_texture")
+shader_parameter/smoke_color = Color(0.1, 0.095, 0.1, 1)
+shader_parameter/density = 0.75
 
 [sub_resource type="ShaderMaterial" id="spark_material"]
 shader = ExtResource("6_spark")
@@ -166,8 +169,8 @@ spread = 40.0
 initial_velocity_min = 0.4
 initial_velocity_max = 0.9
 gravity = Vector3(0, 0.9, 0)
-scale_min = 0.9
-scale_max = 1.6
+scale_min = 1.1
+scale_max = 2.0
 scale_curve = SubResource("smoke_scale")
 color_ramp = SubResource("smoke_fade")
 
@@ -204,8 +207,8 @@ flame_ribbon_material = SubResource("flame_ribbon_material")
 
 [node name="Smoke" type="GPUParticles3D" parent="FireTemplates/StumpFire"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-amount = 22
-lifetime = 2.6
+amount = 30
+lifetime = 3.2
 preprocess = 3.0
 visibility_aabb = AABB(-4, -4, -4, 8, 10, 8)
 process_material = SubResource("smoke_process")
