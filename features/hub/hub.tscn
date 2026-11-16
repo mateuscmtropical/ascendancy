@@ -1,4 +1,4 @@
-[gd_scene load_steps=163 format=3]
+[gd_scene load_steps=164 format=3]
 
 [ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
 [ext_resource type="Texture2D" path="res://art/town/textures/T_RockTrim_BaseColor.png" id="2_ext"]
@@ -121,17 +121,18 @@
 [ext_resource type="Script" path="res://features/hub/farm_animal.gd" id="119_ext"]
 [ext_resource type="PackedScene" path="res://art/town/farm/animals/cow.gltf" id="120_ext"]
 [ext_resource type="PackedScene" path="res://art/town/farm/animals/pig.gltf" id="121_ext"]
-[ext_resource type="Script" path="res://features/hub/carriage.gd" id="122_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="123_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="124_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="125_ext"]
-[ext_resource type="Script" path="res://features/hub/distance_fade.gd" id="126_ext"]
-[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="127_ext"]
-[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="128_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="129_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="130_ext"]
-[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="131_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="132_ext"]
+[ext_resource type="PackedScene" path="res://features/mobs/mula_sem_cabeca.tscn" id="122_ext"]
+[ext_resource type="Script" path="res://features/hub/carriage.gd" id="123_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="124_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="125_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="126_ext"]
+[ext_resource type="Script" path="res://features/hub/distance_fade.gd" id="127_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="128_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="129_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="130_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="131_ext"]
+[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="132_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="133_ext"]
 
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -5644,15 +5645,19 @@ wander_seed = 743114111
 body_size = Vector3(0.600, 0.800, 1.200)
 obstacles = PackedVector3Array(89.00, 35.20, 0.21)
 
+[node name="MulaSemCabeca" parent="." instance=ExtResource("122_ext")]
+position = Vector3(112.500, 0.000, 32.000)
+rotation = Vector3(0.000, 3.142, 0.000)
+
 [node name="Carriages" type="Node3D" parent="."]
 
 [node name="Carriage0" type="AnimatableBody3D" parent="Carriages"]
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("122_ext")
-wagon_scene = ExtResource("123_ext")
-horse_scene = ExtResource("124_ext")
+script = ExtResource("123_ext")
+wagon_scene = ExtResource("124_ext")
+horse_scene = ExtResource("125_ext")
 driver_body = ExtResource("110_ext")
 driver_hair_color = Color(0.320, 0.210, 0.140, 1)
 driver_seat = Vector3(0.000, 1.010, 1.300)
@@ -5664,9 +5669,9 @@ start_distance = 0.00
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("122_ext")
-wagon_scene = ExtResource("125_ext")
-horse_scene = ExtResource("124_ext")
+script = ExtResource("123_ext")
+wagon_scene = ExtResource("126_ext")
+horse_scene = ExtResource("125_ext")
 driver_body = ExtResource("112_ext")
 driver_hair_color = Color(0.080, 0.070, 0.070, 1)
 driver_seat = Vector3(0.000, 1.010, 1.300)
@@ -5677,30 +5682,30 @@ start_distance = 235.41
 [node name="DistanceFades" type="Node" parent="."]
 
 [node name="GrassTufts" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("126_ext")
+script = ExtResource("127_ext")
 target = NodePath("../../Trees")
 child_prefixes = PackedStringArray("Grass")
 range_end = 45.0
 
 [node name="SquareSmallProps" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("126_ext")
+script = ExtResource("127_ext")
 target = NodePath("../../SquareProps")
 child_prefixes = PackedStringArray("Bench", "FlowerBush", "Planter")
 range_end = 70.0
 
 [node name="MarketProps" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("126_ext")
+script = ExtResource("127_ext")
 target = NodePath("../../Market")
 child_prefixes = PackedStringArray()
 range_end = 70.0
 
 [node name="FarmFieldCrops" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("126_ext")
+script = ExtResource("127_ext")
 target = NodePath("../../Farm/FarmFields")
 child_prefixes = PackedStringArray("Crops")
 range_end = 80.0
 
-[node name="Player" parent="." instance=ExtResource("127_ext")]
+[node name="Player" parent="." instance=ExtResource("128_ext")]
 position = Vector3(-38.400, 0.000, -13.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -5710,7 +5715,7 @@ rotation = Vector3(-0.120, 1.837, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
-script = ExtResource("128_ext")
+script = ExtResource("129_ext")
 
 [node name="Key0" type="Marker3D" parent="CinematicTour"]
 position = Vector3(-90.000, 28.000, -30.000)
@@ -5740,10 +5745,10 @@ rotation = Vector3(0.114, -1.571, 0.000)
 position = Vector3(-90.000, 4.000, -57.000)
 rotation = Vector3(-0.011, -1.571, 0.000)
 
-[node name="CharacterSelect" parent="." instance=ExtResource("129_ext")]
+[node name="CharacterSelect" parent="." instance=ExtResource("130_ext")]
 
-[node name="FpsCounter" parent="." instance=ExtResource("130_ext")]
+[node name="FpsCounter" parent="." instance=ExtResource("131_ext")]
 
-[node name="SettingsMenu" parent="." instance=ExtResource("131_ext")]
+[node name="SettingsMenu" parent="." instance=ExtResource("132_ext")]
 
-[node name="HubAudio" parent="." instance=ExtResource("132_ext")]
+[node name="HubAudio" parent="." instance=ExtResource("133_ext")]
