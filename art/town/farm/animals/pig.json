@@ -3,6 +3,11 @@
  "height": 0.7,
  "scale": 0.15254,
  "animations": {
+  "Walk": "cow:Armature|Armature|WalkSlow",
   "Idle": "Armature|Armature|Idle"
+ },
+ "root_travel_in_pack": {
+  "Idle": 0.0,
+  "Walk": 0.0
  }
 }
