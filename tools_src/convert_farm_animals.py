@@ -56,13 +56,14 @@ COAT = {  # material original -> cor sRGB; os nomes do pacote não dizem nada, a
 HOOF_COLOR = {"cow": "2F2A2D", "pig": "3E2D2A", "horse": "2B2427"}
 SNOUT_COLOR = "F08C9A"  # focinho do porco
 SNOUT_SHARE = 0.17  # fração do comprimento da cabeça, a partir da ponta, que é focinho
-EYE_COLORS = {"EyeWhite": "FBF8F0", "EyePupil": "0E0D12", "EyeShine": "FFFFFF"}
+EYE_COLORS = {"EyeIris": "3B2416", "EyePupil": "0B0A0D", "EyeShine": "F4F0E8"}  # olho de bicho: castanho escuro, sem branco à vista
 
 # Olho: (y, z) do centro no espaço do esqueleto (cabeça para -Y), raio. O x vem da superfície da cabeça.
 EYE_SPOTS = {"cow": (-4.38, 4.45, 0.135), "pig": (-4.42, 2.78, 0.115), "horse": (-4.3, 5.78, 0.13)}
-EYE_PUPIL_SHARE = 0.7  # raio da pupila / raio do olho
 EYE_SURFACE_REACH = 0.4  # vértices da cabeça até esta distância (y, z) do olho dão a largura da face
-EYE_SINK = 0.8  # fração da largura da face onde fica o centro do olho (<1 afunda a esfera na cabeça)
+EYE_SINK = 0.74  # fração da largura da face onde fica o centro do olho (<1 afunda o olho na cabeça)
+EYE_SHAPE = (0.42, 1.0, 0.72)  # raios do olho / raio: achatado para fora (não salta da cabeça), amendoado ao longo da cara
+PUPIL_SHAPE = (0.16, 0.5, 0.26)  # pupila horizontal, como a de vaca, porco e cavalo
 
 MUD_COLOR = (0.28, 0.17, 0.08)  # multiplica a pele do porco onde há lama
 MUD_NOISE_SCALE = 0.55  # tamanho das manchas de lama, em unidades do esqueleto
@@ -441,7 +442,8 @@ def join_parts(body: bpy.types.Object, parts: list) -> None:
 
 
 def eye_parts(animal: str, body: bpy.types.Object, armature: bpy.types.Object) -> list:
-    """White ball + pupil + shine on each side of the head, skinned to the Head bone."""
+    """Flattened almond eye (dark iris, horizontal pupil, small shine) set into each side of the head, skinned to
+    the Head bone. Round white balls read as cartoon googly eyes stuck on the head."""
     spot_y, spot_z, radius = EYE_SPOTS[animal]
     face = [vertex.co for vertex in head_vertices(body) if abs(vertex.co.y - spot_y) < EYE_SURFACE_REACH and abs(vertex.co.z - spot_z) < EYE_SURFACE_REACH]
     half_width = max(abs(point.x) for point in face)
@@ -451,14 +453,15 @@ def eye_parts(animal: str, body: bpy.types.Object, armature: bpy.types.Object) -
     for side in (-1.0, 1.0):
         center = Vector((side * half_width * EYE_SINK, spot_y, spot_z))
         gaze = Vector((side * 0.8, -0.55, 0.0)).normalized()
-        pupil_center = center + gaze * radius * 0.38
-        shine_center = pupil_center + gaze * radius * 0.28 + Vector((0.0, -0.04, 0.5)) * radius * 0.45
+        outward = Vector((side, 0.0, 0.0))
+        pupil_center = center + outward * radius * (EYE_SHAPE[0] - PUPIL_SHAPE[0] * 0.6) + gaze * radius * 0.08
+        shine_center = center + outward * radius * EYE_SHAPE[0] * 0.92 + Vector((0.0, -0.25, 0.35)) * radius
         label = "L" if side < 0 else "R"
 
         for suffix, builder, material_name in (
-            ("ball", ball(center, (radius,) * 3), "EyeWhite"),
-            ("pupil", ball(pupil_center, (radius * EYE_PUPIL_SHARE,) * 3), "EyePupil"),
-            ("shine", ball(shine_center, (radius * 0.2,) * 3, (8, 6)), "EyeShine"),
+            ("ball", ball(center, tuple(radius * share for share in EYE_SHAPE)), "EyeIris"),
+            ("pupil", ball(pupil_center, tuple(radius * share for share in PUPIL_SHAPE)), "EyePupil"),
+            ("shine", ball(shine_center, (radius * 0.1,) * 3, (8, 6)), "EyeShine"),
         ):
             parts.append(make_part(f"Eye{label}_{suffix}", builder, "Head", materials[material_name], armature))
 
