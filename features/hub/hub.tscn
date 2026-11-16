@@ -5433,6 +5433,39 @@ activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
 
+[node name="CowOak" parent="Farm" instance=ExtResource("73_ext")]
+position = Vector3(83.000, 0.030, 13.500)
+rotation = Vector3(0.000, 58.100, 0.000)
+scale = Vector3(0.800, 0.800, 0.800)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/CowOak" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/CowOak/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_old_tree")
+
+[node name="CowBloom" parent="Farm" instance=ExtResource("77_ext")]
+position = Vector3(97.000, 0.030, 10.000)
+rotation = Vector3(0.000, 67.900, 0.000)
+scale = Vector3(0.950, 0.950, 0.950)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/CowBloom" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/CowBloom/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_tree_bloom")
+
+[node name="PigBloom" parent="Farm" instance=ExtResource("76_ext")]
+position = Vector3(89.000, 0.030, 36.500)
+rotation = Vector3(0.000, 62.300, 0.000)
+scale = Vector3(0.900, 0.900, 0.900)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/PigBloom" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/PigBloom/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_tree_bloom")
+
 [node name="FarmAnimals" type="Node3D" parent="."]
 
 [node name="Cows0" type="AnimatableBody3D" parent="FarmAnimals"]

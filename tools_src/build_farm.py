@@ -3,19 +3,21 @@
 Outputs in art/town/farm/, each with a JSON sidecar (AABB in Godot coords, doors, lights, markers):
   farmhouse.gltf    the farmer's house: stone ground storey, half-timbered loft, porch, chimney, woodpile
   barn.gltf         red board barn with stone plinth, big double doors, hayloft door and hoist beam
-  farm_yard.gltf    everything else inside the block: dirt yard and lane, kitchen garden, cow pasture with
-                    shelter, hay rack and trough, pigsty with mud and hut, well with a little roof, cart,
-                    wheelbarrow, haystacks, sacks and barrels, split-rail fences
-  farm_fields.gltf  the fields past the wall: wheat, corn, cabbage, carrots, a meadow with haystacks,
-                    scarecrows, the lane out of the gate, the stone gate posts and the outer fence
-  farm_wagon.gltf   two-wheeled covered wagon pulled by a horse along the streets (features/hub/carriage.gd)
+  farm_yard.gltf    everything else inside the block: dirt yard and wandering cart lane, kitchen garden, cow
+                    pasture with shelter, hay rack and trough, pigsty with mud and hut, well with a little roof,
+                    cart, wheelbarrow, hay bales and heaps, baskets of produce, sacks, split-rail fences
+  farm_fields.gltf  the fields past the wall: wheat, corn, cabbage, carrots, a hay field in windrows, a mown
+                    meadow, scarecrows, the lane out of the gate, footpaths, gate posts and the outer fence
+  farm_wagon.gltf   two-wheeled covered wagon pulled by a horse along the streets (features/hub/carriage.gd):
+                    shafts up to the harness rings, driver's bench (sidecar marker driver_seat)
   hay_cart.gltf     open cart heaped with hay, the other wagon of the street loop
 
 The yard and the fields are modelled in world coordinates (origin of the model = origin of the town), so the
 scene places them at (0, 0, 0) without rotation; layout numbers come from build_hub_scene.py (FARM_*). Blender
 coords: X = Godot X, Y = -Godot Z, Z up. Houses and props reuse the Builder of build_town_houses.py: textured
-world-planar UVs tinted by vertex colour. Crops are batched one mesh per colour, so a field of a thousand
-plants is a handful of objects.
+world-planar UVs tinted by vertex colour. Plants (farm_plants.py) are alpha-cut cards from one painted atlas plus
+small solids, stamped with numpy and batched one mesh per (material, tint): a field of thousands of plants is
+a handful of objects.
 
 Ground colliders are named for the footsteps (features/audio/tag_ground_surfaces.gd reads the name without its
 number): Yard<n>, Path<n> and Field<n> sound like dirt, Bed<n> like grass.
@@ -24,6 +26,8 @@ Usage:
   blender -b --factory-startup -P tools_src/build_farm.py -- [farmhouse barn farm_yard farm_fields farm_wagon hay_cart]
 """
 
+import itertools
+import json
 import math
 import random
 import sys
@@ -55,14 +59,36 @@ from build_town_houses import (  # noqa: E402
     WOOD,
     WOOD_DARK_BAND,
     WOOD_LIGHT_BAND,
+    WORLD_TILE,
     Builder,
     House,
     draw_chimney,
     draw_door,
     draw_window,
     Opening,
+    plain_material,
     srgb,
     textured_material,
+)
+from farm_plants import (  # noqa: E402
+    CARROT_ROOT,
+    MEADOW_TINTS,
+    STRAW_TINTS,
+    PlantBatch,
+    arc_path,
+    cabbage_plant,
+    carrot_plant,
+    corn_plant,
+    crop_atlas,
+    hay_texture,
+    lathe_shape,
+    ribbon,
+    spot_matrices,
+    stamp_variants,
+    transforms,
+    tuft_variants,
+    variants_of,
+    wheat_variants,
 )
 from shop_props_common import barrel, lathe, sack  # noqa: E402
 
@@ -81,25 +107,18 @@ SEED = 5150
 SOIL = "A07C55"
 SOIL_DARK = "7E5A3A"
 SOIL_PATH = "C4A57C"
-MUD = "5E4128"
+SOIL_RUT = "A08462"
+STUBBLE = "B89A5E"
 STRAW = "E3C474"
-STRAW_DARK = "C49A4C"
-WHEAT_STALK = "D9B65A"
-WHEAT_EAR = "F2D27A"
-CORN_STALK = "7FA44A"
-CORN_LEAF = "8DBA55"
-CORN_TASSEL = "E8C878"
-CORN_COB = "F2C94C"
-CABBAGE_OUTER = "5E9E4E"
-CABBAGE_HEART = "B8DB8A"
-CARROT_LEAF = "6FB45C"
-CARROT_ROOT = "E8822E"
-MEADOW = "9CC46A"
+MUD = "5E4128"
 BARN_RED = "A8473A"
 BARN_TRIM = "F2EEE6"
 FENCE_WOOD = "9A6B45"
 WATER = "5A8FA8"
 BURLAP = "C8A878"
+CROP_CARD_MATERIAL = "M_FarmCrops"
+WORLD_TILE["hay"] = 1.1  # metros por repetição da palha
+FARM_TEXTURES = {}  # pintadas uma vez por execução
 
 
 def world(x: float, z: float, y: float = 0.0) -> tuple:
@@ -152,69 +171,58 @@ def soil_texture() -> Path:
     return target
 
 
+def farm_textures() -> dict:
+    """Crop atlas and hay, painted on the first call (the same seed always writes the same files)."""
+    if not FARM_TEXTURES:
+        FARM_TEXTURES["crops"] = crop_atlas(TEXTURE_DIR, SEED)
+        FARM_TEXTURES["hay"] = hay_texture(TEXTURE_DIR, SEED + 1)
+
+    return FARM_TEXTURES
+
+
+def crop_material(atlas: Path):
+    """Alpha-cut, double-sided card material of the plants (finish_model marks it MASK in the glTF)."""
+    material = textured_material(CROP_CARD_MATERIAL, atlas, roughness=0.9)
+    nodes = material.node_tree.nodes
+    image_node = next(node for node in nodes if node.type == "TEX_IMAGE")
+
+    material.node_tree.links.new(image_node.outputs["Alpha"], nodes["Principled BSDF"].inputs["Alpha"])
+    material.use_backface_culling = False
+
+    return material
+
+
 def farm_builder(name: str) -> Builder:
-    """Builder with the town materials plus lawn (pasture, meadow) and soil (yard, fields, mud)."""
+    """Builder with the town materials plus lawn (pasture, meadow), soil (yard, fields, mud), hay and the crop
+    cards; b.plants batches the stamped plants. Farm windows have their own glass: every pane lit at night
+    (features/sky/window_glass.gd), not the town's scattering of lit and dark panes."""
     b = Builder(name)
+    textures = farm_textures()
 
     b.materials["lawn"] = textured_material("M_FarmLawn", TEXTURE_DIR / "T_Lawn_BaseColor.png", roughness=0.95)
     b.materials["soil"] = textured_material("M_FarmSoil", soil_texture(), roughness=0.95)
+    b.materials["hay"] = textured_material("M_FarmHay", textures["hay"], roughness=0.95)
+    b.materials["crops"] = crop_material(textures["crops"])
+    b.materials["glass"] = plain_material("M_FarmGlass", srgb("3A4E66"), 0.12, 0.4)
+    b.plants = PlantBatch(b, srgb)
 
     return b
 
 
-# ---------- crop batches: one bmesh per colour ----------
+def finish_model(b: Builder, name: str, sidecar: dict) -> dict:
+    """Flush the plants, export, and turn the card material into alpha-scissor (Blender writes it as BLEND)."""
+    path = FARM_DIR / f"{name}.gltf"
+    b.plants.flush()
+    result = b.finish(path, sidecar)
+    document = json.loads(path.read_text(encoding="utf-8"))
+    cards = [material for material in document["materials"] if material["name"] == CROP_CARD_MATERIAL]
 
-class CropBatch:
-    """Thousands of small plant parts merged into one mesh per colour before they reach the Builder."""
+    for material in cards:
+        material.update({"alphaMode": "MASK", "alphaCutoff": 0.5, "doubleSided": True})
 
-    def __init__(self, b: Builder) -> None:
-        self.builder = b
-        self.meshes = {}
+    path.write_text(json.dumps(document, indent=1), encoding="utf-8", newline="\n")
 
-    def _mesh(self, tint: str):
-        return self.meshes.setdefault(tint, bmesh.new())
-
-    def hull(self, points: list, tint: str, frame: Matrix) -> None:
-        part = bmesh.new()
-        vertices = [part.verts.new(frame @ Vector(point)) for point in points]
-        result = bmesh.ops.convex_hull(part, input=vertices)
-        bmesh.ops.delete(part, geom=result["geom_interior"] + result["geom_unused"], context="VERTS")
-        self._absorb(part, tint)
-
-    def cylinder(self, base: tuple, radius: float, height: float, sides: int, tint: str, frame: Matrix, top_radius: float = None) -> None:
-        part = bmesh.new()
-        bmesh.ops.create_cone(part, cap_ends=True, segments=sides, radius1=radius, radius2=radius if top_radius is None else top_radius, depth=height)
-        bmesh.ops.translate(part, vec=(0.0, 0.0, height / 2.0), verts=part.verts)
-        bmesh.ops.transform(part, matrix=frame @ Matrix.Translation(base), verts=part.verts)
-        self._absorb(part, tint)
-
-    def ball(self, center: tuple, radius: float, tint: str, frame: Matrix, scale: tuple = (1.0, 1.0, 1.0), segments: int = 6) -> None:
-        part = bmesh.new()
-        bmesh.ops.create_uvsphere(part, u_segments=segments, v_segments=max(3, segments // 2 + 1), radius=radius)
-        bmesh.ops.scale(part, vec=scale, verts=part.verts)
-        bmesh.ops.transform(part, matrix=frame @ Matrix.Translation(center), verts=part.verts)
-        self._absorb(part, tint)
-
-    def _absorb(self, part, tint: str) -> None:
-        mesh_data = bpy.data.meshes.new("CropPart")
-        part.to_mesh(mesh_data)
-        part.free()
-        self._mesh(tint).from_mesh(mesh_data)
-        bpy.data.meshes.remove(mesh_data)
-
-    def flush(self, material: str = "paint") -> None:
-        for tint, mesh in self.meshes.items():
-            self.builder._link(mesh, material, srgb(tint), None, Matrix.Identity(4))
-
-        self.meshes = {}
-
-
-def blade(batch: CropBatch, frame: Matrix, length: float, width: float, yaw_degrees: float, lean_degrees: float, tint: str) -> None:
-    """Thin pointed blade (wheat stalk, corn or carrot leaf): a flat diamond with a little thickness."""
-    turn = frame @ Matrix.Rotation(math.radians(yaw_degrees), 4, "Z") @ Matrix.Rotation(math.radians(lean_degrees), 4, "X")
-    points = [(-width / 2.0, 0.0, 0.0), (width / 2.0, 0.0, 0.0), (0.0, -0.012, length * 0.45), (0.0, 0.012, length * 0.45), (0.0, 0.0, length)]
-
-    batch.hull(points, tint, turn)
+    return result
 
 
 # ---------- generic farm pieces ----------
@@ -301,37 +309,275 @@ def rectangle_loop(rectangle: tuple) -> list:
     return [(min_x, min_z), (max_x, min_z), (max_x, max_z), (min_x, max_z), (min_x, min_z)]
 
 
-def haystack(b: Builder, frame: Matrix, radius: float, height: float, seed: int) -> None:
-    """Round medieval haystack: a straw dome around a pole, with a lighter cap and a few loose wisps."""
+# ---------- dirt tracks ----------
+
+def ground_strip(b: Builder, left, right, height: float, material: str, tint: str) -> None:
+    """Flat ribbon of ground between two edges given as world (x, z) points."""
+    strip = bmesh.new()
+    left_vertices = [strip.verts.new(world(x, z, height)) for x, z in left]
+    right_vertices = [strip.verts.new(world(x, z, height)) for x, z in right]
+
+    for index in range(len(left_vertices) - 1):
+        strip.faces.new((left_vertices[index], right_vertices[index], right_vertices[index + 1], left_vertices[index + 1]))
+
+    b._link(strip, material, srgb(tint), None, Matrix.Identity(4))
+
+
+def smooth_path(points: list, spacing: float = 1.0) -> tuple:
+    """Round the corners of a polyline (corner cutting) and walk it at even steps: (centres, unit normals)."""
+    path = numpy.array(points, dtype=float)
+
+    for _ in range(3):
+        cut = numpy.stack([path[:-1] * 0.75 + path[1:] * 0.25, path[:-1] * 0.25 + path[1:] * 0.75], axis=1).reshape(-1, 2)
+        path = numpy.concatenate([path[:1], cut, path[-1:]])
+
+    travelled = numpy.concatenate([[0.0], numpy.cumsum(numpy.linalg.norm(numpy.diff(path, axis=0), axis=1))])
+    stations = numpy.linspace(0.0, travelled[-1], int(travelled[-1] / spacing) + 1)
+    centers = numpy.stack([numpy.interp(stations, travelled, path[:, 0]), numpy.interp(stations, travelled, path[:, 1])], axis=1)
+    tangent = numpy.gradient(centers, axis=0)
+    normals = numpy.stack([-tangent[:, 1], tangent[:, 0]], axis=1)
+
+    return centers, normals / numpy.linalg.norm(normals, axis=1, keepdims=True)
+
+
+def dirt_track(b: Builder, points: list, ground: float, seed: int, half_width: float = 1.9, cart_ruts: bool = True) -> None:
+    """Worn farm track: wandering centre line, ragged edges of uneven width and, for a cart track, two darker
+    wheel ruts with a strip of grass surviving between them in stretches. Tufts of grass creep in at the edges."""
+    generator = numpy.random.default_rng(seed)
+    tuft_generator = random.Random(seed)
+    centers, normals = smooth_path(points)
+    along = numpy.arange(len(centers), dtype=float)
+
+    def wobble(amplitude: float) -> numpy.ndarray:
+        phases = generator.uniform(0.0, 2.0 * math.pi, 3)
+
+        return amplitude * (0.5 * numpy.sin(along * 0.23 + phases[0]) + 0.3 * numpy.sin(along * 0.61 + phases[1]) + 0.2 * numpy.sin(along * 1.37 + phases[2]))
+
+    def edge(distance: numpy.ndarray) -> numpy.ndarray:
+        return centers + normals * distance[:, None]
+
+    left = half_width * (1.0 + wobble(0.3)) + generator.normal(0.0, 0.05, len(along))
+    right = half_width * (1.0 + wobble(0.3)) + generator.normal(0.0, 0.05, len(along))
+    border = numpy.concatenate([edge(left + 0.1)[::3], edge(-right - 0.1)[::3]])
+
+    ground_strip(b, edge(left), edge(-right), ground, "soil", SOIL_PATH)
+    stamp_variants(b.plants, tuft_variants(MEADOW_TINTS, 0.42, 0.3), spot_matrices([tuple(spot) for spot in border], ground, tuft_generator, (0.6, 1.2)), tuft_generator)
+
+    if not cart_ruts:
+        return
+
+    for side in (-1.0, 1.0):
+        middle, half_rut = side * 0.66 + wobble(0.1), 0.17 + wobble(0.06)
+        ground_strip(b, edge(middle + half_rut), edge(middle - half_rut), ground + 0.008, "soil", SOIL_RUT)
+
+    is_grassy = wobble(1.0) > -0.12
+    runs = numpy.flatnonzero(numpy.diff(numpy.concatenate([[0], is_grassy.astype(int), [0]]))).reshape(-1, 2)
+    crown_middle, crown_half = wobble(0.08), 0.24 + wobble(0.1)
+
+    for start, end in runs[(runs[:, 1] - runs[:, 0]) > 3]:
+        taper = numpy.pad(numpy.sin(numpy.linspace(0.0, math.pi, end - start)) ** 0.5, (start, len(along) - end))
+        crown_spots = [tuple(spot) for spot in edge(crown_middle)[start + 1:end - 1]]
+
+        ground_strip(b, edge(crown_middle + crown_half * taper)[start:end], edge(crown_middle - crown_half * taper)[start:end], ground + 0.01, "lawn", "FFFFFF")
+        stamp_variants(b.plants, tuft_variants(MEADOW_TINTS, 0.4, 0.26), spot_matrices(crown_spots, ground, tuft_generator, (0.6, 1.1)), tuft_generator)
+
+
+# ---------- hay ----------
+
+def lumpy_mound(b: Builder, frame: Matrix, radii: tuple, height: float, seed: int, material: str = "hay", tint: str = "FFFFFF", sides: int = 12) -> None:
+    """Irregular heap (loose hay, a load on a cart): rings of uneven radius closing on a peak."""
+    generator = numpy.random.default_rng(seed)
+    shares, levels = numpy.array([1.0, 1.03, 0.9, 0.68, 0.4]), numpy.array([0.0, 0.2, 0.46, 0.7, 0.9])
+    angles = 2.0 * math.pi * numpy.arange(sides) / sides
+    reach = shares[:, None] * generator.uniform(0.86, 1.1, (len(shares), sides))
+    points = numpy.stack([radii[0] * reach * numpy.cos(angles), radii[1] * reach * numpy.sin(angles), height * levels[:, None] * generator.uniform(0.9, 1.1, (len(shares), sides))], axis=-1)
+    points[0, :, 2] = 0.0
+    mound = bmesh.new()
+    vertices = [mound.verts.new(point) for point in points.reshape(-1, 3)]
+    peak = mound.verts.new((0.0, 0.0, height))
+
+    for ring, step in itertools.product(range(len(shares) - 1), range(sides)):
+        lower, lower_next = ring * sides + step, ring * sides + (step + 1) % sides
+        mound.faces.new((vertices[lower], vertices[lower_next], vertices[lower_next + sides], vertices[lower + sides]))
+
+    for step in range(sides):
+        mound.faces.new((vertices[-sides + step], vertices[-sides + (step + 1) % sides], peak))
+
+    for face in mound.faces:
+        face.smooth = True
+
+    b._link(mound, material, srgb(tint), None, frame)
+
+
+def straw_tufts(b: Builder, frame: Matrix, radii: tuple, height: float, count: int, seed: int) -> None:
+    """Wisps of straw hanging off a heap: tuft cards laid outward and down over its surface."""
     generator = random.Random(seed)
-    profile = [(radius, 0.0), (radius * 1.04, height * 0.2), (radius * 0.96, height * 0.45), (radius * 0.72, height * 0.7), (radius * 0.38, height * 0.9), (0.08, height)]
+    angles = [generator.uniform(0.0, 2.0 * math.pi) for _ in range(count)]
+    levels = [generator.uniform(0.05, 0.92) for _ in range(count)]
+    points = [(radii[0] * (1.0 - level ** 1.7) * math.cos(angle), radii[1] * (1.0 - level ** 1.7) * math.sin(angle), height * level + 0.04) for angle, level in zip(angles, levels)]
+    yaws = [math.degrees(angle) + 90.0 + generator.uniform(-35.0, 35.0) for angle in angles]
+    tilts = [generator.uniform(60.0, 125.0) for _ in range(count)]
+    scales = [generator.uniform(0.6, 1.15) for _ in range(count)]
 
-    lathe(b, profile, 12, "paint", STRAW_DARK, frame)
-    lathe(b, [(radius * 0.74, height * 0.7), (radius * 0.4, height * 0.9), (0.09, height + 0.04)], 12, "paint", STRAW, frame)
-    b.cylinder((0.0, 0.0, height - 0.1), 0.05, 0.6, 6, "wood", srgb(WOOD["escura"]), frame=frame)
-
-    for _ in range(6):
-        angle = generator.uniform(0.0, 2.0 * math.pi)
-        wisp_base = (math.cos(angle) * radius * 0.95, math.sin(angle) * radius * 0.95, generator.uniform(0.0, height * 0.3))
-        b.hull([wisp_base, (wisp_base[0] * 1.08, wisp_base[1] * 1.08, 0.0), (wisp_base[0] * 1.04, wisp_base[1] * 1.04, wisp_base[2] + 0.12), (wisp_base[0] * 1.02, wisp_base[1] * 1.02 + 0.05, 0.02)], "paint", srgb(STRAW), frame=frame)
-
-    b.collider((-radius * 0.8, -radius * 0.8, 0.0), (radius * 0.8, radius * 0.8, height * 0.8), frame=frame)
+    stamp_variants(b.plants, tuft_variants(STRAW_TINTS, 0.5, 0.42), transforms(points, yaws, tilts, scales), generator, frame)
 
 
 def hay_pile(b: Builder, frame: Matrix, size: tuple, seed: int) -> None:
-    """Loose heap of hay: overlapping squashed lumps."""
+    """Loose heap of hay (width, depth, height) bristling with straw."""
+    radii = (size[0] / 2.0, size[1] / 2.0)
+
+    lumpy_mound(b, frame, radii, size[2], seed)
+    straw_tufts(b, frame, radii, size[2], int(14 * size[0] * size[1]) + 6, seed)
+
+
+def pitchfork(b: Builder, frame: Matrix) -> None:
+    """Hay fork with the tines at the local origin and the handle up local Z."""
+    iron = srgb("4A4448")
+
+    b.cylinder((0.0, 0.0, 0.32), 0.018, 1.25, 6, "wood", srgb(WOOD["mel"]), frame=frame)
+    b.cylinder((0.0, 0.0, 0.26), 0.024, 0.1, 6, "metal", iron, frame=frame)
+    b.beam((-0.1, 0.0, 0.27), (0.1, 0.0, 0.27), 0.02, 0.02, "metal", iron, frame=frame, uv=None)
+
+    for tine in (-0.1, 0.0, 0.1):
+        b.beam((tine, 0.0, 0.27), (tine, 0.03, 0.0), 0.016, 0.016, "metal", iron, frame=frame, uv=None)
+
+
+def haycock(b: Builder, frame: Matrix, radius: float, height: float, seed: int, fork: bool = False) -> None:
+    """Heap of loose hay raked up to dry: lumpy, wider than tall, shaggy with straw; sometimes a fork left in it."""
+    hay_pile(b, frame, (radius * 2.0, radius * 1.8, height), seed)
+    straw_tufts(b, frame, (radius * 1.15, radius * 1.05), 0.12, int(radius * 16), seed + 1)
+    b.collider((-radius * 0.75, -radius * 0.7, 0.0), (radius * 0.75, radius * 0.7, height * 0.75), frame=frame)
+
+    if fork:
+        pitchfork(b, frame @ Matrix.Translation((radius * 0.5, -radius * 0.35, height * 0.45)) @ Matrix.Rotation(math.radians(-22.0), 4, "Y"))
+
+
+BALE_SIZE = (0.95, 0.46, 0.38)  # comprimento, largura, altura de um fardo retangular
+
+
+def hay_bale(b: Builder, frame: Matrix, seed: int) -> None:
+    """Rectangular bale: pressed hay tied with two strings, straw sticking out of the cut ends."""
     generator = random.Random(seed)
+    half_length, half_width, height = BALE_SIZE[0] / 2.0, BALE_SIZE[1] / 2.0, BALE_SIZE[2]
+    shade = generator.choice(("FFFFFF", "F4EBD0", "FFF6DC"))
+    end_points = [(side * half_length, generator.uniform(-half_width, half_width) * 0.8, generator.uniform(0.08, height - 0.06)) for side in (-1.0, 1.0, -1.0, 1.0)]
+    end_yaws = [-90.0 if point[0] > 0 else 90.0 for point in end_points]
 
-    for _ in range(8):
-        center = (generator.uniform(-size[0] / 3.0, size[0] / 3.0), generator.uniform(-size[1] / 3.0, size[1] / 3.0), 0.0)
-        scale = (size[0] / 2.0 * generator.uniform(0.45, 0.75), size[1] / 2.0 * generator.uniform(0.45, 0.75), size[2] * generator.uniform(0.6, 1.0))
-        b.sphere(center, 1.0, "paint", srgb(STRAW if generator.random() > 0.4 else STRAW_DARK), scale=scale, frame=frame, segments=7)
+    b.box((-half_length, -half_width, 0.0), (half_length, half_width, height), "hay", srgb(shade), frame=frame)
 
-    for _ in range(int(10 * size[0] * size[1]) + 4):
-        root = (generator.uniform(-size[0] / 2.5, size[0] / 2.5), generator.uniform(-size[1] / 2.5, size[1] / 2.5), size[2] * generator.uniform(0.3, 0.7))
-        tip = (root[0] + generator.uniform(-0.25, 0.25), root[1] + generator.uniform(-0.25, 0.25), root[2] + generator.uniform(0.1, 0.3))
-        b.beam(root, tip, 0.025, 0.012, "paint", srgb(STRAW), frame=frame, uv=None)
+    for string in (-0.24, 0.24):
+        b.box((string - 0.009, -half_width - 0.006, -0.002), (string + 0.009, half_width + 0.006, height + 0.006), "paint", srgb("8A6A3A"), frame=frame)
 
+    stamp_variants(b.plants, tuft_variants(STRAW_TINTS, 0.3, 0.2), transforms(end_points, end_yaws, 80.0, 1.0), generator, frame)
+
+
+def bale_stack(b: Builder, frame: Matrix, columns: int, rows: int, layers: int, seed: int) -> None:
+    """Bales stacked like bricks, every layer one bale shorter and shifted half a bale; one loose bale beside it."""
+    generator = random.Random(seed)
+    length, width, height = BALE_SIZE
+    slots = [(layer, row, column) for layer, row, column in itertools.product(range(layers), range(rows), range(columns)) if column < columns - layer]
+
+    for index, (layer, row, column) in enumerate(slots):
+        position = ((column - (columns - layer - 1) / 2.0) * (length + 0.02), (row - (rows - 1) / 2.0) * (width + 0.02), layer * height)
+        hay_bale(b, frame @ Matrix.Translation(position) @ Matrix.Rotation(math.radians(generator.uniform(-3.0, 3.0)), 4, "Z"), seed + index)
+
+    loose = frame @ Matrix.Translation((columns * length / 2.0 + 0.5, generator.uniform(-0.2, 0.2), 0.0)) @ Matrix.Rotation(math.radians(generator.uniform(50.0, 80.0)), 4, "Z")
+    hay_bale(b, loose, seed + 99)
+    straw_tufts(b, frame, (columns * length / 2.0 + 0.3, rows * width / 2.0 + 0.3), 0.1, 14, seed)
+    b.collider((-columns * length / 2.0, -rows * width / 2.0, 0.0), (columns * length / 2.0, rows * width / 2.0, layers * height), frame=frame)
+
+
+# ---------- produce: sacks, baskets and what goes in them ----------
+
+PRODUCE_SHAPES = {
+    "apple": lathe_shape([(0.012, 0.0), (0.05, 0.02), (0.056, 0.055), (0.04, 0.095), (0.01, 0.1)], 7),
+    "potato": lathe_shape([(0.01, 0.0), (0.045, 0.02), (0.05, 0.05), (0.03, 0.085), (0.008, 0.09)], 6),
+    "carrot": lathe_shape([(0.004, 0.0), (0.016, 0.07), (0.026, 0.2), (0.012, 0.215)], 6),
+}
+PRODUCE_TINTS = {"apple": ("C9302C", "D8452F", "E0B23A"), "potato": ("C9A26A", "B88E58", "D2B07A")}
+BASKET_LINING = {"apple": "A82A26", "potato": "A88458", "carrot": "C96A22", "cabbage": "7FB094"}
+
+
+def fill_with_cabbages(b: Builder, frame: Matrix, radius: float, top: float, generator: random.Random) -> None:
+    heads = [(math.cos(angle) * radius * 0.42, math.sin(angle) * radius * 0.42, top - 0.06) for angle in (0.3, 2.4, 4.5)]
+
+    stamp_variants(b.plants, variants_of(cabbage_plant, generator, 2), transforms(heads, [generator.uniform(0.0, 360.0) for _ in heads], 0.0, 0.72), generator, frame)
+
+
+def fill_with_carrots(b: Builder, frame: Matrix, radius: float, top: float, generator: random.Random) -> None:
+    """Carrots in a fan, points to the middle, their leaves hanging over the rim."""
+    angles = [index * 40.0 + generator.uniform(-12.0, 12.0) for index in range(9)]
+    tips = [(math.cos(math.radians(angle)) * radius * 0.15, math.sin(math.radians(angle)) * radius * 0.15, top - 0.03 + 0.012 * (index % 3)) for index, angle in enumerate(angles)]
+    crowns = [(math.cos(math.radians(angle)) * radius * 0.85, math.sin(math.radians(angle)) * radius * 0.85, top + 0.03) for angle in angles]
+    frond = ribbon(arc_path(0.3, 35.0, 60.0, 2), 0.16, "carrot")
+
+    b.plants.stamp(PRODUCE_SHAPES["carrot"], transforms(tips, [angle - 90.0 for angle in angles], -78.0, 1.0), CARROT_ROOT, "paint", frame)
+    b.plants.stamp(frond, transforms(crowns, [angle - 90.0 + generator.uniform(-25.0, 25.0) for angle in angles], 0.0, 1.0), "FFFFFF", "crops", frame)
+
+
+def fill_with_round(produce: str):
+    """Apples or potatoes heaped in two rings and a crown."""
+    def fill(b: Builder, frame: Matrix, radius: float, top: float, generator: random.Random) -> None:
+        rings = [(radius * 0.62, 7, top - 0.05), (radius * 0.3, 4, top + 0.01), (0.0, 1, top + 0.06)]
+        points = [(math.cos(2.0 * math.pi * index / count + reach) * reach, math.sin(2.0 * math.pi * index / count + reach) * reach, level) for reach, count, level in rings for index in range(count)]
+        matrices = transforms(points, [generator.uniform(0.0, 360.0) for _ in points], [generator.uniform(-40.0, 40.0) for _ in points], [generator.uniform(0.85, 1.1) for _ in points])
+        shade = numpy.array([generator.randrange(3) for _ in points])
+
+        for index, tint in enumerate(PRODUCE_TINTS[produce]):
+            b.plants.stamp(PRODUCE_SHAPES[produce], matrices[shade == index], tint, "paint", frame)
+
+    return fill
+
+
+BASKET_FILLS = {"cabbage": fill_with_cabbages, "carrot": fill_with_carrots, "apple": fill_with_round("apple"), "potato": fill_with_round("potato")}
+
+
+def basket(b: Builder, frame: Matrix, produce: str, seed: int, radius: float = 0.27, height: float = 0.3) -> None:
+    """Round wicker basket with thick walls, woven bands, two handles, filled to the brim."""
+    wicker, band = "C49A5E", srgb("96703E")
+    grip = [(radius, -0.07, height), (radius + 0.03, -0.04, height + 0.07), (radius + 0.03, 0.04, height + 0.07), (radius, 0.07, height)]
+
+    lathe(b, [(radius * 0.72, 0.0), (radius, height), (radius * 0.9, height), (radius * 0.64, 0.04)], 12, "paint", wicker, frame, closed=True)
+    b.cylinder((0.0, 0.0, 0.03), radius * 0.68, 0.02, 12, "paint", srgb(wicker), frame=frame)
+    b.cylinder((0.0, 0.0, height * 0.6), radius * 0.86, 0.02, 12, "paint", srgb(BASKET_LINING[produce]), frame=frame)
+
+    for level in (0.25, 0.55, 0.97):
+        b.cylinder((0.0, 0.0, height * level - 0.012), radius * (0.72 + 0.28 * level) + 0.008, 0.024, 12, "paint", band, frame=frame)
+
+    for side, (start, end) in itertools.product((-1.0, 1.0), zip(grip, grip[1:])):
+        b.beam((side * start[0], start[1], start[2]), (side * end[0], end[1], end[2]), 0.022, 0.022, "paint", band, frame=frame, uv=None)
+
+    BASKET_FILLS[produce](b, frame, radius, height, random.Random(seed))
+
+
+def open_sack(b: Builder, frame: Matrix, radius: float, height: float, tint: str, grain: str) -> None:
+    """Sack standing open with its mouth rolled down, heaped with grain."""
+    lathe(b, [(0.75 * radius, 0.0), (radius, 0.2 * height), (radius, 0.6 * height), (0.9 * radius, 0.86 * height), (1.02 * radius, 0.93 * height), (0.94 * radius, height), (0.82 * radius, 0.94 * height)], 9, "paint", tint, frame)
+    lathe(b, [(0.84 * radius, 0.9 * height), (0.5 * radius, 0.99 * height), (0.02, 1.04 * height)], 9, "paint", grain, frame)
+
+
+def lying_sack(b: Builder, frame: Matrix, position: tuple, yaw: float, radius: float, length: float, tint: str) -> None:
+    """Full sack laid on its side (stacked on a cart or against a wall)."""
+    lying = Matrix.Translation((position[0], position[1], position[2] + radius * 0.82)) @ Matrix.Rotation(math.radians(yaw), 4, "Z") @ Matrix.Diagonal((1.0, 1.0, 0.82, 1.0)) @ Matrix.Rotation(math.radians(90.0), 4, "X")
+
+    sack(b, frame @ lying, 0.0, 0.0, -length / 2.0, radius, length, tint)
+
+
+def produce_stand(b: Builder, frame: Matrix, seed: int) -> None:
+    """The day's harvest set out in the yard: baskets of cabbages, carrots, apples and potatoes, an open sack of
+    grain, full sacks leaning on each other."""
+    baskets = (("cabbage", (-0.85, 0.1)), ("carrot", (-0.2, -0.25)), ("apple", (0.45, 0.15)), ("potato", (0.15, 0.75)))
+
+    for index, (produce, (x, y)) in enumerate(baskets):
+        basket(b, frame @ Matrix.Translation((x, y, 0.0)) @ Matrix.Rotation(index * 1.1, 4, "Z"), produce, seed + index)
+
+    open_sack(b, frame @ Matrix.Translation((1.15, 0.2, 0.0)), 0.25, 0.5, "DDC9A0", "E3B95A")
+    sack(b, frame, 1.2, 0.85, 0.0, 0.26, 0.5, "E8D7B0")
+    lying_sack(b, frame, (0.75, 1.4, 0.0), 20.0, 0.22, 0.62, "DDAE62")
+    b.collider((-1.2, -0.6, 0.0), (1.5, 1.6, 0.5), frame=frame)
+
+
+# ---------- carts ----------
 
 def trough(b: Builder, frame: Matrix, length: float) -> None:
     """Plank trough on two trestles with water in it."""
@@ -351,58 +597,245 @@ def trough(b: Builder, frame: Matrix, length: float) -> None:
 
 
 def wheel(b: Builder, frame: Matrix, center: tuple, radius: float, width: float, spokes: int = 8) -> None:
-    """Wooden cart wheel facing local X: iron tyre, felloe, hub and spokes."""
-    b.cylinder((center[0] - width / 2.0, center[1], center[2]), radius, width, 16, "metal", srgb("4A4448"), frame=frame, axis="X")
-    b.cylinder((center[0] - width / 2.0 - 0.01, center[1], center[2]), radius * 0.92, width + 0.02, 16, "wood", srgb(WOOD["media"]), frame=frame, axis="X")
-    b.cylinder((center[0] - width / 2.0 - 0.02, center[1], center[2]), radius * 0.8, width + 0.04, 16, "paint", srgb("2E2422"), frame=frame, axis="X")
-    b.cylinder((center[0] - width, center[1], center[2]), 0.1, width * 2.0, 8, "wood", srgb(WOOD["escura"]), frame=frame, axis="X")
+    """Open spoked wheel turning around local X: wooden felloe inside an iron tyre, hub and spokes you can see
+    through."""
+    around_x = frame @ Matrix.Translation(center) @ Matrix.Rotation(math.radians(90.0), 4, "Y")
+    half = width / 2.0
+
+    lathe(b, [(radius * 0.84, -half), (radius * 0.975, -half), (radius * 0.975, half), (radius * 0.84, half)], 18, "wood", WOOD["media"], around_x, closed=True, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+    lathe(b, [(radius * 0.975, -half - 0.004), (radius, -half - 0.004), (radius, half + 0.004), (radius * 0.975, half + 0.004)], 18, "metal", "4A4448", around_x, closed=True)
+    b.cylinder((center[0] - width, center[1], center[2]), radius * 0.15 + 0.02, width * 2.0, 8, "wood", srgb(WOOD["escura"]), frame=frame, axis="X")
+    b.cylinder((center[0] - width - 0.02, center[1], center[2]), 0.03, width * 2.0 + 0.04, 6, "metal", srgb("4A4448"), frame=frame, axis="X")
 
     for spoke in range(spokes):
         angle = 2.0 * math.pi * spoke / spokes
-        tip = (center[0], center[1] + math.cos(angle) * radius * 0.82, center[2] + math.sin(angle) * radius * 0.82)
-        b.beam(center, tip, 0.05, 0.05, "wood", srgb(WOOD["mel"]), frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+        tip = (center[0], center[1] + math.cos(angle) * radius * 0.86, center[2] + math.sin(angle) * radius * 0.86)
+        b.beam(center, tip, 0.045, 0.04, "wood", srgb(WOOD["mel"]), frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
 
 
-def farm_cart(b: Builder, frame: Matrix, load: str = "hay", seed: int = 1) -> None:
-    """Two-wheeled farm cart with plank sides and shafts resting on a prop; loaded with hay or sacks."""
+def slab(b: Builder, frame: Matrix, lower: tuple, upper: tuple, thickness: tuple, tint: tuple) -> None:
+    """Board between a lower and an upper edge (each a pair of points), given a thickness vector: the leaning
+    sides of a wheelbarrow tray or a footboard."""
+    edge_points = [*lower, *upper]
+    points = edge_points + [tuple(coordinate + offset for coordinate, offset in zip(point, thickness)) for point in edge_points]
+
+    b.hull(points, "wood", tint, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+
+
+CART_HALF_WIDTH = 0.78
+CART_HALF_LENGTH = 1.2
+CART_FLOOR = 0.8
+CART_SIDE_HEIGHT = 0.5
+CART_WHEEL_RADIUS = 0.64
+SEAT_HEIGHT = 1.46
+SEAT_Y = -1.02  # centro do assento: Blender -Y é a frente da carroça (+Z no Godot)
+HORSE_OFFSET = 3.9  # Carriage.horse_offset: do eixo às patas do cavalo
+HARNESS_HEIGHT = 1.15  # argolas do arreio no flanco do cavalo, onde as pontas dos varais chegam
+HORSE_SHOULDER_AHEAD = 0.6  # do centro do cavalo até o ombro
+HORSE_HALF_WIDTH = 0.33
+
+
+def cart_body(b: Builder, frame: Matrix) -> None:
+    """Bed of five floor planks on two sills, slatted sides on stakes, headboard and tailboard."""
+    wood, dark = srgb(WOOD["mel"]), srgb(WOOD["media"])
+    plank = 2.0 * CART_HALF_WIDTH / 5.0
+    top = CART_FLOOR + 0.05
+
+    for index in range(5):
+        x = -CART_HALF_WIDTH + index * plank
+        b.box((x + 0.006, -CART_HALF_LENGTH, CART_FLOOR), (x + plank - 0.006, CART_HALF_LENGTH, top), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+
+    for side in (-1, 1):
+        b.box((side * 0.5 - 0.05, -CART_HALF_LENGTH, CART_FLOOR - 0.1), (side * 0.5 + 0.05, CART_HALF_LENGTH, CART_FLOOR), "wood", dark, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
+        b.box((side * 0.5 - 0.05, 0.02, CART_WHEEL_RADIUS - 0.02), (side * 0.5 + 0.05, 0.18, CART_FLOOR - 0.1), "wood", dark, frame=frame)
+        wheel(b, frame, (side * (CART_HALF_WIDTH + 0.16), 0.1, CART_WHEEL_RADIUS), CART_WHEEL_RADIUS, 0.08, spokes=10)
+
+    for side, stake_y in itertools.product((-1, 1), (-1.14, -0.38, 0.38, 1.14)):
+        b.box((side * CART_HALF_WIDTH - 0.035, stake_y - 0.035, CART_FLOOR - 0.06), (side * CART_HALF_WIDTH + 0.035, stake_y + 0.035, top + CART_SIDE_HEIGHT + 0.06), "wood", dark, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    for side, board in itertools.product((-1, 1), range(3)):
+        inner = side * (CART_HALF_WIDTH - 0.06)
+        b.box((min(inner, inner + side * 0.03), -CART_HALF_LENGTH, top + 0.02 + board * 0.165), (max(inner, inner + side * 0.03), CART_HALF_LENGTH, top + 0.16 + board * 0.165), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+
+    for end, board in itertools.product((-1, 1), range(3)):
+        y = end * (CART_HALF_LENGTH - 0.03)
+        b.box((-CART_HALF_WIDTH + 0.06, min(y, y + end * 0.03), top + 0.02 + board * 0.165), (CART_HALF_WIDTH - 0.06, max(y, y + end * 0.03), top + 0.16 + board * 0.165), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+
+    b.cylinder((-CART_HALF_WIDTH - 0.2, 0.1, CART_WHEEL_RADIUS), 0.04, 2.0 * CART_HALF_WIDTH + 0.4, 6, "metal", srgb("4A4448"), frame=frame, axis="X")
+
+
+def cart_bench(b: Builder, frame: Matrix) -> None:
+    """Driver's bench across the front of the bed: seat plank on two brackets, backrest and a sloping footboard."""
+    wood, dark = srgb(WOOD["mel"]), srgb(WOOD["media"])
+    side_top = CART_FLOOR + 0.05 + CART_SIDE_HEIGHT
+    foot_low = ((-CART_HALF_WIDTH, -CART_HALF_LENGTH, CART_FLOOR + 0.02), (CART_HALF_WIDTH, -CART_HALF_LENGTH, CART_FLOOR + 0.02))
+    foot_high = ((-CART_HALF_WIDTH, -CART_HALF_LENGTH - 0.42, CART_FLOOR + 0.2), (CART_HALF_WIDTH, -CART_HALF_LENGTH - 0.42, CART_FLOOR + 0.2))
+
+    b.box((-CART_HALF_WIDTH - 0.04, SEAT_Y - 0.2, SEAT_HEIGHT - 0.05), (CART_HALF_WIDTH + 0.04, SEAT_Y + 0.2, SEAT_HEIGHT), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+    b.box((-CART_HALF_WIDTH, SEAT_Y + 0.2, SEAT_HEIGHT + 0.12), (CART_HALF_WIDTH, SEAT_Y + 0.24, SEAT_HEIGHT + 0.36), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+    slab(b, frame, foot_low, foot_high, (0.0, 0.0, 0.04), wood)
+
+    for side in (-1, 1):
+        b.box((side * CART_HALF_WIDTH - 0.04, SEAT_Y - 0.17, side_top), (side * CART_HALF_WIDTH + 0.04, SEAT_Y + 0.17, SEAT_HEIGHT - 0.05), "wood", dark, frame=frame)
+        b.box((side * CART_HALF_WIDTH - 0.03, SEAT_Y + 0.2, side_top), (side * CART_HALF_WIDTH + 0.03, SEAT_Y + 0.25, SEAT_HEIGHT + 0.36), "wood", dark, frame=frame)
+        b.beam((side * 0.5, -CART_HALF_LENGTH - 0.4, CART_FLOOR + 0.2), (side * 0.5, -CART_HALF_LENGTH, CART_FLOOR - 0.06), 0.05, 0.05, "wood", dark, frame=frame)
+
+
+def cart_shafts(b: Builder, frame: Matrix, hitched: bool) -> None:
+    """The pair of shafts. Hitched: they rise from the bed to the harness rings on the horse's flanks, one each
+    side of the horse standing HORSE_OFFSET ahead, with a cross bar behind its tail. Parked: level, on a trestle."""
+    dark, iron = srgb(WOOD["media"]), srgb("4A4448")
+    spread = HORSE_HALF_WIDTH + 0.14
+    lines = {
+        True: [(0.56, -CART_HALF_LENGTH + 0.3, CART_FLOOR - 0.05), (0.54, -2.1, CART_FLOOR + 0.1), (spread + 0.02, -3.2, HARNESS_HEIGHT - 0.1), (spread, -(HORSE_OFFSET + HORSE_SHOULDER_AHEAD), HARNESS_HEIGHT)],
+        False: [(0.56, -CART_HALF_LENGTH + 0.3, CART_FLOOR - 0.05), (0.52, -2.1, CART_FLOOR - 0.08), (0.48, -3.5, CART_FLOOR - 0.1)],
+    }[hitched]
+    tip = lines[-1]
+    trestle_y = -3.3
+
+    for side, (start, end) in itertools.product((-1, 1), zip(lines, lines[1:])):
+        b.beam((side * start[0], start[1], start[2]), (side * end[0], end[1], end[2]), 0.075, 0.075, "wood", dark, frame=frame)
+
+    for side in (-1, 1):
+        b.cylinder((side * tip[0], tip[1] - 0.06, tip[2]), 0.05, 0.12, 6, "metal", iron, frame=frame, axis="Y")
+
+    b.beam((-0.58, -2.1, lines[1][2]), (0.58, -2.1, lines[1][2]), 0.07, 0.07, "wood", dark, frame=frame)
+
+    if hitched:
+        return
+
+    b.beam((-0.62, trestle_y, CART_FLOOR - 0.18), (0.62, trestle_y, CART_FLOOR - 0.18), 0.08, 0.08, "wood", dark, frame=frame)
+
+    for side, lean in itertools.product((-1, 1), (-0.22, 0.22)):
+        b.beam((side * 0.5, trestle_y, CART_FLOOR - 0.2), (side * 0.6, trestle_y + lean, 0.0), 0.06, 0.06, "wood", dark, frame=frame)
+
+
+def load_hay(b: Builder, frame: Matrix, seed: int) -> None:
+    """Hay piled above the sides behind the bench, spilling over the boards, the fork stuck in the top."""
+    bed = frame @ Matrix.Translation((0.0, 0.3, CART_FLOOR + 0.05))
+
+    hay_pile(b, bed, (1.5, 1.75, 1.05), seed)
+    straw_tufts(b, bed @ Matrix.Translation((0.0, 0.0, 0.42)), (0.86, 0.95), 0.3, 26, seed + 5)
+    pitchfork(b, bed @ Matrix.Translation((0.2, 0.35, 0.7)) @ Matrix.Rotation(math.radians(14.0), 4, "X"))
+
+
+def load_sacks(b: Builder, frame: Matrix, seed: int) -> None:
+    """Grain sacks standing and lying two deep, one open, and a basket of apples by the tailboard."""
+    bed = frame @ Matrix.Translation((0.0, 0.0, CART_FLOOR + 0.05))
+    tints = ("E8D7B0", "DDAE62", "C98F4F", "E8D7B0")
+
+    for (x, y), tint in zip(((-0.42, -0.45), (0.08, -0.5), (0.45, -0.1), (-0.4, 0.05)), tints):
+        sack(b, bed, x, y, 0.0, 0.25, 0.5, tint)
+
+    lying_sack(b, bed, (-0.3, 0.6, 0.0), 8.0, 0.21, 0.6, tints[2])
+    lying_sack(b, bed, (0.25, 0.42, 0.0), 95.0, 0.21, 0.6, tints[0])
+    lying_sack(b, bed, (-0.1, -0.2, 0.44), 60.0, 0.2, 0.56, tints[1])
+    open_sack(b, bed @ Matrix.Translation((0.45, 0.9, 0.0)), 0.22, 0.44, "DDC9A0", "E3B95A")
+    basket(b, bed @ Matrix.Translation((-0.42, 0.95, 0.0)), "apple", seed, radius=0.22, height=0.26)
+
+
+def load_produce(b: Builder, frame: Matrix, seed: int) -> None:
+    """Harvest going to market: baskets of every vegetable."""
+    bed = frame @ Matrix.Translation((0.0, 0.0, CART_FLOOR + 0.05))
+    baskets = (("cabbage", -0.4, -0.3), ("carrot", 0.38, -0.4), ("potato", -0.4, 0.3), ("cabbage", 0.38, 0.2), ("apple", -0.38, 0.88), ("carrot", 0.35, 0.82))
+
+    for index, (produce, x, y) in enumerate(baskets):
+        basket(b, bed @ Matrix.Translation((x, y, 0.0)) @ Matrix.Rotation(index * 0.9, 4, "Z"), produce, seed + index, radius=0.25)
+
+
+CART_LOADS = {"hay": load_hay, "sacks": load_sacks, "produce": load_produce}
+
+
+def farm_cart(b: Builder, frame: Matrix, load: str = "hay", seed: int = 1, hitched: bool = False) -> None:
+    """Two-wheeled farm cart: slatted bed, spoked wheels, driver's bench, shafts and a load."""
+    cart_body(b, frame)
+    cart_bench(b, frame)
+    cart_shafts(b, frame, hitched)
+    CART_LOADS[load](b, frame, seed)
+    b.collider((-0.98, -CART_HALF_LENGTH - 0.45, 0.0), (0.98, CART_HALF_LENGTH + 0.05, 1.4), frame=frame)
+
+
+def wheelbarrow(b: Builder, frame: Matrix, seed: int = 7) -> None:
+    """Wooden wheelbarrow: an open tray of boards flaring upward (floor and four leaning sides, all with
+    thickness), spoked wheel between the shafts, two legs, handles; a few cabbages riding in it."""
+    wood, dark = srgb(WOOD["mel"]), srgb(WOOD["media"])
     generator = random.Random(seed)
-    wood = srgb(WOOD["mel"])
-    side_wood = srgb(WOOD["media"])
+    floor, rim = 0.4, 0.7
+    low_x, low_front, low_back = 0.24, -0.36, 0.36
+    high_x, high_front, high_back = 0.38, -0.56, 0.5
+    heads = [(-0.1, -0.12, floor), (0.12, 0.14, floor), (0.0, -0.02, floor + 0.17)]
 
-    b.box((-0.75, -1.2, 0.7), (0.75, 1.2, 0.8), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
-
-    for side in (-1, 1):
-        b.box((side * 0.75 - 0.04, -1.2, 0.8), (side * 0.75 + 0.04, 1.2, 1.2), "wood", side_wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
-        b.box((-0.75, side * 1.2 - 0.04, 0.8), (0.75, side * 1.2 + 0.04, 1.15), "wood", side_wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
-        wheel(b, frame, (side * 0.9, 0.1, 0.62), 0.62, 0.08)
-        b.beam((side * 0.5, -1.2, 0.72), (side * 0.45, -3.1, 0.12), 0.08, 0.08, "wood", side_wood, frame=frame)
-
-    b.beam((0.0, -2.9, 0.0), (0.0, -2.9, 0.26), 0.12, 0.12, "wood", srgb(WOOD["escura"]), frame=frame)
-    b.cylinder((-1.0, 0.1, 0.62), 0.05, 2.0, 6, "metal", srgb("4A4448"), frame=frame, axis="X")
-
-    if load == "hay":
-        hay_pile(b, frame @ Matrix.Translation((0.0, 0.0, 0.85)), (1.4, 2.3, 0.75), seed)
-
-    if load == "sacks":
-        for index in range(5):
-            sack(b, frame, generator.uniform(-0.45, 0.45), -0.8 + index * 0.4, 0.8, 0.24, 0.42, "E8D7B0" if index % 2 else "DDAE62")
-
-    b.collider((-0.95, -1.25, 0.0), (0.95, 1.25, 1.2), frame=frame)
-
-
-def wheelbarrow(b: Builder, frame: Matrix) -> None:
-    """Wooden wheelbarrow: tapered tray, front wheel, two handles and legs."""
-    wood = srgb(WOOD["mel"])
-
-    b.hull([(-0.32, -0.35, 0.35), (0.32, -0.35, 0.35), (-0.4, 0.45, 0.4), (0.4, 0.45, 0.4), (-0.42, -0.5, 0.68), (0.42, -0.5, 0.68), (-0.5, 0.55, 0.7), (0.5, 0.55, 0.7)], "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
-    b.hull([(-0.36, -0.42, 0.66), (0.36, -0.42, 0.66), (-0.44, 0.48, 0.68), (0.44, 0.48, 0.68), (-0.3, -0.3, 0.6), (0.3, -0.3, 0.6)], "soil", srgb(SOIL), frame=frame)
-    wheel(b, frame, (0.0, -0.75, 0.24), 0.24, 0.07, spokes=6)
+    b.box((-low_x, low_front, floor - 0.035), (low_x, low_back, floor), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+    slab(b, frame, ((-low_x, low_front, floor - 0.03), (low_x, low_front, floor - 0.03)), ((-high_x, high_front, rim), (high_x, high_front, rim)), (0.0, -0.03, 0.0), wood)
+    slab(b, frame, ((-low_x, low_back, floor - 0.03), (low_x, low_back, floor - 0.03)), ((-high_x, high_back, rim), (high_x, high_back, rim)), (0.0, 0.03, 0.0), wood)
 
     for side in (-1, 1):
-        b.beam((side * 0.12, -0.8, 0.26), (side * 0.32, 1.3, 0.6), 0.06, 0.06, "wood", srgb(WOOD["media"]), frame=frame)
-        b.beam((side * 0.3, 0.45, 0.4), (side * 0.3, 0.5, 0.0), 0.05, 0.05, "wood", srgb(WOOD["media"]), frame=frame)
+        slab(b, frame, ((side * low_x, low_front, floor - 0.03), (side * low_x, low_back, floor - 0.03)), ((side * high_x, high_front, rim), (side * high_x, high_back, rim)), (side * 0.03, 0.0, 0.0), wood)
+        b.beam((side * 0.12, -0.98, 0.25), (side * 0.3, 0.2, floor - 0.07), 0.055, 0.05, "wood", dark, frame=frame)
+        b.beam((side * 0.3, 0.2, floor - 0.07), (side * 0.36, 1.25, 0.62), 0.055, 0.05, "wood", dark, frame=frame)
+        b.cylinder((side * 0.36, 1.2, 0.62), 0.032, 0.16, 6, "wood", srgb(WOOD["escura"]), frame=frame, axis="Y")
+        b.beam((side * 0.31, 0.32, floor - 0.06), (side * 0.34, 0.42, 0.0), 0.05, 0.05, "wood", dark, frame=frame)
+        b.beam((side * 0.33, 0.4, 0.14), (side * 0.3, 0.05, floor - 0.08), 0.035, 0.035, "wood", dark, frame=frame)
 
-    b.collider((-0.5, -1.0, 0.0), (0.5, 1.3, 0.7), frame=frame)
+    b.beam((-0.33, 0.4, 0.12), (0.33, 0.4, 0.12), 0.04, 0.04, "wood", dark, frame=frame)
+    wheel(b, frame, (0.0, -0.9, 0.25), 0.25, 0.05, spokes=6)
+    b.cylinder((-0.15, -0.9, 0.25), 0.02, 0.3, 6, "metal", srgb("4A4448"), frame=frame, axis="X")
+    stamp_variants(b.plants, variants_of(cabbage_plant, generator, 2), transforms(heads, [generator.uniform(0.0, 360.0) for _ in heads], 0.0, 0.8), generator, frame)
+    b.collider((-0.45, -1.1, 0.0), (0.45, 1.3, 0.7), frame=frame)
+
+
+# ---------- shelters and feeders ----------
+
+def lean_to(b: Builder, frame: Matrix, width: float, depth: float, front_height: float, back_height: float) -> None:
+    """Open-fronted animal shelter (front at local y = 0, back at y = depth): posts, board-and-batten walls on the
+    back and the two sides, front beam on braces, shingled mono-pitch roof and straw bedding on the floor."""
+    wood = srgb(WOOD["media"])
+    boards, batten = srgb("8C6448"), srgb("7A5438")
+    half = width / 2.0
+    post_xs = [-half, 0.0, half] if width > 5.0 else [-half, half]
+    batten_count = int(width / 0.45)
+    braces = [(x, reach) for x, reach in itertools.product(post_xs, (-1, 1)) if abs(x + reach * 0.7) < half]
+
+    for x, y in itertools.product(post_xs, (0.0, depth)):
+        b.box((x - 0.09, y - 0.09, 0.0), (x + 0.09, y + 0.09, front_height if y == 0.0 else back_height), "wood", wood, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    b.box((-half, depth - 0.05, 0.0), (half, depth + 0.05, back_height - 0.05), "wood", boards, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 2.0))
+    b.box((-half - 0.1, -0.1, front_height - 0.2), (half + 0.1, 0.1, front_height), "wood", wood, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
+    b.collider((-half, depth - 0.1, 0.0), (half, depth + 0.1, back_height), frame=frame)
+
+    for index in range(batten_count + 1):
+        x = -half + 0.2 + index * (width - 0.4) / batten_count
+        b.box((x - 0.03, depth - 0.085, 0.0), (x + 0.03, depth - 0.05, back_height - 0.05), "wood", batten, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    for side in (-1, 1):
+        b.side_prism([(0.0, 0.0), (depth, 0.0), (depth, back_height - 0.05), (0.0, front_height - 0.05)], side * half - 0.05, side * half + 0.05, "wood", boards, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 2.0))
+        b.collider((side * half - 0.1, 0.0, 0.0), (side * half + 0.1, depth, front_height), frame=frame)
+
+    for x, reach in braces:
+        b.beam((x, 0.0, front_height - 0.9), (x + reach * 0.7, 0.0, front_height - 0.2), 0.07, 0.07, "wood", wood, frame=frame)
+
+    b.hull([(-half - 0.3, -0.4, front_height + 0.12), (half + 0.3, -0.4, front_height + 0.12), (-half - 0.3, depth + 0.3, back_height + 0.02), (half + 0.3, depth + 0.3, back_height + 0.02), (-half - 0.3, -0.4, front_height), (half + 0.3, -0.4, front_height), (-half - 0.3, depth + 0.3, back_height - 0.1), (half + 0.3, depth + 0.3, back_height - 0.1)], "slate", srgb("9A948A"), frame=frame)
+    lumpy_mound(b, frame @ Matrix.Translation((0.0, depth * 0.55, 0.0)), (half * 0.86, depth * 0.4), 0.09, int(width * 100))
+    straw_tufts(b, frame @ Matrix.Translation((0.0, depth * 0.5, 0.0)), (half * 0.95, depth * 0.48), 0.08, int(width * depth), int(width * 10))
+
+
+def hay_rack(b: Builder, frame: Matrix, length: float) -> None:
+    """Slatted V-shaped hay manger on legs, full of hay."""
+    wood = srgb(WOOD["media"])
+    slats = max(4, int(length / 0.25))
+
+    for side in (-1, 1):
+        b.beam((side * length / 2.0, 0.0, 0.0), (side * length / 2.0, 0.0, 1.0), 0.1, 0.1, "wood", wood, frame=frame)
+        b.beam((-length / 2.0, side * 0.45, 1.3), (length / 2.0, side * 0.45, 1.3), 0.07, 0.07, "wood", wood, frame=frame)
+
+    b.beam((-length / 2.0, 0.0, 0.6), (length / 2.0, 0.0, 0.6), 0.08, 0.08, "wood", wood, frame=frame)
+
+    for slat, side in itertools.product(range(slats), (-1, 1)):
+        x = -length / 2.0 + length * (slat + 0.5) / slats
+        b.beam((x, 0.0, 0.62), (x, side * 0.45, 1.3), 0.04, 0.04, "wood", srgb(WOOD["mel"]), frame=frame)
+
+    hay_pile(b, frame @ Matrix.Translation((0.0, 0.0, 0.95)), (length * 0.9, 0.8, 0.5), 41)
+    b.collider((-length / 2.0, -0.5, 0.0), (length / 2.0, 0.5, 1.3), frame=frame)
 
 
 def well(b: Builder, frame: Matrix) -> None:
@@ -447,45 +880,6 @@ def scarecrow(b: Builder, frame: Matrix, shirt: str) -> None:
     b.collider((-0.15, -0.15, 0.0), (0.15, 0.15, 2.3), frame=frame)
 
 
-def lean_to(b: Builder, frame: Matrix, width: float, depth: float, front_height: float, back_height: float, walls: str = "three") -> None:
-    """Open plank shed: posts, board walls on the back and sides, shingled mono-pitch roof sloping to the back."""
-    wood = srgb(WOOD["media"])
-    boards = srgb("8C6448")
-
-    for x, y in ((-width / 2.0, 0.0), (width / 2.0, 0.0), (-width / 2.0, depth), (width / 2.0, depth)):
-        height = front_height if y == 0.0 else back_height
-        b.box((x - 0.08, y - 0.08, 0.0), (x + 0.08, y + 0.08, height), "wood", wood, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    b.box((-width / 2.0, depth - 0.05, 0.0), (width / 2.0, depth + 0.05, back_height - 0.05), "wood", boards, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 2.0))
-    b.collider((-width / 2.0, depth - 0.1, 0.0), (width / 2.0, depth + 0.1, back_height), frame=frame)
-
-    if walls == "three":
-        for side in (-1, 1):
-            b.side_prism([(0.0, 0.0), (depth, 0.0), (depth, back_height - 0.05), (0.0, front_height - 0.05)], side * width / 2.0 - 0.05, side * width / 2.0 + 0.05, "wood", boards, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 2.0))
-            b.collider((side * width / 2.0 - 0.1, 0.0, 0.0), (side * width / 2.0 + 0.1, depth, front_height), frame=frame)
-
-    b.hull([(-width / 2.0 - 0.3, -0.4, front_height + 0.12), (width / 2.0 + 0.3, -0.4, front_height + 0.12), (-width / 2.0 - 0.3, depth + 0.3, back_height + 0.02), (width / 2.0 + 0.3, depth + 0.3, back_height + 0.02), (-width / 2.0 - 0.3, -0.4, front_height), (width / 2.0 + 0.3, -0.4, front_height), (-width / 2.0 - 0.3, depth + 0.3, back_height - 0.1), (width / 2.0 + 0.3, depth + 0.3, back_height - 0.1)], "slate", srgb("9A948A"), frame=frame)
-
-
-def hay_rack(b: Builder, frame: Matrix, length: float) -> None:
-    """Slatted V-shaped hay manger on legs, full of hay."""
-    wood = srgb(WOOD["media"])
-    slats = max(4, int(length / 0.25))
-
-    for side in (-1, 1):
-        b.beam((side * length / 2.0, 0.0, 0.0), (side * length / 2.0, 0.0, 1.0), 0.1, 0.1, "wood", wood, frame=frame)
-        b.beam((-length / 2.0, side * 0.45, 1.3), (length / 2.0, side * 0.45, 1.3), 0.07, 0.07, "wood", wood, frame=frame)
-
-    b.beam((-length / 2.0, 0.0, 0.6), (length / 2.0, 0.0, 0.6), 0.08, 0.08, "wood", wood, frame=frame)
-
-    for slat, side in ((index, sign) for index in range(slats) for sign in (-1, 1)):
-        x = -length / 2.0 + length * (slat + 0.5) / slats
-        b.beam((x, 0.0, 0.62), (x, side * 0.45, 1.3), 0.04, 0.04, "wood", srgb(WOOD["mel"]), frame=frame)
-
-    hay_pile(b, frame @ Matrix.Translation((0.0, 0.0, 0.95)), (length * 0.9, 0.8, 0.4), 41)
-    b.collider((-length / 2.0, -0.5, 0.0), (length / 2.0, 0.5, 1.3), frame=frame)
-
-
 def log_pile(b: Builder, frame: Matrix, length: float, rows: int) -> None:
     """Firewood stacked against a wall: rows of split logs with pale cut ends, a chopping block with an axe."""
     for row in range(rows):
@@ -523,12 +917,13 @@ def plant_spots(plot: tuple, spacing_across: float, spacing_along: float, seed: 
 
 
 def plot_bed(b: Builder, plot: tuple, ground: float, ridge_spacing: float, tint: str = SOIL) -> None:
-    """Soil of a plot with a low ridge under every row (the walkable collider is the flat bed)."""
+    """Soil of a plot with a low ridge under every row (the walkable collider is the flat bed); no ridges when
+    ridge_spacing is None (wheat is sown broadcast)."""
     _crop, min_x, max_x, min_z, max_z = plot
 
     ground_patch(b, (min_x, max_x, min_z, max_z), ground + FIELD_RAISE, "soil", tint, collider="Field", thickness=FIELD_RAISE + 0.02)
 
-    for row_z in crop_rows(plot, ridge_spacing):
+    for row_z in crop_rows(plot, ridge_spacing) if ridge_spacing else []:
         b.side_prism([(row_z - 0.22, ground + FIELD_RAISE), (row_z + 0.22, ground + FIELD_RAISE), (row_z, ground + FIELD_RAISE + 0.1)], min_x + 0.2, max_x - 0.2, "soil", srgb(SOIL_DARK), frame=row_frame())
 
 
@@ -538,88 +933,99 @@ def row_frame() -> Matrix:
     return Matrix.Diagonal((1.0, -1.0, 1.0, 1.0))
 
 
-def wheat_field(batch: CropBatch, plot: tuple, ground: float, seed: int) -> None:
-    """Ripe wheat: a dense golden band over every row and nodding ears on top of it."""
+def wheat_matrices(spots: list, top: float, generator: random.Random, heading: float, spread: float) -> numpy.ndarray:
+    """Row cards standing at the spots, turned around `heading` (either way round), swaying a little."""
+    points = [(x, -z, top) for x, z in spots]
+    yaws = [heading + generator.uniform(-spread, spread) + generator.choice((0.0, 180.0)) for _ in spots]
+    tilts = [generator.uniform(-7.0, 7.0) for _ in spots]
+    heights = [generator.uniform(0.86, 1.08) for _ in spots]
+
+    return transforms(points, yaws, tilts, 1.0, heights)
+
+
+def wheat_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
+    """Ripe wheat standing thick: cards of culms, dry leaves and bearded ears zigzag along close rows, shorter
+    cards cross them so the field is full from every side."""
     generator = random.Random(seed)
+    _crop, min_x, max_x, min_z, max_z = plot
     top = ground + FIELD_RAISE
-    _crop, min_x, max_x, _min_z, _max_z = plot
-    segment_length = 1.2
+    rows = numpy.arange(min_z + 0.4, max_z - 0.3, 0.36)
+    variants = wheat_variants()
+    row_spots = [(x + generator.uniform(-0.25, 0.25), z + generator.uniform(-0.06, 0.06)) for z, x in itertools.product(rows, numpy.arange(min_x + 1.1, max_x - 1.0, 1.55))]
+    cross_spots = [(x + generator.uniform(-0.2, 0.2), z + generator.uniform(-0.1, 0.1)) for z, x in itertools.product(rows, numpy.arange(min_x + 0.6, max_x - 0.5, 0.9))]
 
-    for row_z in crop_rows(plot, 0.55):
-        segment_count = int((max_x - min_x - 0.4) / segment_length)
-        for segment in range(segment_count):
-            x0 = min_x + 0.2 + segment * segment_length
-            height = generator.uniform(0.85, 1.05)
-            batch.hull([world(x0, row_z - 0.18, top), world(x0 + segment_length, row_z - 0.18, top), world(x0, row_z + 0.18, top), world(x0 + segment_length, row_z + 0.18, top), world(x0, row_z - 0.1, top + height), world(x0 + segment_length, row_z - 0.1, top + height * generator.uniform(0.92, 1.06)), world(x0, row_z + 0.1, top + height), world(x0 + segment_length, row_z + 0.1, top + height * generator.uniform(0.92, 1.06))], WHEAT_STALK, Matrix.Identity(4))
-
-    for x, z in plant_spots(plot, 0.55, 0.45, seed + 1, jitter=0.12):
-        ear_frame = frame_at_world(x, z, top + generator.uniform(0.85, 1.02), generator.uniform(0.0, 360.0)) @ Matrix.Rotation(math.radians(generator.uniform(10.0, 30.0)), 4, "X")
-        batch.hull([(-0.03, 0.0, 0.0), (0.03, 0.0, 0.0), (0.0, -0.035, 0.1), (0.0, 0.035, 0.1), (0.0, 0.0, 0.22)], WHEAT_EAR, ear_frame)
+    stamp_variants(b.plants, [variants[0], variants[3]], wheat_matrices(row_spots, top, generator, 0.0, 20.0), generator)
+    stamp_variants(b.plants, variants[1:3], wheat_matrices(cross_spots, top, generator, 90.0, 35.0), generator)
 
 
-def corn_field(batch: CropBatch, plot: tuple, ground: float, seed: int) -> None:
-    """Tall corn: stalk, three arching leaves, a tassel of thin spikes and a cob in its husk."""
+CROPS = {  # cultura -> (planta, entre fileiras, entre plantas, desvio, tamanho, inclinação em graus)
+    "corn": (corn_plant, 0.9, 0.6, 0.07, (0.88, 1.1), 4.0),
+    "cabbage": (cabbage_plant, 0.8, 0.8, 0.06, (0.85, 1.15), 0.0),
+    "carrot": (carrot_plant, 0.6, 0.4, 0.05, (0.8, 1.15), 0.0),
+}
+RIDGE_SPACING = {"wheat": None, "corn": 0.9, "cabbage": 0.8, "carrot": 0.6}
+BED_TINT = {"wheat": STUBBLE, "corn": SOIL, "cabbage": SOIL, "carrot": SOIL}
+
+
+def plant_crop(b: Builder, crop: str, plot: tuple, ground: float, seed: int) -> None:
+    """Rows of one crop: a handful of plant variants stamped along the ridges, each turned and sized at random."""
+    plant, across, along, jitter, sizes, lean = CROPS[crop]
     generator = random.Random(seed)
-    top = ground + FIELD_RAISE
+    spots = plant_spots(plot, across, along, seed, jitter)
 
-    for x, z in plant_spots(plot, 0.95, 0.9, seed):
-        height = generator.uniform(1.9, 2.4)
-        frame = frame_at_world(x, z, top, generator.uniform(0.0, 360.0))
-        batch.cylinder((0.0, 0.0, 0.0), 0.04, height, 5, CORN_STALK, frame, top_radius=0.02)
-
-        for leaf_index in range(3):
-            blade(batch, frame @ Matrix.Translation((0.0, 0.0, height * (0.28 + 0.2 * leaf_index))), generator.uniform(0.7, 0.95), 0.1, leaf_index * 125.0 + generator.uniform(-20, 20), generator.uniform(50.0, 70.0), CORN_LEAF)
-
-        for spike in range(4):
-            blade(batch, frame @ Matrix.Translation((0.0, 0.0, height - 0.02)), generator.uniform(0.28, 0.4), 0.035, spike * 90.0 + generator.uniform(-15, 15), 12.0 + 14.0 * (spike % 2), CORN_TASSEL)
-        batch.hull([(0.05, 0.0, height * 0.45), (0.12, -0.05, height * 0.5), (0.12, 0.05, height * 0.5), (0.17, 0.0, height * 0.68), (0.09, 0.0, height * 0.62)], CORN_COB, frame)
+    stamp_variants(b.plants, variants_of(plant, generator, 5), spot_matrices(spots, ground + FIELD_RAISE + 0.08, generator, sizes, lean), generator)
 
 
-def cabbage_field(batch: CropBatch, plot: tuple, ground: float, seed: int) -> None:
-    """Round cabbages: a pale heart in three loose outer leaves."""
-    generator = random.Random(seed)
-    top = ground + FIELD_RAISE
+def grass_tufts(b: Builder, plot: tuple, ground: float, count: int, generator: random.Random) -> None:
+    _crop, min_x, max_x, min_z, max_z = plot
+    spots = [(generator.uniform(min_x + 0.4, max_x - 0.4), generator.uniform(min_z + 0.4, max_z - 0.4)) for _ in range(count)]
 
-    for x, z in plant_spots(plot, 0.8, 0.75, seed):
-        radius = generator.uniform(0.17, 0.23)
-        frame = frame_at_world(x, z, top, generator.uniform(0.0, 360.0))
-        batch.ball((0.0, 0.0, radius * 0.85), radius, CABBAGE_HEART, frame, scale=(1.0, 1.0, 0.9), segments=5)
-
-        for leaf_index in range(3):
-            turn = frame @ Matrix.Rotation(math.radians(leaf_index * 120.0), 4, "Z")
-            batch.hull([(-0.05, 0.0, 0.02), (0.05, 0.0, 0.02), (-radius * 1.2, radius * 1.6, radius * 1.3), (radius * 1.2, radius * 1.6, radius * 1.3), (0.0, radius * 2.0, radius * 0.9), (0.0, radius * 0.8, radius * 0.4)], CABBAGE_OUTER, turn)
+    stamp_variants(b.plants, tuft_variants(MEADOW_TINTS, 0.55, 0.4), spot_matrices(spots, ground, generator, (0.6, 1.3)), generator)
 
 
-def carrot_field(batch: CropBatch, plot: tuple, ground: float, seed: int) -> None:
-    """Carrots: feathery leaf tufts with the orange shoulder of the root showing above the ridge."""
-    generator = random.Random(seed)
-    top = ground + FIELD_RAISE + 0.08
-
-    for x, z in plant_spots(plot, 0.6, 0.5, seed):
-        frame = frame_at_world(x, z, top, generator.uniform(0.0, 360.0))
-        batch.hull([(-0.045, -0.04, -0.03), (0.045, -0.04, -0.03), (0.0, 0.05, -0.03), (0.0, 0.0, 0.04)], CARROT_ROOT, frame)
-
-        for leaf_index in range(2):
-            blade(batch, frame @ Matrix.Translation((0.0, 0.0, 0.02)), generator.uniform(0.3, 0.42), 0.12, leaf_index * 180.0 + generator.uniform(-25, 25), generator.uniform(15.0, 35.0), CARROT_LEAF)
-
-
-def meadow_field(b: Builder, batch: CropBatch, plot: tuple, ground: float, seed: int) -> None:
-    """Mown meadow: lawn with tufts and a few round haystacks drying."""
+def meadow_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
+    """Mown meadow: grass with tufts, heaps of hay drying and the bales already tied, stacked by the fence."""
     generator = random.Random(seed)
     _crop, min_x, max_x, min_z, max_z = plot
 
     ground_patch(b, (min_x, max_x, min_z, max_z), ground + 0.03, "lawn", "FFFFFF", collider="Bed", thickness=0.05)
+    grass_tufts(b, plot, ground + 0.03, 520, generator)
 
-    for _ in range(160):
-        x, z = generator.uniform(min_x + 0.5, max_x - 0.5), generator.uniform(min_z + 0.5, max_z - 0.5)
-        blade(batch, frame_at_world(x, z, ground + 0.03), generator.uniform(0.25, 0.45), 0.12, generator.uniform(0, 360), generator.uniform(10, 30), MEADOW)
+    for index, (x, z) in enumerate(((113.0, 29.0), (121.5, 38.0), (131.0, 30.5), (139.5, 38.5))):
+        haycock(b, frame_at_world(x, z, ground + 0.03, index * 47.0), generator.uniform(1.2, 1.5), generator.uniform(1.0, 1.3), seed + index, fork=index == 1)
 
-    for index, (x, z) in enumerate(((112.0, 30.0), (118.5, 37.5), (126.0, 29.0), (134.0, 38.0), (141.0, 31.0))):
-        haystack(b, frame_at_world(x, z, ground + 0.03, index * 47.0), generator.uniform(1.4, 1.8), generator.uniform(2.6, 3.2), seed + index)
+    bale_stack(b, frame_at_world(144.5, 28.0, ground + 0.03, 90.0), 3, 2, 2, seed + 10)
 
 
-CROP_BUILDERS = {"wheat": wheat_field, "corn": corn_field, "cabbage": cabbage_field, "carrot": carrot_field}
-RIDGE_SPACING = {"wheat": 0.55, "corn": 0.95, "cabbage": 0.8, "carrot": 0.6, "garden": 0.8}
+def hay_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
+    """Hay just cut, raked into long windrows across the field to dry."""
+    generator = random.Random(seed)
+    _crop, min_x, max_x, min_z, max_z = plot
+    heaps = itertools.product(numpy.arange(min_z + 2.2, max_z - 1.5, 3.1), numpy.arange(min_x + 2.6, max_x - 2.0, 3.3))
+
+    ground_patch(b, (min_x, max_x, min_z, max_z), ground + 0.03, "lawn", "FFFFFF", collider="Bed", thickness=0.05)
+    grass_tufts(b, plot, ground + 0.03, 160, generator)
+
+    for index, (z, x) in enumerate(heaps):
+        hay_pile(b, frame_at_world(x + generator.uniform(-0.3, 0.3), z + generator.uniform(-0.25, 0.25), ground + 0.03, generator.uniform(-9.0, 9.0)), (3.3, generator.uniform(0.8, 1.1), generator.uniform(0.28, 0.4)), seed + index)
+
+
+def build_plot(b: Builder, name: str, plot: tuple) -> None:
+    crop = plot[0]
+    seed = SEED + len(name) * 7
+    pastures = {"meadow": meadow_field, "hayfield": hay_field}
+
+    if crop in pastures:
+        pastures[crop](b, plot, OUTSIDE_GROUND, seed)
+        return
+
+    plot_bed(b, plot, OUTSIDE_GROUND, RIDGE_SPACING[crop], BED_TINT[crop])
+
+    if crop == "wheat":
+        wheat_field(b, plot, OUTSIDE_GROUND, seed)
+        return
+
+    plant_crop(b, crop, plot, OUTSIDE_GROUND, seed)
 
 
 # ---------- buildings ----------
@@ -679,7 +1085,7 @@ def build_farmhouse() -> dict:
     log_pile(b, Matrix.Translation((house.half + 0.6, house.depth / 2.0, 0.0)) @ Matrix.Rotation(math.pi / 2.0, 4, "Z"), 2.4, 3)
     b.marker("door", (0.0, -2.4, 0.0))
 
-    return b.finish(FARM_DIR / "farmhouse.gltf", {"lot_width": FARMHOUSE["width"], "lot_depth": FARMHOUSE["depth"], "doors": house.doors})
+    return finish_model(b, "farmhouse", {"lot_width": FARMHOUSE["width"], "lot_depth": FARMHOUSE["depth"], "doors": house.doors})
 
 
 def roof_slabs(b: Builder, across: tuple, depth: tuple, eave: float, ridge: float, tint: tuple, material: str = "tiles", thickness: float = 0.14) -> None:
@@ -799,7 +1205,7 @@ def build_barn() -> dict:
     b.collider((2.4, -0.9, 0.0), (3.5, -0.1, 0.9))
     b.collider((-4.0, -0.95, 0.0), (-2.6, -0.2, 0.95))
 
-    return b.finish(FARM_DIR / "barn.gltf", {"lot_width": width, "lot_depth": depth, "doors": [{"x": 0.0, "width": 2.0 * door_half, "enterable": False}]})
+    return finish_model(b, "barn", {"lot_width": width, "lot_depth": depth, "doors": [{"x": 0.0, "width": 2.0 * door_half, "enterable": False}]})
 
 
 def weather_vane(b: Builder, top: tuple) -> None:
@@ -823,133 +1229,131 @@ def draw_side_window(b: Builder, u: float, d: float, trim: tuple) -> None:
 
 # ---------- the yard (block 5) ----------
 
-def build_farm_yard() -> dict:
-    """Ground, fences and props of the farm block, in world coordinates."""
-    b = farm_builder("farm_yard")
-    min_x, max_x, min_z, max_z = FARM_YARD
-    cows, pigs = FARM_PENS["cows"], FARM_PENS["pigs"]
-    lane = (min_x, max_x, -FARM_LANE_HALF_WIDTH, FARM_LANE_HALF_WIDTH)
-    yard = (min_x, max_x, -26.0, -FARM_LANE_HALF_WIDTH)
-    garden = KITCHEN_GARDEN[1:]
-    batch = CropBatch(b)
-
-    ground_patch(b, (cows[0] - 1.0, max_x, cows[2] - 1.0, cows[3] + 1.0), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
-    ground_patch(b, (min_x, max_x, FARM_LANE_HALF_WIDTH, cows[2] - 1.0), YARD_TOP, "soil", SOIL, collider="Yard")
-    ground_patch(b, (min_x, cows[0] - 1.0, cows[2] - 1.0, max_z), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
-    ground_patch(b, (cows[0] - 1.0, max_x, cows[3] + 1.0, max_z), YARD_TOP, "soil", SOIL, collider="Yard")
-    ground_patch(b, lane, YARD_TOP + 0.005, "soil", SOIL_PATH, collider="Path")
-    ground_patch(b, yard, YARD_TOP, "soil", SOIL, collider="Yard")
-    ground_patch(b, (min_x, max_x, min_z, -26.0), YARD_TOP, "soil", SOIL, collider="Yard")
-
-    for index, (x, z, rx, rz) in enumerate(((92.0, 38.0, 3.2, 2.2), (96.5, 34.5, 2.0, 1.5), (88.5, 41.0, 1.6, 1.2))):
-        rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.012, MUD, SEED + index)
-
-    for index, (x, z, rx, rz) in enumerate(((93.5, 9.0, 1.8, 1.1), (80.0, 24.0, 2.2, 1.4))):
-        rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.012, SOIL, SEED + 10 + index)
-
-    for index, (x, z, rx, rz) in enumerate(YARD_GRASS_PATCHES):
-        rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.008, "FFFFFF", SEED + 50 + index, material="lawn")
-
-    scatter_tufts(batch, YARD_GRASS_PATCHES, SEED + 60)
-    build_kitchen_garden(b, batch, garden)
-    fence_run(b, rectangle_loop((cows[0], cows[1], cows[2], cows[3])), YARD_TOP, SEED + 20)
-    fence_run(b, rectangle_loop((pigs[0], pigs[1], pigs[2], pigs[3])), YARD_TOP, SEED + 21)
-
-    hay_rack(b, frame_at_world(96.0, 25.5, YARD_TOP, 0.0), 3.0)
-    lean_to(b, frame_at_world(94.0, 23.0, YARD_TOP, 180.0), 6.0, 3.6, 2.6, 2.1)
-    trough(b, frame_at_world(88.0, 5.6, YARD_TOP, 0.0), 2.6)
-    trough(b, frame_at_world(94.0, 32.2, YARD_TOP, 0.0), 2.0)
-    lean_to(b, frame_at_world(97.5, 40.0, YARD_TOP, 180.0), 4.2, 2.6, 1.9, 1.5)
-    hay_pile(b, frame_at_world(88.0, 42.4, YARD_TOP), (2.2, 1.0, 0.45), 61)
-
-    well(b, frame_at_world(88.0, -15.0, YARD_TOP))
-    farm_cart(b, frame_at_world(97.5, -16.0, YARD_TOP, 20.0), load="hay", seed=3)
-    wheelbarrow(b, frame_at_world(84.5, -11.0, YARD_TOP, -60.0))
-    haystack(b, frame_at_world(80.5, -6.5, YARD_TOP, 10.0), 1.5, 2.8, 71)
-    trough(b, frame_at_world(91.5, -8.5, YARD_TOP, 90.0), 2.0)
-
-    for index, (x, z) in enumerate(((78.0, 35.0), (81.0, 40.5), (79.5, 30.5))):
-        haystack(b, frame_at_world(x, z, YARD_TOP, index * 50.0), 1.4, 2.6, 80 + index)
-
-    for index, (x, z) in enumerate(((84.0, -24.5), (84.7, -24.0))):
-        sack(b, frame_at_world(x, z, YARD_TOP), 0.0, 0.0, 0.0, 0.26, 0.44, ("E8D7B0", "DDAE62")[index])
-
-    batch.flush()
-
-    return b.finish(FARM_DIR / "farm_yard.gltf", {"origin": "world", "doors": []})
-
-
+YARD_LANE = [(75.0, 0.3), (80.0, -0.5), (86.0, 0.6), (92.0, -0.4), (97.0, 0.4), (102.0, 0.0)]  # da rua ao portão do muro
+BARN_PATH = [(89.5, -2.4), (90.5, -9.0), (93.5, -14.5), (94.6, -20.0), (94.5, -26.6)]  # da estradinha ao portão do celeiro
 YARD_GRASS_PATCHES = (  # (x, z, raio x, raio z): grama que resiste nas beiradas do terreiro pisado
     (77.6, -4.6, 2.4, 1.4),
     (99.6, -11.0, 1.8, 3.2),
-    (90.5, -3.6, 3.2, 1.0),
+    (84.0, -4.2, 2.6, 0.9),
     (99.8, -21.5, 1.4, 2.2),
     (80.5, 43.4, 3.0, 1.2),
     (77.2, -44.0, 1.6, 0.8),
 )
 
 
-def scatter_tufts(batch: CropBatch, patches: tuple, seed: int) -> None:
-    """A few blades of grass on every patch so the edges read as grass, not paint."""
+def build_farm_yard() -> dict:
+    """Ground, fences and props of the farm block, in world coordinates."""
+    b = farm_builder("farm_yard")
+    min_x, max_x, min_z, max_z = FARM_YARD
+    cows, pigs = FARM_PENS["cows"], FARM_PENS["pigs"]
+
+    ground_patch(b, (cows[0] - 1.0, max_x, cows[2] - 1.0, cows[3] + 1.0), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
+    ground_patch(b, (min_x, max_x, FARM_LANE_HALF_WIDTH, cows[2] - 1.0), YARD_TOP, "soil", SOIL, collider="Yard")
+    ground_patch(b, (min_x, cows[0] - 1.0, cows[2] - 1.0, max_z), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
+    ground_patch(b, (cows[0] - 1.0, max_x, cows[3] + 1.0, max_z), YARD_TOP, "soil", SOIL, collider="Yard")
+    ground_patch(b, (min_x, max_x, -FARM_LANE_HALF_WIDTH, FARM_LANE_HALF_WIDTH), YARD_TOP, "soil", SOIL, collider="Path")
+    ground_patch(b, (min_x, max_x, min_z, -FARM_LANE_HALF_WIDTH), YARD_TOP, "soil", SOIL, collider="Yard")
+    dirt_track(b, YARD_LANE, YARD_TOP + 0.012, SEED + 70)
+    dirt_track(b, BARN_PATH, YARD_TOP + 0.012, SEED + 71, half_width=1.2, cart_ruts=False)
+
+    for index, (x, z, rx, rz) in enumerate(((92.5, 35.8, 2.6, 1.8), (96.5, 33.8, 1.8, 1.3), (88.5, 41.0, 1.6, 1.2))):
+        rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.012, MUD, SEED + index)
+
+    for index, (x, z, rx, rz) in enumerate(((88.0, 6.6, 2.0, 1.1), (93.5, 19.6, 3.4, 1.2))):
+        rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.012, SOIL, SEED + 10 + index)
+
+    for index, (x, z, rx, rz) in enumerate(YARD_GRASS_PATCHES):
+        rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.008, "FFFFFF", SEED + 50 + index, material="lawn")
+
+    scatter_tufts(b, YARD_GRASS_PATCHES, SEED + 60)
+    build_kitchen_garden(b, KITCHEN_GARDEN[1:])
+    fence_run(b, rectangle_loop(cows), YARD_TOP, SEED + 20)
+    fence_run(b, rectangle_loop(pigs), YARD_TOP, SEED + 21)
+
+    # Abrigos inteiros dentro do cercado: fundo e beiral a mais de 1,3 m da cerca.
+    lean_to(b, frame_at_world(93.5, 21.2, YARD_TOP, 180.0), 9.0, 5.0, 3.0, 2.4)
+    hay_rack(b, frame_at_world(85.5, 24.8, YARD_TOP, 0.0), 3.0)
+    trough(b, frame_at_world(88.0, 5.6, YARD_TOP, 0.0), 2.6)
+    lean_to(b, frame_at_world(96.0, 38.0, YARD_TOP, 180.0), 6.5, 3.8, 2.2, 1.7)
+    trough(b, frame_at_world(94.0, 32.2, YARD_TOP, 0.0), 2.0)
+    hay_pile(b, frame_at_world(88.0, 42.2, YARD_TOP), (2.2, 1.0, 0.5), 61)
+
+    well(b, frame_at_world(88.0, -15.0, YARD_TOP))
+    farm_cart(b, frame_at_world(98.0, -15.5, YARD_TOP, 20.0), load="hay", seed=3)
+    wheelbarrow(b, frame_at_world(84.5, -11.0, YARD_TOP, -60.0))
+    haycock(b, frame_at_world(80.5, -7.0, YARD_TOP, 10.0), 1.3, 1.15, 71, fork=True)
+    trough(b, frame_at_world(97.5, -6.0, YARD_TOP, 0.0), 2.0)
+    bale_stack(b, frame_at_world(99.6, -23.0, YARD_TOP, 90.0), 3, 2, 3, 80)
+    produce_stand(b, frame_at_world(88.2, -21.6, YARD_TOP, 15.0), 90)
+    bale_stack(b, frame_at_world(79.0, 40.0, YARD_TOP, 0.0), 4, 2, 3, 81)
+    haycock(b, frame_at_world(78.6, 32.6, YARD_TOP, 30.0), 1.2, 1.05, 82)
+    haycock(b, frame_at_world(81.8, 35.4, YARD_TOP, 80.0), 1.0, 0.9, 83)
+
+    return finish_model(b, "farm_yard", {"origin": "world", "doors": []})
+
+
+def scatter_tufts(b: Builder, patches: tuple, seed: int) -> None:
+    """Tufts of grass on every patch so the edges read as grass, not paint."""
     generator = random.Random(seed)
+    spots = [
+        (x + math.cos(angle) * radius_x * reach, z + math.sin(angle) * radius_z * reach)
+        for x, z, radius_x, radius_z in patches
+        for angle, reach in ((generator.uniform(0.0, 2.0 * math.pi), math.sqrt(generator.random()) * 0.85) for _ in range(int(5 * radius_x * radius_z)))
+    ]
 
-    for x, z, radius_x, radius_z in patches:
-        for _ in range(int(6 * radius_x * radius_z)):
-            angle, reach = generator.uniform(0.0, 2.0 * math.pi), math.sqrt(generator.random()) * 0.8
-            spot = (x + math.cos(angle) * radius_x * reach, z + math.sin(angle) * radius_z * reach)
-            blade(batch, frame_at_world(*spot, YARD_TOP), generator.uniform(0.18, 0.32), 0.1, generator.uniform(0, 360), generator.uniform(10, 30), MEADOW)
+    stamp_variants(b.plants, tuft_variants(MEADOW_TINTS, 0.45, 0.3), spot_matrices(spots, YARD_TOP, generator, (0.6, 1.2)), generator)
 
 
-def build_kitchen_garden(b: Builder, batch: CropBatch, rectangle: tuple) -> None:
-    """Farmhouse vegetable patch: cabbage and carrot rows in a low wattle fence with a gap toward the lane."""
+def build_kitchen_garden(b: Builder, rectangle: tuple) -> None:
+    """Farmhouse vegetable patch: cabbage and carrot rows in a low fence with a gap toward the lane."""
     min_x, max_x, min_z, max_z = rectangle
     half_z = (min_z + max_z) / 2.0
-    cabbages = ("cabbage", min_x + 0.5, max_x - 0.5, min_z + 0.4, half_z - 0.2)
-    carrots = ("carrot", min_x + 0.5, max_x - 0.5, half_z + 0.2, max_z - 0.4)
+    ground = YARD_TOP + 0.04 - FIELD_RAISE
 
     ground_patch(b, rectangle, YARD_TOP + 0.04, "soil", SOIL_DARK, collider="Field", thickness=0.06)
-    cabbage_field(batch, cabbages, YARD_TOP + 0.04 - FIELD_RAISE, SEED + 30)
-    carrot_field(batch, carrots, YARD_TOP + 0.04 - FIELD_RAISE, SEED + 31)
+    plant_crop(b, "cabbage", ("cabbage", min_x + 0.5, max_x - 0.5, min_z + 0.4, half_z - 0.2), ground - 0.08, SEED + 30)
+    plant_crop(b, "carrot", ("carrot", min_x + 0.5, max_x - 0.5, half_z + 0.2, max_z - 0.4), ground - 0.08, SEED + 31)
     fence_run(b, [(max_x - 2.0, max_z), (min_x, max_z), (min_x, min_z), (max_x, min_z), (max_x, max_z)], YARD_TOP, SEED + 32)
 
 
 # ---------- the fields past the wall ----------
 
+FIELD_LANE = [(102.0, 0.0), (107.0, 0.5), (113.0, -0.7), (120.0, 0.6), (127.0, -0.5), (134.0, 0.8), (141.0, -0.3), (148.5, 0.4)]
+FIELD_FOOTPATHS = (  # trilhas de pé: ao longo do muro (norte e sul) e a cabeceira entre o trigo e a horta
+    [(105.2, -44.0), (104.8, -32.0), (105.7, -18.0), (105.1, -2.6)],
+    [(105.2, 2.6), (105.7, 14.0), (104.8, 30.0), (105.3, 44.0)],
+    [(106.0, -21.8), (118.0, -21.3), (131.0, -22.2), (147.5, -21.6)],
+)
+
+
 def build_farm_fields() -> dict:
-    """Crop plots, meadow, the lane out of the town gate, the gate posts and the outer fence, in world coordinates."""
+    """Crop plots, meadows, the lane out of the town gate, footpaths, gate posts and the outer fence, in world
+    coordinates. No plot touches a track: the lane keeps 1.8 m of verge each side, the footpaths 1.4 m."""
     b = farm_builder("farm_fields")
     min_x, max_x, min_z, max_z = FARM_FIELDS
-    batch = CropBatch(b)
     gate_x = min_x - TOWN_GATE_DEPTH
+    track_top = OUTSIDE_GROUND + 0.02
 
-    ground_patch(b, (gate_x, max_x, -FARM_LANE_HALF_WIDTH, FARM_LANE_HALF_WIDTH), OUTSIDE_GROUND + 0.03, "soil", SOIL_PATH, collider="Path", thickness=0.06)
-    ground_patch(b, (min_x + 1.0, min_x + 3.0, min_z + 1.0, max_z - 1.0), OUTSIDE_GROUND + 0.03, "soil", SOIL_PATH, collider="Path", thickness=0.06)
+    b.collider(world(gate_x, 3.0, track_top - 0.08), world(max_x, -3.0, track_top), name="Path")
+    b.collider(world(min_x + 0.6, max_z - 1.0, track_top - 0.08), world(min_x + 3.6, min_z + 1.0, track_top), name="Path")
+    dirt_track(b, FIELD_LANE, track_top, SEED + 72)
+
+    for index, footpath in enumerate(FIELD_FOOTPATHS):
+        dirt_track(b, footpath, track_top, SEED + 73 + index, half_width=0.85, cart_ruts=False)
 
     for name, plot in FARM_FIELD_PLOTS.items():
-        build_plot(b, batch, name, plot)
+        build_plot(b, name, plot)
 
-    for index, (x, z, shirt) in enumerate(((126.0, -35.0, "4F8FC9"), (136.0, 12.0, "C9483B"))):
+    for index, (x, z, shirt) in enumerate(((126.0, -34.0, "4F8FC9"), (116.0, -12.0, "C9483B"))):
         scarecrow(b, frame_at_world(x, z, OUTSIDE_GROUND + FIELD_RAISE, index * 140.0 + 20.0), shirt)
 
     for side in (-1, 1):
         gate_post(b, (CITY_EAST_WALL_X + 0.6, (FARM_GATE_Z[0] if side < 0 else FARM_GATE_Z[1]) + side * 0.5))
 
     fence_run(b, [(min_x + 0.2, min_z), (max_x, min_z), (max_x, max_z), (min_x + 0.2, max_z)], OUTSIDE_GROUND, SEED + 40, gaps=())
-    farm_cart(b, frame_at_world(128.0, 2.8, OUTSIDE_GROUND + 0.03, 95.0), load="sacks", seed=9)
-    batch.flush()
+    farm_cart(b, frame_at_world(113.0, -21.4, track_top, 90.0), load="produce", seed=9)
 
-    return b.finish(FARM_DIR / "farm_fields.gltf", {"origin": "world", "doors": []})
-
-
-def build_plot(b: Builder, batch: CropBatch, name: str, plot: tuple) -> None:
-    crop = plot[0]
-
-    if crop == "meadow":
-        meadow_field(b, batch, plot, OUTSIDE_GROUND, SEED + len(name))
-        return
-
-    plot_bed(b, plot, OUTSIDE_GROUND, RIDGE_SPACING[crop])
-    CROP_BUILDERS[crop](batch, plot, OUTSIDE_GROUND, SEED + len(name) * 7)
+    return finish_model(b, "farm_fields", {"origin": "world", "doors": []})
 
 
 def gate_post(b: Builder, position: tuple) -> None:
@@ -962,45 +1366,73 @@ def gate_post(b: Builder, position: tuple) -> None:
     b.collider((-0.6, -0.5, 0.0), (0.6, 0.5, 4.9), frame=frame)
 
 
-# ---------- the wagon of the street carriages ----------
+# ---------- the wagons of the street carriages ----------
+
+def arched_cover(b: Builder, frame: Matrix, half_width: float, base: float, rise: float, span: tuple, tint: tuple, thickness: float = 0.03) -> None:
+    """Canvas tilt over the bed: a barrel vault open at both ends, with thickness (you see the load through it)."""
+    steps = 12
+    angles = [math.pi * step / steps for step in range(steps + 1)]
+    cover = bmesh.new()
+    arches = [
+        [cover.verts.new(((half_width - inset) * math.cos(angle), y, base + (rise - inset) * math.sin(angle))) for angle in angles]
+        for y, inset in itertools.product(span, (0.0, thickness))
+    ]
+    outer_front, inner_front, outer_back, inner_back = arches
+    strips = ((outer_front, outer_back), (inner_back, inner_front), (inner_front, outer_front), (outer_back, inner_back))
+
+    for (first, second), step in itertools.product(strips, range(steps)):
+        cover.faces.new((first[step], first[step + 1], second[step + 1], second[step]))
+
+    for face in cover.faces:
+        face.smooth = True
+
+    b._link(cover, "paint", tint, None, frame)
+
+
+def wagon_marks(b: Builder) -> None:
+    """Where carriage.gd puts the horse and where a driver sits (sidecar markers, Godot coords: +Z ahead)."""
+    b.marker("horse", (0.0, -HORSE_OFFSET, 0.0))
+    b.marker("driver_seat", (0.0, SEAT_Y, SEAT_HEIGHT))
+
 
 def build_farm_wagon() -> dict:
-    """Covered two-wheeled wagon with shafts for one horse (origin under the axle; the horse walks ahead, -Y)."""
+    """Covered two-wheeled wagon hitched to one horse (origin under the axle; the horse walks ahead, -Y)."""
     b = farm_builder("farm_wagon")
     frame = Matrix.Identity(4)
-    cloth = srgb("F2E6CF")
+    side_top = CART_FLOOR + 0.05 + CART_SIDE_HEIGHT
+    cover_span = (SEAT_Y + 0.42, CART_HALF_LENGTH + 0.05)
 
-    farm_cart(b, frame, load="sacks", seed=5)
+    farm_cart(b, frame, load="sacks", seed=5, hitched=True)
+    arched_cover(b, frame, CART_HALF_WIDTH + 0.06, side_top, 0.95, cover_span, srgb("F2E6CF"))
 
-    for hoop in (-1.0, 0.0, 1.0):
-        b.beam((-0.78, hoop, 1.15), (-0.55, hoop, 2.05), 0.05, 0.05, "wood", srgb(WOOD["media"]), frame=frame)
-        b.beam((0.78, hoop, 1.15), (0.55, hoop, 2.05), 0.05, 0.05, "wood", srgb(WOOD["media"]), frame=frame)
-        b.beam((-0.55, hoop, 2.05), (0.55, hoop, 2.05), 0.05, 0.05, "wood", srgb(WOOD["media"]), frame=frame)
+    for hoop_y in (cover_span[0] + 0.02, sum(cover_span) / 2.0, cover_span[1] - 0.02):
+        arched_cover(b, frame, CART_HALF_WIDTH + 0.075, side_top, 0.965, (hoop_y - 0.025, hoop_y + 0.025), srgb(WOOD["media"]), thickness=0.07)
 
-    b.hull([(-0.82, -1.15, 1.15), (0.82, -1.15, 1.15), (-0.82, 1.15, 1.15), (0.82, 1.15, 1.15), (-0.6, -1.15, 2.1), (0.6, -1.15, 2.1), (-0.6, 1.15, 2.1), (0.6, 1.15, 2.1)], "paint", cloth, frame=frame)
-    b.box((-0.4, -1.4, 0.95), (0.4, -1.15, 1.25), "wood", srgb(WOOD["mel"]), frame=frame)
     wagon_lantern(b, frame)
-    b.marker("horse", (0.0, -3.9, 0.0))
+    wagon_marks(b)
 
-    return b.finish(FARM_DIR / "farm_wagon.gltf", {"origin": "axle", "doors": []})
+    return finish_model(b, "farm_wagon", {"origin": "axle", "doors": []})
 
 
 def build_hay_cart() -> dict:
     """Open two-wheeled cart heaped with hay, the second wagon of the street loop."""
     b = farm_builder("hay_cart")
 
-    farm_cart(b, Matrix.Identity(4), load="hay", seed=11)
+    farm_cart(b, Matrix.Identity(4), load="hay", seed=11, hitched=True)
     wagon_lantern(b, Matrix.Identity(4))
-    b.marker("horse", (0.0, -3.9, 0.0))
+    wagon_marks(b)
 
-    return b.finish(FARM_DIR / "hay_cart.gltf", {"origin": "axle", "doors": []})
+    return finish_model(b, "hay_cart", {"origin": "axle", "doors": []})
 
 
 def wagon_lantern(b: Builder, frame: Matrix) -> None:
-    """Small lantern hanging from a hook at the front of a wagon (its glow is the untinted lead material)."""
-    b.beam((0.7, -1.2, 1.1), (0.7, -1.45, 1.55), 0.04, 0.04, "metal", srgb("4A4448"), frame=frame)
-    b.box((0.62, -1.53, 1.2), (0.78, -1.37, 1.42), "glow_warm", WHITE, frame=frame)
-    b.box((0.6, -1.55, 1.42), (0.8, -1.35, 1.47), "metal", srgb("4A4448"), frame=frame)
+    """Small lantern on an iron arm beside the driver (its glow is the untinted lead material)."""
+    side = CART_HALF_WIDTH + 0.04
+
+    b.beam((side, SEAT_Y - 0.1, SEAT_HEIGHT - 0.1), (side + 0.16, SEAT_Y - 0.3, SEAT_HEIGHT + 0.42), 0.035, 0.035, "metal", srgb("4A4448"), frame=frame)
+    b.box((side + 0.08, SEAT_Y - 0.38, SEAT_HEIGHT + 0.14), (side + 0.24, SEAT_Y - 0.22, SEAT_HEIGHT + 0.36), "glow_warm", WHITE, frame=frame)
+    b.box((side + 0.06, SEAT_Y - 0.4, SEAT_HEIGHT + 0.36), (side + 0.26, SEAT_Y - 0.2, SEAT_HEIGHT + 0.41), "metal", srgb("4A4448"), frame=frame)
+    b.box((side + 0.06, SEAT_Y - 0.4, SEAT_HEIGHT + 0.1), (side + 0.26, SEAT_Y - 0.2, SEAT_HEIGHT + 0.14), "metal", srgb("4A4448"), frame=frame)
 
 
 MODELS = {

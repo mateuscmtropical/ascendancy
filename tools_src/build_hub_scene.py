@@ -551,12 +551,19 @@ FARM_ANIMAL_SEED = 5150
 FARM_ANIMAL_GAP = 1.6  # distância mínima entre bichos ao nascer, em comprimentos do corpo
 FARM_ANIMAL_TRIES = 60
 FARM_FIELD_PLOTS = {  # canteiro -> (cultura, min x, max x, min z, max z): fileiras correm ao longo de x
-    "WheatNorth": ("wheat", 106.0, 146.0, -44.0, -26.0),
-    "Corn": ("corn", 106.0, 126.0, -22.0, -4.0),
-    "CabbageNorth": ("cabbage", 129.0, 146.0, -22.0, -4.0),
-    "Carrot": ("carrot", 106.0, 124.0, 4.0, 20.0),
-    "WheatSouth": ("wheat", 127.0, 146.0, 4.0, 20.0),
-    "Meadow": ("meadow", 106.0, 146.0, 24.0, 44.0),
+    # Uma faixa por cultura: horta (repolho, cenoura) junto do portão, grãos adiante, trigo na faixa do fundo,
+    # feno ao sul. A estradinha (z = 0) fica com 1,8 m de margem de cada lado e as trilhas com 1,4 m.
+    "Wheat": ("wheat", 108.0, 147.0, -44.0, -24.0),
+    "Cabbage": ("cabbage", 108.0, 124.0, -19.0, -5.0),
+    "Corn": ("corn", 127.0, 147.0, -19.0, -5.0),
+    "Carrot": ("carrot", 108.0, 124.0, 5.0, 19.0),
+    "HayField": ("hayfield", 127.0, 147.0, 5.0, 19.0),
+    "Meadow": ("meadow", 108.0, 147.0, 23.0, 44.0),
+}
+FARM_SHADE_TREES = {  # nome -> (tipo em PLANT_MODELS, variante, x, z, escala): sombra nos pastos, tronco longe da cerca
+    "CowOak": ("tree_old", 2, 83.0, 13.5, 0.8),
+    "CowBloom": ("tree_bloom", 0, 97.0, 10.0, 0.95),
+    "PigBloom": ("tree_bloom", 1, 89.0, 36.5, 0.9),
 }
 KITCHEN_GARDEN = ("garden", 77.0, 86.0, -28.5, -20.0)  # horta ao lado da casa do fazendeiro
 
@@ -1490,6 +1497,9 @@ def add_farm(scene: SceneWriter) -> None:
 
     for name, (body, hair, position, target, animation) in FARMHANDS.items():
         npc(scene, name, body, hair, stand(position, facing_yaw(position, target), animation, 0.0, height=0.03))
+
+    for name, (kind, variant, x, z, scale) in FARM_SHADE_TREES.items():
+        place(scene, name, "Farm", plant_models(kind)[variant], (x, 0.03, z), rotation_y=x * 0.7, scale=scale)
 
     add_farm_animals(scene)
 
