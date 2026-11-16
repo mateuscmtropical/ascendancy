@@ -9,8 +9,9 @@ render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabl
 // onde encosta na geometria.
 
 global uniform vec3 sun_direction;
+global uniform float sunlight; // força do sol (0 de noite e no eclipse), mantida pelo Hub
 
-uniform float intensity : hint_range(0.0, 2.0) = 0.14;
+uniform float intensity : hint_range(0.0, 2.0) = 0.09;
 uniform float reference_length = 12.0; // igual a SHAFT_REFERENCE_LENGTH em tools_src/build_cathedral.py
 uniform float floor_height = 1.05; // piso da nave, em coordenadas do mundo
 uniform float max_length : hint_range(1.0, 40.0) = 22.0;
@@ -63,5 +64,5 @@ void fragment() {
 	float dust = 1.0 - dust_strength + dust_strength * sin(UV.y * 31.0 - TIME * dust_speed * 6.283 + UV.x * 5.0);
 
 	ALBEDO = shaft_color;
-	ALPHA = intensity * sun_strength * side_fade * length_fade * view_fade * camera_fade * contact_fade * dust;
+	ALPHA = intensity * sunlight * sun_strength * side_fade * length_fade * view_fade * camera_fade * contact_fade * dust;
 }

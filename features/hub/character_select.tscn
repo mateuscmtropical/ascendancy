@@ -67,7 +67,7 @@ theme_override_constants/separation = 16
 [node name="Title" type="Label" parent="Panel/Layout"]
 theme_override_colors/font_color = Color(1, 0.9, 0.68, 1)
 theme_override_font_sizes/font_size = 26
-text = "Choose your adventurer"
+text = "Escolha seu aventureiro"
 horizontal_alignment = 1
 
 [node name="Buttons" type="HBoxContainer" parent="Panel/Layout"]
@@ -80,7 +80,7 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("button_style")
 theme_override_styles/hover = SubResource("button_hover_style")
 theme_override_styles/pressed = SubResource("button_hover_style")
-text = "Adventurer"
+text = "Aventureiro"
 
 [node name="FemaleButton" type="Button" parent="Panel/Layout/Buttons"]
 unique_name_in_owner = true
@@ -88,4 +88,4 @@ theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("button_style")
 theme_override_styles/hover = SubResource("button_hover_style")
 theme_override_styles/pressed = SubResource("button_hover_style")
-text = "Adventuress"
+text = "Aventureira"

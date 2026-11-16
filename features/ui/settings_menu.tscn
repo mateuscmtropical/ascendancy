@@ -89,7 +89,7 @@ theme_override_constants/separation = 18
 [node name="Title" type="Label" parent="Panel/Layout"]
 theme_override_colors/font_color = Color(1, 0.9, 0.68, 1)
 theme_override_font_sizes/font_size = 30
-text = "Settings"
+text = "Configurações"
 horizontal_alignment = 1
 
 [node name="Tabs" type="TabContainer" parent="Panel/Layout"]
@@ -143,11 +143,11 @@ theme_override_constants/separation = 24
 
 [node name="ResumeButton" type="Button" parent="Panel/Layout/Buttons"]
 unique_name_in_owner = true
-text = "Resume"
+text = "Continuar"
 
 [node name="QuitButton" type="Button" parent="Panel/Layout/Buttons"]
 unique_name_in_owner = true
-text = "Quit game"
+text = "Sair do jogo"
 
 [node name="InterfaceSound" type="AudioStreamPlayer" parent="."]
 unique_name_in_owner = true

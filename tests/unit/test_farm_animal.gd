@@ -46,6 +46,22 @@ func test_step_never_overshoots_the_target() -> void:
 	assert_eq(arrived, target)
 
 
+func test_cruise_speed_slows_down_near_the_target() -> void:
+	var far: float = FarmAnimal.cruise_speed(0.5, 10.0)
+	var near: float = FarmAnimal.cruise_speed(0.5, 0.1)
+
+	assert_almost_eq(far, 0.5, 0.001)
+	assert_almost_eq(near, 0.5 * FarmAnimal.MIN_SPEED_SHARE, 0.001)
+
+
+func test_heading_angle_faces_the_target() -> void:
+	var toward_plus_z: float = FarmAnimal.heading_angle(Vector2.ZERO, Vector2(0.0, 3.0))
+	var toward_plus_x: float = FarmAnimal.heading_angle(Vector2.ZERO, Vector2(3.0, 0.0))
+
+	assert_almost_eq(toward_plus_z, 0.0, 0.001)
+	assert_almost_eq(toward_plus_x, PI / 2.0, 0.001)
+
+
 func _wander_path(wander_seed: int) -> Array[Vector2]:
 	var generator: RandomNumberGenerator = RandomNumberGenerator.new()
 	var path: Array[Vector2] = []
