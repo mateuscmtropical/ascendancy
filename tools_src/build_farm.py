@@ -208,6 +208,7 @@ def farm_builder(name: str) -> Builder:
     b.materials["hay"] = textured_material("M_FarmHay", textures["hay"], roughness=0.95)
     b.materials["crops"] = crop_material(textures["crops"])
     b.materials["glass"] = plain_material("M_FarmGlass", srgb("3A4E66"), 0.12, 0.4)
+    b.materials["lantern"] = plain_material("M_FarmLantern", srgb("C9B48A"), 0.2)
     b.plants = PlantBatch(b, srgb)
 
     return b
@@ -632,7 +633,10 @@ CART_FLOOR = 0.8
 CART_SIDE_HEIGHT = 0.5
 CART_WHEEL_RADIUS = 0.64
 SEAT_HEIGHT = 1.46
-SEAT_Y = -1.02  # centro do assento: Blender -Y é a frente da carroça (+Z no Godot)
+SEAT_Y = -1.3  # centro do assento, além da parede da frente (as canelas do condutor descem livres): Blender -Y é a frente (+Z no Godot)
+FOOTBOARD_REACH = 0.62  # da parede da frente até a ponta do estribo, onde os pés do condutor apoiam
+BARN_PLANKS_UV = ("band", *WOOD_LIGHT_BAND, 1.5)
+BARN_BOARD_WIDTH = 0.3  # cada tábua da parede pega uma faixa do atlas: uma caixa do tamanho da parede esticava uma tábua só por 4 m
 HORSE_OFFSET = 3.9  # Carriage.horse_offset: do eixo às patas do cavalo
 HARNESS_SIDECAR = FARM_DIR / "animals" / "horse_harness.json"
 HARNESS_RING = (0.275, 1.149, 0.241)  # argola direita do arreio no cavalo (Godot: x lado, y altura, z à frente)
@@ -685,16 +689,16 @@ def cart_bench(b: Builder, frame: Matrix) -> None:
     wood, dark = srgb(WOOD["mel"]), srgb(WOOD["media"])
     side_top = CART_FLOOR + 0.05 + CART_SIDE_HEIGHT
     foot_low = ((-CART_HALF_WIDTH, -CART_HALF_LENGTH, CART_FLOOR + 0.02), (CART_HALF_WIDTH, -CART_HALF_LENGTH, CART_FLOOR + 0.02))
-    foot_high = ((-CART_HALF_WIDTH, -CART_HALF_LENGTH - 0.42, CART_FLOOR + 0.2), (CART_HALF_WIDTH, -CART_HALF_LENGTH - 0.42, CART_FLOOR + 0.2))
+    foot_high = ((-CART_HALF_WIDTH, -CART_HALF_LENGTH - FOOTBOARD_REACH, CART_FLOOR + 0.26), (CART_HALF_WIDTH, -CART_HALF_LENGTH - FOOTBOARD_REACH, CART_FLOOR + 0.26))
 
     b.box((-CART_HALF_WIDTH - 0.04, SEAT_Y - 0.2, SEAT_HEIGHT - 0.05), (CART_HALF_WIDTH + 0.04, SEAT_Y + 0.2, SEAT_HEIGHT), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
     b.box((-CART_HALF_WIDTH, SEAT_Y + 0.2, SEAT_HEIGHT + 0.12), (CART_HALF_WIDTH, SEAT_Y + 0.24, SEAT_HEIGHT + 0.36), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
     slab(b, frame, foot_low, foot_high, (0.0, 0.0, 0.04), wood)
 
     for side in (-1, 1):
-        b.box((side * CART_HALF_WIDTH - 0.04, SEAT_Y - 0.17, side_top), (side * CART_HALF_WIDTH + 0.04, SEAT_Y + 0.17, SEAT_HEIGHT - 0.05), "wood", dark, frame=frame)
+        b.box((side * CART_HALF_WIDTH - 0.04, -CART_HALF_LENGTH, side_top), (side * CART_HALF_WIDTH + 0.04, SEAT_Y + 0.17, SEAT_HEIGHT - 0.05), "wood", dark, frame=frame)
         b.box((side * CART_HALF_WIDTH - 0.03, SEAT_Y + 0.2, side_top), (side * CART_HALF_WIDTH + 0.03, SEAT_Y + 0.25, SEAT_HEIGHT + 0.36), "wood", dark, frame=frame)
-        b.beam((side * 0.5, -CART_HALF_LENGTH - 0.4, CART_FLOOR + 0.2), (side * 0.5, -CART_HALF_LENGTH, CART_FLOOR - 0.06), 0.05, 0.05, "wood", dark, frame=frame)
+        b.beam((side * 0.5, -CART_HALF_LENGTH - FOOTBOARD_REACH + 0.02, CART_FLOOR + 0.26), (side * 0.5, -CART_HALF_LENGTH, CART_FLOOR - 0.06), 0.05, 0.05, "wood", dark, frame=frame)
 
 
 def cart_shafts(b: Builder, frame: Matrix, hitched: bool) -> None:
@@ -1175,12 +1179,15 @@ def build_barn() -> dict:
     door_half = 2.0
 
     b.box((-half, 0.0, 0.0), (half, depth, 0.7), "stone", srgb(STONE["media"]))
-    b.box((-half + 0.05, 0.05, 0.7), (half - 0.05, depth - 0.05, eave), "wood", red, uv=("band", *WOOD_LIGHT_BAND, 2.0))
-    b.prism([(-half + 0.05, eave), (half - 0.05, eave), (0.0, eave + rise - 0.1)], 0.05, depth - 0.05, "wood", red, uv=("band", *WOOD_LIGHT_BAND, 2.0))
+    b.box((-half + 0.05, 0.05, 0.7), (half - 0.05, depth - 0.05, eave), "wood", red, uv=BARN_PLANKS_UV)
+    b.prism([(-half + 0.05, eave), (half - 0.05, eave), (0.0, eave + rise - 0.1)], 0.05, depth - 0.05, "wood", red, uv=BARN_PLANKS_UV)
+    barn_boards(b, half - 0.05, depth, eave, rise - 0.1, red)
     b.collider((-half, 0.0, 0.0), (half, depth, eave))
 
-    for batten in range(int(width / 0.6) + 1):
-        u = -half + 0.3 + batten * 0.6
+    battens_per_side = int(half / (2.0 * BARN_BOARD_WIDTH))
+
+    for batten in range(2 * battens_per_side + 1):
+        u = (batten - battens_per_side) * 2.0 * BARN_BOARD_WIDTH
         if abs(u) < door_half + 0.1:
             continue
         b.box((u - 0.03, -0.02, 0.7), (u + 0.03, 0.05, eave), "wood", srgb("8E3A2F"), uv=("band", *WOOD_DARK_BAND, 1.5))
@@ -1190,7 +1197,7 @@ def build_barn() -> dict:
 
     for side in (-1, 1):
         leaf_from, leaf_to = sorted((0.0, side * door_half))
-        b.box((leaf_from, -0.1, 0.0), (leaf_to, 0.02, 3.4), "wood", red, uv=("band", *WOOD_LIGHT_BAND, 2.0))
+        board_panel(b, (leaf_from, leaf_to), 0.0, lambda u: 3.4, (-0.1, 0.02), red, 40 + side)
         b.box((leaf_from, -0.14, 0.0), (leaf_to, -0.1, 0.14), "wood", trim)
         b.box((leaf_from, -0.14, 3.26), (leaf_to, -0.1, 3.4), "wood", trim)
         b.box((side * door_half - 0.07, -0.14, 0.0), (side * door_half + 0.07, -0.1, 3.4), "wood", trim)
@@ -1224,6 +1231,32 @@ def build_barn() -> dict:
     b.collider((-4.0, -0.95, 0.0), (-2.6, -0.2, 0.95))
 
     return finish_model(b, "barn", {"lot_width": width, "lot_depth": depth, "doors": [{"x": 0.0, "width": 2.0 * door_half, "enterable": False}]})
+
+
+def barn_boards(b: Builder, wall_half: float, depth: float, eave: float, gable_rise: float, red: tuple) -> None:
+    """Vertical boards over the walls and gables of the barn, 3 cm proud of the core box, seams meeting at the ridge."""
+    gable_top = lambda u: eave + gable_rise * (1.0 - abs(u) / wall_half)
+    wall_top = lambda u: eave
+    side_frames = {1: Matrix.Rotation(math.pi / 2.0, 4, "Z"), -1: Matrix.Rotation(-math.pi / 2.0, 4, "Z") @ Matrix.Translation((-depth, 0.0, 0.0))}
+
+    for seed, (u_span, depth_span) in enumerate((((-wall_half, 0.0), (0.02, 0.05)), ((0.0, wall_half), (0.02, 0.05)), ((-wall_half, 0.0), (depth - 0.05, depth - 0.02)), ((0.0, wall_half), (depth - 0.05, depth - 0.02)))):
+        board_panel(b, u_span, 0.7, gable_top, depth_span, red, seed * 50)
+
+    for side, frame in side_frames.items():
+        board_panel(b, (0.05, depth - 0.05), 0.7, wall_top, (-wall_half - 0.03, -wall_half), red, 300 + side * 50, frame)
+
+
+def board_panel(b: Builder, u_span: tuple, bottom: float, top_at, depth_span: tuple, tint: tuple, seed: int, frame: Matrix = None) -> None:
+    """Row of vertical boards from u_span[0] to u_span[1], tops following top_at(u), each a slightly different red."""
+    u_from, u_to = u_span
+    count = math.ceil((u_to - u_from) / BARN_BOARD_WIDTH - 1e-6)
+
+    for index in range(count):
+        u0 = u_from + index * BARN_BOARD_WIDTH
+        u1 = min(u0 + BARN_BOARD_WIDTH, u_to)
+        shade = 0.88 + 0.16 * ((seed + index) * 7919 % 13) / 12.0
+        board_tint = tuple(channel * shade for channel in tint)
+        b.prism([(u0, bottom), (u1, bottom), (u1, top_at(u1)), (u0, top_at(u0))], *depth_span, "wood", board_tint, frame=frame, uv=BARN_PLANKS_UV)
 
 
 def weather_vane(b: Builder, top: tuple) -> None:
@@ -1469,11 +1502,11 @@ def build_hay_cart() -> dict:
 
 
 def wagon_lantern(b: Builder, frame: Matrix) -> None:
-    """Small lantern on an iron arm beside the driver (its glow is the untinted lead material)."""
+    """Small lantern on an iron arm beside the driver (smoky glass that lights up at night, features/sky/window_glass.gd)."""
     side = CART_HALF_WIDTH + 0.04
 
     b.beam((side, SEAT_Y - 0.1, SEAT_HEIGHT - 0.1), (side + 0.16, SEAT_Y - 0.3, SEAT_HEIGHT + 0.42), 0.035, 0.035, "metal", srgb("4A4448"), frame=frame)
-    b.box((side + 0.08, SEAT_Y - 0.38, SEAT_HEIGHT + 0.14), (side + 0.24, SEAT_Y - 0.22, SEAT_HEIGHT + 0.36), "glow_warm", WHITE, frame=frame)
+    b.box((side + 0.08, SEAT_Y - 0.38, SEAT_HEIGHT + 0.14), (side + 0.24, SEAT_Y - 0.22, SEAT_HEIGHT + 0.36), "lantern", WHITE, frame=frame)
     b.box((side + 0.06, SEAT_Y - 0.4, SEAT_HEIGHT + 0.36), (side + 0.26, SEAT_Y - 0.2, SEAT_HEIGHT + 0.41), "metal", srgb("4A4448"), frame=frame)
     b.box((side + 0.06, SEAT_Y - 0.4, SEAT_HEIGHT + 0.1), (side + 0.26, SEAT_Y - 0.2, SEAT_HEIGHT + 0.14), "metal", srgb("4A4448"), frame=frame)
 
