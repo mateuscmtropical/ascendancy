@@ -1010,7 +1010,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
             "script": f'ExtResource("{sun_script}")',
             "day_night": 'NodePath("../../DayNight")',
             "inward_normal": vector(*inward),
-            "base_energy": "2.4",
+            "base_energy": "1.6",
         })
 
 

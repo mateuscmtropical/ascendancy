@@ -1560,7 +1560,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-0.866, 0.000, 0.500)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="LancetSun0S" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(58.716, 8.950, 3.300)
@@ -1574,7 +1574,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-0.866, 0.000, -0.500)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="LancetSun1N" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(56.786, 8.950, -5.406)
@@ -1588,7 +1588,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-0.574, 0.000, 0.819)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="LancetSun1S" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(56.786, 8.950, 5.406)
@@ -1602,7 +1602,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-0.574, 0.000, -0.819)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="LancetSun2N" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(54.372, 8.950, -6.456)
@@ -1616,7 +1616,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-0.208, 0.000, 0.978)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="LancetSun2S" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(54.372, 8.950, 6.456)
@@ -1630,7 +1630,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-0.208, 0.000, -0.978)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="OculusSun" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(59.600, 13.250, 0.000)
@@ -1644,7 +1644,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(-1.000, 0.000, 0.000)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="AisleSun0" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(20.800, 10.450, 12.300)
@@ -1658,7 +1658,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(0.000, 0.000, -1.000)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="AisleSun1" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(26.400, 10.450, 12.300)
@@ -1672,7 +1672,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(0.000, 0.000, -1.000)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="AisleSun2" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(32.000, 10.450, 12.300)
@@ -1686,7 +1686,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(0.000, 0.000, -1.000)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="AisleSun3" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(37.600, 10.450, 12.300)
@@ -1700,7 +1700,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(0.000, 0.000, -1.000)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="AisleSun4" type="SpotLight3D" parent="CathedralLights" node_paths=PackedStringArray("day_night")]
 position = Vector3(43.200, 10.450, 12.300)
@@ -1714,7 +1714,7 @@ light_volumetric_fog_energy = 0.2
 script = ExtResource("69_ext")
 day_night = NodePath("../../DayNight")
 inward_normal = Vector3(0.000, 0.000, -1.000)
-base_energy = 2.4
+base_energy = 1.6
 
 [node name="Lamps" type="Node3D" parent="." groups=["navigation_source"]]
 
