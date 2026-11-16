@@ -98,6 +98,10 @@ textures/default_filters/texture_mipmap_bias=-4.0
 
 [shader_globals]
 
+sky_time={
+"type": "float",
+"value": 0.0
+}
 night_glow={
 "type": "float",
 "value": 0.0

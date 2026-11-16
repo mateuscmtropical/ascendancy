@@ -9,6 +9,8 @@ extends Node
 ## Iluminação: a cidade não tem GI assado por hora do dia. Quem acompanha o ciclo é a luz
 ## direcional, a luz ambiente vinda do céu (radiância do Sky, refeita conforme o shader muda), a
 ## névoa e a exposição; as luzes locais (postes, lojas) são fixas e só os postes apagam de dia.
+## A radiância custa caro: o tempo que move nuvens e estrelas vai no global `sky_time` (não suja o
+## material) e sol, lua e quantidades só são reescritos no material quando a mudança aparece.
 ##
 ## Argumentos (depois de --): --time-of-day=0.8 congela o relógio nessa hora (prints);
 ## --sky-event=shower|solar|lunar força um evento para conferir o visual.
@@ -49,6 +51,11 @@ const NIGHT_AMBIENT_ENERGY: float = 0.45
 const LAMPS_ON_DAY_AMOUNT: Vector2 = Vector2(0.15, 0.45)
 ## Estrela que começou na fatia anterior ainda pode estar riscando o céu.
 const SLOT_LOOKBACK: int = 1
+const SKY_TIME_GLOBAL: StringName = &"sky_time"
+## O céu é reescrito quando o sol anda mais que isso (radianos; ~0,46 s de jogo) ou uma quantidade
+## (dia, crepúsculo, eclipses) muda mais que SKY_REFRESH_AMOUNT.
+const SKY_REFRESH_ANGLE: float = 0.002
+const SKY_REFRESH_AMOUNT: float = 0.004
 
 @export var sun: DirectionalLight3D
 @export var world_environment: WorldEnvironment
@@ -73,6 +80,9 @@ var _forced_meteors: Array[SkyMeteor] = []
 var _meteor_heads: PackedVector4Array = PackedVector4Array()
 var _meteor_tails: PackedVector4Array = PackedVector4Array()
 var _lamp_amount: float = -1.0
+var _sent_sun_direction: Vector3 = Vector3.ZERO
+var _sent_sky_amounts: Vector4 = -Vector4.ONE
+var _sent_meteor_count: int = 0
 
 
 func _ready() -> void:
@@ -150,24 +160,54 @@ func apply_sky() -> void:
 	var day_amount: float = day_amount_for(sun_direction.y)
 	var twilight_amount: float = twilight_amount_for(sun_direction.y)
 	var eclipse: Vector2 = _eclipse_coverage()
+	var sky_amounts: Vector4 = Vector4(day_amount, twilight_amount, eclipse.x, eclipse.y)
+	var meteor_count: int
 
 	_light_with_sun_or_moon(sun_direction, moon_direction, eclipse)
 	_tint_environment(day_amount, twilight_amount, eclipse.x)
 	_switch_night_lights(day_amount * (1.0 - 0.8 * eclipse.x))
-	_fill_meteor_slots()
+	meteor_count = _fill_meteor_slots()
+	RenderingServer.global_shader_parameter_set(SKY_TIME_GLOBAL, game_seconds)
 
 	if _sky_material == null:
 		return
 
+	if is_sky_change_visible(_sent_sun_direction, sun_direction, _sent_sky_amounts, sky_amounts):
+		_send_sky_state(sun_direction, moon_direction, sky_amounts)
+
+	if meteor_count > 0 or _sent_meteor_count > 0:
+		_sky_material.set_shader_parameter(&"meteor_heads", _meteor_heads)
+		_sky_material.set_shader_parameter(&"meteor_tails", _meteor_tails)
+		_sent_meteor_count = meteor_count
+
+
+## Verdadeiro quando o sol andou ou uma quantidade do céu (dia, crepúsculo, eclipses) mudou o
+## bastante para aparecer; antes disso reescrever o material só refaria a radiância à toa.
+static func is_sky_change_visible(
+	sent_sun: Vector3, sun_direction: Vector3, sent_amounts: Vector4, amounts: Vector4
+) -> bool:
+	var amount_change: Vector4 = (amounts - sent_amounts).abs()
+	var largest_change: float = maxf(
+		maxf(amount_change.x, amount_change.y), maxf(amount_change.z, amount_change.w)
+	)
+
+	if sent_sun.is_zero_approx():
+		return true
+
+	return (
+		sent_sun.angle_to(sun_direction) > SKY_REFRESH_ANGLE or largest_change > SKY_REFRESH_AMOUNT
+	)
+
+
+func _send_sky_state(sun_direction: Vector3, moon_direction: Vector3, amounts: Vector4) -> void:
 	_sky_material.set_shader_parameter(&"sun_direction", sun_direction)
 	_sky_material.set_shader_parameter(&"moon_direction", moon_direction)
-	_sky_material.set_shader_parameter(&"day_amount", day_amount)
-	_sky_material.set_shader_parameter(&"twilight_amount", twilight_amount)
-	_sky_material.set_shader_parameter(&"cloud_time", game_seconds)
-	_sky_material.set_shader_parameter(&"solar_eclipse", eclipse.x)
-	_sky_material.set_shader_parameter(&"lunar_eclipse", eclipse.y)
-	_sky_material.set_shader_parameter(&"meteor_heads", _meteor_heads)
-	_sky_material.set_shader_parameter(&"meteor_tails", _meteor_tails)
+	_sky_material.set_shader_parameter(&"day_amount", amounts.x)
+	_sky_material.set_shader_parameter(&"twilight_amount", amounts.y)
+	_sky_material.set_shader_parameter(&"solar_eclipse", amounts.z)
+	_sky_material.set_shader_parameter(&"lunar_eclipse", amounts.w)
+	_sent_sun_direction = sun_direction
+	_sent_sky_amounts = amounts
 
 
 ## Cobertura do eclipse solar (x) e lunar (y) agora: sorteado por dia, ou forçado por argumento.
@@ -261,8 +301,8 @@ func _switch_night_lights(day_amount: float) -> void:
 		night_light.visible = lamp_amount > 0.01
 
 
-## Até METEOR_SLOTS estrelas cadentes no céu agora, das fatias atual e anterior.
-func _fill_meteor_slots() -> void:
+## Até METEOR_SLOTS estrelas cadentes no céu agora, das fatias atual e anterior; devolve quantas.
+func _fill_meteor_slots() -> int:
 	var slot: int = SkyEvents.slot_of(game_seconds)
 	var visible_meteors: Array[SkyMeteor] = _forced_meteors.filter(
 		func(meteor: SkyMeteor) -> bool: return meteor.is_visible_at(game_seconds)
@@ -284,6 +324,8 @@ func _fill_meteor_slots() -> void:
 		_meteor_tails[slot_index] = _meteor_vector(meteor, false)
 
 	_forget_old_slots(slot)
+
+	return mini(visible_meteors.size(), METEOR_SLOTS)
 
 
 func _meteors_of_slot(slot: int) -> Array[SkyMeteor]:

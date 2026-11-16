@@ -620,6 +620,10 @@ SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício princ
 SHOP_FRONT_OVERHANG = 2.6  # toldos e mercadoria na calçada
 ROW_START_SIDE = {"S": "left", "N": "right", "E": "right", "W": "left"}  # lado do modelo (u < 0 = left) na ponta inicial da fileira
 INTERIOR_VISIBLE_DISTANCE = 60.0  # o recheio das lojas some além disto (features/hub/shop_interior.gd)
+# Luzes locais somem com a distância (o Forward+ paga cada luz por pixel que ela toca): de dentro das lojas e da
+# catedral só se vê a luz pela porta e pelas janelas, e de longe ela não faz diferença.
+LIGHT_FADE_BEGIN = {"shop": 30.0, "cathedral": 45.0}
+LIGHT_FADE_LENGTH = 10.0
 ALLEY_WALL_HEIGHT = 2.2
 
 
@@ -897,10 +901,13 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
             "light_color": hex_color(light["color"]),
             "light_energy": f"{light['energy']}",
             "omni_range": f"{light['range']}",
-            "distance_fade_enabled": "true",
-            "distance_fade_begin": "40.0",
-            "distance_fade_length": "15.0",
+            **light_fade("shop"),
         })
+
+
+def light_fade(place_kind: str) -> dict:
+    """Distance fade properties of a local light (LIGHT_FADE_BEGIN by where it shines)."""
+    return {"distance_fade_enabled": "true", "distance_fade_begin": f"{LIGHT_FADE_BEGIN[place_kind]}", "distance_fade_length": f"{LIGHT_FADE_LENGTH}"}
 
 
 def add_shopkeepers(scene: SceneWriter, lots: list) -> None:
@@ -981,7 +988,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
     altar_light = (CATHEDRAL_FACADE_X + 39.7, CHANCEL_FLOOR + 9.0, 0.0)
     retable_backlights = [(CATHEDRAL_FACADE_X + 45.0, CHANCEL_FLOOR + 8.0, side * 2.0) for side in (-1.0, 1.0)]
     side_altar_lights = [(CATHEDRAL_FACADE_X + 38.5, CATHEDRAL_FLOOR + 3.0, side * 10.0) for side in (-1.0, 1.0)]
-    warm_omni = {"light_color": "Color(1, 0.85, 0.62, 1)", "distance_fade_enabled": "true", "distance_fade_begin": "60.0"}
+    warm_omni = {"light_color": "Color(1, 0.85, 0.62, 1)", **light_fade("cathedral")}
 
     scene.add_node("CathedralLights", ".", "Node3D")
 
@@ -995,6 +1002,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
         "light_energy": "4.0",
         "spot_range": "14.0",
         "spot_angle": "28.0",
+        **light_fade("cathedral"),
     })
 
     for index, position in enumerate(retable_backlights):
@@ -1019,6 +1027,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
             "day_night": 'NodePath("../../DayNight")',
             "inward_normal": vector(*inward),
             "base_energy": "1.6",
+            **light_fade("cathedral"),
         })
 
 
@@ -1756,6 +1765,8 @@ def add_player_and_cameras(scene: SceneWriter) -> None:
 
 DAY_NIGHT_CYCLE_MINUTES = 24.0  # 12 min de dia claro + 12 de noite
 START_TIME_OF_DAY = 0.18  # manhã: o sol a uns 40° a leste-sudeste, a luz dos prints de antes
+SUN_SHADOW_DISTANCE = 60.0  # style bible: sombra do sol até ~60 m (era 110 m: o dobro de mapa no passe de sombra)
+SUN_SHADOW_NEAR_SPLIT = 0.25  # primeira cascata nos 15 m mais perto da câmera
 WORLD_SEED = 1  # semente do mundo da cidade inicial (eventos do céu); o servidor mandará a dele
 
 
@@ -1805,8 +1816,10 @@ adjustment_saturation = 1.08''')
         "light_energy": "1.35",
         "shadow_enabled": "true",
         "shadow_blur": "1.5",
-        "directional_shadow_mode": "1",
-        "directional_shadow_max_distance": "110.0",
+        "directional_shadow_mode": "1",  # 2 cascatas (style bible: 2–3; o Godot só tem 2 ou 4)
+        "directional_shadow_split_1": f"{SUN_SHADOW_NEAR_SPLIT}",
+        "directional_shadow_max_distance": f"{SUN_SHADOW_DISTANCE}",
+        "directional_shadow_fade_start": "0.85",
     })
     scene.add_node("DayNight", ".", "Node", properties={
         "script": f'ExtResource("{day_night_script}")',
@@ -1837,9 +1850,35 @@ def build_hub_scene() -> str:
     add_townsfolk(scene, benches)
     add_farm(scene)
     add_carriages(scene)
+    add_distance_fades(scene)
     add_player_and_cameras(scene)
 
     return scene.render()
+
+
+DISTANCE_FADES = {  # nó -> (grupo da cena, prefixos dos filhos, alcance em m): peças pequenas somem de longe com fade
+    "GrassTufts": ("Trees", ("Grass",), 45.0),
+    "SquareSmallProps": ("SquareProps", ("Bench", "FlowerBush", "Planter"), 70.0),
+    "MarketProps": ("Market", (), 70.0),
+    "FarmFieldCrops": ("Farm/FarmFields", ("Crops",), 80.0),
+}
+
+
+def add_distance_fades(scene: SceneWriter) -> None:
+    """One DistanceFade (features/hub/distance_fade.gd) per group of small pieces: grass tufts, benches and pots,
+    market props and the crops of each farm plot (build_farm.py keeps each plot's plants as Crops<n> meshes)."""
+    script = scene.external_id("Script", "res://features/hub/distance_fade.gd")
+
+    scene.add_node("DistanceFades", ".", "Node")
+
+    for name, (group, prefixes, range_end) in DISTANCE_FADES.items():
+        prefix_text = ", ".join(f'"{prefix}"' for prefix in prefixes)
+        scene.add_node(name, "DistanceFades", "Node", properties={
+            "script": f'ExtResource("{script}")',
+            "target": f'NodePath("../../{group}")',
+            "child_prefixes": f"PackedStringArray({prefix_text})",
+            "range_end": f"{range_end}",
+        })
 
 
 SHOP_SHOTS_PATH = PROJECT_DIR / "tests" / "shots" / "shop_shots.tscn"
