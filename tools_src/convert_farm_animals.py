@@ -7,7 +7,7 @@ animals facing whichever way the author modelled them. For each animal this scri
   2. scales the top-level object so the rest pose stands ANIMALS[animal] metres tall;
   3. turns it so the head points to Godot +Z (Blender -Y): the head is the end of the long axis that carries the
      highest vertices;
-  4. renames the actions to the names the game plays (Idle, Walk, Eat) and drops the rest;
+  4. renames the actions to the names the game plays (Idle, Walk) and drops the rest;
   5. exports glTF with only those animations; the sidecar JSON keeps the height and the original action names.
 
 Usage:
@@ -26,7 +26,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 PACK_DIR = PROJECT_DIR / "tools" / "vendor" / "animals"
 OUTPUT_DIR = PROJECT_DIR / "art" / "town" / "farm" / "animals"
 ANIMALS = {"cow": 1.4, "pig": 0.7, "horse": 1.75}  # altura do modelo em repouso, metros
-ACTION_NAMES = {"idle": "Idle", "walk": "Walk", "eat": "Eat"}  # trecho do nome original (minúsculo) -> nome no jogo
+ACTION_NAMES = {"idle": "Idle", "walk": "Walk"}  # último trecho do nome original ("Armature|Armature|Walk", minúsculo) -> nome no jogo
 SOURCE_SUFFIXES = (".gltf", ".glb", ".fbx")
 HEAD_HEIGHT_SHARE = 0.75  # vértices acima desta fração da altura marcam a ponta da cabeça
 
@@ -102,8 +102,8 @@ def rename_actions() -> dict:
     kept = {}
 
     for action in list(bpy.data.actions):
-        lowered = action.name.lower()
-        game_name = next((name for key, name in ACTION_NAMES.items() if key in lowered and name not in kept), None)
+        last_part = action.name.rsplit("|", 1)[-1].lower()
+        game_name = ACTION_NAMES.get(last_part)
 
         if game_name is None:
             bpy.data.actions.remove(action)

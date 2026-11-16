@@ -3,6 +3,7 @@ extends AnimatableBody3D
 ## Bicho da fazenda (vaca, porco): pasta parado e de vez em quando caminha devagar até outro
 ## ponto do cercado. Sem navmesh: anda em linha reta dentro do retângulo `pen` (x, z), que fica
 ## afastado da cerca. O sorteio usa a semente própria, então cada bicho repete o mesmo passeio.
+## Modelo sem animação de andar (o porco do pacote só tem Idle) fica pastando no lugar.
 
 enum Mood { GRAZING, WALKING }
 
@@ -27,6 +28,7 @@ var _mood: Mood = Mood.GRAZING
 var _graze_left: float = 0.0
 var _target: Vector2 = Vector2.ZERO
 var _animation_player: AnimationPlayer
+var _can_walk: bool = true
 var _mood_steps: Dictionary[Mood, Callable] = {
 	Mood.GRAZING: _graze,
 	Mood.WALKING: _walk_to_target,
@@ -45,6 +47,7 @@ func _ready() -> void:
 
 	add_child(model)
 	_animation_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	_can_walk = _animation_player != null and _animation_player.has_animation(WALK_ANIMATION)
 	_loop_animations()
 	_play(IDLE_ANIMATION)
 
@@ -84,6 +87,11 @@ func _graze(delta: float) -> void:
 	_graze_left -= delta
 
 	if _graze_left > 0.0:
+		return
+
+	if not _can_walk:
+		_start_grazing()
+
 		return
 
 	_target = pick_wander_target(pen, ground_position, _generator)
