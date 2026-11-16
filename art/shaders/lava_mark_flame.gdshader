@@ -7,10 +7,10 @@ render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabl
 uniform sampler2D noise_texture : repeat_enable, filter_linear_mipmap;
 uniform float now_seconds = 0.0;
 uniform float cooling_seconds = 5.0;
-uniform float energy = 1.4;
+uniform float energy = 0.9;
 uniform float scroll_speed = 1.3;
-uniform vec3 base_color : source_color = vec3(1.0, 0.6, 0.12);
-uniform vec3 tip_color : source_color = vec3(0.9, 0.12, 0.01);
+uniform vec3 base_color : source_color = vec3(1.0, 0.38, 0.05);
+uniform vec3 tip_color : source_color = vec3(0.7, 0.07, 0.01);
 
 varying float heat;
 varying float seed;

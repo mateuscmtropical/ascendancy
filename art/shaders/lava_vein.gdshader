@@ -7,6 +7,7 @@ render_mode cull_back;
 
 uniform vec3 trunk_color : source_color = vec3(1.0, 0.6, 0.14);
 uniform vec3 tip_color : source_color = vec3(0.95, 0.13, 0.01);
+uniform vec3 core_color : source_color = vec3(1.0, 0.8, 0.3);
 uniform float energy = 5.0;
 uniform float beats_per_second = 0.75;
 uniform float beat_travel = 2.2;
@@ -21,8 +22,11 @@ void fragment() {
 	float wave = 0.5 + 0.5 * sin(TAU * (TIME * beats_per_second - distance_from_stump * beat_travel));
 	float beat = pow(wave, 5.0);
 	float core = pow(clamp(dot(NORMAL, VIEW), 0.0, 1.0), 1.5);
-	float strength = mix(0.4, 1.0, thickness) * mix(1.0, 0.45, distance_from_stump) * mix(0.22, 1.0, core * core);
+	float strength = mix(0.25, 1.0, thickness) * mix(1.0, 0.45, distance_from_stump) * mix(0.22, 1.0, core * core);
 	vec3 lava = mix(tip_color, trunk_color, clamp(thickness * 0.7 + beat * 0.35 + core * 0.2 - 0.2, 0.0, 1.0));
+
+	// vaso grosso: miolo amarelo de lava viva, borda laranja
+	lava = mix(lava, core_color, smoothstep(0.45, 0.9, thickness) * core * core);
 
 	ALBEDO = vec3(0.03, 0.01, 0.005);
 	ROUGHNESS = 0.45;

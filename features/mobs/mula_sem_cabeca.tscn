@@ -15,7 +15,7 @@
 [sub_resource type="ShaderMaterial" id="vein_material"]
 shader = ExtResource("3_vein")
 shader_parameter/energy = 2.3
-shader_parameter/trunk_color = Color(1, 0.3, 0.04, 1)
+shader_parameter/trunk_color = Color(1, 0.36, 0.05, 1)
 shader_parameter/tip_color = Color(0.8, 0.07, 0.01, 1)
 
 [sub_resource type="FastNoiseLite" id="fire_noise"]
@@ -238,6 +238,20 @@ colors = PackedColorArray(1, 0.45, 0.06, 0, 1, 0.5, 0.08, 1, 0.9, 0.2, 0.02, 1, 
 [sub_resource type="GradientTexture1D" id="drip_fade"]
 gradient = SubResource("drip_gradient")
 
+[sub_resource type="Curve" id="drip_width"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="drip_length"]
+_limits = [0.0, 3.0, 0.0, 1.0]
+_data = [Vector2(0, 0.3), 0.0, 0.0, 0, 0, Vector2(0.3, 2.8), 0.0, 0.0, 0, 0, Vector2(0.55, 1.2), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveXYZTexture" id="drip_stretch"]
+curve_x = SubResource("drip_width")
+curve_y = SubResource("drip_length")
+curve_z = SubResource("drip_width")
+
 [sub_resource type="ParticleProcessMaterial" id="stump_drip_process"]
 emission_shape = 6
 emission_ring_axis = Vector3(0, 1, 0)
@@ -248,9 +262,10 @@ direction = Vector3(0, -1, 0)
 spread = 10.0
 initial_velocity_min = 0.0
 initial_velocity_max = 0.3
-gravity = Vector3(0, -6, 0)
+gravity = Vector3(0, -3.2, 0)
 scale_min = 0.7
 scale_max = 1.5
+scale_curve = SubResource("drip_stretch")
 color_ramp = SubResource("drip_fade")
 
 [sub_resource type="ParticleProcessMaterial" id="hoof_drip_process"]
@@ -260,9 +275,10 @@ direction = Vector3(0, -1, 0)
 spread = 25.0
 initial_velocity_min = 0.0
 initial_velocity_max = 0.3
-gravity = Vector3(0, -6, 0)
+gravity = Vector3(0, -3.2, 0)
 scale_min = 0.5
 scale_max = 1.0
+scale_curve = SubResource("drip_stretch")
 color_ramp = SubResource("drip_fade")
 
 [node name="MulaSemCabeca" type="Node3D"]

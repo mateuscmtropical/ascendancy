@@ -36,8 +36,8 @@ GROUND_CLEARANCE = 0.03  # sola do casco chata
 # Os volumes grandes dão a massa; os músculos ficam por cima, saltando só um pouco, para a junção virar sulco.
 MUSCLES = [
     # tronco
-    ((0.0, -1.6, 4.35), (0.0, 1.5, 4.72), 1.46, 0.92, (1.0, 1.0, 1.0)),  # barril das costelas até o flanco: barriga recolhida
-    ((0.0, -2.4, 4.35), (0.0, -1.9, 4.3), 1.46, 1.54, (1.08, 1.0, 1.06)),  # peito fundo e largo
+    ((0.0, -1.6, 4.35), (0.0, 1.5, 4.86), 1.46, 0.78, (1.0, 1.0, 1.0)),  # barril das costelas até o flanco: barriga recolhida
+    ((0.0, -2.45, 4.3), (0.0, -1.9, 4.2), 1.6, 1.72, (1.16, 1.0, 1.08)),  # peito fundo e largo
     ((0.5, 0.7, 4.85), (0.75, 1.6, 4.75), 0.6, 0.62, (0.8, 1.0, 1.0)),  # flanco, do barril à coxa
     ((0.0, 1.9, 4.72), (0.0, 2.5, 4.5), 1.0, 0.78, (1.0, 1.0, 1.0)),  # garupa
     ((0.0, -2.1, 5.42), (0.0, -1.0, 5.3), 0.66, 0.42, (0.75, 1.0, 1.0)),  # cernelha
@@ -45,10 +45,10 @@ MUSCLES = [
     ((0.0, 0.5, 5.12), (0.0, 1.9, 5.3), 0.34, 0.38, (0.9, 1.0, 1.0)),  # e sobe para a garupa
     ((0.0, 2.75, 4.95), (0.0, 3.1, 4.8), 0.2, 0.13, (1.0, 1.0, 1.0)),  # sabugo do rabo
     # ombro e peito
-    ((0.84, -1.45, 5.0), (1.02, -2.4, 3.9), 0.8, 0.96, (0.82, 1.0, 1.0)),  # escápula: globo da espádua
+    ((0.98, -1.45, 5.0), (1.22, -2.4, 3.95), 0.8, 1.0, (0.9, 1.0, 1.0)),  # escápula: globo da espádua
     ((1.02, -1.1, 4.4), (1.0, -1.6, 3.45), 0.62, 0.5, (0.78, 1.0, 1.0)),  # tríceps
-    ((1.06, -2.6, 3.9), (0.95, -2.05, 3.3), 0.5, 0.44, (0.85, 1.0, 1.0)),  # ponta do ombro e braço
-    ((0.5, -3.1, 4.3), (0.52, -2.65, 3.45), 0.7, 0.48, (1.0, 0.9, 1.0)),  # peitoral
+    ((1.22, -2.6, 3.9), (1.0, -2.05, 3.3), 0.52, 0.44, (0.9, 1.0, 1.0)),  # ponta do ombro e braço
+    ((0.6, -3.25, 4.3), (0.6, -2.75, 3.4), 0.8, 0.54, (1.0, 0.9, 1.0)),  # peitoral
     # pata dianteira
     ((0.92, -1.9, 3.3), (0.87, -2.06, 1.9), 0.58, 0.2, (0.9, 1.0, 1.0)),  # antebraço grosso que afina até o joelho
     ((1.0, -2.2, 3.0), (0.93, -2.16, 2.2), 0.24, 0.12, (0.8, 1.0, 1.0)),  # extensor
@@ -76,11 +76,11 @@ MUSCLES = [
     ((0.75, 2.64, 0.6), (0.75, 2.5, 0.42), 0.19, 0.22, (1.0, 1.0, 1.0)),  # quartela
     ((0.75, 2.53, 0.4), (0.75, 2.45, 0.1), 0.26, 0.37, (1.0, 1.1, 0.3)),  # casco
     # pescoço: cone grosso e mais em pé que o osso Neck, da cernelha e do peito até acima do corte
-    ((0.0, -2.05, 4.6), (0.0, -2.8, 7.9), 1.45, 0.98, (0.92, 1.0, 1.0)),  # coluna do pescoço: tronco grosso, quase a prumo
-    ((0.0, -1.3, 5.3), (0.0, -1.95, 7.9), 0.42, 0.2, (0.6, 1.0, 1.0)),  # crista
-    ((0.0, -3.1, 4.6), (0.0, -3.6, 7.85), 0.42, 0.22, (1.0, 1.0, 1.0)),  # traqueia
-    ((1.0, -2.5, 4.5), (0.62, -3.1, 7.85), 0.4, 0.22, (1.0, 1.0, 1.0)),  # braquiocefálico
-    ((0.8, -1.8, 5.1), (0.6, -2.4, 7.9), 0.4, 0.22, (1.0, 1.0, 1.0)),  # esplênio
+    ((0.0, -2.1, 4.3), (0.0, -2.8, 7.9), 1.7, 1.0, (1.0, 1.0, 1.0)),  # coluna do pescoço: tronco grosso, quase a prumo
+    ((0.0, -1.2, 5.3), (0.0, -2.1, 7.9), 0.4, 0.16, (0.6, 1.0, 1.0)),  # crista
+    ((0.0, -3.3, 4.6), (0.0, -3.5, 7.85), 0.4, 0.16, (1.0, 1.0, 1.0)),  # traqueia
+    ((1.15, -2.5, 4.5), (0.72, -2.9, 7.85), 0.36, 0.16, (1.0, 1.0, 1.0)),  # braquiocefálico
+    ((0.85, -1.7, 5.1), (0.55, -2.45, 7.9), 0.34, 0.14, (1.0, 1.0, 1.0)),  # esplênio
 ]
 # Eixo do toco: da base do pescoço esculpido até a boca do corte (o pescoço da mula é mais longo e mais em pé que o
 # do cavalo do pacote; a pele continua seguindo o osso Neck pelos pesos).
