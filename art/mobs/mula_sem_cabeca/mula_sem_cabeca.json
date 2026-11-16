@@ -1,0 +1,43 @@
+{
+ "source": "Horse.fbx",
+ "withers_height": 1.7,
+ "scale": 0.29712,
+ "animations": {
+  "Death": "Armature|Armature|Death",
+  "Idle": "Armature|Armature|Idle",
+  "Attack": "Armature|Armature|Jump",
+  "Run": "Armature|Armature|Run",
+  "Walk": "Armature|Armature|Walk"
+ },
+ "attachment_bones": {
+  "neck_stump": "Head",
+  "mane": [
+   "Neck",
+   "Shoulders"
+  ],
+  "tail": [
+   "Tail1",
+   "Tail2",
+   "Tail3",
+   "Tail4"
+  ],
+  "hooves": [
+   "FrontFoot.L",
+   "FrontFoot.R",
+   "BackFoot.L",
+   "BackFoot.R"
+  ],
+  "hanging_chains": [
+   "Chain1",
+   "Chain2",
+   "Chain3",
+   "Chain4",
+   "Chain5"
+  ]
+ },
+ "vertices": {
+  "Mula": 4010,
+  "MulaVeins": 7962,
+  "MulaChains": 5800
+ }
+}
