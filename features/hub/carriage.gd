@@ -3,9 +3,11 @@ extends AnimatableBody3D
 ## Carroça puxada a cavalo rodando devagar em laço por uma rota fixa nas ruas rebaixadas.
 ## O corpo empurra o jogador e o NavigationObstacle3D filho faz os moradores desviarem.
 ## A posição vem só da distância percorrida (início + velocidade x tempo): duas máquinas com o
-## mesmo relógio veem a carroça no mesmo lugar.
+## mesmo relógio veem a carroça no mesmo lugar. Um condutor vai sentado no banco da frente.
 
+const CHARACTER_MODEL_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const WALK_ANIMATION: StringName = &"Walk"
+const DRIVER_ANIMATION: StringName = &"ual1/Sitting_Idle"
 ## O cavalo e a carroça viram olhando um pouco à frente: a curva sai suave mesmo na quina da rota.
 const LOOK_AHEAD_DISTANCE: float = 2.5
 ## A traseira da carroça fica 1,4 m atrás do eixo; a caixa começa ali.
@@ -15,6 +17,10 @@ const WAGON_REAR: float = 1.4
 @export var horse_scene: PackedScene
 ## Do eixo da carroça até as patas do cavalo, para a frente (+Z do modelo).
 @export var horse_offset: float = 3.9
+## Corpo do condutor (sem corpo, a carroça anda sozinha) e onde ele senta, na origem da carroça.
+@export var driver_body: PackedScene
+@export var driver_hair_color: Color = Color("4a3426")
+@export var driver_seat: Vector3 = Vector3(0.0, 1.2, 1.6)
 @export var route: PackedVector3Array = PackedVector3Array()
 @export var speed: float = 1.4
 @export var start_distance: float = 0.0
@@ -31,6 +37,7 @@ func _ready() -> void:
 	_travelled = start_distance
 	_add_body_collision()
 	_add_navigation_obstacle()
+	_seat_driver()
 
 	if wagon:
 		add_child(wagon)
@@ -107,6 +114,20 @@ func _add_navigation_obstacle() -> void:
 	obstacle.position.z = body_size.z / 2.0 - WAGON_REAR
 	obstacle.avoidance_enabled = true
 	add_child(obstacle)
+
+
+func _seat_driver() -> void:
+	var driver: CharacterModel
+
+	if driver_body == null:
+		return
+
+	driver = CHARACTER_MODEL_SCENE.instantiate()
+	driver.body_scene = driver_body
+	driver.hair_color = driver_hair_color
+	driver.start_animation = DRIVER_ANIMATION
+	driver.position = driver_seat
+	add_child(driver)
 
 
 func _walk_in_place(horse: Node3D) -> void:

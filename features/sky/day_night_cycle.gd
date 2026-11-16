@@ -61,6 +61,10 @@ const SLOT_LOOKBACK: int = 1
 @export var forced_event: ForcedEvent = ForcedEvent.NONE
 
 var game_seconds: float = 0.0
+## Direção que aponta para o sol agora e a força da luz dele (0 de noite, menor no eclipse);
+## lidas pelos vitrais da catedral (SunThroughGlass).
+var sun_direction_now: Vector3 = Vector3.UP
+var sunlight: float = 1.0
 
 var _sky_material: ShaderMaterial
 var _meteors_by_slot: Dictionary[int, Array] = {}
@@ -204,6 +208,9 @@ func _light_with_sun_or_moon(
 	var moon_strength: float = smoothstep(0.0, 0.25, moon_direction.y) * (1.0 - 0.5 * eclipse.y)
 	var sun_tint: Color = LOW_SUN_COLOR.lerp(NOON_SUN_COLOR, smoothstep(0.02, 0.4, sun_direction.y))
 	var moon_tint: Color = MOON_LIGHT_COLOR.lerp(BLOOD_MOON_COLOR, eclipse.y)
+
+	sun_direction_now = sun_direction
+	sunlight = sun_strength
 
 	if sun == null:
 		return

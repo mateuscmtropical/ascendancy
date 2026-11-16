@@ -938,11 +938,32 @@ def hex_color(text: str) -> str:
     return color(tuple(int(text[offset:offset + 2], 16) / 255.0 for offset in (0, 2, 4)))
 
 
-CATHEDRAL_GLASS_SPOTS = [  # (nome, posição, alvo, cor): luz colorida das lancetas e do óculo no piso do presbitério
-    ("LancetSpotA", (CATHEDRAL_FACADE_X + 45.6, CHANCEL_FLOOR + 7.0, 3.25), (CATHEDRAL_FACADE_X + 38.0, CHANCEL_FLOOR, -1.0), "Color(0.5, 0.69, 1, 1)"),
-    ("LancetSpotB", (CATHEDRAL_FACADE_X + 45.6, CHANCEL_FLOOR + 7.0, -3.25), (CATHEDRAL_FACADE_X + 38.0, CHANCEL_FLOOR, 1.0), "Color(0.5, 0.69, 1, 1)"),
-    ("OculusSpot", (CATHEDRAL_FACADE_X + 46.5, CHANCEL_FLOOR + 11.3, 0.0), (CATHEDRAL_FACADE_X + 37.0, CHANCEL_FLOOR, 0.0), "Color(1, 0.78, 0.4, 1)"),
-]
+APSE_CENTER_X = CATHEDRAL_FACADE_X + 40.0  # centro do semicírculo da abside (build_cathedral.py: BODY_LENGTH)
+APSE_GLASS_RADIUS = 6.6  # um pouco para dentro da face interna da parede (raio 7)
+LANCET_ANGLES = (30.0, 55.0, 78.0)  # graus do eixo da abside, de cada lado (build_cathedral.py)
+LANCET_CENTER_Y = CHANCEL_FLOOR + 7.0
+OCULUS_CENTER_Y = CHANCEL_FLOOR + 11.3
+AISLE_BAYS = (7.8, 13.4, 19.0, 24.6, 30.2)  # build_cathedral.py: BAY_CENTERS, ao longo da nave a partir da fachada
+AISLE_GLASS_Z = 12.3  # face interna da parede sul (meia largura 13, parede 0,6)
+AISLE_GLASS_Y = 10.45  # meio do vitral alto do tramo
+GLASS_TEXTURES = "res://art/town/textures/"
+
+
+def cathedral_glass_spots() -> list:
+    """(name, position, inward normal, projector texture, half angle) for every window the sun can shine through:
+    the six apse lancets and the oculus get the morning sun from the east, the south aisle windows the rest of the day
+    (the sun crosses the sky on the +z side; the north windows never see it)."""
+    lancets = [
+        (f"LancetSun{variant}{'N' if side < 0 else 'S'}",
+         (APSE_CENTER_X + APSE_GLASS_RADIUS * math.cos(math.radians(angle)), LANCET_CENTER_Y, side * APSE_GLASS_RADIUS * math.sin(math.radians(angle))),
+         (-math.cos(math.radians(angle)), 0.0, -side * math.sin(math.radians(angle))),
+         f"{GLASS_TEXTURES}T_DoveGlass{variant}.png", 5.0)
+        for (variant, angle), side in itertools.product(enumerate(LANCET_ANGLES), (-1.0, 1.0))
+    ]
+    oculus = [("OculusSun", (APSE_CENTER_X + APSE_GLASS_RADIUS, OCULUS_CENTER_Y, 0.0), (-1.0, 0.0, 0.0), f"{GLASS_TEXTURES}T_OculusGlass.png", 6.0)]
+    aisle = [(f"AisleSun{index}", (CATHEDRAL_FACADE_X + bay, AISLE_GLASS_Y, AISLE_GLASS_Z), (0.0, 0.0, -1.0), f"{GLASS_TEXTURES}T_StainedGlassFigure.png", 6.0) for index, bay in enumerate(AISLE_BAYS)]
+
+    return lancets + oculus + aisle
 
 
 def add_cathedral_lights(scene: SceneWriter) -> None:
@@ -974,14 +995,22 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
     for index, position in enumerate(side_altar_lights):
         scene.add_node(f"SideAltarLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_energy": "0.8", "omni_range": "4.0"})
 
-    for name, position, target, color in CATHEDRAL_GLASS_SPOTS:
+    sun_script = scene.external_id("Script", "res://features/sky/sun_through_glass.gd")
+
+    for name, position, inward, texture, half_angle in cathedral_glass_spots():
         scene.add_node(name, "CathedralLights", "SpotLight3D", properties={
             "position": vector(*position),
-            "rotation": look_rotation(position, target),
-            "light_color": color,
-            "light_energy": "1.2",
-            "spot_range": "16.0",
-            "spot_angle": "30.0",
+            "visible": "false",
+            "light_projector": f'ExtResource("{scene.external_id("Texture2D", texture)}")',
+            "light_energy": "0.0",
+            "spot_range": "32.0",
+            "spot_angle": f"{half_angle}",
+            "spot_attenuation": "0.2",
+            "light_volumetric_fog_energy": "0.2",  # só um véu de poeira no feixe; 1.0 lava a nave
+            "script": f'ExtResource("{sun_script}")',
+            "day_night": 'NodePath("../../DayNight")',
+            "inward_normal": vector(*inward),
+            "base_energy": "2.4",
         })
 
 
@@ -1429,6 +1458,9 @@ FARMHANDS = {  # nome -> (corpo, cabelo, posição, para onde olha, animação)
 }
 FARM_ANIMAL_BODY = {"cows": (0.9, 1.4, 2.2), "pigs": (0.6, 0.8, 1.2)}
 CARRIAGE_HORSE = "res://art/town/farm/animals/horse.gltf"
+CARRIAGE_HARNESSED_HORSE = "res://art/town/farm/animals/horse_harness.gltf"  # coelheira, selim e argolas dos varais
+CARRIAGE_DRIVERS = (("villager_male", "brown"), ("villager_female", "black"))  # (corpo, cabelo) de cada condutor
+CARRIAGE_DRIVER_SEAT = (0.0, 1.2, 1.6)  # banco do condutor na origem da carroça (build_farm.py)
 CARRIAGE_WAGONS = ("res://art/town/farm/farm_wagon.gltf", "res://art/town/farm/hay_cart.gltf")
 CARRIAGE_SPEED = 1.3
 CARRIAGE_CORNER_RADIUS = 6.0
@@ -1539,7 +1571,8 @@ def add_carriages(scene: SceneWriter) -> None:
     route = rounded_loop(STREET_LOOP, CARRIAGE_CORNER_RADIUS)
     route_text = ", ".join(f"{x:.2f}, {-STREET_DROP}, {z:.2f}" for x, z in route)
     lap = sum(distance(route[index - 1], route[index]) for index in range(len(route)))
-    models = [CARRIAGE_HORSE, *CARRIAGE_WAGONS]
+    horse = CARRIAGE_HARNESSED_HORSE if model_exists(CARRIAGE_HARNESSED_HORSE) else CARRIAGE_HORSE
+    models = [horse, *CARRIAGE_WAGONS]
 
     if not all(model_exists(model) for model in models):
         print("AVISO: carroças fora da cena até existirem o cavalo (convert_farm_animals.py) e as carroças (build_farm.py)")
@@ -1547,14 +1580,17 @@ def add_carriages(scene: SceneWriter) -> None:
 
     scene.add_node("Carriages", ".", "Node3D")
 
-    for index, wagon in enumerate(CARRIAGE_WAGONS):
+    for index, (wagon, (driver_body, driver_hair)) in enumerate(zip(CARRIAGE_WAGONS, CARRIAGE_DRIVERS)):
         scene.add_node(f"Carriage{index}", "Carriages", "AnimatableBody3D", properties={
             "collision_layer": "4",
             "collision_mask": "0",
             "sync_to_physics": "false",  # o script move o corpo direto a cada quadro de física
             "script": f'ExtResource("{script}")',
             "wagon_scene": f'ExtResource("{scene.external_id("PackedScene", wagon)}")',
-            "horse_scene": f'ExtResource("{scene.external_id("PackedScene", CARRIAGE_HORSE)}")',
+            "horse_scene": f'ExtResource("{scene.external_id("PackedScene", horse)}")',
+            "driver_body": f'ExtResource("{scene.external_id("PackedScene", f"res://art/characters/{driver_body}.gltf")}")',
+            "driver_hair_color": color(HAIR_COLORS[driver_hair]),
+            "driver_seat": vector(*CARRIAGE_DRIVER_SEAT),
             "route": f"PackedVector3Array({route_text})",
             "speed": f"{CARRIAGE_SPEED}",
             "start_distance": f"{lap * index / len(CARRIAGE_WAGONS):.2f}",
