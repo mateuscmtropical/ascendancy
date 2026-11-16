@@ -20,7 +20,7 @@ const WAGON_REAR: float = 1.4
 ## Corpo do condutor (sem corpo, a carroça anda sozinha) e onde ele senta, na origem da carroça.
 @export var driver_body: PackedScene
 @export var driver_hair_color: Color = Color("4a3426")
-@export var driver_seat: Vector3 = Vector3(0.0, 1.2, 1.6)
+@export var driver_seat: Vector3 = Vector3(0.0, 0.72, 1.45)
 @export var route: PackedVector3Array = PackedVector3Array()
 @export var speed: float = 1.4
 @export var start_distance: float = 0.0
