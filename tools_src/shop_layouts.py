@@ -40,7 +40,7 @@ def furnish_guild(f) -> None:
 
     f.wall("back", ["wainscot_a"] * 12, start=f.left, gap=0.0)
 
-    for along in (12.5, 15.3, 17.3):
+    for along in (15.3, 17.3):  # o vão da porta em arco vai de 12.0 a 14.2: lambri só na parede
         f.put("wainscot_a", 6.03, along, -90.0)
 
     # nave
@@ -340,7 +340,8 @@ def furnish_school(f) -> None:
     f.on_wall("back", "blackboard_big", 4.9)
 
     for block_u in (-5.94, 0.0, 5.94):
-        f.grid("school_desk", (block_u - 0.8, block_u + 0.8), (4.4, 10.8), 2, 5, 180.0)
+        # alunos olham para o fundo (lousa e mesa do mestre); 4 fileiras deixam ~1,2 m de corredor entre elas
+        f.grid("school_desk", (block_u - 0.8, block_u + 0.8), (4.4, 10.8), 2, 4)
 
     f.put("rug_runner", -2.97, 9.7, variant="blue")  # entre as duas colunas do corredor, sem entrar nas sapatas
     f.put("rug_runner", 2.97, 9.7, variant="blue")
