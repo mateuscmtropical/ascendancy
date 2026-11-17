@@ -727,11 +727,14 @@ def rug(b: Builder, frame: Matrix, variant: str = "red", **options) -> None:
 def chest_gold(b: Builder, frame: Matrix, **options) -> None:
     frame = frame @ Matrix.Translation((0.0, -0.035, 0.0))  # centres body plus the open lid on the prop box
     body_top = 0.38
-    wood_box(b, frame, (-0.4, -0.22, 0.0), (0.4, 0.22, 0.05), WOOD_DEEP)
-    wood_box(b, frame, (-0.4, -0.22, 0.05), (0.4, -0.18, body_top), WOOD_BODY)
-    wood_box(b, frame, (-0.4, 0.18, 0.05), (0.4, 0.22, body_top), WOOD_BODY)
-    wood_box(b, frame, (-0.4, -0.18, 0.05), (-0.36, 0.18, body_top), WOOD_BODY)
-    wood_box(b, frame, (0.36, -0.18, 0.05), (0.4, 0.18, body_top), WOOD_BODY)
+    bevel_box(b, frame, (-0.4, -0.22, 0.0), (0.4, 0.22, 0.05), WOOD_DEEP, bevel=0.008)
+    bevel_box(b, frame, (-0.4, -0.22, 0.05), (0.4, -0.18, body_top), WOOD_BODY, bevel=0.008)
+    bevel_box(b, frame, (-0.4, 0.18, 0.05), (0.4, 0.22, body_top), WOOD_BODY, bevel=0.008)
+    bevel_box(b, frame, (-0.4, -0.18, 0.05), (-0.36, 0.18, body_top), WOOD_BODY, bevel=0.008)
+    bevel_box(b, frame, (0.36, -0.18, 0.05), (0.4, 0.18, body_top), WOOD_BODY, bevel=0.008)
+
+    for corner_x, corner_y in itertools.product((-0.37, 0.37), (-0.19, 0.19)):
+        b.sphere((corner_x, corner_y, 0.04), 0.03, "metal", srgb(BRASS), frame=frame, segments=6)
 
     for strap_x in (-0.3, 0.3):
         metal_box(b, frame, (strap_x - 0.035, -0.225, 0.0), (strap_x + 0.035, -0.18, body_top + 0.01), IRON)
@@ -889,10 +892,11 @@ def wheel_chandelier(b: Builder, frame: Matrix, **options) -> None:
 
 
 def hanging_lantern(b: Builder, frame: Matrix, **options) -> None:
+    """Lantern on a chain of round links with a ceiling rosette and a decorative bracket under the cap."""
+    ring(b, (0.0, 0.0, -0.03), 0.04, 0.008, "metal", IRON, frame, sides=8, tube_sides=3)
+
     for link in range(5):
-        link_z = -0.14 * (link + 1)
-        half = (0.012, 0.004) if link % 2 else (0.004, 0.012)
-        metal_box(b, frame, (-half[0], -half[1], link_z), (half[0], half[1], link_z + 0.15), IRON)
+        ring(b, (0.0, 0.0, -0.1 - link * 0.12), 0.026, 0.006, "metal", IRON, frame @ Matrix.Rotation(math.pi / 2.0 * (link % 2), 4, "Z"), sides=6, tube_sides=3, axis="X")
 
     b.cylinder((0.0, 0.0, -0.72), 0.03, 0.04, 6, "metal", srgb(IRON), top_radius=0.012, frame=frame)
     lantern_body(b, frame, (0.0, 0.0, -0.95))
@@ -1283,6 +1287,99 @@ def dais_a(b: Builder, frame: Matrix, width: float = 3.6, depth: float = 2.4, ca
     b.collider((-half_w, -half_d, 0.0), (half_w, half_d, top), frame)
 
 
+DRESS_STYLES_A = {
+    "dress": ("E56C94", "FFE3A0"),
+    "gown": ("5B7BD6", "F4EFE6"),
+    "cloak": ("3C8F6B", "E8B84F"),
+}
+
+
+def dress_form_a(b: Builder, frame: Matrix, variant: str = "dress", tint: str = None, **options) -> None:
+    """Tailor's mannequin on a turned post and tripod: padded torso under a draped dress with ruffled hem and a
+    ribbon belt (dress), a long gown with a train (gown) or a hooded cloak over a linen form (cloak)."""
+    colour, accent = DRESS_STYLES_A[variant]
+    colour = tint or colour
+
+    for angle in (90.0, 210.0, 330.0):
+        foot = (0.27 * math.cos(math.radians(angle)), 0.27 * math.sin(math.radians(angle)), 0.0)
+        wood_beam(b, frame, (0.0, 0.0, 0.3), foot, 0.045, 0.04, WOOD_DEEP)
+        b.sphere(foot, 0.028, "wood", srgb(WOOD_BODY), frame=frame, segments=6)
+
+    turned_leg(b, frame, 0.0, 0.0, 1.0, 0.032, WOOD_BODY, "baluster")
+    ring(b, (0.0, 0.0, 0.3), 0.05, 0.012, "metal", BRASS, frame, sides=8, tube_sides=4)
+
+    if variant == "cloak":
+        lathe(b, [(0.2, 0.9), (0.16, 1.05), (0.19, 1.2), (0.17, 1.34), (0.09, 1.44), (0.001, 1.47)], 12, "paint", "EADFC8", place_scale(frame, 0.78))
+        b.hull([(-0.2, -0.03, 1.46), (0.2, -0.03, 1.46), (-0.17, 0.12, 1.5), (0.17, 0.12, 1.5), (-0.32, 0.0, 0.5), (0.32, 0.0, 0.5), (-0.37, 0.28, 0.45), (0.37, 0.28, 0.45), (0.0, 0.24, 1.66)], "paint", srgb(colour), frame=frame)
+        b.hull([(-0.12, 0.1, 1.5), (0.12, 0.1, 1.5), (-0.06, 0.2, 1.72), (0.06, 0.2, 1.72), (0.0, 0.0, 1.44)], "paint", srgb(colour), frame=frame)
+        b.sphere((0.0, -0.17, 1.4), 0.04, "metal", srgb(accent), frame=frame, segments=6)
+        return
+
+    hem = 0.16 if variant == "gown" else 0.46
+    hem_radius = 0.4 if variant == "gown" else 0.33
+    lathe(b, [(hem_radius, hem), (0.3, 0.7), (0.15, 0.96), (0.115, 1.0), (0.17, 1.2), (0.185, 1.3), (0.14, 1.4), (0.07, 1.47), (0.001, 1.49)], 12, "paint", colour, place_scale(frame, 0.82))
+    ring(b, (0.0, 0.0, hem + 0.02), hem_radius, 0.02, "paint", accent, place_scale(frame, 0.82), sides=12, tube_sides=4)
+    ring(b, (0.0, 0.0, hem + 0.22), hem_radius * 0.88, 0.015, "paint", accent, place_scale(frame, 0.82), sides=12, tube_sides=4)
+    ring(b, (0.0, 0.0, 1.0), 0.125, 0.015, "paint", accent, place_scale(frame, 0.82), sides=12, tube_sides=4)
+    b.sphere((0.0, -0.11, 1.0), 0.032, "paint", srgb(accent), frame=frame, segments=6)
+    b.cylinder((0.0, 0.0, 1.46), 0.03, 0.1, 8, "wood", srgb(WOOD_TOP), frame=frame)
+    b.sphere((0.0, 0.0, 1.6), 0.07, "wood", srgb(WOOD_TOP), frame=frame, segments=8)
+    ring(b, (0.0, 0.0, 1.4), 0.1, 0.012, "paint", accent, place_scale(frame, 0.82), sides=10, tube_sides=4)
+
+    if variant == "gown":
+        b.hull([(-0.22, 0.1, 0.3), (0.22, 0.1, 0.3), (-0.4, 0.5, 0.03), (0.4, 0.5, 0.03), (-0.2, 0.3, 1.0), (0.2, 0.3, 1.0)], "paint", srgb(colour), frame=frame)
+
+
+def place_scale(frame: Matrix, depth_scale: float) -> Matrix:
+    """Frame squashed along local Y (round forms read better a little flat from the side)."""
+    return frame @ Matrix.Diagonal((1.0, depth_scale, 1.0, 1.0))
+
+
+def hanging_fabrics_a(b: Builder, frame: Matrix, **options) -> None:
+    """Dyed cloth hung from a pole on two chains, z = 0 at the ceiling: five bolts draped in scalloped swags with
+    gilded hems, wooden finials on the pole. Looks good in any shop that sells or sews."""
+    pole_z = -0.85
+    colours = ("C9483B", "3561B0", "E8B84F", "5FA862", "9A5AB8")
+
+    for chain_x in (-0.95, 0.95):
+        b.cylinder((chain_x, 0.0, pole_z), 0.007, -pole_z, 6, "metal", srgb(IRON), frame=frame)
+        ring(b, (chain_x, 0.0, -0.04), 0.03, 0.007, "metal", IRON, frame, sides=8, tube_sides=3, axis="Y")
+
+    b.cylinder((-1.08, 0.0, pole_z), 0.028, 2.16, 8, "wood", srgb(WOOD_DEEP), frame=frame, axis="X")
+
+    for finial_x in (-1.1, 1.1):
+        b.sphere((finial_x, 0.0, pole_z), 0.045, "wood", srgb(WOOD_TOP), frame=frame, segments=7)
+
+    for index, colour in enumerate(colours):
+        left, right = -0.95 + index * 0.38, -0.95 + (index + 1) * 0.38 - 0.02
+        drop_left, drop_right = 0.5 + 0.12 * (index % 2), 0.5 + 0.12 * ((index + 1) % 2)
+        middle = (left + right) / 2.0
+        swag = [(left, pole_z + 0.03), (right, pole_z + 0.03), (right, pole_z - drop_right), (middle + 0.06, pole_z - drop_right - 0.06), (middle - 0.06, pole_z - drop_left - 0.1), (left, pole_z - drop_left)]
+        b.prism(swag, -0.025, 0.025, "paint", srgb(colour), frame=frame)
+        b.prism([(left + 0.03, pole_z - 0.05), (middle, pole_z - 0.05), (middle - 0.02, pole_z - drop_left * 0.8), (left + 0.03, pole_z - drop_left * 0.85)], -0.04, -0.025, "paint", srgb(colours[(index + 2) % 5]), frame=frame)
+        b.prism([(left, pole_z - drop_left), (right, pole_z - drop_right), (right, pole_z - drop_right - 0.03), (left, pole_z - drop_left - 0.03)], -0.027, 0.027, "metal", srgb(GOLD), frame=frame)
+
+
+def bunting_a(b: Builder, frame: Matrix, **options) -> None:
+    """Festive string of triangular pennants sagging between two ceiling hooks, z = 0 at the ceiling: 3.6 m of cord,
+    ten two-tone flags and a tassel at each end."""
+    span = 3.6
+    colours = ("C9483B", "F4EFE6", "3561B0", "E8B84F", "5FA862")
+    cord = [(-span / 2.0 + span * step / 20.0, -0.12 - 0.3 * math.sin(math.pi * step / 20.0)) for step in range(21)]
+
+    for start, end in zip(cord, cord[1:]):
+        b.beam((start[0], 0.0, start[1]), (end[0], 0.0, end[1]), 0.012, 0.012, "paint", srgb("8B6B4A"), frame=frame)
+
+    for flag in range(10):
+        centre_x, centre_z = cord[1 + flag * 2]
+        b.prism([(centre_x - 0.13, centre_z), (centre_x + 0.13, centre_z), (centre_x, centre_z - 0.3)], -0.008, 0.008, "paint", srgb(colours[flag % 5]), frame=frame)
+        b.prism([(centre_x - 0.13, centre_z), (centre_x + 0.13, centre_z), (centre_x + 0.07, centre_z - 0.1), (centre_x - 0.07, centre_z - 0.1)], -0.01, 0.01, "paint", srgb(colours[(flag + 2) % 5]), frame=frame)
+
+    for end_x in (-span / 2.0, span / 2.0):
+        b.sphere((end_x, 0.0, -0.14), 0.03, "metal", srgb(GOLD), frame=frame, segments=6)
+        b.cylinder((end_x, 0.0, -0.26), 0.025, 0.12, 6, "paint", srgb("C9483B"), frame=frame, top_radius=0.005)
+
+
 # @@NEW
 
 
@@ -1310,11 +1407,14 @@ PROPS.update(
         "ceiling_beam_hooks": {"build": ceiling_beam_hooks, "size": (2.0, 0.3, 1.1), "solid": False, "hang": True, "variants": list(HOOK_GOODS)},
         "stairs_straight": {"build": stairs_straight, "size": (1.4, 4.8, 4.2), "solid": True, "clearance": 0.8, "beside_window": True},
         "railing": {"build": railing, "size": (2.0, 0.1, 1.0), "solid": True},
+        "dress_form_a": {"build": dress_form_a, "size": (0.9, 1.0, 1.78), "solid": True, "variants": list(DRESS_STYLES_A)},
+        "hanging_fabrics_a": {"build": hanging_fabrics_a, "size": (2.3, 0.12, 1.6), "solid": False, "hang": True},
+        "bunting_a": {"build": bunting_a, "size": (3.7, 0.1, 0.8), "solid": False, "hang": True},
         "dais_a": {"build": dais_a, "size": (3.6, 2.4, 0.3), "solid": False},
         "wainscot_a": {"build": wainscot_a, "size": (2.0, 0.08, 1.05), "solid": False},
         "doorway_lintel_a": {"build": doorway_lintel_a, "size": (2.6, 0.4, 4.9), "solid": False, "hang": True},
         "timber_screen_a": {"build": timber_screen_a, "size": (2.0, 0.14, 2.3), "solid": True, "variants": ["lattice", "bars", "panels"]},
         "forge_floor_a": {"build": forge_floor_a, "size": (4.2, 3.2, 0.03), "solid": False},
-        "guild_hearth_a": {"build": guild_hearth_a, "size": (2.9, 1.24, 6.6), "solid": True, "clearance": 1.5, "light": ((0.0, 0.3, 0.6), "FF8A3A", 2.6, 8.0)},
+        "guild_hearth_a": {"build": guild_hearth_a, "size": (2.9, 1.24, 6.6), "solid": True, "clearance": 1.5, "beside_window": True, "light": ((0.0, 0.3, 0.6), "FF8A3A", 2.6, 8.0)},
     }
 )

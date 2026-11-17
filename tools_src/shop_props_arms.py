@@ -1660,6 +1660,85 @@ def workbench_vise_a(b: Builder, frame: Matrix, **options) -> None:
     lump(b, frame, (-0.05, 0.12, top + 0.025), 0.04, COPPER, random.Random(6), "metal")
 
 
+ARMOUR_STYLES_A = {
+    "plate": dict(plate="C9D6E8", trim=GOLD, cloth=CLOTH_RED, helm="great", material="metal"),
+    "knight_gold": dict(plate="EDCB62", trim="FFF1B8", cloth=CLOTH_BLUE, helm="winged", material="metal"),
+    "mail": dict(plate="A9BCD4", trim=BRASS, cloth=CLOTH_RED, helm="dome", material="metal"),
+    "leather": dict(plate=LEATHER, trim=LEATHER_DARK, cloth=CLOTH_GREEN, helm="leather", material="paint"),
+}
+
+
+def _limb_a(b: Builder, frame: Matrix, start: tuple, end: tuple, radius: float, top_radius: float, material: str, tint: str) -> None:
+    limb_frame, length = along(frame, start, end)
+    b.cylinder((0.0, 0.0, 0.0), radius, length, 8, material, srgb(tint), top_radius=top_radius, frame=limb_frame)
+
+
+def armor_stand_a(b: Builder, frame: Matrix, variant: str = "plate", **options) -> None:
+    """Armour on a turned oak stand: brass-ringed base, post, greaves with knee cops, overlapping skirt lames or a
+    tabard, a ridged cuirass, belt, gorget, three-lame pauldrons, bent arms with elbow cops and fists, a helmet
+    with plume; the gold knight also has a cape. Variant plate | knight_gold | mail | leather."""
+    style = ARMOUR_STYLES_A[variant]
+    plate, trim, cloth, material = style["plate"], style["trim"], style["cloth"], style["material"]
+    lathe(b, [(0.001, 0.0), (0.3, 0.0), (0.31, 0.025), (0.29, 0.06), (0.12, 0.085), (0.07, 0.13), (0.001, 0.15)], 12, "wood", WOOD["escura"], frame, uv=DARK_GRAIN)
+    ring(b, (0.0, 0.0, 0.045), 0.3, 0.014, "metal", BRASS, frame, sides=12, tube_sides=4)
+    b.cylinder((0.0, 0.0, 0.1), 0.04, 0.9, 8, "wood", srgb(WOOD["escura"]), frame=frame)
+
+    for side in (-1, 1):
+        x = side * 0.1
+        hull(b, [(x + dx, y, z) for dx, (y, z) in itertools.product((-0.055, 0.055), ((0.08, 0.08), (0.08, 0.15), (-0.16, 0.08), (-0.16, 0.12)))], "metal" if material == "metal" else "paint", srgb(trim), frame=frame)
+        b.cylinder((x, 0.0, 0.14), 0.052, 0.4, 8, material, srgb(plate if material == "metal" else LEATHER_DARK), top_radius=0.066, frame=frame)
+        b.sphere((x, -0.02, 0.55), 0.068, material, srgb(trim), frame=frame, segments=6)
+        b.cylinder((x, 0.0, 0.52), 0.068, 0.46, 8, material, srgb(plate), top_radius=0.086, frame=frame)
+
+    if variant in ("plate", "knight_gold"):
+        for lame in range(4):
+            lathe(b, [(0.21 + lame * 0.02, 1.0 - lame * 0.085), (0.235 + lame * 0.02, 0.9 - lame * 0.085)], 12, material, plate if lame % 2 == 0 else trim, place(frame, scale=(1.0, 0.78, 1.0)))
+    else:
+        tabard = [(-0.16, 1.38), (0.16, 1.38), (0.15, 0.58), (0.0, 0.52), (-0.15, 0.58)]
+
+        for depth in (-0.165, 0.165):
+            b.prism(tabard, depth - 0.008, depth + 0.008, "paint", srgb(cloth), frame=frame)
+
+        b.prism(EMBLEMS["cross"](0.2), -0.178, -0.172, "paint", srgb(GOLD if variant == "mail" else LEATHER_DARK), frame=place(frame, (0.0, 0.0, 1.0)))
+
+    lathe(b, [(0.172, 0.98), (0.155, 1.08), (0.19, 1.2), (0.205, 1.31), (0.18, 1.4), (0.1, 1.47), (0.001, 1.48)], 12, material, plate, place(frame, scale=(1.0, 0.76, 1.0)))
+    box(b, frame, (-0.013, -0.168, 1.05), (0.013, -0.152, 1.4), "metal" if material == "metal" else "paint", trim)
+
+    for band_z in (1.12, 1.24):
+        ring(b, (0.0, 0.0, band_z), 0.185 if band_z > 1.15 else 0.165, 0.008, "metal" if material == "metal" else "paint", trim, place(frame, scale=(1.0, 0.76, 1.0)), sides=12, tube_sides=4)
+
+    _belt(b, frame, 0.97, LEATHER_DARK, trim if material == "metal" else BRASS, 0.176)
+    lathe(b, [(0.125, 1.42), (0.118, 1.5), (0.09, 1.56)], 10, material, trim if variant != "mail" else plate, frame)
+
+    for side in (-1, 1):
+        for lame in range(3):
+            lathe(b, [(0.13 - lame * 0.01, -0.02), (0.14 - lame * 0.01, 0.0), (0.1, 0.05), (0.001, 0.075)], 8, material, trim if lame == 2 else plate, place(frame, (side * 0.235, 0.0, 1.42 - lame * 0.045), (0.0, side * 24.0, 0.0)))
+
+        shoulder, elbow, wrist = (side * 0.27, 0.0, 1.36), (side * 0.31, 0.0, 1.07), (side * 0.3, -0.07, 0.84)
+        _limb_a(b, frame, shoulder, elbow, 0.05, 0.043, material, plate)
+        b.sphere(elbow, 0.058, material, srgb(trim), frame=frame, segments=6)
+        _limb_a(b, frame, elbow, wrist, 0.046, 0.054, material, plate)
+        b.sphere((wrist[0], wrist[1] - 0.01, wrist[2] - 0.05), 0.055, "paint", srgb(LEATHER_DARK), frame=frame, segments=6)
+
+    b.cylinder((0.0, 0.0, 1.48), 0.075, 0.1, 8, "paint", srgb(LEATHER), frame=frame)
+    helmet(b, place(frame, (0.0, 0.0, 1.55)), style["helm"], plate if style["helm"] != "leather" else LEATHER, trim, cloth)
+
+    if variant == "knight_gold":
+        cape = [(-0.26, 1.42), (0.26, 1.42), (0.3, 0.42), (0.0, 0.48), (-0.3, 0.42)]
+        b.prism(cape, 0.17, 0.19, "paint", srgb(cloth), frame=frame)
+        b.prism([(u * 1.04, z - 0.03) for u, z in cape], 0.19, 0.2, "paint", srgb(GOLD), frame=frame)
+
+
+def armor_stand_row_a(b: Builder, frame: Matrix, **options) -> None:
+    """Oak plinth 2.4 x 0.8 with a moulded edge and brass rail carrying three mannequins (leather, gold knight, mail)."""
+    bevel_box(b, frame, (-1.2, -0.4, 0.0), (1.2, 0.4, 0.15), WOOD["escura"], bevel=0.02)
+    bevel_box(b, frame, (-1.22, -0.42, 0.11), (1.22, 0.42, 0.15), WOOD["mel"], bevel=0.01, light=True)
+    box(b, frame, (-1.2, -0.43, 0.12), (1.2, -0.41, 0.14), "metal", BRASS)
+
+    for x, variant in ((-0.8, "leather"), (0.0, "knight_gold"), (0.8, "mail")):
+        armor_stand_a(b, place(frame, (x, 0.05, 0.15), scale=(0.9, 0.9, 0.9)), variant=variant)
+
+
 # @@NEW
 
 
@@ -1704,4 +1783,6 @@ PROPS = {
     "masterwork_plinth_a": {"build": masterwork_plinth_a, "size": (0.9, 0.9, 1.6), "solid": True},
     "hanging_tool_rack_a": {"build": hanging_tool_rack_a, "size": (1.9, 0.2, 1.8), "solid": False, "hang": True},
     "workbench_vise_a": {"build": workbench_vise_a, "size": (1.6, 0.8, 1.2), "solid": True},
+    "armor_stand_a": {"build": armor_stand_a, "size": (0.84, 0.64, 2.0), "solid": True, "variants": list(ARMOUR_STYLES_A)},
+    "armor_stand_row_a": {"build": armor_stand_row_a, "size": (2.4, 0.86, 2.2), "solid": True},
 }

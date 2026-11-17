@@ -1,36 +1,46 @@
 {
  "aabb_min": [
-  -8.52,
-  0.045,
-  -19.07
+  -8.775,
+  0.0,
+  -19.098
  ],
  "aabb_max": [
-  8.52,
-  4.2,
-  -2.78
+  8.548,
+  4.55,
+  -0.4
  ],
  "shop": "armor",
- "props": 51,
+ "props": 72,
  "lights": [
   {
    "position": [
-    0.0,
-    3.35,
-    -5.0
+    7.42,
+    1.35,
+    -16.6
    ],
-   "color": "FFB347",
-   "energy": 1.6,
+   "color": "FF8A3A",
+   "energy": 3.0,
    "range": 7.0
   },
   {
    "position": [
     0.0,
-    3.35,
-    -12.5
+    3.25,
+    -6.4
    ],
    "color": "FFB347",
-   "energy": 1.6,
-   "range": 7.0
+   "energy": 1.0,
+   "range": 5.0
+  },
+  {
+   "position": [
+    -5.8,
+    3.25,
+    -15.6
+   ],
+   "color": "FFB347",
+   "energy": 1.0,
+   "range": 5.0
   }
  ],
  "markers": {}
