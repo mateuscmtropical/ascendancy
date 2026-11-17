@@ -1,23 +1,29 @@
 {
  "aabb_min": [
-  -7.1,
-  0.0,
-  -15.6
+  -10.089,
+  -0.009,
+  -7.489
  ],
  "aabb_max": [
-  7.1,
-  12.583,
-  1.5
+  10.089,
+  6.683,
+  2.223
  ],
- "lot_width": 13.0,
- "lot_depth": 15.0,
+ "lot_width": 18.0,
+ "lot_depth": 6.4,
  "doors": [
   {
    "x": 0.0,
-   "width": 4.0,
+   "width": 3.0,
    "enterable": false
   }
  ],
  "lights": [],
- "markers": {}
+ "markers": {
+  "door": [
+   0.0,
+   0.0,
+   2.2
+  ]
+ }
 }
