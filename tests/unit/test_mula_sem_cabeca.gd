@@ -30,7 +30,9 @@ func test_fire_is_drawn_in_metres() -> void:
 	var blazes: Array[Node] = _mula.find_children("Blaze", "GPUParticles3D", true, false)
 	var blaze: GPUParticles3D = blazes[0] as GPUParticles3D
 
-	assert_almost_eq(blaze.global_basis.get_scale(), Vector3.ONE, Vector3.ONE * 0.01)
+	var body_scale: Vector3 = (_mula.get_node("Model") as Node3D).scale
+
+	assert_almost_eq(blaze.global_basis.get_scale(), body_scale, Vector3.ONE * 0.01)
 
 
 func test_each_hoof_burns() -> void:
@@ -41,9 +43,10 @@ func test_each_hoof_burns() -> void:
 
 func test_stump_stands_above_the_withers() -> void:
 	var stump: Node3D = _mula.find_child("FireStump", true, false) as Node3D
+	var body_scale: float = (_mula.get_node("Model") as Node3D).scale.y
 
-	assert_gt(stump.global_position.y, WITHERS_HEIGHT)
-	assert_lt(stump.global_position.y, WITHERS_HEIGHT + HEIGHT_TOLERANCE)
+	assert_gt(stump.global_position.y, WITHERS_HEIGHT * body_scale)
+	assert_lt(stump.global_position.y, (WITHERS_HEIGHT + HEIGHT_TOLERANCE) * body_scale)
 
 
 func test_veins_use_the_pulsing_material() -> void:

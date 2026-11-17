@@ -287,6 +287,7 @@ vein_material = SubResource("vein_material")
 flame_ribbon_material = SubResource("flame_ribbon_material")
 
 [node name="Model" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 0, 0, 0)
 
 [node name="FireTemplates" type="Node3D" parent="."]
 
