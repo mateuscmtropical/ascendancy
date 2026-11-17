@@ -32,6 +32,7 @@ Usage:
   blender -b --factory-startup -P tools_src/build_farm.py -- [farmhouse barn farm_yard farm_fields farm_wagon hay_cart]
 """
 
+import hashlib
 import itertools
 import json
 import math
@@ -53,6 +54,7 @@ from build_hub_scene import (  # noqa: E402  (plano puro em Python)
     FARM_FIELDS,
     FARM_GATE_Z,
     FARM_LANE_HALF_WIDTH,
+    FARM_PEN_PROPS,
     FARM_PENS,
     FARM_YARD,
     FARMHOUSE,
@@ -68,6 +70,7 @@ from build_town_houses import (  # noqa: E402
     WOOD_LIGHT_BAND,
     WORLD_TILE,
     Builder,
+    load_image,
     plain_material,
     srgb,
     textured_material,
@@ -87,6 +90,7 @@ from farm_plants import (  # noqa: E402
     crop_atlas,
     hay_texture,
     lathe_shape,
+    rgb,
     ribbon,
     spot_matrices,
     stamp_variants,
@@ -116,6 +120,10 @@ STRAW = "E3C474"
 MUD = "5E4128"
 WATER = "5A8FA8"
 BURLAP = "C8A878"
+BRICK_SATURATION = 0.6  # o tijolo do terreiro é o da praça desbotado de sol: 60% da saturação,
+BRICK_BRIGHTNESS = 1.35  # mais claro
+BRICK_DUST = "C09A72"  # e coberto de poeira de barro (#B17F64 de média, entre a madeira e a pedra da paleta)
+BRICK_DUST_AMOUNT = 0.4
 CROP_CARD_MATERIAL = "M_FarmCrops"
 # As plantas de cada canteiro e trilha viram malhas soltas Crops<n> (a cena para de desenhar cada canteiro de longe);
 # as dos props ficam na malha principal, que assim traz M_FarmCrops antes: o importador do Godot desliga a cor de
@@ -176,11 +184,35 @@ def soil_texture() -> Path:
     return target
 
 
+def faded_brick_texture() -> Path:
+    """The town's red paving brick bleached to the dull clay of an old terreiro: half the saturation gone, lighter, and
+    a film of the yard's dust over it (vertex tint only multiplies, it can not take the red out)."""
+    target = TEXTURE_DIR / "T_FarmBrick_BaseColor.png"
+    source = load_image(TEXTURE_DIR / "T_BrickPaving_BaseColor.png", True)
+    width, height = source.size
+    rgba = numpy.array(source.pixels[:], dtype=numpy.float32).reshape(height, width, 4)
+    color = rgba[..., :3]
+    luma = (color @ numpy.array([0.2126, 0.7152, 0.0722], dtype=numpy.float32))[..., None]
+    bleached = (luma + (color - luma) * BRICK_SATURATION) * BRICK_BRIGHTNESS
+    dust = rgb(BRICK_DUST) * (luma / luma.mean())
+    rgba[..., :3] = numpy.clip(bleached * (1.0 - BRICK_DUST_AMOUNT) + dust * BRICK_DUST_AMOUNT, 0.0, 1.0)
+    image = bpy.data.images.new("T_FarmBrick_BaseColor", width, height, alpha=False)
+
+    image.pixels.foreach_set(rgba.ravel())
+    image.filepath_raw = str(target)
+    image.file_format = "PNG"
+    image.save()
+    bpy.data.images.remove(image)
+
+    return target
+
+
 def farm_textures() -> dict:
-    """Crop atlas and hay, painted on the first call (the same seed always writes the same files)."""
+    """Crop atlas, hay and the faded terreiro brick, made on the first call (the same seed always writes the same files)."""
     if not FARM_TEXTURES:
         FARM_TEXTURES["crops"] = crop_atlas(TEXTURE_DIR, SEED)
         FARM_TEXTURES["hay"] = hay_texture(TEXTURE_DIR, SEED + 1)
+        FARM_TEXTURES["brick"] = faded_brick_texture()
 
     return FARM_TEXTURES
 
@@ -208,7 +240,7 @@ def farm_builder(name: str) -> Builder:
     b.materials["soil"] = textured_material("M_FarmSoil", soil_texture(), roughness=0.95)
     b.materials["hay"] = textured_material("M_FarmHay", textures["hay"], roughness=0.95)
     b.materials["crops"] = crop_material(textures["crops"])
-    b.materials["paving"] = textured_material("M_FarmPaving", TEXTURE_DIR / "T_BrickPaving_BaseColor.png", TEXTURE_DIR / "T_BrickPaving_Normal.png", roughness=0.9)
+    b.materials["paving"] = textured_material("M_FarmPaving", textures["brick"], TEXTURE_DIR / "T_BrickPaving_Normal.png", roughness=0.9)
     b.materials["glass"] = plain_material("M_FarmGlass", srgb("3A4E66"), 0.12, 0.4)
     b.materials["lantern"] = plain_material("M_FarmLantern", srgb("C9B48A"), 0.2)
     b.plants = PlantBatch(b, srgb)
@@ -217,7 +249,9 @@ def farm_builder(name: str) -> Builder:
 
 
 def finish_model(b: Builder, name: str, sidecar: dict) -> dict:
-    """Flush the plants, export, and turn the card material into alpha-scissor (Blender writes it as BLEND)."""
+    """Flush the plants, export, and turn the card material into alpha-scissor (Blender writes it as BLEND). The
+    hash of the .bin goes into the .gltf: Godot only reimports when the .gltf text changes, and a rebuild that
+    moves vertices or UVs (a repainted atlas) changes nothing but the .bin."""
     path = FARM_DIR / f"{name}.gltf"
     b.plants.flush()
     result = b.finish(path, sidecar, separate=(CROPS_PREFIX,))
@@ -227,6 +261,7 @@ def finish_model(b: Builder, name: str, sidecar: dict) -> dict:
     for material in cards:
         material.update({"alphaMode": "MASK", "alphaCutoff": 0.5, "doubleSided": True})
 
+    document["asset"]["extras"] = {"buffer_md5": hashlib.md5(path.with_suffix(".bin").read_bytes()).hexdigest()}
     path.write_text(json.dumps(document, indent=1), encoding="utf-8", newline="\n")
 
     return result
@@ -1097,7 +1132,7 @@ TERREIRO_TOP = YARD_TOP + 0.05
 TERREIRO_BORDER = 0.5
 TERREIRO_PATH = (83.9, 87.1)  # lajedo da escada da casa até a pista
 KERB_TINT = "F4F0E6"
-BRICK_TINT = "F7DDC2"
+BRICK_TINT = "FFF8F0"  # quase branco: a cor já vem da textura desbotada (faded_brick_texture)
 COFFEE_TINTS = {"cereja": "B8402F", "passa": "7A3A28", "seco": "4E3A2A", "verde": "9A8A3E"}
 COFFEE_BEDS = {  # leito -> (min x, max x, estado de cada retângulo, do norte para o sul)
     "west": (77.5, 83.1, ("seco", "passa", "cereja", "cereja", "passa", "seco")),
@@ -1148,6 +1183,16 @@ def build_farm_yard() -> dict:
     return finish_model(b, "farm_yard", {"origin": "world", "doors": []})
 
 
+RANCHO_EAVE = {"cows": 2.7, "pigs": 2.4}
+PEN_PROPS = [(pen, prop) for pen, props in FARM_PEN_PROPS.items() for prop in props]
+PEN_PROP_BUILDERS = {  # tipo de FARM_PEN_PROPS -> (builder, frame, cercado, largura, fundo)
+    "rancho": lambda b, frame, pen, width, depth: farm_rancho(b, frame, width, depth, RANCHO_EAVE[pen]),
+    "hay_rack": lambda b, frame, pen, width, depth: hay_rack(b, frame, width),
+    "trough": lambda b, frame, pen, width, depth: trough(b, frame, width),
+    "hay_pile": lambda b, frame, pen, width, depth: hay_pile(b, frame, (width, depth, 0.5), 61),
+}
+
+
 def build_curral(b: Builder) -> None:
     """The pens: heavy fences with a porteira each, ranchos on round posts, troughs, hay rack."""
     cows, pigs = FARM_PENS["cows"], FARM_PENS["pigs"]
@@ -1156,12 +1201,8 @@ def build_curral(b: Builder) -> None:
     fence_run(b, rectangle_loop(pigs), YARD_TOP, SEED + 21, gates=((0, 1),))
 
     # Ranchos inteiros dentro do cercado: fundo e beiral a mais de 1,3 m da cerca.
-    farm_rancho(b, frame_at_world(93.5, 21.2, YARD_TOP, 180.0), 9.0, 5.0, 2.7)
-    hay_rack(b, frame_at_world(85.5, 24.8, YARD_TOP, 0.0), 3.0)
-    trough(b, frame_at_world(88.0, 5.6, YARD_TOP, 0.0), 2.6)
-    farm_rancho(b, frame_at_world(96.0, 38.0, YARD_TOP, 180.0), 6.5, 3.8, 2.4)
-    trough(b, frame_at_world(94.0, 32.2, YARD_TOP, 0.0), 2.0)
-    hay_pile(b, frame_at_world(88.0, 42.2, YARD_TOP), (2.2, 1.0, 0.5), 61)
+    for pen, (kind, x, z, yaw, width, depth) in PEN_PROPS:
+        PEN_PROP_BUILDERS[kind](b, frame_at_world(x, z, YARD_TOP, yaw), pen, width, depth)
 
 
 def terreiro(b: Builder) -> None:
@@ -1313,7 +1354,7 @@ def build_kitchen_garden(b: Builder, rectangle: tuple) -> None:
 # ---------- the fields past the wall ----------
 
 FIELD_LANE = [(102.0, 0.0), (107.0, 0.5), (113.0, -0.7), (120.0, 0.6), (127.0, -0.5), (134.0, 0.8), (141.0, -0.3), (148.5, 0.4)]
-FIELD_FOOTPATHS = (  # trilhas de pé: ao longo do muro (norte e sul) e a cabeceira entre o trigo e a horta
+FIELD_FOOTPATHS = (  # trilhas de pé: ao longo do muro (norte e sul) e a cabeceira entre o cafezal e a mandioca e o milho
     [(105.2, -44.0), (104.8, -32.0), (105.7, -18.0), (105.1, -2.6)],
     [(105.2, 2.6), (105.7, 14.0), (104.8, 30.0), (105.3, 44.0)],
     [(106.0, -21.8), (118.0, -21.3), (131.0, -22.2), (147.5, -21.6)],
