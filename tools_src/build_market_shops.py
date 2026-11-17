@@ -36,6 +36,7 @@ DOOR_CLEARANCE = 3.0  # faixa livre atrás da porta
 BOARD_WIDTH = 0.6
 JOIST_SPACING = 1.6
 POST = 0.32
+PLINTH_MARGIN = 0.06  # a sapata de pedra passa isso do pilar de cada lado
 LIGHT_SPACING = 9.0
 LIGHT_ROWS = (0.28, 0.72)  # frações da profundidade
 AWNING_REACH = 1.7
@@ -384,7 +385,7 @@ def build_ceiling(b: Builder, room: Room) -> None:
 
     for u, d in room.posts:
         town.wall_piece(b, (u - POST / 2.0, d - POST / 2.0, 0.0), (u + POST / 2.0, d + POST / 2.0, room.ceiling - 0.42), "wood", house.wood_tint)
-        b.box((u - POST / 2.0 - 0.06, d - POST / 2.0 - 0.06, 0.0), (u + POST / 2.0 + 0.06, d + POST / 2.0 + 0.06, 0.35), "stone", srgb(STONE["media"]))
+        b.box((u - POST / 2.0 - PLINTH_MARGIN, d - POST / 2.0 - PLINTH_MARGIN, 0.0), (u + POST / 2.0 + PLINTH_MARGIN, d + POST / 2.0 + PLINTH_MARGIN, 0.35), "stone", srgb(STONE["media"]))
 
         for brace_sign in (-1, 1):
             b.beam((u, d + brace_sign * 0.1, room.ceiling - 1.4), (u, d + brace_sign * 1.0, room.ceiling - 0.42), 0.14, 0.14, "wood", house.wood_tint)
@@ -488,6 +489,7 @@ class Furnisher:
         self.windows = window_spans(room)
         self.window_list = [(side, window) for side, windows in self.windows.items() for window in windows]
         self.window_blockers = []
+        self.rugs = []
         self.footprints = [("porta", (door_u - door_width / 2.0 - 0.2, door_u + door_width / 2.0 + 0.2, room.front, room.front + DOOR_CLEARANCE)), ("lojista", (self.keeper[0] - 0.35, self.keeper[0] + 0.35, self.keeper[1] - 0.35, self.keeper[1] + 0.35))]
         self.footprints += [("pilar", (u - POST / 2.0, u + POST / 2.0, d - POST / 2.0, d + POST / 2.0)) for u, d in room.posts]
         self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in (partition_box(room, partition) for partition in room.partitions)]
@@ -512,6 +514,9 @@ class Furnisher:
 
         if not entry.get("hang") and not entry.get("beside_window"):
             self.note_window_blocker(name, (u - half_u, u + half_u, d - half_d, d + half_d), height_origin + height)
+
+        if name.startswith("rug") and not entry.get("hang"):
+            self.rugs.append((name, (u - half_u, u + half_u, d - half_d, d + half_d)))
 
         if entry.get("solid"):
             self.b.collider((-width / 2.0, -depth / 2.0, 0.0), (width / 2.0, depth / 2.0, min(height, COLLIDER_MAX_HEIGHT)), frame)
@@ -605,10 +610,15 @@ class Furnisher:
         against a wall in front of one of its windows."""
         pairs = itertools.combinations(self.footprints, 2)
         overlapping = [(first[0], second[0], tuple(round(value, 1) for value in second[1])) for first, second in pairs if first[1][0] < second[1][1] - 0.02 and second[1][0] < first[1][1] - 0.02 and first[1][2] < second[1][3] - 0.02 and second[1][2] < first[1][3] - 0.02]
+        fixed = [(name, box) for name, box in self.footprints if name in ("pilar", "parede")]
+        rugs_under = [(rug, name, tuple(round(value, 1) for value in box)) for (rug, rug_box), (name, box) in itertools.product(self.rugs, fixed) if boxes_overlap(rug_box, box, -PLINTH_MARGIN)]
         outside = [name for name, (u_from, u_to, d_from, d_to) in self.footprints if u_from < self.left - 0.02 or u_to > self.right + 0.02 or d_from < self.front - 0.02 or d_to > self.back + 0.02]
 
         for first, second, where in overlapping:
             print(f"AVISO {self.room.shop_type}: {first} x {second} em {where}")
+
+        for rug, name, where in rugs_under:
+            print(f"AVISO {self.room.shop_type}: {rug} entra embaixo de {name} em {where}")
 
         for name in outside:
             print(f"AVISO {self.room.shop_type}: {name} fora do salão")
@@ -618,6 +628,11 @@ class Furnisher:
 
         if self.missing:
             print(f"AVISO {self.room.shop_type}: props ainda não modelados: {sorted(self.missing)}")
+
+
+def boxes_overlap(first: tuple, second: tuple, margin: float = 0.0) -> bool:
+    """True when two (u from, u to, d from, d to) boxes overlap; a negative margin grows them (a post's plinth)."""
+    return first[0] < second[1] - margin and second[0] < first[1] - margin and first[2] < second[3] - margin and second[2] < first[3] - margin
 
 
 def fill_floor(furnisher: Furnisher, items: list) -> None:
