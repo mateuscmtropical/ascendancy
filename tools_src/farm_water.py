@@ -8,9 +8,9 @@ All pieces draw in a local frame (origin on the ground, Blender Z up, Y = -Godot
 import itertools
 import math
 
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
-from build_town_houses import STONE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, srgb
+from build_town_houses import STONE, WHITE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, srgb
 from farm_colonial import (
     CAIADO,
     CREAM,
@@ -187,32 +187,50 @@ def trough(b: Builder, frame: Matrix, length: float) -> None:
 
 # ---------- monjolo ----------
 
+MONJOLO_PIVOT_Z = 1.05
+MONJOLO_FEED = (-3.15, 0.0, 2.17)  # topo da forquilha onde a bica de bambu chega ao monjolo
+MONJOLO_SCOOP_END = (-1.55, 0.0, 0.28)  # pontas do braço a partir do pino, em repouso (pilão no fundo)
+MONJOLO_PESTLE_END = (1.75, 0.0, -0.28)
+MONJOLO_MORTAR_HOLLOW = 0.4  # fundo da boca do pilão de toco, onde a mão do pilão bate
+
+
 def monjolo(b: Builder, frame: Matrix) -> None:
-    """Monjolo: a hollow-log beam pivoting on two forked posts, a scoop at one end that the bamboo spout fills, a
-    pestle at the other end that falls into the stump mortar when the scoop tips. Beam along local X; scoop at -X."""
-    beam_wood = srgb(WOOD["mel"])
-    pivot_z = 1.05
-    scoop_end = (-1.55, 0.0, pivot_z + 0.28)
-    pestle_end = (1.75, 0.0, pivot_z - 0.28)
+    """Fixed part of the monjolo: two forked posts with the iron pin, the stump mortar, the forked post that carries
+    the bamboo spout and the water falling from it into the scoop. The beam swings (monjolo_beam, its own model,
+    sidecar marker monjolo_beam at the pin). Beam along local X; scoop at -X."""
+    pestle_x = MONJOLO_PESTLE_END[0]
+    spout_end = (-1.7, 0.0, MONJOLO_PIVOT_Z + 0.9)
 
     for side in (-1, 1):
-        forked_post(b, frame, 0.0, side * 0.5, pivot_z + 0.2)
+        forked_post(b, frame, 0.0, side * 0.5, MONJOLO_PIVOT_Z + 0.2)
 
-    b.cylinder((0.0, -0.58, pivot_z), 0.045, 1.16, 6, "metal", srgb(IRON), frame=frame, axis="Y", uv=None)
-    tube(b, scoop_end, pestle_end, 0.12, 8, "wood", WOOD["mel"], frame=frame, uv=TIMBER_UV)
-    b.box((-1.95, -0.2, pivot_z + 0.3), (-1.2, 0.2, pivot_z + 0.36), "wood", srgb(WOOD["media"]), frame=frame, uv=TIMBER_UV)
-
-    for side in (-1, 1):
-        b.box((-1.95, side * 0.2 - 0.025, pivot_z + 0.3), (-1.2, side * 0.2 + 0.025, pivot_z + 0.5), "wood", srgb(WOOD["media"]), frame=frame, uv=TIMBER_UV)
-
-    b.box((-1.97, -0.2, pivot_z + 0.3), (-1.93, 0.2, pivot_z + 0.5), "wood", srgb(WOOD["media"]), frame=frame, uv=TIMBER_UV)
-    b.cylinder((pestle_end[0], 0.0, 0.55), 0.09, pestle_end[2] - 0.5, 8, "wood", srgb(WOOD["escura"]), frame=frame, uv=TIMBER_UV)
-    lathe(b, [(0.36, 0.0), (0.38, 0.1), (0.36, 0.5), (0.2, 0.48), (0.18, 0.4)], 12, "wood", WOOD["media"], frame, base=(pestle_end[0], 0.0, 0.0), closed=True, uv=("band", *WOOD_LIGHT_BAND, 1.0))
-    bamboo_pipe(b, frame, (-3.1, 0.0, 2.15), (-1.7, 0.0, pivot_z + 0.9))
-    forked_post(b, frame, -3.2, 0.0, 2.0)
-    b.cylinder((-1.67, 0.0, pivot_z + 0.38), 0.02, 0.5, 6, WATER_KEY, srgb("8FC4D8"), frame=frame)
+    b.cylinder((0.0, -0.58, MONJOLO_PIVOT_Z), 0.045, 1.16, 6, "metal", srgb(IRON), frame=frame, axis="Y", uv=None)
+    lathe(b, [(0.36, 0.0), (0.38, 0.1), (0.36, 0.5), (0.2, 0.48), (0.18, MONJOLO_MORTAR_HOLLOW)], 12, "wood", WOOD["media"], frame, base=(pestle_x, 0.0, 0.0), closed=True, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+    bamboo_pipe(b, frame, MONJOLO_FEED, spout_end)
+    forked_post(b, frame, MONJOLO_FEED[0] - 0.05, 0.0, MONJOLO_FEED[2] - 0.17)
+    b.cylinder((spout_end[0] + 0.03, 0.0, MONJOLO_PIVOT_Z + 0.38), 0.02, 0.5, 6, WATER_KEY, srgb("8FC4D8"), frame=frame)
+    b.marker("monjolo_beam", (0.0, 0.0, MONJOLO_PIVOT_Z), frame)
     b.collider((-0.3, -0.7, 0.0), (0.3, 0.7, 1.3), frame=frame)
-    b.collider((pestle_end[0] - 0.4, -0.4, 0.0), (pestle_end[0] + 0.4, 0.4, 0.6), frame=frame)
+    b.collider((pestle_x - 0.4, -0.4, 0.0), (pestle_x + 0.4, 0.4, 0.6), frame=frame)
+    b.collider((MONJOLO_FEED[0] - 0.25, -0.25, 0.0), (MONJOLO_FEED[0] + 0.15, 0.25, MONJOLO_FEED[2]), frame=frame)
+
+
+def monjolo_beam(b: Builder, frame: Matrix) -> None:
+    """The swinging beam of the monjolo, origin at the pin: a hollow log with the scoop (an open plank box) on the -X
+    end and the pestle hanging from the +X end down into the mortar hollow. In rest pose the pestle is down."""
+    scoop_floor = MONJOLO_SCOOP_END[2] + 0.02
+    pestle_x, _pestle_y, pestle_z = MONJOLO_PESTLE_END
+    pestle_bottom = MONJOLO_MORTAR_HOLLOW + 0.02 - MONJOLO_PIVOT_Z
+
+    tube(b, MONJOLO_SCOOP_END, MONJOLO_PESTLE_END, 0.12, 8, "wood", WOOD["mel"], frame=frame, uv=TIMBER_UV)
+    b.box((-1.95, -0.2, scoop_floor), (-1.2, 0.2, scoop_floor + 0.06), "wood", srgb(WOOD["media"]), frame=frame, uv=TIMBER_UV)
+
+    for side in (-1, 1):
+        b.box((-1.95, side * 0.2 - 0.025, scoop_floor), (-1.2, side * 0.2 + 0.025, scoop_floor + 0.2), "wood", srgb(WOOD["media"]), frame=frame, uv=TIMBER_UV)
+
+    b.box((-1.97, -0.2, scoop_floor), (-1.93, 0.2, scoop_floor + 0.2), "wood", srgb(WOOD["media"]), frame=frame, uv=TIMBER_UV)
+    b.cylinder((pestle_x, 0.0, pestle_bottom), 0.09, pestle_z + 0.05 - pestle_bottom, 8, "wood", srgb(WOOD["escura"]), frame=frame, uv=TIMBER_UV)
+    ring(b, (pestle_x, 0.0, pestle_bottom + 0.06), 0.095, 0.012, "iron", "FFFFFF", frame, sides=10, tube_sides=4)
 
 
 # ---------- the mill ----------
@@ -221,18 +239,39 @@ MILL_WIDTH = 4.6
 MILL_DEPTH = 4.0
 MILL_BASE = 0.5
 MILL_WALL_TOP = 3.0
+MILL_EAVE = 0.6
 WHEEL_RADIUS = 1.45
+WHEEL_WIDTH = 0.9
 WHEEL_AXLE_Z = 1.75
 WHEEL_PADDLES = 14
+WHEEL_AXLE_REACH = WHEEL_WIDTH / 2.0 + 0.9  # meio eixo, do centro da roda até cada ponta
+WHEEL_X = MILL_WIDTH / 2.0 + MILL_EAVE + 0.6  # aro de dentro fora do beiral (o telhado passa da parede 0,6 m)
+WHEEL_Y = MILL_DEPTH / 2.0
+FLUME_TOP = WHEEL_AXLE_Z + WHEEL_RADIUS + 0.15  # fundo da calha 7 cm acima do topo da roda
+FLUME_HALF_WIDTH = 0.31
+FLUME_START_Y = MILL_DEPTH + 6.0  # caixa d'água de pedra atrás da casa, de onde a calha sai
+FLUME_LAST_POST_Y = WHEEL_Y + WHEEL_RADIUS + 0.55  # cavalete mais perto da roda; dali a calha vai em balanço com mão-francesa
+FLUME_SPILL_Y = WHEEL_Y - 0.15  # a água cai logo depois do topo, do lado da frente: a roda gira com o topo para -Y
+CHANNEL_INNER = (MILL_WIDTH / 2.0 + 0.08, WHEEL_X + WHEEL_AXLE_REACH - 0.6)  # do embasamento da casa até o muro de fora
+CHANNEL_Y = (-3.2, WHEEL_Y + WHEEL_RADIUS + 0.15)
+CHANNEL_KERB = (0.25, 0.25)  # largura e altura dos muretes do rego
+CHANNEL_WATER = 0.13
+POND_RADIUS = 1.55
+POND_Y = CHANNEL_Y[0] - POND_RADIUS + 0.05
+POND_RIM = 0.25
+CHANNEL_INTO_POND = POND_Y + 0.9  # muretes do rego entram na borda do tanque até aqui: nos cantos a borda curva fica mais longe
+MILL_FOOTPRINT = (-MILL_WIDTH / 2.0 - MILL_EAVE - 0.3, WHEEL_X + WHEEL_AXLE_REACH + 0.3, POND_Y - POND_RADIUS - 0.3, FLUME_START_Y + 1.7)  # x, y locais sem tufo de grama
+MONJOLO_FOOTPRINT = (MONJOLO_FEED[0] - 0.4, MONJOLO_PESTLE_END[0] + 0.6, -1.3, 1.0)
 
 
-def water_wheel(b: Builder, frame: Matrix, width: float) -> None:
-    """Overshot wheel turning around local X at the origin: two rims, spokes in two sets, buckets of boards, the axle."""
+def water_wheel(b: Builder, frame: Matrix) -> None:
+    """Overshot wheel turning around local X at the origin: two rims, spokes in two sets, buckets of boards, the axle
+    with its iron hubs. Its own model (water_wheel.gltf): features/hub/water_wheel.gd turns it. The hubs use the
+    farm builder's untinted "iron" so the mesh has a neutral first surface."""
     wood = srgb(WOOD["media"])
     timber = srgb(TIMBER)
-    iron = srgb(IRON)
     around_x = frame @ Matrix.Rotation(math.radians(90.0), 4, "Y")
-    half = width / 2.0
+    half = WHEEL_WIDTH / 2.0
 
     for rim in (-half, half):
         lathe(b, [(WHEEL_RADIUS - 0.12, rim - 0.05), (WHEEL_RADIUS, rim - 0.05), (WHEEL_RADIUS, rim + 0.05), (WHEEL_RADIUS - 0.12, rim + 0.05)], 14, "wood", WOOD["media"], around_x, closed=True, uv=("band", *WOOD_DARK_BAND, 1.0))
@@ -252,52 +291,131 @@ def water_wheel(b: Builder, frame: Matrix, width: float) -> None:
 
         b.beam((rim, 0.0, 0.0), tip, 0.09, 0.07, "wood", timber, frame=frame)
 
-    b.cylinder((-half - 0.9, 0.0, 0.0), 0.14, width + 1.8, 8, "wood", timber, frame=frame, axis="X", uv=TIMBER_UV)
-    b.cylinder((-half - 0.04, 0.0, 0.0), 0.2, 0.2, 8, "metal", iron, frame=frame, axis="X")
-    b.cylinder((half - 0.16, 0.0, 0.0), 0.2, 0.2, 8, "metal", iron, frame=frame, axis="X")
+    b.cylinder((-WHEEL_AXLE_REACH, 0.0, 0.0), 0.14, 2.0 * WHEEL_AXLE_REACH, 8, "wood", timber, frame=frame, axis="X", uv=TIMBER_UV)
+    b.cylinder((-half - 0.04, 0.0, 0.0), 0.2, 0.2, 8, "iron", WHITE, frame=frame, axis="X")
+    b.cylinder((half - 0.16, 0.0, 0.0), 0.2, 0.2, 8, "iron", WHITE, frame=frame, axis="X")
 
 
-def flume(b: Builder, frame: Matrix, length: float, top_z: float) -> None:
-    """Wooden water channel on trestles running along local +X from the origin, water in it, ending in a spill."""
+def flume(b: Builder, frame: Matrix, length: float, supported: float, spill_bottom: float) -> None:
+    """Wooden water channel running along local +X from the origin with water in it: trestles up to `supported`, the
+    rest cantilevered on knee braces from the last trestle, and a spill falling from the open end to `spill_bottom`."""
     wood = srgb(WOOD["media"])
     timber = srgb(TIMBER)
-    posts = int(length / 1.4) + 1
+    top_z = FLUME_TOP
+    posts = math.ceil((supported - 0.3) / 1.4) + 1
 
     b.box((0.0, -0.28, top_z - 0.08), (length, 0.28, top_z), "wood", wood, frame=frame, uv=TIMBER_UV)
 
     for side in (-1, 1):
-        low, high = sorted((side * 0.25, side * 0.31))
+        low, high = sorted((side * 0.25, side * FLUME_HALF_WIDTH))
 
         b.box((0.0, low, top_z), (length, high, top_z + 0.3), "wood", wood, frame=frame, uv=TIMBER_UV)
 
-    b.box((0.04, -0.25, top_z + 0.0), (length - 0.02, 0.25, top_z + 0.2), WATER_KEY, srgb("5A8FA8"), frame=frame)
+    b.box((0.0, -0.25, top_z), (length - 0.02, 0.25, top_z + 0.2), WATER_KEY, srgb("5A8FA8"), frame=frame)
+    b.cylinder((length - 0.08, 0.0, spill_bottom), 0.07, top_z + 0.2 - spill_bottom, 6, WATER_KEY, srgb("8FC4D8"), frame=frame)
 
     for index in range(posts):
-        x = 0.3 + index * (length - 0.6) / max(1, posts - 1)
+        x = 0.3 + index * (supported - 0.3) / max(1, posts - 1)
 
         for side in (-1, 1):
             b.box((x - 0.07, side * 0.38 - 0.07, 0.0), (x + 0.07, side * 0.38 + 0.07, top_z - 0.08), "wood", timber, frame=frame, uv=TIMBER_UV)
+            b.box((x - 0.14, side * 0.38 - 0.14, 0.0), (x + 0.14, side * 0.38 + 0.14, 0.12), "stone", srgb(STONE["media"]), frame=frame)
 
         b.box((x - 0.08, -0.45, top_z - 0.18), (x + 0.08, 0.45, top_z - 0.08), "wood", timber, frame=frame, uv=TIMBER_UV)
+        b.collider((x - 0.15, -0.53, 0.0), (x + 0.15, 0.53, top_z), frame=frame)
 
-    b.cylinder((length - 0.05, 0.0, 1.9), 0.09, top_z - 1.9 + 0.1, 6, WATER_KEY, srgb("8FC4D8"), frame=frame)
+    for side in (-1, 1):
+        b.beam((supported, side * 0.38, top_z - 1.35), (supported + 0.8, side * 0.38, top_z - 0.08), 0.08, 0.08, "wood", timber, frame=frame, uv=TIMBER_UV)
+
+
+def head_tank(b: Builder, frame: Matrix) -> None:
+    """Stone cistern the flume starts from, standing on the ground behind it (local +Y), water up to the coping."""
+    top_z = FLUME_TOP + 0.3
+    half = 0.7
+
+    b.box((-half, 0.0, 0.0), (half, 2.0 * half, top_z - 0.1), "stone", srgb(STONE["media"]), frame=frame)
+    b.box((-half - 0.06, -0.06, top_z - 0.1), (half + 0.06, 2.0 * half + 0.06, top_z), "trim", srgb(CREAM), frame=frame)
+    b.box((-half + 0.12, 0.12, top_z - 0.12), (half - 0.12, 2.0 * half - 0.12, top_z - 0.1 + 0.005), WATER_KEY, srgb("5A8FA8"), frame=frame)
+    b.collider((-half - 0.06, -0.06, 0.0), (half + 0.06, 2.0 * half + 0.06, top_z), frame=frame)
+
+
+def tailrace(b: Builder, frame: Matrix) -> None:
+    """Stone channel (rego) under the wheel along local Y: the house base is its inner wall beside the house, low
+    kerbs elsewhere, an end wall behind the wheel and a round stone tank (tanque) in front that it empties into.
+    A stone pier on the outer kerb carries the far end of the wheel axle in an iron bearing."""
+    inner_x, outer_x = CHANNEL_INNER
+    start_y, end_y = CHANNEL_Y
+    kerb_width, kerb_height = CHANNEL_KERB
+    stone = srgb(STONE["media"])
+    pier_x = WHEEL_X + WHEEL_AXLE_REACH - 0.3  # a ponta do eixo passa 6 cm do pilar: nada de face rente girando
+
+    b.box((outer_x, CHANNEL_INTO_POND, 0.0), (outer_x + kerb_width, end_y + kerb_width, kerb_height), "stone", stone, frame=frame)
+    b.box((inner_x - kerb_width, end_y, 0.0), (outer_x, end_y + kerb_width, kerb_height), "stone", stone, frame=frame)
+
+    b.box((inner_x - kerb_width, CHANNEL_INTO_POND, 0.0), (inner_x, 0.0, kerb_height), "stone", stone, frame=frame)
+
+    b.box((inner_x, start_y - 0.2, 0.01), (outer_x, end_y, CHANNEL_WATER - 0.015), "paint", srgb("2E4A5A"), frame=frame)
+    b.box((inner_x, start_y - 0.2, CHANNEL_WATER - 0.015), (outer_x, end_y, CHANNEL_WATER), WATER_KEY, srgb("5A8FA8"), frame=frame)
+    b.collider((outer_x, start_y, 0.0), (outer_x + kerb_width, end_y + kerb_width, kerb_height), frame=frame)
+    b.collider((inner_x - kerb_width, start_y, 0.0), (inner_x, 0.0, kerb_height), frame=frame)
+    b.collider((inner_x - kerb_width, end_y, 0.0), (outer_x, end_y + kerb_width, kerb_height), frame=frame)
+
+    b.box((pier_x - 0.2, WHEEL_Y - 0.3, 0.0), (pier_x + 0.2, WHEEL_Y + 0.3, WHEEL_AXLE_Z - 0.26), "stone", srgb(STONE["clara"]), frame=frame)
+    b.box((pier_x - 0.24, WHEEL_Y - 0.34, WHEEL_AXLE_Z - 0.26), (pier_x + 0.24, WHEEL_Y + 0.34, WHEEL_AXLE_Z - 0.16), "trim", srgb(CREAM), frame=frame)
+    b.collider((pier_x - 0.24, WHEEL_Y - 0.34, 0.0), (pier_x + 0.24, WHEEL_Y + 0.34, WHEEL_AXLE_Z), frame=frame)
+
+    for bearing_x in (pier_x - 0.1, MILL_WIDTH / 2.0 + 0.04):
+        b.box((bearing_x - 0.08, WHEEL_Y - 0.22, WHEEL_AXLE_Z - 0.18), (bearing_x + 0.08, WHEEL_Y + 0.22, WHEEL_AXLE_Z - 0.13), "metal", srgb(IRON), frame=frame)
+        ring(b, (bearing_x, WHEEL_Y, WHEEL_AXLE_Z), 0.16, 0.025, "metal", IRON, frame, sides=12, tube_sides=4, axis="X")
+
+    pond = frame @ Matrix.Translation((WHEEL_X - 0.15, POND_Y, 0.0))
+
+    lathe(b, [(POND_RADIUS, 0.0), (POND_RADIUS, 0.3), (POND_RADIUS - POND_RIM, 0.3), (POND_RADIUS - POND_RIM, 0.02)], 18, "stone", STONE["media"], pond, closed=True)
+    b.cylinder((0.0, 0.0, 0.01), POND_RADIUS - POND_RIM, 0.005, 18, "paint", srgb("2E4A5A"), frame=pond)
+    b.cylinder((0.0, 0.0, CHANNEL_WATER - 0.02), POND_RADIUS - POND_RIM, 0.01, 18, WATER_KEY, srgb("5A8FA8"), frame=pond)
+    b.collider((-POND_RADIUS, -POND_RADIUS, 0.0), (POND_RADIUS, POND_RADIUS, 0.3), frame=pond)
 
 
 def mill_house(b: Builder, frame: Matrix) -> None:
-    """Little whitewashed mill house (door and window frames in the accent colour, hipped tile roof) with the wheel on
-    its +X wall and the flume coming from the +X side, over a stream that runs under the wheel along local Y.
-    Front at local -Y (like every facade, d = 0 there)."""
+    """Little whitewashed mill house (door and window frames in the accent colour, hipped tile roof). Front at local
+    -Y (like every facade, d = 0 there); the wheel turns past the +X wall."""
     half = MILL_WIDTH / 2.0
-    frames = {"front": Matrix.Identity(4), "west": Matrix.Translation((-half, MILL_DEPTH / 2.0, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z")}
-    house = frame
+    west = frame @ Matrix.Translation((-half, MILL_DEPTH / 2.0, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z")
 
-    b.box((-half - 0.08, -0.08, 0.0), (half + 0.08, MILL_DEPTH + 0.08, MILL_BASE - 0.08), "stone", srgb(STONE["media"]), frame=house)
-    b.box((-half, 0.0, MILL_BASE), (half, MILL_DEPTH, MILL_WALL_TOP), "plaster", srgb(CAIADO), frame=house)
-    b.box((-half - 0.1, -0.1, MILL_BASE - 0.1), (half + 0.1, MILL_DEPTH + 0.1, MILL_BASE), "trim", srgb(CREAM), frame=house)
-    b.collider((-half - 0.08, 0.0, 0.0), (half + 0.08, MILL_DEPTH + 0.08, MILL_WALL_TOP), frame=house)
-    entrance_door(b, house @ Matrix.Translation((-half / 2.0, 0.0, MILL_BASE)), 0.0, 1.1, 2.0, double=False, fanlight=False)
-    window(b, house, half / 2.0 + 0.2, MILL_BASE + 0.7, 0.8, 1.2, shutters=True, top="flat")
-    window(b, house @ frames["west"], 0.0, MILL_BASE + 0.7, 0.8, 1.2, shutters=True, top="flat")
-    hip_roof(b, half + 0.6, -0.6, MILL_DEPTH + 0.6, MILL_WALL_TOP + 0.12, 28.0, frame=house)
-    rafter_tails(b, (half + 0.6, -0.6, MILL_DEPTH + 0.6), (half, 0.0, MILL_DEPTH), MILL_WALL_TOP + 0.12, spacing=0.7, frame=house)
-    b.box((-half - 0.3, -0.28, 0.0), (half + 0.3, -0.02, 0.1), "stone", srgb(STONE["clara"]), frame=house)
+    b.box((-half - 0.08, -0.08, 0.0), (half + 0.08, MILL_DEPTH + 0.08, MILL_BASE - 0.08), "stone", srgb(STONE["media"]), frame=frame)
+    b.box((-half, 0.0, MILL_BASE), (half, MILL_DEPTH, MILL_WALL_TOP), "plaster", srgb(CAIADO), frame=frame)
+    b.box((-half - 0.1, -0.1, MILL_BASE - 0.1), (half + 0.1, MILL_DEPTH + 0.1, MILL_BASE), "trim", srgb(CREAM), frame=frame)
+    b.collider((-half - 0.08, 0.0, 0.0), (half + 0.08, MILL_DEPTH + 0.08, MILL_WALL_TOP), frame=frame)
+    entrance_door(b, frame @ Matrix.Translation((-half / 2.0, 0.0, MILL_BASE)), 0.0, 1.1, 2.0, double=False, fanlight=False)
+    window(b, frame, half / 2.0 + 0.2, MILL_BASE + 0.7, 0.8, 1.2, shutters=True, top="flat")
+    window(b, west, 0.0, MILL_BASE + 0.7, 0.8, 1.2, shutters=True, top="flat")
+    hip_roof(b, half + MILL_EAVE, -MILL_EAVE, MILL_DEPTH + MILL_EAVE, MILL_WALL_TOP + 0.12, 28.0, frame=frame)
+    rafter_tails(b, (half + MILL_EAVE, -MILL_EAVE, MILL_DEPTH + MILL_EAVE), (half, 0.0, MILL_DEPTH), MILL_WALL_TOP + 0.12, spacing=0.7, frame=frame)
+    b.box((-half - 0.3, -0.28, 0.0), (-0.1, -0.02, 0.1), "stone", srgb(STONE["clara"]), frame=frame)
+
+
+def water_mill(b: Builder, frame: Matrix) -> None:
+    """The mill: the house, the stone tank behind it, the flume on trestles carrying the water to the top of the
+    wheel, and the rego under the wheel into the tanque in front. The wheel itself is water_wheel.gltf, placed by the
+    scene at the sidecar marker water_wheel (its axle)."""
+    flume_frame = frame @ Matrix.Translation((WHEEL_X, FLUME_START_Y, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z")
+    flume_length = FLUME_START_Y - FLUME_SPILL_Y
+    spill_bottom = WHEEL_AXLE_Z + WHEEL_RADIUS - 0.3
+    wheel_reach = WHEEL_RADIUS + 0.05
+
+    mill_house(b, frame)
+    tailrace(b, frame)
+    head_tank(b, frame @ Matrix.Translation((WHEEL_X, FLUME_START_Y, 0.0)))
+    flume(b, flume_frame, flume_length, FLUME_START_Y - FLUME_LAST_POST_Y, spill_bottom)
+    b.marker("water_wheel", (WHEEL_X, WHEEL_Y, WHEEL_AXLE_Z), frame)
+    b.collider((WHEEL_X - WHEEL_WIDTH / 2.0 - 0.05, WHEEL_Y - wheel_reach, WHEEL_AXLE_Z - wheel_reach), (WHEEL_X + WHEEL_WIDTH / 2.0 + 0.05, WHEEL_Y + wheel_reach, WHEEL_AXLE_Z + wheel_reach), frame=frame)
+
+
+def flume_tap(frame: Matrix, target: tuple) -> tuple:
+    """Point on the flume's +X wall (mill frame) level with a world point, a little under the water line: where a
+    bamboo branch taking water off the flume toward `target` starts. Returns world (Blender) coords."""
+    local_target = frame.inverted() @ Vector(target)
+    side = 1.0 if local_target.x > WHEEL_X else -1.0
+    tap = Vector((WHEEL_X + side * FLUME_HALF_WIDTH, local_target.y, FLUME_TOP + 0.12))
+
+    return tuple(frame @ tap)
