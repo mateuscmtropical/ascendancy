@@ -342,8 +342,8 @@ def furnish_school(f) -> None:
     for block_u in (-5.94, 0.0, 5.94):
         f.grid("school_desk", (block_u - 0.8, block_u + 0.8), (4.4, 10.8), 2, 5, 180.0)
 
-    f.put("rug_runner", -2.97, 8.6, variant="blue")
-    f.put("rug_runner", 2.97, 8.6, variant="blue")
+    f.put("rug_runner", -2.97, 9.7, variant="blue")  # entre as duas colunas do corredor, sem entrar nas sapatas
+    f.put("rug_runner", 2.97, 9.7, variant="blue")
     f.put("planet_mobile", 0.0, 12.6)
     f.put("school_bell", -2.6, 2.4)
     f.put("bunting", 0.0, 3.6)
