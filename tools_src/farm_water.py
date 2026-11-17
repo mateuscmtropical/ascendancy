@@ -30,7 +30,7 @@ from shop_props_common import lathe, ring
 IDENTITY = Matrix.Identity(4)
 BAMBOO = "B9B35E"
 BAMBOO_NODE = "8E8A3E"
-ROPE = "B89A62"
+ROPE = "8A6A40"
 WOOD_BARE = "7A5438"
 WATER_KEY = "water"
 CURB_RADIUS = 0.95
@@ -41,8 +41,9 @@ AXLE_Z = 1.3  # altura do eixo: manivela entre 0,95 e 1,65 m, na mão de quem pu
 AXLE_RADIUS = 0.075
 DRUM_RADIUS = 0.13
 DRUM_HALF_LENGTH = 0.5
-ROPE_RADIUS = 0.018
-ROPE_TURNS = 11
+ROPE_RADIUS = 0.02
+ROPE_TURNS = 8
+ROPE_PITCH = 0.052  # voltas com um vão entre elas: lê como corda enrolada, não como um tubo liso
 CRANK_ARM = 0.34
 BUCKET_BAIL_RISE = 0.16
 
@@ -87,11 +88,11 @@ def cacimba(b: Builder, frame: Matrix) -> None:
     curb = [(CURB_RADIUS, 0.0), (CURB_RADIUS, CURB_TOP), (WELL_RADIUS, CURB_TOP), (WELL_RADIUS, 0.1)]
     cap_top = CURB_TOP + 0.1
     rope_y = DRUM_RADIUS + ROPE_RADIUS
-    rope_x = DRUM_HALF_LENGTH - 0.1 - ROPE_TURNS * ROPE_RADIUS * 2.2
+    rope_x = DRUM_HALF_LENGTH - 0.1 - ROPE_TURNS * ROPE_PITCH
     hanging_bucket = (rope_x, rope_y, cap_top - 0.36)
 
     lathe(b, curb, 14, "stone", STONE["media"], frame, closed=True)
-    b.cylinder((0.0, 0.0, CURB_TOP), CURB_RADIUS + 0.07, 0.1, 14, "trim", srgb(CREAM), frame=frame)
+    lathe(b, [(WELL_RADIUS - 0.03, CURB_TOP), (CURB_RADIUS + 0.07, CURB_TOP), (CURB_RADIUS + 0.07, cap_top), (WELL_RADIUS - 0.03, cap_top)], 14, "trim", CREAM, frame, closed=True)
     b.cylinder((0.0, 0.0, 0.3), WELL_RADIUS, 0.02, 14, WATER_KEY, srgb("5A8FA8"), frame=frame)
 
     for side in (-1, 1):
@@ -108,7 +109,7 @@ def cacimba(b: Builder, frame: Matrix) -> None:
         ring(b, (side * SARILHO_POST_X + offset, 0.0, AXLE_Z), AXLE_RADIUS + 0.008, 0.014, "metal", IRON, frame, sides=12, tube_sides=4, axis="X")
 
     for turn in range(ROPE_TURNS):
-        ring(b, (DRUM_HALF_LENGTH - 0.1 - turn * ROPE_RADIUS * 2.2, 0.0, AXLE_Z), DRUM_RADIUS + ROPE_RADIUS, ROPE_RADIUS, "paint", ROPE, frame, sides=14, tube_sides=4, axis="X")
+        ring(b, (DRUM_HALF_LENGTH - 0.1 - turn * ROPE_PITCH, 0.0, AXLE_Z), DRUM_RADIUS + ROPE_RADIUS, ROPE_RADIUS, "paint", ROPE, frame, sides=14, tube_sides=6, axis="X")
 
     crank(b, frame, SARILHO_POST_X + 0.2)
     b.cylinder((rope_x, rope_y, hanging_bucket[2] + 0.3 + BUCKET_BAIL_RISE), ROPE_RADIUS, AXLE_Z - hanging_bucket[2] - 0.3 - BUCKET_BAIL_RISE, 6, "paint", srgb(ROPE), frame=frame)

@@ -120,10 +120,10 @@ STRAW = "E3C474"
 MUD = "5E4128"
 WATER = "5A8FA8"
 BURLAP = "C8A878"
-BRICK_SATURATION = 0.6  # o tijolo do terreiro é o da praça desbotado de sol: 60% da saturação,
-BRICK_BRIGHTNESS = 1.35  # mais claro
-BRICK_DUST = "C09A72"  # e coberto de poeira de barro (#B17F64 de média, entre a madeira e a pedra da paleta)
-BRICK_DUST_AMOUNT = 0.4
+BRICK_SATURATION = 0.5  # o tijolo do terreiro é o da praça desbotado de sol: metade da saturação,
+BRICK_BRIGHTNESS = 1.3  # mais claro
+BRICK_DUST = "B08E66"  # e coberto de poeira de barro (#A57C61 de média, entre a madeira e a pedra da paleta)
+BRICK_DUST_AMOUNT = 0.5
 CROP_CARD_MATERIAL = "M_FarmCrops"
 # As plantas de cada canteiro e trilha viram malhas soltas Crops<n> (a cena para de desenhar cada canteiro de longe);
 # as dos props ficam na malha principal, que assim traz M_FarmCrops antes: o importador do Godot desliga a cor de
