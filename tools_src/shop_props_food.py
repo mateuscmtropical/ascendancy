@@ -407,19 +407,29 @@ def tavern_table_set(b: Builder, frame: Matrix, **options) -> None:
     generator = random.Random(options.get("seed", 0))
     top = options.get("tint", HONEY)
 
-    plank(b, frame, (-0.8, -0.45, 0.72), (0.8, 0.45, 0.78), top)
+    for plank_index in range(3):
+        plank(b, frame, (-0.8, -0.45 + plank_index * 0.3, 0.72), (0.8, -0.45 + (plank_index + 1) * 0.3 - 0.006, 0.78), (top, PALE_WOOD, top)[plank_index])
+
+    plank(b, frame, (-0.78, -0.43, 0.68), (0.78, 0.43, 0.72), WALNUT, dark=True)
 
     for leg_x in (-0.58, 0.58):
-        plank(b, frame, (leg_x - 0.05, -0.06, 0.1), (leg_x + 0.05, 0.06, 0.72), OAK)
-        plank(b, frame, (leg_x - 0.06, -0.38, 0.0), (leg_x + 0.06, 0.38, 0.1), OAK)
-        plank(b, frame, (leg_x - 0.05, -0.38, 0.66), (leg_x + 0.05, 0.38, 0.72), OAK)
+        trestle = [(-0.38, 0.0), (-0.3, 0.1), (-0.06, 0.2), (-0.06, 0.66), (0.06, 0.66), (0.06, 0.2), (0.3, 0.1), (0.38, 0.0)]
 
-    plank(b, frame, (-0.58, -0.04, 0.3), (0.58, 0.04, 0.38), OAK)
+        b.side_prism(trestle, leg_x - 0.05, leg_x + 0.05, "wood", srgb(OAK), frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+        plank(b, frame, (leg_x - 0.06, -0.4, 0.0), (leg_x + 0.06, 0.4, 0.04), WALNUT, dark=True)
+        plank(b, frame, (leg_x - 0.06, -0.38, 0.66), (leg_x + 0.06, 0.38, 0.72), OAK)
+
+    plank(b, frame, (-0.68, -0.04, 0.3), (0.68, 0.04, 0.38), OAK)
+
+    for wedge_x in (-0.65, 0.65):
+        plank(b, frame, (wedge_x - 0.015, -0.05, 0.28), (wedge_x + 0.015, 0.05, 0.4), WALNUT, dark=True)
 
     for bench_y in (-0.8, 0.8):
         plank(b, frame, (-0.75, bench_y - 0.17, 0.41), (0.75, bench_y + 0.17, 0.46), top)
-        plank(b, frame, (-0.6, bench_y - 0.14, 0.0), (-0.54, bench_y + 0.14, 0.41), OAK)
-        plank(b, frame, (0.54, bench_y - 0.14, 0.0), (0.6, bench_y + 0.14, 0.41), OAK)
+        plank(b, frame, (-0.73, bench_y - 0.15, 0.37), (0.73, bench_y + 0.15, 0.41), WALNUT, dark=True)
+
+        for leg_x in (-0.57, 0.57):
+            b.side_prism([(bench_y - 0.17, 0.0), (bench_y + 0.17, 0.0), (bench_y + 0.09, 0.2), (bench_y + 0.09, 0.37), (bench_y - 0.09, 0.37), (bench_y - 0.09, 0.2)], leg_x - 0.03, leg_x + 0.03, "wood", srgb(OAK), frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
 
     plate(b, frame, -0.42, -0.2, 0.78)
     loaf(b, frame, (-0.42, -0.2, 0.792), (0.08, 0.06, 0.045), "C9782F")
@@ -1362,12 +1372,121 @@ def parasol_table(b: Builder, frame: Matrix, **options) -> None:
 
 LIGHT_FIRE = "FF8A3D"
 
+# ---------- tavern architecture and dressing ----------
+
+def tavern_booth(b: Builder, frame: Matrix, **options) -> None:
+    """Wall booth, 2.2 m wide and 1.5 deep: two high-backed padded benches facing each other over a small table,
+    a panelled end screen against the wall with a hanging lamp bracket, and a padded back on each bench."""
+    wood = options.get("tint", OAK)
+    cushion = options.get("cushion", "A83A48")
+
+    plank(b, frame, (-1.1, 0.6, 0.0), (1.1, 0.7, 1.55), WALNUT, dark=True)
+
+    for panel_x in (-0.75, 0.0, 0.75):
+        plank(b, frame, (panel_x - 0.3, 0.55, 0.3), (panel_x + 0.3, 0.6, 1.2), HONEY)
+        plank(b, frame, (panel_x - 0.26, 0.545, 0.34), (panel_x + 0.26, 0.55, 1.16), OAK)
+
+    plank(b, frame, (-1.12, 0.55, 1.45), (1.12, 0.72, 1.55), HONEY)
+
+    for side in (-1.0, 1.0):
+        bench_x = side * 0.95
+        outline = [(-0.6, 0.0), (0.62, 0.0), (0.62, 1.05), (0.5, 1.3), (0.2, 1.42), (-0.2, 1.46), (-0.5, 1.42), (-0.6, 1.2)]
+
+        b.side_prism(outline, bench_x + side * 0.08, bench_x + side * 0.14, "wood", srgb(WALNUT), frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+        plank(b, frame, (bench_x - 0.14, -0.6, 0.4), (bench_x + 0.14, 0.6, 0.45), wood)
+        painted(b, frame, (bench_x - 0.12, -0.58, 0.45), (bench_x + 0.12, 0.58, 0.5), cushion)
+        plank(b, frame, (bench_x + side * 0.1 - 0.015, -0.6, 0.45), (bench_x + side * 0.1 + 0.015, 0.6, 1.2), HONEY)
+        painted(b, frame, (bench_x + side * 0.085 - 0.02, -0.56, 0.52), (bench_x + side * 0.085, 0.56, 1.05), cushion)
+        plank(b, frame, (bench_x - 0.14, -0.6, 0.0), (bench_x + 0.14, -0.55, 0.4), WALNUT, dark=True)
+        plank(b, frame, (bench_x - 0.14, 0.55, 0.0), (bench_x + 0.14, 0.6, 0.4), WALNUT, dark=True)
+
+    for leg_x in (-0.32, 0.32):
+        lathe(b, [(0.045, 0.0), (0.06, 0.05), (0.04, 0.2), (0.05, 0.4), (0.04, 0.6), (0.05, 0.7)], 6, "wood", WALNUT, frame @ Matrix.Translation((leg_x, 0.0, 0.0)), uv=("band", *WOOD_DARK_BAND, 1.0))
+
+    plank(b, frame, (-0.45, -0.3, 0.72), (0.45, 0.3, 0.77), HONEY)
+    plank(b, frame, (-0.47, -0.32, 0.755), (0.47, 0.32, 0.77), OAK)
+    mug(b, frame, -0.15, -0.1, 0.77)
+    mug(b, frame, 0.2, 0.1, 0.77, foam=False)
+    candle(b, frame, 0.0, 0.0, 0.77, 0.1, holder=True)
+    plate(b, frame, 0.2, -0.12, 0.77, 0.1, "E8C14F")
+    stick(b, frame, (0.0, 0.58, 1.2), (0.0, 0.2, 1.35), 0.03, WARM_IRON, "metal")
+    b.cylinder((0.0, 0.2, 1.32), 0.05, 0.1, 6, "metal", srgb(BRASS), frame=frame)
+    flame(b, frame, (0.0, 0.2, 1.34), 0.025, 0.07, "glow_warm")
+
+
+def settle_bench(b: Builder, frame: Matrix, **options) -> None:
+    """Fireside settle, 1.9 m: a high panelled back with a scalloped crest, scrolled arms, a padded seat with
+    cushions and a box base."""
+    wood = options.get("tint", WALNUT)
+    cushion = options.get("cushion", "C9483B")
+    crest = [(-0.95, 1.1), (-0.95, 1.3), (-0.6, 1.38), (-0.3, 1.3), (0.0, 1.42), (0.3, 1.3), (0.6, 1.38), (0.95, 1.3), (0.95, 1.1)]
+
+    plank(b, frame, (-0.95, 0.22, 0.2), (0.95, 0.3, 1.1), wood, dark=True)
+    b.prism(crest, 0.22, 0.3, "wood", srgb(wood), frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+
+    for panel in range(3):
+        plank(b, frame, (-0.88 + panel * 0.6, 0.2, 0.55), (-0.38 + panel * 0.6, 0.22, 1.05), HONEY)
+
+    plank(b, frame, (-0.95, -0.3, 0.0), (0.95, 0.3, 0.4), wood, dark=True)
+    plank(b, frame, (-0.9, -0.31, 0.08), (0.9, -0.3, 0.36), OAK)
+    plank(b, frame, (-0.95, -0.32, 0.4), (0.95, 0.3, 0.45), HONEY)
+    painted(b, frame, (-0.88, -0.28, 0.45), (0.88, 0.2, 0.52), cushion)
+
+    for arm_x in (-0.88, 0.88):
+        plank(b, frame, (arm_x - 0.07, -0.3, 0.45), (arm_x + 0.07, 0.3, 0.75), wood, dark=True)
+        b.cylinder((arm_x, -0.32, 0.77), 0.065, 0.14, 8, "wood", srgb(HONEY), frame=frame, axis="X")
+
+    for cushion_x, color in ((-0.4, "E8C14F"), (0.45, "3F8A50")):
+        b.sphere((cushion_x, 0.12, 0.64), 1.0, "paint", srgb(color), scale=(0.17, 0.05, 0.14), frame=frame @ Matrix.Rotation(0.12, 4, "Y"), segments=6)
+
+
+def bunting(b: Builder, frame: Matrix, **options) -> None:
+    """Ceiling prop: a string of 14 festive pennants swagged between two beam hooks over 4 m."""
+    colors = ("C9483B", "E8C14F", "3F8A50", "4F8FC9", "E0884A", "B57FE0", "F2E6CF")
+    points = [(-2.0 + 4.0 * step / 14.0, -0.1 - 0.22 * math.sin(math.pi * step / 14.0)) for step in range(15)]
+
+    for hook_x in (-2.0, 2.0):
+        b.cylinder((hook_x, 0.0, -0.1), 0.02, 0.1, 6, "metal", srgb(WARM_IRON), frame=frame)
+
+    for (start_x, start_z), (end_x, end_z) in zip(points, points[1:]):
+        stick(b, frame, (start_x, 0.0, start_z), (end_x, 0.0, end_z), 0.012, CREAM, "paint")
+
+    for index, (x, z) in enumerate(points[:-1]):
+        b.hull([(x + 0.02, 0.0, z - 0.01), (x + 0.24, 0.0, z - 0.02), (x + 0.13, 0.0, z - 0.26), (x + 0.02, 0.012, z - 0.01), (x + 0.24, 0.012, z - 0.02)], "paint", srgb(colors[index % len(colors)]), frame=frame)
+
+
+def fireplace_tall(b: Builder, frame: Matrix, **options) -> None:
+    """The big stone hearth with its chimney breast carried up to the ceiling: a tapering hood with a moulded
+    cornice, a corbelled cap and a mounted sconce on each shoulder. options.height: top of the breast (default 4.4)."""
+    height = options.get("height", 4.4)
+    stone = options.get("tint", STONE["dourada"])
+    shoulder = 2.2
+
+    fireplace(b, frame, **options)
+    b.hull([(-0.95, -0.15, shoulder), (0.95, -0.15, shoulder), (-0.95, 0.4, shoulder), (0.95, 0.4, shoulder), (-0.55, -0.1, shoulder + 0.7), (0.55, -0.1, shoulder + 0.7), (-0.55, 0.4, shoulder + 0.7), (0.55, 0.4, shoulder + 0.7)], "stone", srgb(stone), frame=frame)
+    b.box((-0.55, -0.1, shoulder + 0.7), (0.55, 0.4, height - 0.15), "stone", srgb(stone), frame=frame)
+    b.box((-0.65, -0.16, height - 0.2), (0.65, 0.4, height - 0.12), "stone", srgb(STONE["clara"]), frame=frame)
+    b.box((-0.72, -0.2, height - 0.12), (0.72, 0.4, height), "stone", srgb(STONE["media"]), frame=frame)
+
+    for sconce_x in (-0.78, 0.78):
+        stick(b, frame, (sconce_x, -0.12, 2.5), (sconce_x, -0.3, 2.6), 0.03, WARM_IRON, "metal")
+        b.cylinder((sconce_x, -0.3, 2.6), 0.05, 0.02, 8, "metal", srgb(BRASS), frame=frame)
+        candle(b, frame, sconce_x, -0.3, 2.62, 0.14)
+
+    stick(b, frame, (-0.5, -0.12, shoulder + 0.4), (0.5, -0.12, shoulder + 0.4), 0.03, WARM_IRON, "metal")
+    b.hull([(-0.14, -0.2, shoulder + 0.5), (0.14, -0.2, shoulder + 0.5), (0.0, -0.2, shoulder + 0.7), (-0.14, -0.14, shoulder + 0.5), (0.14, -0.14, shoulder + 0.5), (0.0, -0.14, shoulder + 0.7)], "metal", srgb(BRASS), frame=frame)
+
+
 PROPS = {
     "bar_counter_l": {"build": bar_counter_l, "size": (6.0, 2.4, 1.5), "solid": True, "variants": ["right", "left"], "clearance": 1.5},
     "bar_stool": {"build": bar_stool, "size": (0.4, 0.4, 0.78), "solid": True},
     "keg_rack": {"build": keg_rack, "size": (1.5, 0.95, 1.45), "solid": True, "clearance": 0.8},
     "bottle_shelf": {"build": bottle_shelf, "size": (2.4, 0.45, 2.4), "solid": True, "clearance": 0.9},
     "mug_rail": {"build": mug_rail, "size": (1.2, 0.22, 2.03), "solid": False, "clearance": 0.6},
+    "fireplace_tall": {"build": fireplace_tall, "size": (2.5, 0.8, 4.4), "solid": True, "light": ((0.0, -0.3, 0.6), LIGHT_FIRE, 2.5, 6.0), "clearance": 1.5},
+    "tavern_booth": {"build": tavern_booth, "size": (2.24, 1.32, 1.55), "solid": True, "clearance": 0.6},
+    "settle_bench": {"build": settle_bench, "size": (1.98, 0.7, 1.45), "solid": True},
+    "bunting": {"build": bunting, "size": (4.04, 0.04, 0.6), "solid": False, "hang": True},
     "fireplace": {"build": fireplace, "size": (2.5, 0.8, 2.2), "solid": True, "light": ((0.0, -0.3, 0.6), LIGHT_FIRE, 2.5, 6.0), "clearance": 1.5},
     "tavern_table_set": {"build": tavern_table_set, "size": (1.6, 1.95, 0.97), "solid": True},
     "round_table_set": {"build": round_table_set, "size": (2.05, 2.05, 0.98), "solid": True},

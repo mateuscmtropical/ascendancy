@@ -126,6 +126,45 @@ def furnish_armor(f) -> None:
     f.scatter([("armor_stand", 0.0, {"variant": "mail"}), ("gauntlet_basket", 0.0, {}), ("chainmail_stand", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("plate_pile", 0.0, {}), ("boots_rack", 90.0, {})], (-6.6, 6.6), (3.4, 13.0), 6, 4)
 
 
+SCREEN_SLOT_B = 2.0  # largura de um módulo de panel_screen / partition_doorway
+SCREEN_HALF_B = 0.14  # meia espessura de uma divisória de painéis
+
+
+def screen_run_b(f, axis: str, fixed: float, start: float, slots: int, door_slot: int = None, variant: str = "glazed", doorway: str = "timber") -> None:
+    """Divisória de módulos de 2 m: axis "u" corre ao longo da fachada na profundidade `fixed`, "d" corre para o
+    fundo no u `fixed`; o módulo door_slot vira passagem (partition_doorway)."""
+    degrees = {"u": 0.0, "d": 90.0}[axis]
+
+    for index in range(slots):
+        centre = start + SCREEN_SLOT_B * (index + 0.5)
+        u, d = {"u": (centre, fixed), "d": (fixed, centre)}[axis]
+        name, options = ("partition_doorway", {"variant": doorway}) if index == door_slot else ("panel_screen", {"variant": variant})
+
+        f.put(name, u, d, degrees, **options)
+
+
+def back_room_b(f, u_from: float, slots_across: int, slots_deep: int, door_on: str = "front", door_slot: int = 1, variant: str = "glazed", doorway: str = "timber", has_left: bool = True, has_right: bool = True) -> dict:
+    """Sala de divisórias encostada na parede do fundo. u_from: eixo da divisória esquerda (ou a parede, sem ela).
+    Devolve os limites internos {u_from, u_to, d_from}. door_on: front, left ou right."""
+    run_from = u_from + (SCREEN_HALF_B if has_left else 0.0)
+    run_to = run_from + SCREEN_SLOT_B * slots_across
+    front_d = f.back - SCREEN_SLOT_B * slots_deep - SCREEN_HALF_B
+    side_start = front_d + SCREEN_HALF_B
+    doors = {side: (door_slot if door_on == side else None) for side in ("front", "left", "right")}
+
+    screen_run_b(f, "u", front_d, run_from, slots_across, doors["front"], variant, doorway)
+
+    if has_left:
+        screen_run_b(f, "d", u_from, side_start, slots_deep, doors["left"], variant, doorway)
+        f.put("screen_post", u_from, front_d)
+
+    if has_right:
+        screen_run_b(f, "d", run_to + SCREEN_HALF_B, side_start, slots_deep, doors["right"], variant, doorway)
+        f.put("screen_post", run_to + SCREEN_HALF_B, front_d)
+
+    return {"u_from": run_from, "u_to": run_to, "d_from": front_d + SCREEN_HALF_B}
+
+
 def furnish_tavern(f) -> None:
     """Tavern and inn (18 m): inn reception by the door on the left and the stairs to the rooms at the back, big
     fireplace with a mounted head over the mantel on the left wall, L bar with kegs and bottles in the back right,
@@ -403,60 +442,92 @@ def furnish_general(f) -> None:
 
 
 def furnish_library(f) -> None:
-    """Public library: bookcases on every wall with rolling ladders, back-to-back stacks forming corridors in the
-    side bays, a nave of reading tables, a map table under floating books on the axis, the librarian's counter
-    before the back wall, a printing press in the back corner, scroll racks, book carts and a reading nook with
-    armchairs by the front windows."""
-    stack_rows = (5.4, 8.2, 11.0, 13.8)
-    stack_u = 11.3
+    """Public library in the casarão's 5.6 m ground storey: a two-tier gallery of bookcases along the left wall
+    reached by a spiral stair, a scriptorium partitioned off in the back left corner (printing press, scribe's
+    desk), a sunlit reading wall on the right (hearth nook with armchairs, benches under the windows, card
+    catalogues between them), back-to-back stacks, a nave of reading tables, a map table under floating books on the
+    axis and the librarian's counter before the back wall. Back-wall bookcases stand on the piers between the high
+    windows."""
+    f.on_wall("right", "fireplace_tall", 5.45, height=5.0)
+    f.grid("wheel_chandelier", (-5.94, 5.94), (5.4, 12.0), 3, 2)
 
-    f.put("rug", 0.0, 5.4, variant="red")
+    f.put("rug_ornate", 0.0, 5.0, 90.0, variant="red")
     f.put("globe_stand", -1.6, 5.0)
     f.put("lectern", 1.6, 5.0)
-    f.put("rug", 0.0, 9.7, variant="red")
+    f.put("rug_ornate", 0.0, 9.7, variant="red")
     f.put("map_table", 0.0, 9.7)
     f.put("floating_books", 0.0, 9.7)
     f.put("counter_straight", 0.0, 14.6)
-    f.put("chair", 0.8, 16.4)
+    f.put("study_chair", 0.8, 16.4)
     f.put("book_cart", -2.2, 15.4)
 
-    f.wall("back", ["tall_bookcase"] * 5, start=f.left + 0.5, gap=0.25)
+    for pier_u in (-13.575, 13.575):
+        f.on_wall("back", "tall_bookcase_slim", pier_u)
+
+    for pier_u in (-9.8, 9.8):
+        f.on_wall("back", "tall_bookcase", pier_u)
+
     f.on_wall("back", "scroll_rack", -2.2)
     f.on_wall("back", "world_map_wall", 0.0)
     f.on_wall("back", "scroll_rack", 2.2)
-    f.wall("back", ["tall_bookcase"] * 5, start=3.1, gap=0.25)
-    f.put("rolling_ladder", -7.9, f.back - 0.8)
-    f.put("rolling_ladder", 7.9, f.back - 0.8)
-    f.put("printing_press", -11.8, 16.8, 90.0)
-    f.put("crate_stack", -11.8, 15.0, 90.0)
-    f.put("reading_table", 11.6, 16.6)
-    f.grid("chair", (10.8, 12.4), (17.4, 17.4), 2, 1)
+    f.on_wall("back", "scroll_rack", -6.1)
+    f.on_wall("back", "scroll_rack", 6.1)
+    f.on_wall("back", "rolling_ladder", -4.95)
+    f.on_wall("back", "rolling_ladder", 4.95)
 
-    side_wall(f, "left", ["tall_bookcase"] * 8, ["book_cart", "bench_long", ("plant_pot", {"variant": "fern"}), "book_cart", "bench_long", ("plant_pot", {"variant": "fern"})], start=0.6, gap=0.25)
-    side_wall(f, "right", ["tall_bookcase"] * 8, ["book_cart", "bench_long", ("plant_pot", {"variant": "fern"}), "book_cart", "bench_long", ("plant_pot", {"variant": "fern"})], start=0.6, gap=0.25)
-    if "left" not in f.room.exposed:
-        f.put("rolling_ladder", f.left + 0.8, 16.2, 90.0)
-    if "right" not in f.room.exposed:
-        f.put("rolling_ladder", f.right - 0.8, 16.2, -90.0)
+    f.put("gallery_stair", f.left + 1.2, 1.5, -70.0)
 
-    for row_d in stack_rows:
-        f.put("tall_bookcase", -stack_u, row_d - 0.2)
-        f.put("tall_bookcase", -stack_u, row_d + 0.2, 180.0)
-        f.put("tall_bookcase", stack_u, row_d - 0.2)
-        f.put("tall_bookcase", stack_u, row_d + 0.2, 180.0)
+    f.on_wall("left", "book_gallery", 4.8, open_end=-1)
+    f.on_wall("left", "book_gallery", 8.96)
+    f.on_wall("left", "tall_bookcase", 12.4)
+
+    f.put("rug_runner", -10.4, 9.0, variant="plum")
+    f.put("candle_stand", -12.2, 7.4)
+    f.put("candle_stand", -12.2, 12.2)
+    f.put("floating_candles", -10.4, 6.4)
+    f.put("floating_candles", -10.4, 11.6)
+    f.put("reading_table", -9.4, 9.0, 90.0)
+    f.grid("study_chair", (-10.45, -8.35), (8.3, 9.7), 2, 2, 90.0)
+
+    back_room_b(f, f.left, 3, 2, door_on="front", door_slot=1, has_left=False)
+    f.on_wall("left", "printing_press", 17.6)
+    f.put("crate_stack", -13.4, 15.9)
+    f.put("reading_table", -11.2, 17.8)
+    f.put("study_chair", -11.2, 16.8, 180.0)
+    f.put("rug_ornate", -11.4, 17.0, variant="plum")
+    f.put("candle_stand", -9.2, 15.9)
+
+    f.on_wall("right", "wainscot", 9.7)
+    f.on_wall("right", "wainscot", 13.9)
+    f.on_wall("right", "wainscot", 17.75)
+    f.on_wall("right", "plant_pot", 3.35, variant="fern")
+    f.on_wall("right", "bench_long", 7.8)
+    f.on_wall("right", "bench_long", 11.75)
+    f.on_wall("right", "bench_long", 16.0)
+    f.on_wall("right", "card_catalog", 9.65)
+    f.on_wall("right", "globe_stand", 17.7)
+    f.on_wall("right", "card_catalog", 13.9)
+
+    f.put("rug_ornate", 12.0, 5.45, 90.0, variant="green")
+    f.put("armchair", 11.2, 4.1, 80.0)
+    f.put("armchair", 11.2, 6.9, 100.0)
+    f.put("plant_pot", 13.6, 8.0, variant="bush")
+
+    for row_d in (10.4, 13.0, 15.6):
+        f.put("tall_bookcase", 10.8, row_d - 0.2)
+        f.put("tall_bookcase", 10.8, row_d + 0.2, 180.0)
 
     f.grid("reading_table", (-5.94, 5.94), (4.6, 11.8), 2, 3)
-    for table_u in (-5.94, 5.94):
-        f.grid("chair", (table_u - 0.6, table_u + 0.6), (3.85, 11.05), 2, 3, 180.0)
-        f.grid("chair", (table_u - 0.6, table_u + 0.6), (5.35, 12.55), 2, 3)
 
-    f.wall("front", [("plant_pot", {"variant": "bush"}), "armchair", ("rug", {"variant": "green"}), "armchair", "lectern"], start=f.left + 0.6, gap=0.4)
-    f.wall("front", ["lectern", "armchair", ("rug", {"variant": "green"}), "armchair", ("plant_pot", {"variant": "bush"})], start=f.door_u + 2.6, gap=0.4)
+    for table_u in (-5.94, 5.94):
+        f.grid("study_chair", (table_u - 0.6, table_u + 0.6), (3.85, 11.05), 2, 3, 180.0)
+        f.grid("study_chair", (table_u - 0.6, table_u + 0.6), (5.35, 12.55), 2, 3)
+
+    f.on_wall("front", "card_catalog", -4.4)
+    f.on_wall("front", "card_catalog", 4.4)
     f.put("book_cart", -5.94, 14.2)
     f.put("book_cart", 5.94, 14.2)
-
-    f.grid("wheel_chandelier", (-5.94, 5.94), (5.4, 12.0), 3, 2)
-    f.grid("hanging_lantern", (-stack_u, stack_u), (6.8, 12.4), 2, 2)
+    f.grid("hanging_lantern", (10.8, 10.8), (8.4, 14.2), 1, 2)
 
 
 PLANS = {
