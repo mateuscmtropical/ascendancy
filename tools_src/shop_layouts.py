@@ -72,36 +72,71 @@ def furnish_guild(f) -> None:
 
 
 def furnish_smith(f) -> None:
-    """Blacksmith (24 m): sales hall on the left (weapons on every wall, counter at the back), forge yard on the
-    right, open to the street: forge and bellows at the back wall, anvil, quench barrel and grindstone around it."""
+    """Blacksmith (24 m): the sales hall on the left (panelled walls, a showpiece plinth on a rug by the lane, weapons
+    on every wall, a barred stock alcove behind the counter) and the forge yard on the right behind a stone partition
+    with an arched doorway: hearth on slate flags at the back wall, anvils, quench barrel, grindstone, a workbench with
+    a vise and tool racks hanging from the beams; the yard is open to the street."""
+    f.on_wall("back", "forge", 8.2)
+    f.put("forge_floor_a", 7.4, 16.9)
+    f.put("hanging_lantern", -5.0, 5.0)
+    f.put("hanging_lantern", -5.0, 11.8)
+    f.put("doorway_lintel_a", 3.1, 13.3, 90.0, width=2.0, height=f.ceiling)
+
+    for along in [1.4 + 2.0 * index for index in range(9)]:
+        f.on_wall("left", "wainscot_a", along)
+
+    f.wall("back", ["wainscot_a"] * 7, start=f.left, gap=0.0)
+
+    for along in (9.5, 15.3, 17.3):
+        f.put("wainscot_a", 2.88, along, -90.0)
+
+    # sales hall: counter, lane, showpiece
     f.put("counter_till", -5.0, 14.0)
     f.put("rug", -5.0, 11.4, variant="gold")
-    f.wall("back", ["shield_wall", "axe_mace_rack", ("sword_wall", {"seed": 2}), "spear_rack", "helmet_shelf", "giant_sword"], start=-11.3, gap=0.4)
-    window_wall(f, "left", [[], [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "mail"})], [("wall_shelf", {"variant": "helmets"})], ["spear_rack", ("armor_stand", {"variant": "leather"})]], ["boots_rack", "crate_stack", "gauntlet_basket", None], gap=0.5)
-    f.put("floor_shelf", -8.4, 9.6, 90.0, variant="tools")
-    f.put("floor_shelf", -1.6, 9.6, 90.0, variant="helmets")
-    f.put("ingot_crates", 0.8, 4.2)
-    f.put("blade_shelf", 2.6, 11.4, -90.0)
-    f.put("spear_rack", 2.7, 14.4, -90.0)
-    f.put("plans_table", 1.6, 17.2, -90.0)
+    f.put("rug", -2.4, 5.0, variant="red")
+    f.put("masterwork_plinth_a", -2.4, 5.0)
+    f.wall("back", ["shield_wall", ("sword_wall", {"seed": 2}), "helmet_shelf", "giant_sword"], start=-7.0, gap=0.4)
+    window_wall(f, "left", [[("armor_stand", {"variant": "knight_gold"})], [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "mail"})], [("wall_shelf", {"variant": "helmets"})], ["spear_rack", ("armor_stand", {"variant": "leather"})]], ["boots_rack", "crate_stack", "gauntlet_basket", None], gap=0.5)
+    f.put("floor_shelf", -8.4, 10.8, 90.0, variant="tools")
+    f.put("floor_shelf", -1.6, 10.8, 90.0, variant="helmets")
+    f.put("armor_stand", -8.9, 3.6, 20.0, variant="plate")
+    f.put("axe_mace_rack", -8.9, 5.6, 90.0)
+    f.put("ingot_crates", 0.8, 3.0)
+    f.put("weapon_barrel", 2.2, 5.8)
+    f.put("blade_shelf", 2.6, 10.6, -90.0)
+    f.put("spear_rack", 2.7, 16.6, -90.0)
+    f.put("plans_table", 1.3, 18.0, -90.0)
     f.grid("wheel_chandelier", (-8.4, -1.6), (5.0, 12.0), 2, 2)
-    f.scatter([("armor_stand", 0.0, {"variant": "plate"}), ("floor_shelf", 90.0, {"variant": "tools"}), ("crate_open", 0.0, {"variant": "ingots"}), ("axe_mace_rack", 0.0, {}), ("floor_shelf", 90.0, {"variant": "helmets"}), ("barrel_group", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"})], (-9.8, 1.2), (4.2, 11.4), 5, 3)
 
-    f.on_wall("back", "forge", 8.2)
+    # stock alcove behind bars in the back left corner
+    f.put("timber_screen_a", -10.5, 17.0, 0.0, variant="bars")
+    f.put("timber_screen_a", -8.5, 17.0, 0.0, variant="bars")
+    f.wall("back", [("wall_shelf", {"variant": "tools"}), ("wall_shelf", {"variant": "boxes"})], start=-11.4, gap=0.1)
+    f.put("crate_stack", -10.3, 17.95, 0.0)
+    f.put("barrel_group", -8.5, 17.95, 0.0)
+    f.put("display_table", -9.8, 7.9, variant="daggers")
+    f.put("display_table", -2.0, 1.8, 0.0, variant="ingots")
+
+    # forge yard
     f.put("bellows", 6.0, 17.5, -20.0)
-    f.put("anvil_block", 6.8, 14.0, 30.0)
-    f.put("quench_barrel", 9.4, 13.4)
-    f.put("grindstone", 5.2, 10.8, 90.0)
-    f.on_wall("right", "coal_pile", 16.8)
+    f.put("anvil_block", 7.0, 15.2, 30.0)
+    f.put("quench_barrel", 9.6, 15.2)
+    f.put("grindstone", 5.2, 11.6, 90.0)
+    f.on_wall("right", "workbench_vise_a", 11.9)
+    f.on_wall("right", "coal_pile", 17.0)
     f.on_wall("right", "tool_wall_rack", 13.9)
     f.on_wall("right", "ingot_crates", 8.4)
-    f.put("plans_table", 3.9, 15.6, 90.0)
-    f.put("blade_shelf", 3.6, 12.2, 90.0)
+    f.put("hanging_tool_rack_a", 7.4, 12.0)
+    f.put("hanging_tool_rack_a", 8.8, 6.0)
     f.put("barrel_group", 10.4, 4.6)
     f.put("crate_stack", 10.6, 6.6)
-    f.put("ceiling_beam_hooks", 7.4, 11.8)
-    f.put("hanging_lantern", 7.4, 6.5)
-    f.scatter([("crate_open", 0.0, {"variant": "ingots"}), ("sack_pile", 0.0, {}), ("barrel_group", 0.0, {})], (5.0, 9.8), (3.0, 9.0), 3, 3)
+    f.put("anvil_block", 7.8, 3.4, -20.0)
+    f.put("weapon_barrel", 5.4, 3.2)
+    f.put("ceiling_beam_hooks", 5.0, 8.0, 90.0)
+    f.put("forge_floor_a", 8.0, 7.2)
+    f.put("coal_pile", 5.6, 7.4, 90.0)
+    f.put("plate_pile", 4.8, 4.6)
+    f.put("grindstone", 9.8, 9.6, -90.0)
 
 
 def furnish_armor(f) -> None:
@@ -463,7 +498,7 @@ PLANS = {
     "school": dict(keeper=(0.0, 16.6), furnish=furnish_school),
     "seminary": dict(keeper=(0.0, 16.8), posts=((-4.4, 6.47), (4.4, 6.47), (-4.4, 12.93), (4.4, 12.93)), furnish=furnish_seminary),
     "guild": dict(keeper=(0.0, 17.3), furnish=furnish_guild),
-    "smith": dict(keeper=(-5.0, 15.6), posts=((-8.4, 7.0), (-1.6, 7.0), (-8.4, 13.4), (-1.6, 13.4)), partitions=(("u", 3.1, 8.5, 19.1),), furnish=furnish_smith),
+    "smith": dict(keeper=(-5.0, 15.6), posts=((-8.4, 7.0), (-1.6, 7.0), (-8.4, 13.4), (-1.6, 13.4)), partitions=(("u", 3.1, 8.5, 12.3), ("u", 3.1, 14.3, 19.1)), furnish=furnish_smith),
     "armor": dict(keeper=(0.0, 16.2), furnish=furnish_armor),
     "tavern": dict(keeper=(5.0, 17.6), furnish=furnish_tavern),
     "magic": dict(keeper=(0.0, 15.6), furnish=furnish_magic),
@@ -473,7 +508,7 @@ PLANS = {
     "library": dict(keeper=(0.0, 16.0), furnish=furnish_library),
 }
 FILL = {  # prédio -> ilhas soltas que enchem o chão livre dos dois lados do corredor da porta (fill_floor)
-    "smith": [("armor_stand", 0.0, {"variant": "plate"}), ("crate_open", 0.0, {"variant": "ingots"}), ("weapon_barrel", 0.0, {}), ("plate_pile", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("weapon_barrel", 0.0, {"seed": 2}), ("barrel_group", 0.0, {})],
+    "smith": [],
     "armor": [("armor_stand", 0.0, {"variant": "plate"}), ("plate_pile", 0.0, {}), ("chainmail_stand", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("boots_rack", 90.0, {}), ("standing_mirror", 0.0, {})],
     "magic": [("mana_crystal_crate", 0.0, {}), ("rune_pillar", 0.0, {}), ("wand_case", 90.0, {}), ("giant_hourglass", 0.0, {}), ("mage_hat_stand", 0.0, {}), ("celestial_globe", 0.0, {}), ("crystal_ball_pedestal", 0.0, {})],
     "alchemy": [("planter_box", 90.0, {}), ("glowing_jar", 0.0, {}), ("drying_rack_herbs", 90.0, {}), ("mortar_table", 90.0, {}), ("flower_steps", 0.0, {}), ("crate_open", 0.0, {"variant": "roots"}), ("skeleton_stand", 0.0, {}), ("barrel_group", 0.0, {})],

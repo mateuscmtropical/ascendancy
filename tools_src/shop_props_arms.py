@@ -18,7 +18,7 @@ from mathutils import Euler, Matrix, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_town_houses import BRICK, STONE, TRIM_SMOOTH_BAND, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, srgb  # noqa: E402
-from shop_props_common import GOODS_PALETTE, filled_row, lathe, ring  # noqa: E402
+from shop_props_common import GOODS_PALETTE, base_profile, bevel_box, cornice_profile, filled_row, knob, lathe, raised_panel, ring, run_profile, solid_hull, turned_leg  # noqa: E402
 
 # Bright, clean metals and cloths (style bible: never dead grey; steel leans blue, iron leans violet).
 STEEL = "CDD8E6"
@@ -1568,6 +1568,101 @@ def wanted_posters(b: Builder, frame: Matrix, **options) -> None:
         box(b, sheet, (-0.012, -0.012, height / 2.0 - 0.04), (0.012, -0.004, height / 2.0 - 0.016), "metal", BRASS)
 
 
+def masterwork_plinth_a(b: Builder, frame: Matrix, **options) -> None:
+    """Showpiece of the smithy: a stepped stone plinth carrying a glass case with a jewelled sword lying on red
+    velvet, brass corner posts, a plaque on the front and a pair of velvet-rope stanchions."""
+    lathe(b, [(0.44, 0.0), (0.44, 0.1), (0.36, 0.14), (0.34, 0.2), (0.3, 0.24), (0.3, 0.8), (0.34, 0.84), (0.34, 0.88), (0.4, 0.92), (0.4, 0.98)], 8, "stone", "D9C8A8", frame)
+    bevel_box(b, frame, (-0.34, -0.22, 0.98), (0.34, 0.22, 1.02), "5A3A26", bevel=0.008)
+    box(b, frame, (-0.3, -0.18, 1.02), (0.3, 0.18, 1.045), "paint", "A8323C")
+
+    for tassel_x in (-0.32, 0.32):
+        b.sphere((tassel_x, -0.2, 1.03), 0.025, "metal", srgb(GOLD), frame=frame, segments=6)
+
+    sword(b, place(frame, (-0.27, 0.0, 1.06), (0.0, 90.0, 0.0)), 0.56, STEEL_BRIGHT, GOLD, CLOTH_BLUE, jewel="glow_cyan")
+    b.box((-0.32, -0.2, 1.02), (0.32, 0.2, 1.42), "vitrine", srgb("FFFFFF"), frame=frame)
+
+    for post_x, post_y in itertools.product((-0.32, 0.31), (-0.2, 0.19)):
+        box(b, frame, (post_x, post_y, 1.02), (post_x + 0.015, post_y + 0.015, 1.42), "metal", BRASS)
+
+    for rail_low, rail_high in (((-0.33, -0.21, 1.42), (0.33, -0.19, 1.45)), ((-0.33, 0.19, 1.42), (0.33, 0.21, 1.45)), ((-0.33, -0.21, 1.42), (-0.31, 0.21, 1.45)), ((0.31, -0.21, 1.42), (0.33, 0.21, 1.45))):
+        box(b, frame, rail_low, rail_high, "metal", BRASS)
+
+    gem(b, frame, (0.0, 0.0, 1.5), 0.035, "metal", GOLD, (1.0, 1.0, 1.3))
+    box(b, frame, (-0.1, -0.31, 0.5), (0.1, -0.295, 0.58), "metal", BRASS)
+
+
+def hanging_tool_rack_a(b: Builder, frame: Matrix, **options) -> None:
+    """Smith's overhead rack, z = 0 at the ceiling: two chains carry a bar with hooks for tongs, hammers, horseshoes,
+    a ladle and a coil of chain."""
+    bar_z = -1.1
+
+    for chain_x in (-0.82, 0.82):
+        chain(b, frame, chain_x, 0.0, bar_z, 0.0, 0.1, IRON_DARK)
+
+    bevel_box(b, frame, (-0.95, -0.05, bar_z - 0.06), (0.95, 0.05, bar_z), WOOD["escura"], bevel=0.01)
+
+    for hook_x in (-0.78, -0.5, -0.22, 0.06, 0.34, 0.62, 0.84):
+        box(b, frame, (hook_x - 0.006, -0.05, bar_z - 0.1), (hook_x + 0.006, -0.036, bar_z), "metal", IRON_DARK)
+
+    tongs(b, place(frame, (-0.78, -0.06, bar_z - 0.62)), 0.55)
+    smith_hammer(b, place(frame, (-0.5, -0.06, bar_z - 0.5)), 0.4, STEEL_DARK, WOOD["mel"], 1.1)
+    tongs(b, place(frame, (-0.22, -0.06, bar_z - 0.7)), 0.6)
+    smith_hammer(b, place(frame, (0.06, -0.06, bar_z - 0.42)), 0.34, STEEL, WOOD["media"], 0.9)
+
+    for shoe_x in (0.28, 0.4):
+        ring(b, (shoe_x, -0.06, bar_z - 0.14), 0.065, 0.013, "metal", IRON_DARK, frame, sides=8, tube_sides=4, axis="Y")
+
+    b.cylinder((0.62, -0.06, bar_z - 0.5), 0.012, 0.42, 6, "wood", srgb(WOOD["mel"]), frame=frame)
+    lathe(b, [(0.001, bar_z - 0.62), (0.05, bar_z - 0.6), (0.06, bar_z - 0.54), (0.04, bar_z - 0.5)], 8, "metal", COPPER, frame, base=(0.62, -0.06, 0.0))
+    ring(b, (0.84, -0.06, bar_z - 0.3), 0.1, 0.014, "metal", IRON_DARK, frame, sides=10, tube_sides=4, axis="Y")
+    ring(b, (0.84, -0.06, bar_z - 0.3), 0.07, 0.012, "metal", IRON_DARK, frame, sides=10, tube_sides=4, axis="Y")
+
+
+def workbench_vise_a(b: Builder, frame: Matrix, **options) -> None:
+    """Heavy smith's workbench 1.6 x 0.7: thick planked top, chunky chamfered legs with a low shelf of ingots,
+    an iron vise on the front corner, a drawer, hammers and files on a tool strip along the back edge."""
+    top = 0.92
+    bevel_box(b, frame, (-0.8, -0.35, top - 0.1), (0.8, 0.35, top), WOOD["media"], bevel=0.02, light=True)
+
+    for seam_y in (-0.12, 0.12):
+        box(b, frame, (-0.79, seam_y - 0.004, top - 0.001), (0.79, seam_y + 0.004, top + 0.001), "wood", WOOD["escura"], DARK_GRAIN)
+
+    for leg_x, leg_y in itertools.product((-0.72, 0.66), (-0.28, 0.22)):
+        bevel_box(b, frame, (leg_x, leg_y, 0.0), (leg_x + 0.08, leg_y + 0.08, top - 0.1), WOOD["escura"], bevel=0.012)
+
+    for shelf_x in (-0.64, 0.58):
+        bevel_box(b, frame, (shelf_x, -0.26, 0.2), (shelf_x + 0.06, 0.26, 0.26), WOOD["mel"], bevel=0.008, light=True)
+
+    bevel_box(b, frame, (-0.66, -0.28, 0.2), (0.66, 0.24, 0.26), WOOD["mel"], bevel=0.01, light=True)
+    bevel_box(b, frame, (-0.66, -0.3, top - 0.24), (0.66, -0.26, top - 0.1), WOOD["mel"], bevel=0.008, light=True)
+
+    for drawer_from in (-0.64, 0.0):
+        bevel_box(b, frame, (drawer_from + 0.04, -0.32, top - 0.22), (drawer_from + 0.6, -0.28, top - 0.12), WOOD["media"], bevel=0.006, light=True)
+        b.sphere((drawer_from + 0.32, -0.335, top - 0.17), 0.018, "metal", srgb(BRASS), frame=frame, segments=6)
+
+    for ingot_index in range(4):
+        ingot(b, frame, (-0.3 + (ingot_index % 2) * 0.22, -0.05, 0.26 + (ingot_index // 2) * 0.045), STEEL if ingot_index % 2 else COPPER)
+
+    box(b, frame, (0.46, -0.3, top), (0.64, -0.18, top + 0.14), "metal", IRON_DARK)
+    box(b, frame, (0.43, -0.34, top + 0.1), (0.5, -0.14, top + 0.16), "metal", STEEL_DARK)
+    b.cylinder((0.56, -0.34, top + 0.07), 0.014, 0.2, 6, "metal", srgb(IRON_DARK), frame=frame, axis="Y")
+    b.cylinder((0.46, -0.39, top + 0.07), 0.01, 0.2, 6, "metal", srgb(IRON_DARK), frame=frame, axis="X")
+
+    strip_z = top + 0.02
+    box(b, frame, (-0.76, 0.22, strip_z), (0.0, 0.32, strip_z + 0.025), "wood", WOOD["escura"], DARK_GRAIN)
+    smith_hammer(b, place(frame, (-0.5, -0.12, strip_z + 0.012), (0.0, 90.0, 20.0)), 0.3, STEEL_DARK, WOOD["mel"], 0.9)
+    tongs(b, place(frame, (-0.2, -0.05, strip_z + 0.012), (0.0, 90.0, -15.0)), 0.4)
+
+    for file_index in range(3):
+        box(b, frame, (-0.76 + file_index * 0.06, 0.24, strip_z + 0.025), (-0.745 + file_index * 0.06, 0.26, strip_z + 0.25 - file_index * 0.03), "metal", STEEL_DARK)
+
+    lump(b, frame, (0.2, 0.1, top + 0.03), 0.05, STEEL_DARK, random.Random(5), "metal")
+    lump(b, frame, (-0.05, 0.12, top + 0.025), 0.04, COPPER, random.Random(6), "metal")
+
+
+# @@NEW
+
+
 PROPS = {
     "forge": {"build": forge, "size": (2.0, 1.7, 4.5), "solid": True, "clearance": 1.5, "light": ((0.0, -0.25, 1.3), "FF8A3A", 3.0, 7.0)},
     "bellows": {"build": bellows, "size": (1.2, 0.5, 0.5), "solid": True},
@@ -1606,4 +1701,7 @@ PROPS = {
     "weapon_rental_rack": {"build": weapon_rental_rack, "size": (1.8, 0.5, 1.95), "solid": True},
     "group_table": {"build": group_table, "size": (1.7, 2.0, 1.0), "solid": True},
     "wanted_posters": {"build": wanted_posters, "size": (1.6, 0.1, 2.4), "solid": False},
+    "masterwork_plinth_a": {"build": masterwork_plinth_a, "size": (0.9, 0.9, 1.6), "solid": True},
+    "hanging_tool_rack_a": {"build": hanging_tool_rack_a, "size": (1.9, 0.2, 1.8), "solid": False, "hang": True},
+    "workbench_vise_a": {"build": workbench_vise_a, "size": (1.6, 0.8, 1.2), "solid": True},
 }
