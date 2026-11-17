@@ -32,7 +32,6 @@ Usage:
   blender -b --factory-startup -P tools_src/build_farm.py -- [farmhouse barn farm_yard farm_fields farm_wagon hay_cart]
 """
 
-import hashlib
 import itertools
 import json
 import math
@@ -249,9 +248,7 @@ def farm_builder(name: str) -> Builder:
 
 
 def finish_model(b: Builder, name: str, sidecar: dict) -> dict:
-    """Flush the plants, export, and turn the card material into alpha-scissor (Blender writes it as BLEND). The
-    hash of the .bin goes into the .gltf: Godot only reimports when the .gltf text changes, and a rebuild that
-    moves vertices or UVs (a repainted atlas) changes nothing but the .bin."""
+    """Flush the plants, export, and turn the card material into alpha-scissor (Blender writes it as BLEND)."""
     path = FARM_DIR / f"{name}.gltf"
     b.plants.flush()
     result = b.finish(path, sidecar, separate=(CROPS_PREFIX,))
@@ -261,7 +258,6 @@ def finish_model(b: Builder, name: str, sidecar: dict) -> dict:
     for material in cards:
         material.update({"alphaMode": "MASK", "alphaCutoff": 0.5, "doubleSided": True})
 
-    document["asset"]["extras"] = {"buffer_md5": hashlib.md5(path.with_suffix(".bin").read_bytes()).hexdigest()}
     path.write_text(json.dumps(document, indent=1), encoding="utf-8", newline="\n")
 
     return result
