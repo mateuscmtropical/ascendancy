@@ -299,22 +299,60 @@ def furnish_tavern(f) -> None:
 
 
 def furnish_school(f) -> None:
-    """School (30 m): the master's desk and boards at the back, rows of long desks with benches facing them, maps,
-    globes and bookshelves on the walls, a reading corner by the windows."""
-    f.put("lectern", 0.0, 15.2)
+    """School (30 m): the master's desk under a map and two blackboards at the back, three blocks of pupils' desks
+    facing it, a cloakroom with pegs and benches on the left by the door, an art corner with easels, an astronomy
+    corner (orrery, globes, scrolls) at the back left, a science lab on the right with benches and cabinets, and
+    the headmaster's study partitioned off in the back right corner. A brass bell and a planet mobile hang over the
+    desks."""
+    f.grid("wheel_chandelier", (-5.94, 5.94), (5.4, 10.8), 2, 2)
+    f.put("teacher_desk", 0.0, 14.9)
+    f.put("globe_stand", -3.2, 15.4)
+    f.put("celestial_globe", 3.2, 15.4)
     f.on_wall("back", "world_map_wall", 0.0)
-    f.wall("back", ["recipe_board", "recipe_board", 4.4, "recipe_board", "recipe_board"], start=-4.6, gap=0.5)
-    f.on_wall("back", "tall_bookcase", -9.7)
-    f.on_wall("back", "tall_bookcase", 9.7)
-    f.on_wall("back", "scroll_rack", -12.6)
-    f.on_wall("back", "scroll_rack", 12.6)
-    f.put("globe_stand", -3.2, 15.6)
-    f.put("celestial_globe", 3.2, 15.6)
-    f.wall("left", [("wall_shelf", {"variant": "books"}), "notice_board", ("wall_shelf", {"variant": "scrolls"}), "map_table", ("wall_shelf", {"variant": "books"})], start=3.0, gap=0.9)
-    f.wall("right", [("wall_shelf", {"variant": "books"}), "astrolabe", ("wall_shelf", {"variant": "boxes"}), "book_cart", ("wall_shelf", {"variant": "scrolls"})], start=3.0, gap=0.9)
-    f.scatter([("reading_table", 0.0, {})], (-11.6, 11.6), (5.4, 11.8), 7, 3, aisle=0.7)
-    f.scatter([("bench_long", 0.0, {})], (-11.6, 11.6), (4.5, 10.9), 7, 3, aisle=0.02)
-    f.grid("wheel_chandelier", (-9.0, 9.0), (5.0, 13.0), 3, 2)
+    f.on_wall("back", "blackboard_big", -4.9)
+    f.on_wall("back", "blackboard_big", 4.9)
+
+    for block_u in (-5.94, 0.0, 5.94):
+        f.grid("school_desk", (block_u - 0.8, block_u + 0.8), (4.4, 10.8), 2, 5, 180.0)
+
+    f.put("rug_runner", -2.97, 8.6, variant="blue")
+    f.put("rug_runner", 2.97, 8.6, variant="blue")
+    f.put("planet_mobile", 0.0, 12.6)
+    f.put("school_bell", -2.6, 2.4)
+    f.put("bunting", 0.0, 3.6)
+
+    f.on_wall("left", "coat_rack_wall", 1.5)
+    f.on_wall("left", "coat_rack_wall", 3.7)
+    f.on_wall("left", "bench_long", 1.5)
+    f.on_wall("left", "bench_long", 3.7)
+    f.grid("wainscot", (f.left + 0.09, f.left + 0.09), (6.4, 12.4), 1, 4, 90.0)
+    f.put("rug_ornate", -11.4, 9.0, 90.0, variant="green")
+    f.put("easel", -12.4, 7.0, 90.0)
+    f.put("easel", -11.0, 9.2, 60.0)
+    f.put("easel", -12.4, 11.2, 110.0)
+    f.put("stool_round", -10.2, 7.8)
+    f.put("stool_round", -9.4, 10.2)
+    f.put("reading_table", -9.0, 5.2, 90.0)
+
+    f.on_wall("back", "tall_bookcase_slim", -13.575)
+    f.on_wall("back", "tall_bookcase", -9.8)
+    f.put("rug_ornate", -11.4, 16.6, variant="plum")
+    f.put("orrery", -11.8, 16.6)
+    f.put("astrolabe", -9.2, 17.0)
+    f.on_wall("back", "scroll_rack", -7.6)
+
+    f.wall("right", ["skeleton_stand", "potion_wall", "recipe_board", ("wall_shelf", {"variant": "potions"})], start=f.front + 1.0, gap=0.4)
+    f.grid("lab_bench", (11.4, 11.4), (4.4, 9.6), 1, 3, 90.0)
+    f.put("mortar_table", 13.4, 12.0, -90.0)
+
+    back_room_b(f, f.right - 6.0 - SCREEN_HALF_B, 3, 2, door_on="front", door_slot=1, has_right=False)
+    f.on_wall("back", "tall_bookcase", 9.8)
+    f.on_wall("back", "tall_bookcase_slim", 13.575)
+    f.put("rug_ornate", 11.55, 17.2, variant="red")
+    f.put("reading_table", 11.55, 17.0)
+    f.put("study_chair", 11.55, 15.95, 180.0)
+    f.put("globe_stand", 9.4, 15.8)
+    f.put("candle_stand", 13.8, 15.9)
 
 
 def furnish_seminary(f) -> None:
