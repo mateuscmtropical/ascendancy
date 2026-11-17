@@ -10,7 +10,11 @@ Outputs in art/town/farm/, each with a JSON sidecar (AABB in Godot coords, doors
                     coffee drying in beds, rakes, sacks, baskets), horta, curral and pigsty with heavy fences and
                     porteiras, ranchos on round posts, cacimba with sarilho, spring box with bamboo bica and trough
   farm_fields.gltf  the fields past the wall: cafezal, mandioca, sugar cane, milho, a hay field in windrows, a mown
-                    meadow, scarecrows, the lane out of the gate, footpaths, gate posts and the outer fence
+                    meadow, scarecrows, the lane out of the gate, footpaths, gate posts and the outer fence; in the
+                    meadow's east corner the water mill (house, stone tank, flume, rego, tanque) and the monjolo fed
+                    by a bamboo branch off the flume (sidecar markers water_wheel and monjolo_beam)
+  water_wheel.gltf  the mill's overshot wheel, origin at the axle (features/hub/water_wheel.gd turns it)
+  monjolo_beam.gltf the monjolo's swinging beam with scoop and pestle, origin at the pin (features/hub/monjolo.gd)
   farm_wagon.gltf   two-wheeled covered wagon pulled by a horse along the streets (features/hub/carriage.gd):
                     shafts up to the harness rings, driver's bench (sidecar marker driver_seat)
   hay_cart.gltf     open cart heaped with hay, the other wagon of the street loop
@@ -29,7 +33,8 @@ Ground colliders are named for the footsteps (features/audio/tag_ground_surfaces
 number): Yard<n>, Path<n> and Field<n> sound like dirt, Bed<n> like grass, Terreiro like stone.
 
 Usage:
-  blender -b --factory-startup -P tools_src/build_farm.py -- [farmhouse barn farm_yard farm_fields farm_wagon hay_cart]
+  blender -b --factory-startup -P tools_src/build_farm.py -- [farmhouse barn farm_yard farm_fields farm_wagon hay_cart
+                                                              water_wheel monjolo_beam]
 """
 
 import itertools
@@ -43,7 +48,7 @@ from typing import NamedTuple
 import bmesh
 import bpy
 import numpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -53,6 +58,8 @@ from build_hub_scene import (  # noqa: E402  (plano puro em Python)
     FARM_FIELDS,
     FARM_GATE_Z,
     FARM_LANE_HALF_WIDTH,
+    FARM_MILL,
+    FARM_MONJOLO,
     FARM_PEN_PROPS,
     FARM_PENS,
     FARM_YARD,
@@ -97,9 +104,10 @@ from farm_plants import (  # noqa: E402
     tuft_variants,
     variants_of,
 )
+from farm_colonial import IRON  # noqa: E402
 from farm_rural import rancho, tulha  # noqa: E402
 from farm_sede import casa_grande  # noqa: E402
-from farm_water import cacimba, spring_box  # noqa: E402
+from farm_water import MILL_FOOTPRINT, MONJOLO_FEED, MONJOLO_FOOTPRINT, bamboo_pipe, cacimba, flume_tap, monjolo, monjolo_beam, spring_box, water_mill, water_wheel  # noqa: E402
 from shop_props_common import barrel, lathe, sack  # noqa: E402
 
 FARM_DIR = Path(__file__).resolve().parent.parent / "art" / "town" / "farm"
@@ -229,8 +237,9 @@ def crop_material(atlas: Path):
 
 
 def farm_builder(name: str) -> Builder:
-    """Builder with the town materials plus lawn (pasture, meadow), soil (yard, fields, mud), hay and the crop
-    cards; b.plants batches the stamped plants. Farm windows have their own glass: every pane lit at night
+    """Builder with the town materials plus lawn (pasture, meadow), soil (yard, fields, mud), hay, the crop
+    cards and an iron that carries its own colour (the untinted first surface Godot's import needs, in the moving
+    pieces that are all tinted wood otherwise); b.plants batches the stamped plants. Farm windows have their own glass: every pane lit at night
     (features/sky/window_glass.gd), not the town's scattering of lit and dark panes."""
     b = Builder(name)
     textures = farm_textures()
@@ -242,6 +251,7 @@ def farm_builder(name: str) -> Builder:
     b.materials["paving"] = textured_material("M_FarmPaving", textures["brick"], TEXTURE_DIR / "T_BrickPaving_Normal.png", roughness=0.9)
     b.materials["glass"] = plain_material("M_FarmGlass", srgb("3A4E66"), 0.12, 0.4)
     b.materials["lantern"] = plain_material("M_FarmLantern", srgb("C9B48A"), 0.2)
+    b.materials["iron"] = plain_material("M_FarmIron", srgb(IRON), 0.45, 0.7)  # ferro já na cor: abre as malhas que só têm madeira tingida
     b.plants = PlantBatch(b, srgb)
 
     return b
@@ -1045,25 +1055,55 @@ def plant_crop(b: Builder, crop: str, plot: tuple, ground: float, seed: int) -> 
     stamp_variants(b.plants, variants_of(plant, generator, 5), spot_matrices(spots, ground + FIELD_RAISE + 0.08, generator, sizes, lean), generator)
 
 
-def grass_tufts(b: Builder, plot: tuple, ground: float, count: int, generator: random.Random) -> None:
+def grass_tufts(b: Builder, plot: tuple, ground: float, count: int, generator: random.Random, clearings: tuple = ()) -> None:
+    """Tufts strewn over a plot, none inside the clearings (world rectangles min x, max x, min z, max z)."""
     _crop, min_x, max_x, min_z, max_z = plot
-    spots = [(generator.uniform(min_x + 0.4, max_x - 0.4), generator.uniform(min_z + 0.4, max_z - 0.4)) for _ in range(count)]
+    strewn = [(generator.uniform(min_x + 0.4, max_x - 0.4), generator.uniform(min_z + 0.4, max_z - 0.4)) for _ in range(count)]
+    spots = [spot for spot in strewn if all(rectangle_gap(spot, clearing) > 0.0 for clearing in clearings)]
 
     stamp_variants(b.plants, tuft_variants(MEADOW_TINTS, 0.55, 0.4), spot_matrices(spots, ground, generator, (0.6, 1.3)), generator)
 
 
 def meadow_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
-    """Mown meadow: grass with tufts, heaps of hay drying and the bales already tied, stacked by the fence."""
+    """Mown meadow: grass with tufts, heaps of hay drying and the bales already tied, stacked by the fence; the mill
+    and the monjolo in its east corner."""
     generator = random.Random(seed)
     _crop, min_x, max_x, min_z, max_z = plot
+    mill_frame, monjolo_frame = mill_frames(ground + 0.03)
+    clearings = (footprint_rectangle(mill_frame, MILL_FOOTPRINT), footprint_rectangle(monjolo_frame, MONJOLO_FOOTPRINT))
 
     ground_patch(b, (min_x, max_x, min_z, max_z), ground + 0.03, "lawn", "FFFFFF", collider="Bed", thickness=0.05)
-    grass_tufts(b, plot, ground + 0.03, 520, generator)
+    grass_tufts(b, plot, ground + 0.03, 520, generator, clearings)
+    build_mill_corner(b, mill_frame, monjolo_frame)
 
-    for index, (x, z) in enumerate(((113.0, 29.0), (121.5, 38.0), (131.0, 30.5), (139.5, 38.5))):
+    for index, (x, z) in enumerate(((113.0, 29.0), (121.5, 38.0), (131.0, 30.5), (144.6, 24.8))):
         haycock(b, frame_at_world(x, z, ground + 0.03, index * 47.0), generator.uniform(1.2, 1.5), generator.uniform(1.0, 1.3), seed + index, fork=index == 1)
 
-    bale_stack(b, frame_at_world(144.5, 28.0, ground + 0.03, 90.0), 3, 2, 2, seed + 10)
+    bale_stack(b, frame_at_world(144.8, 41.2, ground + 0.03, 90.0), 3, 2, 2, seed + 10)
+
+
+def mill_frames(ground: float) -> tuple:
+    """Frames of the mill house and of the monjolo on the meadow ground (plan in FARM_MILL and FARM_MONJOLO)."""
+    return tuple(frame_at_world(*plan["position"], ground, math.degrees(plan["rotation"])) for plan in (FARM_MILL, FARM_MONJOLO))
+
+
+def footprint_rectangle(frame: Matrix, rectangle: tuple) -> tuple:
+    """World rectangle (min x, max x, min z, max z) around a local one (min x, max x, min y, max y) in a frame."""
+    corners = [frame @ Vector((x, y, 0.0)) for x, y in itertools.product(rectangle[:2], rectangle[2:])]
+    xs, zs = [corner.x for corner in corners], [-corner.y for corner in corners]
+
+    return min(xs), max(xs), min(zs), max(zs)
+
+
+def build_mill_corner(b: Builder, mill_frame: Matrix, monjolo_frame: Matrix) -> None:
+    """The water mill and the monjolo beside its flume, joined by a bamboo branch that takes water off the flume
+    down to the monjolo's spout post. Moving parts are models of their own (water_wheel, monjolo_beam)."""
+    feed = tuple(monjolo_frame @ Vector(MONJOLO_FEED))
+
+    water_mill(b, mill_frame)
+    monjolo(b, monjolo_frame)
+    bamboo_pipe(b, Matrix.Identity(4), flume_tap(mill_frame, feed), feed)
+    open_sack(b, monjolo_frame @ Matrix.Translation((2.0, -0.9, 0.0)), 0.26, 0.55, BURLAP_TINTS[1], "E8C45A")
 
 
 def hay_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
@@ -1491,6 +1531,22 @@ def wagon_lantern(b: Builder, frame: Matrix) -> None:
     b.box((side + 0.06, SEAT_Y - 0.4, SEAT_HEIGHT + 0.1), (side + 0.26, SEAT_Y - 0.2, SEAT_HEIGHT + 0.14), "metal", srgb("4A4448"), frame=frame)
 
 
+def build_water_wheel() -> dict:
+    b = farm_builder("water_wheel")
+
+    water_wheel(b, Matrix.Identity(4))
+
+    return finish_model(b, "water_wheel", {"origin": "axle", "doors": []})
+
+
+def build_monjolo_beam() -> dict:
+    b = farm_builder("monjolo_beam")
+
+    monjolo_beam(b, Matrix.Identity(4))
+
+    return finish_model(b, "monjolo_beam", {"origin": "pin", "doors": []})
+
+
 MODELS = {
     "farmhouse": build_farmhouse,
     "barn": build_barn,
@@ -1498,6 +1554,8 @@ MODELS = {
     "farm_fields": build_farm_fields,
     "farm_wagon": build_farm_wagon,
     "hay_cart": build_hay_cart,
+    "water_wheel": build_water_wheel,
+    "monjolo_beam": build_monjolo_beam,
 }
 
 
