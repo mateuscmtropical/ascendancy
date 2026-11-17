@@ -526,6 +526,14 @@ def add_buildings(scene: SceneWriter) -> None:
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     add_town_lots(scene, lots)
+    add_casarao(scene, lots)
+
+
+def add_casarao(scene: SceneWriter, lots: list) -> None:
+    """The mansion that dresses the three halls of the block in front of the cathedral and adds its upper storeys."""
+    frame_lot = next(lot for lot in lots if lot.get("shop") == CASARAO_FRAME_HALL)
+
+    place(scene, "Casarao", "Buildings", "res://art/town/casarao.gltf", frame_lot["position"], frame_lot["rotation"])
 
 
 # ---------- farm: block 5 behind the apse and the fields beyond the east wall ----------
@@ -589,6 +597,11 @@ HOUSE_ARCHETYPES = {  # arquétipo -> (larguras de lote, profundidade, cores de 
 HOUSE_VARIANTS = 3
 BACK_STREET_ARCHETYPES = ("terrea", "fachwerk", "chale", "mediterranea", "pedra")
 CORNER_ARCHETYPES = ("torre", "artdeco", "sobrado")
+STREET_GABLE_ARCHETYPES = ("fachwerk", "holandesa", "hanseatica")  # cumeeira perpendicular à rua (empena para a rua)
+FLAT_ROOF_ARCHETYPES = ("artdeco", "torre")  # platibanda e pavilhão: sem cumeeira, servem em qualquer quadra
+BLOCK_RIDGE_AXIS = {  # quadra -> eixo do mundo de todas as cumeeiras dela (o das lojas fixas manda; senão o da fileira principal)
+    0: "x", 1: "z", 2: "x", 3: "x", 6: "x", 7: "x", 8: "x", 9: "x",
+}
 ARCHETYPE_REPEAT_DISTANCE = 3  # mesmo arquétipo proibido a menos de 3 lotes
 LOT_WIDTHS = (6, 8, 10, 12)
 LOT_FRONT_OVERHANG = 1.2  # beiral, sacada e placa podem avançar sobre a calçada
@@ -616,8 +629,10 @@ FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da
 }
 SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
     "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
-    "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"), "library": ("bookshop",),
-}
+    "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"),
+}  # biblioteca, escola e seminário: salões do casarão, sem placa pendurada
+CASARAO_HALLS = ("library", "school", "seminary")
+CASARAO_FRAME_HALL = "school"  # o casarão (build_casarao.py) usa o lote da escola, no meio da quadra, como origem
 SHOP_FRONT_OVERHANG = 2.6  # toldos e mercadoria na calçada
 ROW_START_SIDE = {"S": "left", "N": "right", "E": "right", "W": "left"}  # lado do modelo (u < 0 = left) na ponta inicial da fileira
 INTERIOR_VISIBLE_DISTANCE = 60.0  # o recheio das lojas some além disto (features/hub/shop_interior.gd)
@@ -628,14 +643,14 @@ LIGHT_FADE_LENGTH = 10.0
 ALLEY_WALL_HEIGHT = 2.2
 
 
-def lot_widths(length: float, generator: random.Random) -> tuple:
+def lot_widths(length: float, generator: random.Random, allowed_widths: tuple = LOT_WIDTHS) -> tuple:
     """Lot widths that fill length exactly; the odd remainder (< 2 m) becomes an alley (C.1 item 4)."""
     alley = length % 2.0
     remaining = length - alley
     lots = []
 
     while remaining > 0.0:
-        options = [width for width in LOT_WIDTHS if remaining - width == 0.0 or remaining - width >= min(LOT_WIDTHS)]
+        options = [width for width in allowed_widths if remaining - width == 0.0 or remaining - width >= min(allowed_widths)]
         lots.append(generator.choice(options))
         remaining -= lots[-1]
 
@@ -657,16 +672,16 @@ def row_segments(run_start: float, run_end: float, fixed: list) -> list:
     return segments
 
 
-def segment_lots(segment: tuple, generator: random.Random) -> list:
+def segment_lots(segment: tuple, generator: random.Random, allowed_widths: tuple) -> list:
     """(start, width, shop) lots of one segment; a free stretch may end with an alley ("alley" lot)."""
     start, end, kind = segment
-    lots_by_kind = {"free": lambda: free_lots(start, end, generator), "fixed": lambda: [(start, end - start, None)]}
+    lots_by_kind = {"free": lambda: free_lots(start, end, generator, allowed_widths), "fixed": lambda: [(start, end - start, None)]}
 
     return lots_by_kind.get(kind, lambda: [(start, end - start, kind)])()
 
 
-def free_lots(start: float, end: float, generator: random.Random) -> list:
-    widths, alley = lot_widths(end - start, generator)
+def free_lots(start: float, end: float, generator: random.Random, allowed_widths: tuple) -> list:
+    widths, alley = lot_widths(end - start, generator, allowed_widths)
     lots = []
     cursor = start
     alley_index = len(widths) // 2 if alley > 1e-6 else -1
@@ -682,12 +697,30 @@ def free_lots(start: float, end: float, generator: random.Random) -> list:
     return lots
 
 
-def pick_archetype(width: float, history: list, usage: dict, is_corner: bool, is_main: bool, generator: random.Random) -> str:
-    """Archetype for a residence lot: fits the width, never repeats within ARCHETYPE_REPEAT_DISTANCE lots,
-    corners of the main rows prefer the two-fronted types, back streets the simple ones; among those, the least
-    used so far in town wins (ties drawn by seed)."""
-    recent = history[-(ARCHETYPE_REPEAT_DISTANCE - 1):]
-    fitting = [name for name, (widths, _, _) in HOUSE_ARCHETYPES.items() if int(width) in widths and name not in recent]
+def roof_archetypes(gable_to_street: bool) -> tuple:
+    """Archetypes whose ridge runs the way the block asks: across the street (gable to the street) or along it."""
+    along_street = tuple(name for name in HOUSE_ARCHETYPES if name not in STREET_GABLE_ARCHETYPES + FLAT_ROOF_ARCHETYPES)
+
+    return (STREET_GABLE_ARCHETYPES if gable_to_street else along_street) + FLAT_ROOF_ARCHETYPES
+
+
+def row_widths(archetypes: tuple) -> tuple:
+    """Lot widths some archetype of the row can fill."""
+    return tuple(width for width in LOT_WIDTHS if any(width in HOUSE_ARCHETYPES[name][0] for name in archetypes))
+
+
+def pick_archetype(width: float, history: list, usage: dict, is_corner: bool, is_main: bool, archetypes: tuple, generator: random.Random) -> str:
+    """Archetype for a residence lot: one of the block's roof family, fits the width, never repeats within
+    ARCHETYPE_REPEAT_DISTANCE lots (relaxed to the last lot when the family is too small), corners of the main rows
+    prefer the two-fronted types, back streets the simple ones; among those, the least used so far in town wins
+    (ties drawn by seed)."""
+    fitting = []
+
+    for repeat_distance in (ARCHETYPE_REPEAT_DISTANCE, 2):
+        recent = history[-(repeat_distance - 1):]
+        fitting = fitting or [name for name in archetypes if int(width) in HOUSE_ARCHETYPES[name][0] and name not in recent]
+
+    assert fitting, f"nenhum arquétipo de {width} m entre {archetypes}"
     preferred_by_place = {(True, True): CORNER_ARCHETYPES, (True, False): BACK_STREET_ARCHETYPES + ("torre",), (False, False): BACK_STREET_ARCHETYPES, (False, True): tuple(HOUSE_ARCHETYPES)}
     preferred = [name for name in fitting if name in preferred_by_place[(is_corner, is_main)]] or fitting
     fewest = min(usage.get(name, 0) for name in preferred)
@@ -723,14 +756,15 @@ def town_lots() -> list:
 
         for side_index, side in enumerate(street_sides):
             facade, run_start, run_end, axis = trimmed_run(block, side, street_sides[:side_index])
+            archetypes = roof_archetypes(axis != BLOCK_RIDGE_AXIS.get(block_index, axis))
             segments = row_segments(run_start, run_end, FIXED_LOTS.get((block_index, side), []))
-            row = [lot for segment in segments for lot in segment_lots(segment, generator)]
-            lots += dress_row(row, facade, axis, side, side_index == 0, usage, generator)
+            row = [lot for segment in segments for lot in segment_lots(segment, generator, row_widths(archetypes))]
+            lots += dress_row(row, facade, axis, side, side_index == 0, usage, archetypes, generator)
 
     return lots
 
 
-def dress_row(row: list, facade: float, axis: str, side: str, is_main: bool, usage: dict, generator: random.Random) -> list:
+def dress_row(row: list, facade: float, axis: str, side: str, is_main: bool, usage: dict, archetypes: tuple, generator: random.Random) -> list:
     """Give each lot of a row its model (shop building, house archetype and variant, or alley gate)."""
     history = []
     previous_plaster = ""
@@ -750,7 +784,7 @@ def dress_row(row: list, facade: float, axis: str, side: str, is_main: bool, usa
             lot.update(model=f"res://art/town/shops/shop_{kind}.gltf", depth=SHOP_LOTS[kind][1], shop=kind, exposed=exposed)
             history.append(kind)
         else:
-            archetype = pick_archetype(width, history, usage, index in corners, is_main, generator)
+            archetype = pick_archetype(width, history, usage, index in corners, is_main, archetypes, generator)
             variant = pick_variant(archetype, previous_plaster, generator)
             previous_plaster = HOUSE_ARCHETYPES[archetype][2][variant]
             history.append(archetype)

@@ -63,6 +63,9 @@ FILL_BACK = 6.0  # fundo do salão que fica para o balcão e o lojista
 ISLAND_AISLE = 0.9  # folga em volta de cada ilha que scatter() põe no meio do salão
 
 CASARAO_STOREYS = (5.6, 4.4, 4.0)  # biblioteca, escola e seminário são os salões do térreo do casarão em frente à catedral
+CASARAO_HALL = dict(  # o casarão (build_casarao.py) veste a fachada, os andares de cima e o telhado; o salão só faz o térreo
+    casarao=True, sill=0.9, vitrine_top="round", vitrine_apex=4.0, vitrine_width=1.4, side_window=(1.4, 0.9, 3.1, "round"),
+)
 
 SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como ARCHETYPE_SPECS; awning = (cor, cor)
     "smith": dict(archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(5.2,), roof_shape=("gable_parallel", dict(pitch=30.0, eave_front=0.5, eave_back=0.4)), features=("dormers",), floor="stone", awning=("B5533F", "F2E6CF"), door=(-5.0, 2.6, 3.2, "segment"), open_bays=((7.4, 7.2),), chimney=dict(u=8.2, d=18.3, extra=1.5, pots=0, material="stone"), light="FFC890"),
@@ -71,11 +74,11 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     "armor": dict(archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=("7A2F3A", "D8DCE4"), door=(0.0, 2.4, 3.0, "round"), features=("stone_bands",), light="FFD9A0"),
     "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=("B5533F", "F4EFE6"), door=(0.0, 2.4, 2.9, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
     "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
-    "alchemy": dict(archetype="fachwerk", wall="salvia", roof="velha", accent="verde", storeys=(4.6, 2.9), roof_shape=("gable_street", dict(pitch=40.0, gable="half_hip")), floor="wood", awning=("2F6B4F", "D9E8B0"), door=(0.0, 2.2, 2.9, "round"), features=("half_timber",), jetty=0.3, chimney=dict(u=-6.0, d=15.0, extra=1.2, pots=2), light="C8F0B0"),
-    "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_parallel", dict(pitch=18.0, eave_front=0.4, eave_back=0.3)), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
-    "library": dict(archetype="palacete", wall="dourada", roof="cobre", accent="azul", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=22.0, eave_front=0.8, eave_back=0.5)), floor="wood", awning=None, sill=1.1, vitrine_top="round", door=(0.0, 3.2, 4.2, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFDFA8"),
-    "school": dict(archetype="sobrado", wall="amarelo", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=None, sill=1.1, door=(0.0, 2.6, 3.2, "segment"), features=("finials",), quoins=True, cornice=True, light="FFE2B0"),
-    "seminary": dict(archetype="pedra", wall="caiada", roof="velha", accent="vinho", storeys=CASARAO_STOREYS, roof_shape=("gable_parallel", dict(pitch=36.0, eave_front=0.4, eave_back=0.4)), floor="stone", awning=None, sill=1.3, vitrine_top="pointed", door=(0.0, 2.6, 3.6, "pointed"), features=("dormers",), light="FFDCB0"),
+    "alchemy": dict(archetype="fachwerk", wall="salvia", roof="velha", accent="verde", storeys=(4.6, 2.9), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("2F6B4F", "D9E8B0"), door=(0.0, 2.2, 2.9, "round"), features=("half_timber",), jetty=0.3, chimney=dict(u=-6.0, d=15.0, extra=1.2, pots=2), light="C8F0B0"),
+    "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
+    "library": dict(archetype="palacete", wall="cal", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=25.0)), floor="wood", awning=None, door=(0.0, 2.6, 4.0, "round"), light="FFDFA8", **CASARAO_HALL),
+    "school": dict(archetype="palacete", wall="cal", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=25.0)), floor="wood", awning=None, door=(0.0, 3.0, 4.4, "round"), light="FFE2B0", **CASARAO_HALL),
+    "seminary": dict(archetype="palacete", wall="cal", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=25.0)), floor="stone", awning=None, door=(0.0, 2.6, 4.0, "round"), light="FFDCB0", **CASARAO_HALL),
 }
 
 
@@ -211,14 +214,14 @@ def evenly(span_from: float, span_to: float, pitch: float) -> list:
 def front_openings(room: Room) -> list:
     """Door, open bays and as many shop windows as fit the free stretches of the facade (wall-local u = facade u + half)."""
     door_u, door_width, door_height, door_top = room.door
-    vitrine_top = min(room.ceiling - 0.6, 3.4)
+    vitrine_top = room.spec.get("vitrine_apex", min(room.ceiling - 0.6, 3.4))
     bays = [(u, width, "open") for u, width in room.spec.get("open_bays", ())]
     taken = sorted([(door_u - door_width / 2.0, door_u + door_width / 2.0)] + [(u - width / 2.0, u + width / 2.0) for u, width, _ in bays])
     free_from = [-room.half] + [right for _, right in taken]
     free_to = [left for left, _ in taken] + [room.half]
     spots = [spot for span_from, span_to in zip(free_from, free_to) for spot in evenly(span_from + PIER, span_to - PIER, VITRINE_PITCH)]
     sill = room.spec.get("sill", VITRINE_SILL)
-    vitrines = [Opening(u + room.half, space - 0.9, sill, vitrine_top - sill, room.spec.get("vitrine_top", "segment"), kind="vitrine") for u, space in spots]
+    vitrines = [Opening(u + room.half, room.spec.get("vitrine_width", space - 0.9), sill, vitrine_top - sill, room.spec.get("vitrine_top", "segment"), kind="vitrine") for u, space in spots]
     door = Opening(door_u + room.half, door_width, 0.0, door_height, door_top, kind="door")
     open_bays = [Opening(u + room.half, width, 0.0, min(room.ceiling - 0.5, 3.8), "flat", kind="open") for u, width, _ in bays]
 
@@ -229,9 +232,9 @@ def side_windows(room: Room, length: float) -> list:
     """Windows of an exposed side wall; halls taller than TALL_HALL get them high, over the wall furniture."""
     is_tall = room.ceiling >= TALL_HALL
     sill = room.ceiling - HIGH_SIDE_WINDOW_DROP if is_tall else SIDE_WINDOW_SILL
-    height = min(2.2, room.ceiling - 1.8)
+    width, sill, height, top = room.spec.get("side_window", (1.5, sill, min(2.2, room.ceiling - 1.8), "segment"))
 
-    return [Opening(u, 1.5, sill, height, "segment", kind="vitrine") for u, _ in evenly(1.0, length - 1.0, SIDE_WINDOW_PITCH)]
+    return [Opening(u, width, sill, height, top, kind="vitrine") for u, _ in evenly(1.0, length - 1.0, SIDE_WINDOW_PITCH)]
 
 
 def back_windows(room: Room) -> list:
@@ -329,6 +332,9 @@ def build_walls(b: Builder, room: Room) -> list:
 
     for side, frame in frames.items():
         pierced_wall(b, room, frame, lengths[side], openings[side])
+
+    if room.spec.get("casarao"):
+        return front
 
     for side in ("front", *room.exposed):
         dress_street_wall(b, room, frames[side], lengths[side], openings[side])
@@ -448,7 +454,9 @@ def build_shell(shop_type: str) -> dict:
     build_floor(b, room)
     build_ceiling(b, room)
     build_awnings(b, room, front)
-    build_roof(b, room)
+
+    if not room.spec.get("casarao"):
+        build_roof(b, room)
 
     for partition in room.partitions:
         town.wall_piece(b, *partition_box(room, partition), house.wall_material, house.wall_tint)
