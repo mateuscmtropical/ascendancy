@@ -5,7 +5,8 @@ extends AnimatableBody3D
 ## afastado da cerca. O sorteio usa a semente própria, então cada bicho repete o mesmo passeio.
 ## Antes de sair vira no lugar para o alvo; acelera e freia devagar, e o passo da animação acompanha
 ## a velocidade (sem patinar). Modelo sem animação de andar fica pastando no lugar. Troncos de
-## árvore no cercado (`obstacles`) ficam fora do caminho: o bicho só escolhe alvo com linha livre.
+## árvore, ranchos e cochos do cercado (`obstacles`, círculos que cobrem cada um) ficam fora do
+## caminho: o bicho só escolhe alvo com a linha livre por mais que o alcance do corpo ao virar.
 
 enum Mood { GRAZING, TURNING, WALKING }
 
@@ -35,7 +36,7 @@ const MIN_ANIMATION_SPEED: float = 0.4
 @export var wander_seed: int = 1
 ## Caixa de colisão (largura, altura, comprimento) que o jogador não atravessa.
 @export var body_size: Vector3 = Vector3(0.8, 1.3, 2.0)
-## Troncos no cercado: (x, z, raio) de cada um.
+## Troncos e peças no cercado: (x, z, raio) de cada círculo que o bicho contorna.
 @export var obstacles: PackedVector3Array = PackedVector3Array()
 
 var _generator: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -116,6 +117,14 @@ static func is_path_clear(
 	return true
 
 
+## Até onde o corpo alcança quando o bicho vira no lugar: metade da diagonal da caixa vista de cima.
+## É a folga que o caminho guarda dos obstáculos, para nem cabeça nem anca entrarem num esteio.
+static func swing_radius(size: Vector3) -> float:
+	var footprint: Vector2 = Vector2(size.x, size.z)
+
+	return footprint.length() / 2.0
+
+
 ## Um passo em linha reta, sem passar do alvo.
 static func step_toward(from: Vector2, target: Vector2, distance: float) -> Vector2:
 	return from.move_toward(target, distance)
@@ -137,6 +146,7 @@ static func heading_angle(from: Vector2, target: Vector2) -> float:
 
 func _graze(delta: float) -> void:
 	var ground_position: Vector2 = Vector2(global_position.x, global_position.z)
+	var turning_reach: float = swing_radius(body_size)
 
 	_graze_left -= delta
 
@@ -148,7 +158,7 @@ func _graze(delta: float) -> void:
 
 		return
 
-	_target = pick_wander_target(pen, ground_position, _generator, obstacles, body_size.z / 2.0)
+	_target = pick_wander_target(pen, ground_position, _generator, obstacles, turning_reach)
 
 	if _target == ground_position:
 		_start_grazing()
