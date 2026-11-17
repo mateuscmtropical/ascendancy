@@ -587,7 +587,7 @@ def paint_vertex_colors(mesh_object) -> None:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from build_hub_scene import ALLEY_WALL_HEIGHT, HOUSE_ARCHETYPES, town_lots  # noqa: E402  (plano puro em Python, sem bpy)
+from build_hub_scene import ALLEY_WALL_HEIGHT, HOUSE_ARCHETYPES, STREET_GABLE_ARCHETYPES, town_lots  # noqa: E402  (plano puro em Python, sem bpy)
 
 POINTED_RADIUS = 1.0  # arco ogival equilátero: raio = largura do vão
 POINTED_RISE = math.sqrt(3.0) / 2.0
@@ -1379,7 +1379,15 @@ def planned_models() -> dict:
     return models
 
 
+def check_roof_families() -> None:
+    """The town plan picks archetypes by ridge direction (build_hub_scene.STREET_GABLE_ARCHETYPES): keep it true."""
+    street_gables = {name for name, spec in ARCHETYPE_SPECS.items() if spec["roof"][0] == "gable_street"}
+
+    assert street_gables == set(STREET_GABLE_ARCHETYPES), f"empenas para a rua: {sorted(street_gables)} != {STREET_GABLE_ARCHETYPES}"
+
+
 if __name__ == "__main__":
+    check_roof_families()
     requested = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     models = planned_models()
 
