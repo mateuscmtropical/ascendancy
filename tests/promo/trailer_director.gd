@@ -8,13 +8,18 @@ extends Node
 ## rótulos da cena, se ela os tiver. Conferir com trailer_check.tscn ou full_check.tscn e gravar com
 ## tools_src/record.sh. Argumentos (depois de --): --from-shot=N --to-shot=M tocam só esse trecho.
 
-enum Reel { TRAILER, COMPLETE }
+enum Reel { TRAILER, COMPLETE, MARKETING }
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
-const BPM_BY_REEL: Dictionary[Reel, float] = {Reel.TRAILER: 124.0, Reel.COMPLETE: 120.0}
+## MARKETING: 60 "batidas" por minuto, então "beats" é a duração do clipe em segundos (a edição e a
+## trilha ficam em tools_src/cut_marketing_trailer.py).
+const BPM_BY_REEL: Dictionary[Reel, float] = {
+	Reel.TRAILER: 124.0, Reel.COMPLETE: 120.0, Reel.MARKETING: 60.0
+}
 const SHOTS_BY_REEL: Dictionary[Reel, Array] = {
 	Reel.TRAILER: TrailerShots.SHOTS,
 	Reel.COMPLETE: FullShots.SHOTS,
+	Reel.MARKETING: MarketingShots.SHOTS,
 }
 const CHARACTER_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const BODY_BY_NAME: Dictionary[String, PackedScene] = {
@@ -154,6 +159,15 @@ func _process(delta: float) -> void:
 	_update_mula(shot, shot_seconds)
 	_camera_updaters[shot["camera"]].call(shot, shot_seconds / _shot_length(shot_index))
 	_update_flash(shot, shot_seconds)
+	_update_time_lapse(shot)
+
+
+## Plano com "time_to": o céu anda de "time" até "time_to" ao longo do plano (pôr do sol acelerado).
+func _update_time_lapse(shot: Dictionary) -> void:
+	if not shot.has("time_to"):
+		return
+
+	hub.set_time_of_day(lerpf(shot["time"], shot["time_to"], shot_progress()))
 
 
 ## Quanto do plano atual já passou, de 0 a 1.
@@ -237,6 +251,10 @@ func _place_actor(actor_spec: Dictionary) -> void:
 
 	actor.set_body(BODY_BY_NAME[body_name], HAIR_BY_NAME[body_name])
 	actor.show()
+
+	if actor_spec.get("weapon", false):
+		HeroSword.arm(actor)
+
 	_actor_obstacle.avoidance_enabled = true
 	_actor_ground_height = path[0].y
 	actor.global_position = path[0]

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Grava uma cena em vídeo (Movie Maker do Godot, 30 fps fixos, 1080p) sem roubar foco nem abrir alerta.
 # A cena precisa fechar sozinha (ex.: tests/promo/promo_reel.tscn) e mover a janela para fora da tela.
-# Uso: tools_src/record.sh <cena.tscn> <saida.avi> [argumentos extras da cena...]
+# Uso: [RECORD_FPS=60] tools_src/record.sh <cena.tscn> <saida.avi> [argumentos extras da cena...]
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -10,6 +10,7 @@ GODOT=tools/Godot_v4.7.2-stable_win64_console.exe
 SCENE="$1"
 OUTPUT="$(cygpath -m "$(realpath -m "$2")")"
 EXTRA_ARGUMENTS=("${@:3}")
+FPS="${RECORD_FPS:-30}"  # 60 dá câmera lenta limpa na edição (tools_src/cut_marketing_trailer.py)
 NOISE='Unreferenced static|string_name.cpp|leaked|RID alloc|Pages in use|paged_allocator|instance_notify|ObjectDB|still in use|Thread object|wait_to_finish|thread.cpp|resource.cpp|object.cpp|utilities.cpp|user://'
 
 timeout 300 "$GODOT" --headless --path . --import > /dev/null 2>&1 || true
@@ -42,5 +43,5 @@ movie_writer/mjpeg_quality=1.0
 CFG
 trap 'rm -f override.cfg' EXIT
 
-timeout 1800 "$GODOT" --path . --screen 0 --fixed-fps 30 --write-movie "$OUTPUT" "$SCENE" -- "${EXTRA_ARGUMENTS[@]}" 2>&1 | grep -E "ERROR|Movie" | grep -vE "$NOISE" || true
+timeout 1800 "$GODOT" --path . --screen 0 --fixed-fps "$FPS" --write-movie "$OUTPUT" "$SCENE" -- "${EXTRA_ARGUMENTS[@]}" 2>&1 | grep -E "ERROR|Movie" | grep -vE "$NOISE" || true
 ls -la "$OUTPUT"

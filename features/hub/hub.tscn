@@ -564,28 +564,28 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop00Smith"]
-position = Vector3(-8.400, 3.950, -5.000)
-light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
+position = Vector3(8.200, 1.350, -17.970)
+light_color = Color(1.000, 0.541, 0.227, 1)
+light_energy = 3.0
 omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light7" type="OmniLight3D" parent="Shops/Shop00Smith"]
-position = Vector3(-8.400, 3.950, -12.000)
+position = Vector3(-5.000, 3.850, -5.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light8" type="OmniLight3D" parent="Shops/Shop00Smith"]
-position = Vector3(-1.600, 3.950, -5.000)
+position = Vector3(-5.000, 3.850, -11.800)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -645,19 +645,28 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light4" type="OmniLight3D" parent="Shops/Shop01Armor"]
-position = Vector3(0.000, 3.350, -5.000)
-light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
+position = Vector3(7.420, 1.350, -16.600)
+light_color = Color(1.000, 0.541, 0.227, 1)
+light_energy = 3.0
 omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light5" type="OmniLight3D" parent="Shops/Shop01Armor"]
-position = Vector3(0.000, 3.350, -12.500)
+position = Vector3(0.000, 3.250, -6.400)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light6" type="OmniLight3D" parent="Shops/Shop01Armor"]
+position = Vector3(-5.800, 3.250, -15.600)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -717,16 +726,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light4" type="OmniLight3D" parent="Shops/Shop02Magic"]
-position = Vector3(0.000, 1.370, -5.400)
-light_color = Color(0.561, 0.847, 1.000, 1)
-light_energy = 1.0
-omni_range = 4.0
-distance_fade_enabled = true
-distance_fade_begin = 30.0
-distance_fade_length = 10.0
-
-[node name="Light5" type="OmniLight3D" parent="Shops/Shop02Magic"]
-position = Vector3(0.000, 0.450, -9.700)
+position = Vector3(0.000, 0.550, -9.700)
 light_color = Color(0.561, 0.847, 1.000, 1)
 light_energy = 1.2
 omni_range = 4.5
@@ -734,11 +734,20 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light6" type="OmniLight3D" parent="Shops/Shop02Magic"]
+[node name="Light5" type="OmniLight3D" parent="Shops/Shop02Magic"]
 position = Vector3(0.000, 4.200, -9.700)
 light_color = Color(0.961, 0.604, 0.847, 1)
 light_energy = 0.8
 omni_range = 4.0
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light6" type="OmniLight3D" parent="Shops/Shop02Magic"]
+position = Vector3(-5.700, 4.350, -5.000)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.6
+omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -802,28 +811,28 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light4" type="OmniLight3D" parent="Shops/Shop03Tailor"]
-position = Vector3(-8.140, 1.100, -3.140)
-light_color = Color(1.000, 0.541, 0.227, 1)
-light_energy = 0.6
-omni_range = 3.0
+position = Vector3(-6.200, 3.050, -15.300)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light5" type="OmniLight3D" parent="Shops/Shop03Tailor"]
-position = Vector3(-5.700, 3.150, -5.000)
+position = Vector3(5.700, 3.050, -15.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop03Tailor"]
-position = Vector3(-5.700, 3.150, -12.000)
+position = Vector3(0.000, 3.050, -5.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -887,16 +896,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light4" type="OmniLight3D" parent="Shops/Shop04Tavern"]
-position = Vector3(-2.270, 0.500, -18.260)
-light_color = Color(1.000, 0.541, 0.239, 1)
-light_energy = 0.8
-omni_range = 3.0
-distance_fade_enabled = true
-distance_fade_begin = 30.0
-distance_fade_length = 10.0
-
-[node name="Light5" type="OmniLight3D" parent="Shops/Shop04Tavern"]
-position = Vector3(-7.820, 0.650, -9.700)
+position = Vector3(-7.820, 0.650, -9.650)
 light_color = Color(1.000, 0.541, 0.239, 1)
 light_energy = 2.5
 omni_range = 6.0
@@ -904,11 +904,20 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light6" type="OmniLight3D" parent="Shops/Shop04Tavern"]
-position = Vector3(-6.600, 0.400, -9.700)
-light_color = Color(1.000, 0.541, 0.239, 1)
+[node name="Light5" type="OmniLight3D" parent="Shops/Shop04Tavern"]
+position = Vector3(-4.600, 3.750, -5.000)
+light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.6
-omni_range = 5.0
+omni_range = 7.0
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light6" type="OmniLight3D" parent="Shops/Shop04Tavern"]
+position = Vector3(-4.600, 3.750, -11.600)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.6
+omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -981,19 +990,19 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light5" type="OmniLight3D" parent="Shops/Shop05Alchemy"]
-position = Vector3(3.620, 1.100, -18.685)
-light_color = Color(0.561, 0.847, 1.000, 1)
-light_energy = 0.5
-omni_range = 3.0
+position = Vector3(-1.600, 3.350, -6.400)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.6
+omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop05Alchemy"]
-position = Vector3(5.720, 1.100, -8.380)
-light_color = Color(0.561, 0.847, 1.000, 1)
-light_energy = 0.5
-omni_range = 3.0
+position = Vector3(-1.600, 3.350, -12.600)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.6
+omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -1057,7 +1066,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light4" type="OmniLight3D" parent="Shops/Shop06General"]
-position = Vector3(5.600, 1.150, -17.570)
+position = Vector3(5.900, 1.150, -17.570)
 light_color = Color(1.000, 0.541, 0.239, 1)
 light_energy = 2.0
 omni_range = 5.0
@@ -1066,19 +1075,19 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light5" type="OmniLight3D" parent="Shops/Shop06General"]
-position = Vector3(-5.700, 3.150, -5.000)
+position = Vector3(6.000, 3.050, -15.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop06General"]
-position = Vector3(-5.700, 3.150, -11.400)
+position = Vector3(-1.000, 3.050, -5.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.0
+omni_range = 5.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -1160,28 +1169,28 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop07Guild"]
-position = Vector3(0.000, 1.650, -11.200)
-light_color = Color(0.561, 0.847, 1.000, 1)
-light_energy = 1.5
-omni_range = 5.0
+position = Vector3(-11.200, 0.650, -9.650)
+light_color = Color(1.000, 0.541, 0.227, 1)
+light_energy = 2.6
+omni_range = 8.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light7" type="OmniLight3D" parent="Shops/Shop07Guild"]
-position = Vector3(-10.820, 0.650, -9.700)
-light_color = Color(1.000, 0.541, 0.239, 1)
-light_energy = 2.5
-omni_range = 6.0
+position = Vector3(-6.200, 1.800, -3.940)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.2
+omni_range = 5.5
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light8" type="OmniLight3D" parent="Shops/Shop07Guild"]
-position = Vector3(-7.200, 6.150, -4.500)
+position = Vector3(11.300, 1.800, -8.600)
 light_color = Color(1.000, 0.702, 0.278, 1)
-light_energy = 1.6
-omni_range = 7.0
+light_energy = 1.2
+omni_range = 5.5
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -1255,10 +1264,10 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop08Library"]
-position = Vector3(0.000, 4.200, -9.700)
-light_color = Color(0.961, 0.604, 0.847, 1)
-light_energy = 0.8
-omni_range = 4.0
+position = Vector3(13.820, 0.650, -5.450)
+light_color = Color(1.000, 0.541, 0.239, 1)
+light_energy = 2.5
+omni_range = 6.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
@@ -1350,7 +1359,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop09School"]
-position = Vector3(-9.000, 4.350, -5.000)
+position = Vector3(-5.940, 4.350, -5.400)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.6
 omni_range = 7.0
@@ -1359,7 +1368,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light7" type="OmniLight3D" parent="Shops/Shop09School"]
-position = Vector3(-9.000, 4.350, -13.000)
+position = Vector3(-5.940, 4.350, -10.800)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.6
 omni_range = 7.0
@@ -1368,7 +1377,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light8" type="OmniLight3D" parent="Shops/Shop09School"]
-position = Vector3(0.000, 4.350, -5.000)
+position = Vector3(5.940, 4.350, -5.400)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.6
 omni_range = 7.0
@@ -1445,7 +1454,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop10Seminary"]
-position = Vector3(-13.820, 0.650, -9.700)
+position = Vector3(-13.820, 0.650, -5.500)
 light_color = Color(1.000, 0.541, 0.239, 1)
 light_energy = 2.5
 omni_range = 6.0
@@ -1454,16 +1463,16 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light7" type="OmniLight3D" parent="Shops/Shop10Seminary"]
-position = Vector3(-11.870, 0.500, -18.260)
-light_color = Color(1.000, 0.541, 0.239, 1)
-light_energy = 0.8
-omni_range = 3.0
+position = Vector3(-2.900, 4.350, -4.400)
+light_color = Color(1.000, 0.702, 0.278, 1)
+light_energy = 1.6
+omni_range = 7.0
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light8" type="OmniLight3D" parent="Shops/Shop10Seminary"]
-position = Vector3(-9.000, 4.350, -5.000)
+position = Vector3(-2.900, 4.350, -11.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.6
 omni_range = 7.0
@@ -5442,11 +5451,11 @@ animation_offset_seconds = 0.0
 [node name="Farm" type="Node3D" parent="." groups=["navigation_source"]]
 
 [node name="Farmhouse" parent="Farm" instance=ExtResource("112_ext")]
-position = Vector3(76.500, 0.000, -37.000)
-rotation = Vector3(0.000, -1.571, 0.000)
+position = Vector3(85.500, 0.000, -34.600)
 
 [node name="Barn" parent="Farm" instance=ExtResource("113_ext")]
-position = Vector3(94.500, 0.000, -27.000)
+position = Vector3(94.600, 0.000, -17.000)
+rotation = Vector3(0.000, -1.571, 0.000)
 
 [node name="FarmYard" parent="Farm" instance=ExtResource("114_ext")]
 position = Vector3(0.000, 0.000, 0.000)
@@ -5457,7 +5466,7 @@ position = Vector3(0.000, 0.000, 0.000)
 [node name="Farmer" parent="Townsfolk" instance=ExtResource("108_ext")]
 body_scene = ExtResource("107_ext")
 hair_color = Color(0.320, 0.210, 0.140, 1)
-position = Vector3(86.400, 0.030, -15.000)
+position = Vector3(85.500, 0.030, -17.000)
 rotation = Vector3(0.000, 1.571, 0.000)
 activity = 1
 idle_animation = &"ual1/Idle"
@@ -5480,6 +5489,125 @@ rotation = Vector3(0.000, 0.477, 0.000)
 activity = 1
 idle_animation = &"ual2/Idle_FoldArms"
 animation_offset_seconds = 0.0
+
+[node name="AlleyPalm00" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(108.000, -0.120, -4.200)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm00" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm00/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm01" parent="Farm" instance=ExtResource("81_ext")]
+position = Vector3(115.000, -0.120, -4.200)
+rotation = Vector3(0.000, 1.300, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm01" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm01/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm02" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(122.000, -0.120, -4.200)
+rotation = Vector3(0.000, 2.600, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm02" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm02/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm03" parent="Farm" instance=ExtResource("81_ext")]
+position = Vector3(129.000, -0.120, -4.200)
+rotation = Vector3(0.000, 3.900, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm03" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm03/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm04" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(136.000, -0.120, -4.200)
+rotation = Vector3(0.000, 5.200, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm04" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm04/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm05" parent="Farm" instance=ExtResource("81_ext")]
+position = Vector3(143.000, -0.120, -4.200)
+rotation = Vector3(0.000, 6.500, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm05" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm05/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm06" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(108.000, -0.120, 4.200)
+rotation = Vector3(0.000, 7.800, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm06" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm06/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm07" parent="Farm" instance=ExtResource("81_ext")]
+position = Vector3(115.000, -0.120, 4.200)
+rotation = Vector3(0.000, 9.100, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm07" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm07/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm08" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(122.000, -0.120, 4.200)
+rotation = Vector3(0.000, 10.400, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm08" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm08/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm09" parent="Farm" instance=ExtResource("81_ext")]
+position = Vector3(129.000, -0.120, 4.200)
+rotation = Vector3(0.000, 11.700, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm09" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm09/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm10" parent="Farm" instance=ExtResource("83_ext")]
+position = Vector3(136.000, -0.120, 4.200)
+rotation = Vector3(0.000, 13.000, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm10" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm10/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
+
+[node name="AlleyPalm11" parent="Farm" instance=ExtResource("81_ext")]
+position = Vector3(143.000, -0.120, 4.200)
+rotation = Vector3(0.000, 14.300, 0.000)
+
+[node name="Collider" type="StaticBody3D" parent="Farm/AlleyPalm11" groups=["navigation_source"]]
+
+[node name="Shape" type="CollisionShape3D" parent="Farm/AlleyPalm11/Collider"]
+position = Vector3(0.000, 1.500, 0.000)
+shape = SubResource("collider_palm_")
 
 [node name="CowOak" parent="Farm" instance=ExtResource("76_ext")]
 position = Vector3(83.000, 0.030, 12.000)
