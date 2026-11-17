@@ -439,50 +439,54 @@ def shelf_island(f, u: float, d: float, variants: tuple) -> None:
 
 
 def furnish_magic(f) -> None:
-    """Magic shop: a summoning circle under floating books in the middle of the nave, bookcases with a rolling
-    ladder and staff racks on the walls, wands and crystal balls in the windows, a glass counter, and the
-    enchanter's corner (enchanting table between rune pillars) at the back right."""
-    f.put("rug", 0.0, 5.0, variant="blue")
-    f.put("crystal_ball_pedestal", 0.0, 5.4)
-    f.put("summoning_circle", 0.0, 9.7)
+    """Magic shop: a three-step dais with a summoning circle under floating books in the middle of the nave, a
+    wizards' library on the left (two-tier gallery with a spiral stair, an orrery and floating candles), staff racks,
+    wand cases and bookcases on the right, wands and crystal balls in the windows, a glass counter, and the
+    enchanter's sanctum (partitioned off, arched doorway, enchanting table between rune pillars) at the back right."""
+    f.put("summoning_dais", 0.0, 9.7)
     f.put("floating_books", 0.0, 9.7)
+    f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 12.4), 2, 2)
+    f.put("rug_ornate", 0.0, 4.6, variant="blue")
+    f.put("crystal_ball_pedestal", 0.0, 5.4)
     f.put("counter_glass", 0.0, 14.2)
     f.put("price_board", 1.9, 14.2)
     f.put("stool_round", 0.9, 16.0)
 
-    f.on_wall("back", "tall_bookcase", -7.4)
-    f.on_wall("back", "staff_rack", -4.6)
-    f.on_wall("back", "wand_case", -2.3)
+    f.put("gallery_stair", f.left + 1.2, 1.5, -70.0)
+    f.on_wall("left", "book_gallery", 4.8, open_end=-1)
+    f.on_wall("left", "book_gallery", 8.96)
+    f.on_wall("left", "tall_bookcase", 12.2)
+    f.on_wall("left", "staff_rack", 14.4)
+    f.put("orrery", -4.9, 8.2)
+    f.put("floating_candles", -4.9, 4.6)
+    f.put("floating_candles", -4.9, 12.6)
+    f.put("celestial_globe", -5.6, 5.6)
+    f.put("giant_hourglass", -5.7, 12.0)
+
+    f.on_wall("back", "tall_bookcase", -7.0)
+    f.on_wall("back", "wand_case", -2.4)
     f.on_wall("back", "star_tapestry", 0.0)
-    f.on_wall("back", "mage_hat_stand", 2.0)
+    f.on_wall("back", "mage_hat_stand", 1.2)
+    f.put("lectern", -5.2, 16.6)
+    f.put("chest_gold", -3.2, 17.6)
+    f.put("rug_ornate", -5.2, 16.2, 90.0, variant="plum")
+
+    back_room_b(f, f.right - 6.0 - SCREEN_HALF_B, 3, 2, door_on="front", door_slot=1, variant="glazed", doorway="arch", has_right=False)
+    f.put("rug_ornate", 5.55, 17.2, variant="blue")
+    f.put("enchant_table", 5.55, 17.2)
+    f.put("rune_pillar", 3.5, 18.2)
+    f.put("rune_pillar", 7.6, 16.0)
+    f.put("giant_hourglass", 7.5, 18.3)
     f.on_wall("back", "tall_bookcase", 7.4)
-    f.put("lectern", -5.6, 16.6)
-    f.put("chest_gold", -2.6, 17.4)
+    f.on_wall("back", "staff_rack", 3.7)
 
-    f.put("rug", 5.8, 16.0, variant="blue")
-    f.put("enchant_table", 5.8, 16.0)
-    f.put("rune_pillar", 3.6, 16.8)
-    f.put("rune_pillar", 7.6, 14.6)
-    f.put("giant_hourglass", 3.8, 14.9)
+    f.wall("right", ["wand_case", "staff_rack", "tall_bookcase", "mage_hat_stand", "wand_case", "scroll_rack", ("wall_shelf", {"variant": "potions"})], start=f.front + 1.6, gap=0.3)
+    f.put("astrolabe", 5.9, 4.4)
+    f.put("mana_crystal_crate", 5.9, 6.4)
+    f.put("crystal_ball_pedestal", 5.9, 8.2)
 
-    side_wall(f, "left", ["tall_bookcase", "staff_rack", "tall_bookcase", "wand_case", "tall_bookcase", "mage_hat_stand", "tall_bookcase"], ["wand_case", "mana_crystal_crate", ("glowing_jar", {"variant": "cyan"}), "crystal_ball_pedestal", "wand_case", ("plant_pot", {"variant": "fern"})], start=0.8)
-    side_wall(f, "right", [("wall_shelf", {"variant": "crystals"}), "tall_bookcase", "scroll_rack", ("wall_shelf", {"variant": "potions"}), "tall_bookcase", "skeleton_stand"], ["mana_crystal_crate", ("glowing_jar", {"variant": "pink"}), "wand_case", "crystal_ball_pedestal", "mana_crystal_crate"], start=0.8)
-    if "left" not in f.room.exposed:
-        f.put("rolling_ladder", f.left + 0.8, 1.8, 90.0)
-    if "right" not in f.room.exposed:
-        f.put("rolling_ladder", f.right - 0.8, 4.8, -90.0)
-
-    f.wall("front", ["wand_case", ("glowing_jar", {"variant": "green"}), "crystal_ball_pedestal", "wand_case", ("glowing_jar", {"variant": "amber"})], start=f.left + 1.2)
+    f.wall("front", ["wand_case", ("glowing_jar", {"variant": "green"}), "crystal_ball_pedestal"], start=f.left + 3.4)
     f.wall("front", [("glowing_jar", {"variant": "pink"}), "wand_case", "crystal_ball_pedestal", ("glowing_jar", {"variant": "cyan"}), "wand_case"], start=f.door_u + 2.0)
-
-    f.put("celestial_globe", -5.7, 4.6)
-    shelf_island(f, -5.7, 9.7, ("crystals", "potions"))
-    f.put("giant_hourglass", -5.7, 12.4)
-    f.put("astrolabe", 5.7, 4.6)
-    shelf_island(f, 5.7, 9.7, ("scrolls", "books"))
-    f.put("mana_crystal_crate", 5.7, 12.4)
-
-    f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 12.4), 2, 2)
     f.grid("hanging_lantern", (-1.8, 1.8), (2.0, 2.0), 2, 1)
 
 
@@ -762,7 +766,6 @@ PLANS = {
 FILL = {  # prédio -> ilhas soltas que enchem o chão livre dos dois lados do corredor da porta (fill_floor)
     "smith": [],
     "armor": [],
-    "magic": [("mana_crystal_crate", 0.0, {}), ("rune_pillar", 0.0, {}), ("wand_case", 90.0, {}), ("giant_hourglass", 0.0, {}), ("mage_hat_stand", 0.0, {}), ("celestial_globe", 0.0, {}), ("crystal_ball_pedestal", 0.0, {})],
     "alchemy": [("planter_box", 90.0, {}), ("glowing_jar", 0.0, {}), ("drying_rack_herbs", 90.0, {}), ("mortar_table", 90.0, {}), ("flower_steps", 0.0, {}), ("crate_open", 0.0, {"variant": "roots"}), ("skeleton_stand", 0.0, {}), ("barrel_group", 0.0, {})],
     "tailor": [],
     "general": [],
