@@ -23,7 +23,7 @@ from mathutils import Matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from build_town_houses import WHITE, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, srgb  # noqa: E402,F401
+from build_town_houses import STONE, TRIM_SMOOTH_BAND, WHITE, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, srgb  # noqa: E402,F401
 
 # Vivid, clean anime-fantasy goods colours (style bible: bright, never dead grey).
 GOODS_PALETTE = ("C9483B", "E0884A", "E8C14F", "7FC46A", "3F8A50", "4F8FC9", "6C5BB8", "C46AA8", "F2E6CF", "8B5A3C")
@@ -131,6 +131,7 @@ PROPS = {}
 # ---------- common furniture kit ----------
 # Ceiling props follow the lead's contract: z = 0 at the ceiling mount and growing DOWN, "hang": True.
 
+SMOOTH_UV = ("band", *TRIM_SMOOTH_BAND, 1.0)
 WOOD_DARK_UV = ("band", *WOOD_DARK_BAND, 1.5)
 WOOD_LIGHT_UV = ("band", *WOOD_LIGHT_BAND, 1.0)
 WOOD_BODY, WOOD_TOP, WOOD_DEEP, WOOD_HONEY = "BE8A58", "E0B678", "98623C", "D9A468"
@@ -163,6 +164,91 @@ def wood_beam(b: Builder, frame: Matrix, start: tuple, end: tuple, width: float,
 
 def wood_cylinder(b: Builder, frame: Matrix, base: tuple, radius: float, height: float, sides: int = 8, tint: str = WOOD_BODY, top_radius: float = None, axis: str = "Z"):
     return b.cylinder(base, radius, height, sides, "wood", srgb(tint), top_radius=top_radius, frame=frame, uv=WOOD_LIGHT_UV, axis=axis)
+
+
+# ---------- craft kit: chamfered boxes, turned legs, mouldings, hardware ----------
+
+TURNED_PROFILES = {  # (radius factor, height fraction) bottom to top, radius factor 1.0 = the leg's nominal radius
+    "baluster": [(0.7, 0.0), (0.95, 0.03), (0.75, 0.07), (0.6, 0.1), (0.6, 0.34), (0.95, 0.44), (0.72, 0.54), (0.6, 0.6), (0.6, 0.86), (1.0, 0.91), (1.0, 1.0)],
+    "column": [(1.1, 0.0), (1.1, 0.05), (0.8, 0.09), (0.7, 0.14), (0.62, 0.5), (0.7, 0.86), (0.85, 0.92), (1.1, 0.96), (1.1, 1.0)],
+    "ball": [(0.55, 0.0), (0.7, 0.05), (0.5, 0.12), (0.5, 0.58), (0.78, 0.66), (0.9, 0.78), (0.78, 0.9), (0.5, 0.96), (0.5, 1.0)],
+    "taper": [(0.5, 0.0), (0.62, 0.06), (0.8, 0.5), (1.0, 0.94), (1.0, 1.0)],
+}
+
+
+def solid_hull(b: Builder, points: list, material: str, tint: str, frame: Matrix, uv: tuple = None):
+    """Convex hull that tolerates points on its faces (Builder.hull hands those to bmesh.ops.delete twice)."""
+    hull_bmesh = bmesh.new()
+    vertices = [hull_bmesh.verts.new(point) for point in points]
+    result = bmesh.ops.convex_hull(hull_bmesh, input=vertices)
+    unused = list(dict.fromkeys(element for element in result["geom_interior"] + result["geom_unused"] if isinstance(element, bmesh.types.BMVert)))
+    bmesh.ops.delete(hull_bmesh, geom=unused, context="VERTS")
+
+    return b._link(hull_bmesh, material, srgb(tint), uv, frame)
+
+
+def bevel_box(b: Builder, frame: Matrix, low: tuple, high: tuple, tint: str = None, bevel: float = 0.012, material: str = "wood", light: bool = False):
+    """Box with every edge chamfered (24 hull points): catches the light along its edges."""
+    chamfer = min(bevel, min(high_value - low_value for low_value, high_value in zip(low, high)) / 2.4)
+    points = []
+
+    for corner in itertools.product(*zip(low, high)):
+        step = [chamfer if value == low_value else -chamfer for value, low_value in zip(corner, low)]
+        points += [tuple(value + (0.0 if axis == kept else step[axis]) for axis, value in enumerate(corner)) for kept in range(3)]
+
+    return solid_hull(b, points, material, tint or WOOD_BODY, frame, (WOOD_LIGHT_UV if light else WOOD_DARK_UV) if material == "wood" else None)
+
+
+def turned_leg(b: Builder, frame: Matrix, x: float, y: float, height: float, radius: float, tint: str = None, style: str = "baluster", z: float = 0.0, sides: int = 8):
+    """Lathe-turned leg or post standing on z at (x, y)."""
+    profile = [(radius * factor, z + height * fraction) for factor, fraction in TURNED_PROFILES[style]]
+
+    return lathe(b, profile, sides, "wood", tint or WOOD_DEEP, frame, base=(x, y, 0.0), uv=WOOD_LIGHT_UV)
+
+
+def run_profile(b: Builder, frame: Matrix, x_from: float, x_to: float, profile: list, tint: str = None, material: str = "wood"):
+    """Moulding: a (y, z) polygon extruded along X."""
+    return b.side_prism(profile, x_from, x_to, material, srgb(tint or WOOD_TOP), frame=frame, uv=WOOD_LIGHT_UV if material == "wood" else None)
+
+
+def cornice_profile(y_wall: float, z: float, reach: float, height: float, toward: float = -1.0) -> list:
+    """Stepped cove moulding hanging from z up to z + height, jutting `reach` from y_wall toward `toward` (+-1)."""
+    steps = [(0.0, 0.0), (0.55, 0.0), (0.55, 0.22), (0.8, 0.3), (0.8, 0.55), (1.0, 0.6), (1.0, 1.0), (0.0, 1.0)]
+
+    return [(y_wall + toward * reach * out, z + height * rise) for out, rise in steps]
+
+
+def base_profile(y_wall: float, z: float, reach: float, height: float, toward: float = -1.0) -> list:
+    """Skirting: a step, a bead and a cove up to the wall."""
+    steps = [(0.0, 0.0), (1.0, 0.0), (1.0, 0.4), (0.7, 0.45), (0.7, 0.62), (0.4, 0.75), (0.0, 1.0)]
+
+    return [(y_wall + toward * reach * out, z + height * rise) for out, rise in steps]
+
+
+def knob(b: Builder, frame: Matrix, x: float, y: float, z: float, radius: float = 0.016, tint: str = None) -> None:
+    """Round drawer pull standing proud of a face on -Y."""
+    b.sphere((x, y - radius * 0.7, z), radius, "metal", srgb(tint or BRASS), frame=frame, segments=6)
+    b.cylinder((x, y, z), radius * 0.35, radius * 0.5, 5, "metal", srgb(tint or BRASS), frame=frame, axis="Y")
+
+
+def rivets(b: Builder, frame: Matrix, centres: list, y: float, radius: float = 0.012, tint: str = None) -> None:
+    """Row of iron rivet heads on a -Y face at y."""
+    for x, z in centres:
+        b.cylinder((x, y, z), radius, 0.01, 5, "metal", srgb(tint or STEEL), frame=frame, axis="Y")
+
+
+def strap_hinge(b: Builder, frame: Matrix, x: float, y: float, z: float, length: float, tint: str = None) -> None:
+    """Iron strap hinge lying on a -Y face: a tapering strap with a round eye at the pivot end."""
+    colour = tint or IRON
+    b.prism([(x, z - 0.014), (x + length, z - 0.006), (x + length + 0.02, z), (x + length, z + 0.006), (x, z + 0.014)], y - 0.008, y, "metal", srgb(colour), frame=frame)
+    b.cylinder((x, y - 0.012, z), 0.022, 0.016, 6, "metal", srgb(colour), frame=frame, axis="Y")
+
+
+def raised_panel(b: Builder, frame: Matrix, x_from: float, x_to: float, z_from: float, z_to: float, y: float, tint: str = None, border: float = 0.05, depth: float = 0.014) -> None:
+    """Raised panel on a -Y face at y: a bevelled frame around a recessed field."""
+    frame_tint, field_tint = tint or WOOD_TOP, WOOD_HONEY
+    bevel_box(b, frame, (x_from, y - depth, z_from), (x_to, y, z_to), frame_tint, bevel=0.006, light=True)
+    wood_box(b, frame, (x_from + border, y - depth * 1.5, z_from + border), (x_to - border, y - depth * 0.5, z_to - border), field_tint, light=True)
 
 
 def leaf(b: Builder, frame: Matrix, base: tuple, length: float, width: float, degrees: float, lift: float, tint: str) -> None:
@@ -253,43 +339,75 @@ def wall_shelf(b: Builder, frame: Matrix, variant: str = "books", seed: int = 1,
     half_width, half_depth, height = 1.0, 0.175, 2.2
     board_tops = [0.12, 0.62, 1.12, 1.62]
     body = tint or WOOD_BODY
+    side_front = -0.15
+    carcass_top = height - 0.07
 
-    wood_box(b, frame, (-half_width, 0.15, 0.0), (half_width, half_depth, height), WOOD_DEEP)
+    wood_box(b, frame, (-half_width + 0.05, 0.15, 0.0), (half_width - 0.05, half_depth, carcass_top), WOOD_DEEP)
 
-    for side_x in (-half_width, half_width - 0.04):
-        wood_box(b, frame, (side_x, -half_depth, 0.0), (side_x + 0.04, half_depth, height), body)
+    for groove_x in (-0.5, 0.0, 0.5):
+        wood_box(b, frame, (groove_x - 0.006, 0.146, 0.1), (groove_x + 0.006, 0.15, carcass_top), "6E4529")
 
-    wood_box(b, frame, (-half_width + 0.04, -0.15, 0.0), (half_width - 0.04, 0.15, 0.08), WOOD_DEEP)
-    wood_box(b, frame, (-half_width, -half_depth, height - 0.07), (half_width, half_depth, height), WOOD_TOP, light=True)
-    shelf_boards(b, frame, -half_width + 0.04, half_width - 0.04, -half_depth, 0.15, board_tops, body)
+    for side_x in (-half_width, half_width - 0.05):
+        bevel_box(b, frame, (side_x, side_front, 0.0), (side_x + 0.05, 0.15, carcass_top), body, bevel=0.008)
+
+    bevel_box(b, frame, (-half_width + 0.05, side_front, 0.0), (half_width - 0.05, 0.15, 0.1), WOOD_DEEP, bevel=0.008)
+    run_profile(b, frame, -half_width + 0.05, half_width - 0.05, base_profile(side_front, 0.0, 0.025, 0.1), WOOD_DEEP)
+    run_profile(b, frame, -half_width, half_width, cornice_profile(side_front, carcass_top - 0.07, 0.025, 0.07), WOOD_TOP)
+    bevel_box(b, frame, (-half_width, -half_depth, carcass_top), (half_width, half_depth, height), WOOD_TOP, bevel=0.016, light=True)
+
+    for top in board_tops:
+        bevel_box(b, frame, (-half_width + 0.05, side_front, top - 0.04), (half_width - 0.05, 0.15, top), body, bevel=0.007, light=True)
+        wood_box(b, frame, (-half_width + 0.05, side_front - 0.012, top - 0.075), (half_width - 0.05, side_front, top), WOOD_TOP, light=True)
+
+    for tag_x, tag_top in ((-0.62, board_tops[0]), (0.18, board_tops[1]), (-0.2, board_tops[2]), (0.7, board_tops[3])):
+        paint_box(b, frame, (tag_x - 0.03, side_front - 0.016, tag_top - 0.07), (tag_x + 0.03, side_front - 0.012, tag_top - 0.025), "F2E6CF")
+
     stock_boards(b, frame, -half_width + 0.09, half_width - 0.09, -0.01, board_tops, 0.26, 0.4, seed, variant)
 
 
 def floor_shelf(b: Builder, frame: Matrix, variant: str = "books", seed: int = 1, tint: str = None, **options) -> None:
-    half_width, height = 0.75, 1.8
+    half_width, height = 0.75, 1.76
     board_tops = [0.14, 0.7, 1.26]
     body = tint or WOOD_BODY
     turned = frame @ Matrix.Rotation(math.pi, 4, "Z")
 
-    wood_box(b, frame, (-half_width, -0.015, 0.0), (half_width, 0.015, height - 0.04), WOOD_DEEP)
+    wood_box(b, frame, (-half_width + 0.04, -0.015, 0.0), (half_width - 0.04, 0.015, height - 0.04), WOOD_DEEP)
 
     for side_x in (-half_width, half_width - 0.04):
-        wood_box(b, frame, (side_x, -0.25, 0.0), (side_x + 0.04, 0.25, height), body)
+        bevel_box(b, frame, (side_x, -0.24, 0.1), (side_x + 0.04, 0.24, height), body, bevel=0.008)
 
-    wood_box(b, frame, (-half_width, -0.25, height - 0.07), (half_width, 0.25, height), WOOD_TOP, light=True)
+    for foot_x, foot_y in itertools.product((-half_width + 0.01, half_width - 0.1), (-0.24, 0.14)):
+        bevel_box(b, frame, (foot_x, foot_y, 0.0), (foot_x + 0.09, foot_y + 0.1, 0.12), WOOD_DEEP, bevel=0.01)
+
+    bevel_box(b, frame, (-half_width + 0.04, -0.24, 0.1), (half_width - 0.04, 0.24, 0.16), WOOD_DEEP, bevel=0.008)
+    bevel_box(b, frame, (-half_width, -0.25, height - 0.07), (half_width, 0.25, height), WOOD_TOP, bevel=0.016, light=True)
+
+    for finial_x, finial_y in itertools.product((-half_width + 0.04, half_width - 0.04), (-0.19, 0.19)):
+        b.sphere((finial_x, finial_y, height), 0.03, "wood", srgb(WOOD_DEEP), frame=frame, segments=6)
 
     for side_frame, sign in ((frame, -1.0), (turned, 1.0)):
-        shelf_boards(b, side_frame, -half_width + 0.04, half_width - 0.04, -0.245, -0.015, board_tops, body)
+        run_profile(b, side_frame, -half_width, half_width, cornice_profile(-0.24, height - 0.14, 0.01, 0.07), WOOD_TOP)
+
+        for top in board_tops:
+            bevel_box(b, side_frame, (-half_width + 0.04, -0.245, top - 0.04), (half_width - 0.04, -0.015, top), body, bevel=0.007, light=True)
+            wood_box(b, side_frame, (-half_width + 0.04, -0.25, top - 0.07), (half_width - 0.04, -0.245, top), WOOD_TOP, light=True)
+
         stock_boards(b, side_frame, -half_width + 0.09, half_width - 0.09, -0.13, board_tops, 0.2, 0.5, seed + int(sign), variant, fill=0.75)
 
 
 # ---------- counters ----------
 
 def counter_block(b: Builder, frame: Matrix, x_from: float, x_to: float, y_from: float, y_to: float, top: float = 1.05, panels: bool = True, inset: float = 0.03) -> None:
-    """Counter run: recessed plinth, body, overhanging top, raised front panels on the y_from face."""
-    wood_box(b, frame, (x_from + 0.06, y_from + 0.06, 0.0), (x_to - 0.06, y_to - 0.06, 0.1), WOOD_DEEP)
-    wood_box(b, frame, (x_from + inset, y_from + inset, 0.1), (x_to - inset, y_to - inset, top - 0.07), WOOD_BODY)
-    wood_box(b, frame, (x_from, y_from, top - 0.07), (x_to, y_to, top), WOOD_TOP, light=True)
+    """Counter run: recessed plinth with skirting, body, pilasters, framed doors and drawers on the y_from face,
+    moulded underside and a bevelled overhanging top."""
+    body_front = y_from + inset
+    door_top = top - (0.28 if top > 0.9 else 0.17)
+
+    bevel_box(b, frame, (x_from + 0.06, y_from + 0.06, 0.0), (x_to - 0.06, y_to - 0.06, 0.1), WOOD_DEEP, bevel=0.01)
+    bevel_box(b, frame, (x_from + inset, y_from + inset, 0.1), (x_to - inset, y_to - inset, top - 0.07), WOOD_BODY, bevel=0.008)
+    run_profile(b, frame, x_from + inset, x_to - inset, base_profile(body_front, 0.1, inset, 0.09), WOOD_DEEP)
+    run_profile(b, frame, x_from, x_to, cornice_profile(body_front, top - 0.14, inset, 0.07), WOOD_TOP)
+    bevel_box(b, frame, (x_from, y_from, top - 0.07), (x_to, y_to, top), WOOD_TOP, bevel=0.018, light=True)
 
     if not panels:
         return
@@ -297,9 +415,18 @@ def counter_block(b: Builder, frame: Matrix, x_from: float, x_to: float, y_from:
     count = max(1, round((x_to - x_from) / 0.95))
     span = (x_to - x_from) / count
 
+    for index in range(count + 1):
+        pilaster_x = min(max(x_from + index * span, x_from + 0.045 + inset), x_to - 0.045 - inset)
+        bevel_box(b, frame, (pilaster_x - 0.045, y_from + 0.008, 0.1), (pilaster_x + 0.045, body_front, top - 0.14), WOOD_DEEP, bevel=0.007)
+
     for index in range(count):
-        panel_from = x_from + index * span + 0.1
-        wood_box(b, frame, (panel_from, y_from + 0.01, 0.2), (panel_from + span - 0.2, y_from + inset, top - 0.17), WOOD_HONEY, light=True)
+        panel_from, panel_to = x_from + index * span + 0.09, x_from + (index + 1) * span - 0.09
+        raised_panel(b, frame, panel_from, panel_to, 0.17, door_top, body_front)
+        knob(b, frame, panel_to - 0.07, body_front - 0.021, door_top - 0.14, 0.016)
+
+        if top > 0.9:
+            raised_panel(b, frame, panel_from, panel_to, door_top + 0.03, top - 0.17, body_front, border=0.035)
+            knob(b, frame, (panel_from + panel_to) / 2.0, body_front - 0.021, (door_top + top - 0.14) / 2.0, 0.014)
 
 
 def counter_straight(b: Builder, frame: Matrix, **options) -> None:
@@ -335,25 +462,44 @@ def counter_till(b: Builder, frame: Matrix, **options) -> None:
     top = 1.05
     counter_block(b, frame, -1.5, 1.5, -0.35, 0.35)
 
-    # balance scale on the left
-    b.cylinder((-0.9, 0.0, top), 0.09, 0.02, 8, "metal", srgb(BRASS), frame=frame)
-    b.cylinder((-0.9, 0.0, top + 0.02), 0.012, 0.26, 6, "metal", srgb(BRASS), frame=frame)
-    metal_box(b, frame, (-1.12, -0.012, top + 0.28), (-0.68, 0.012, top + 0.3))
+    # balance scale on the left: weighted base, post, bevelled beam, hanging pans on three cords each
+    bevel_box(b, frame, (-1.0, -0.1, top), (-0.8, 0.1, top + 0.03), BRASS, bevel=0.008, material="metal")
+    b.cylinder((-0.9, 0.0, top + 0.03), 0.014, 0.3, 6, "metal", srgb(BRASS), frame=frame)
+    bevel_box(b, frame, (-1.13, -0.01, top + 0.31), (-0.67, 0.01, top + 0.335), BRASS, bevel=0.004, material="metal")
+    b.sphere((-0.9, 0.0, top + 0.345), 0.02, "metal", srgb(GOLD), frame=frame, segments=6)
 
     for pan_x in (-1.1, -0.7):
-        metal_box(b, frame, (pan_x - 0.004, -0.004, top + 0.1), (pan_x + 0.004, 0.004, top + 0.28))
-        b.cylinder((pan_x, 0.0, top + 0.08), 0.09, 0.02, 8, "metal", srgb(BRASS), frame=frame)
+        lathe(b, [(0.03, top + 0.06), (0.09, top + 0.08), (0.105, top + 0.1), (0.09, top + 0.1)], 10, "metal", BRASS, frame, base=(pan_x, 0.0, 0.0))
 
-    # cash box with coin stacks and a ledger on the right
-    wood_box(b, frame, (0.45, -0.12, top), (0.8, 0.1, top + 0.14), WOOD_DEEP)
-    metal_box(b, frame, (0.45, -0.125, top + 0.1), (0.8, 0.105, top + 0.115), IRON)
-    metal_box(b, frame, (0.6, -0.14, top + 0.06), (0.65, -0.12, top + 0.12))
+        for degrees in (0, 120, 240):
+            foot = (pan_x + 0.09 * math.cos(math.radians(degrees)), 0.09 * math.sin(math.radians(degrees)), top + 0.095)
+            b.beam(foot, (pan_x, 0.0, top + 0.31), 0.004, 0.004, "metal", srgb(BRASS), frame=frame)
 
-    for coin_x, coin_count in ((0.95, 3), (1.05, 5), (1.15, 2)):
-        b.cylinder((coin_x, -0.12, top), 0.035, 0.012 * coin_count, 8, "metal", srgb(GOLD), frame=frame)
+    # cash box: banded lid, hasp and carry handle, coin stacks and loose coins beside it
+    bevel_box(b, frame, (0.4, -0.13, top), (0.82, 0.11, top + 0.14), WOOD_DEEP, bevel=0.01)
+    bevel_box(b, frame, (0.4, -0.13, top + 0.11), (0.82, 0.11, top + 0.14), WOOD_TOP, bevel=0.012, light=True)
 
-    paint_box(b, frame, (0.2, -0.05, top), (0.38, 0.15, top + 0.04), "F2E6CF")
-    paint_box(b, frame, (0.18, -0.07, top), (0.4, 0.17, top + 0.015), "7A2F3A")
+    for band_x in (0.44, 0.75):
+        metal_box(b, frame, (band_x, -0.135, top), (band_x + 0.03, 0.115, top + 0.145), IRON)
+
+    metal_box(b, frame, (0.59, -0.14, top + 0.07), (0.63, -0.12, top + 0.13), BRASS)
+    ring(b, (0.61, 0.0, top + 0.14), 0.05, 0.007, "metal", IRON, frame, sides=8, tube_sides=4, axis="Y")
+
+    for coin_x, coin_count in ((0.95, 3), (1.05, 6), (1.15, 2), (1.25, 4)):
+        b.cylinder((coin_x, -0.12, top), 0.035, 0.012 * coin_count, 10, "metal", srgb(GOLD), frame=frame)
+
+    for coin_x, coin_y in ((0.98, -0.02), (1.1, 0.08), (1.22, -0.05)):
+        b.cylinder((coin_x, coin_y, top), 0.03, 0.008, 10, "metal", srgb("FFE27A"), frame=frame)
+
+    # open ledger with ruled pages, inkwell and quill, little brass bell
+    bevel_box(b, frame, (0.05, -0.1, top), (0.3, 0.14, top + 0.025), "7A2F3A", bevel=0.006, material="paint")
+    page_points = [(0.07, -0.08), (0.175, -0.08), (0.28, -0.08), (0.07, 0.12), (0.175, 0.12), (0.28, 0.12)]
+    solid_hull(b, [(u, v, top + 0.025 + (0.005 if u == 0.175 else 0.0)) for u, v in page_points] + [(u, v, top + 0.035 + (0.005 if u == 0.175 else 0.0)) for u, v in page_points], "paint", "F2E6CF", frame)
+    paint_box(b, frame, (0.12, -0.05, top + 0.04), (0.17, 0.1, top + 0.0415), "5A4A5E")
+    paint_box(b, frame, (0.19, -0.05, top + 0.04), (0.25, 0.1, top + 0.0415), "5A4A5E")
+    lathe(b, [(0.03, top), (0.034, top + 0.03), (0.02, top + 0.045), (0.016, top + 0.05)], 8, "paint", "2B2236", frame, base=(-0.35, 0.1, 0.0))
+    b.beam((-0.35, 0.1, top + 0.04), (-0.28, 0.14, top + 0.2), 0.03, 0.005, "paint", srgb("F7F2E8"), frame=frame, uv=None)
+    lathe(b, [(0.001, top), (0.045, top), (0.05, top + 0.012), (0.03, top + 0.05), (0.012, top + 0.08), (0.001, top + 0.09)], 10, "metal", BRASS, frame, base=(-0.5, -0.12, 0.0))
 
 
 PROPS.update(
@@ -396,26 +542,44 @@ TABLE_GOODS = {"fruit": display_fruit, "bread": display_bread, "cloth": display_
 def display_table(b: Builder, frame: Matrix, variant: str = "fruit", seed: int = 1, tint: str = None, **options) -> None:
     top = 0.84
 
-    for leg_x, leg_y in itertools.product((-0.66, 0.6), (-0.41, 0.35)):
-        wood_box(b, frame, (leg_x, leg_y, 0.0), (leg_x + 0.08, leg_y + 0.08, top - 0.06), WOOD_DEEP)
+    for leg_x, leg_y in itertools.product((-0.6, 0.6), (-0.36, 0.36)):
+        turned_leg(b, frame, leg_x, leg_y, top - 0.12, 0.045, WOOD_DEEP, "baluster")
 
-    wood_box(b, frame, (-0.7, -0.45, top - 0.06), (0.7, 0.45, top), tint or WOOD_TOP, light=True)
+    for rail_y in (-0.36, 0.36):
+        bevel_box(b, frame, (-0.6, rail_y - 0.015, top - 0.2), (0.6, rail_y + 0.015, top - 0.12), WOOD_BODY, bevel=0.008)
+        bevel_box(b, frame, (-0.6, rail_y - 0.012, 0.2), (0.6, rail_y + 0.012, 0.24), WOOD_DEEP, bevel=0.006)
+
+    for rail_x in (-0.6, 0.6):
+        bevel_box(b, frame, (rail_x - 0.015, -0.36, top - 0.2), (rail_x + 0.015, 0.36, top - 0.12), WOOD_BODY, bevel=0.008)
+
+    bevel_box(b, frame, (-0.7, -0.45, top - 0.06), (0.7, 0.45, top), tint or WOOD_TOP, bevel=0.016, light=True)
     paint_box(b, frame, (-0.6, -0.4, top), (0.6, 0.4, top + 0.006), "EBD3A0")
+    paint_box(b, frame, (-0.6, -0.4, top - 0.08), (0.6, -0.395, top), "EBD3A0")
+    paint_box(b, frame, (-0.6, -0.4, top - 0.1), (0.6, -0.39, top - 0.08), "C9483B")
     TABLE_GOODS[variant](b, frame, random.Random(seed), top + 0.006)
 
 
 def crate(b: Builder, frame: Matrix, x: float, y: float, z: float, width: float, depth: float, height: float, tint: str = WOOD_BODY) -> None:
-    """Slatted crate standing on z: inset body, dark corner posts and a lighter slat band front and back."""
+    """Slatted crate standing on z: dark inner body, three gapped slats per long face, corner posts and a brace."""
     half_width, half_depth = width / 2.0, depth / 2.0
-    wood_box(b, frame, (x - half_width + 0.015, y - half_depth + 0.015, z), (x + half_width - 0.015, y + half_depth - 0.015, z + height), tint, light=True)
+    slat = height / 3.0 - 0.012
+    wood_box(b, frame, (x - half_width + 0.02, y - half_depth + 0.02, z + 0.01), (x + half_width - 0.02, y + half_depth - 0.02, z + height - 0.01), WOOD_DEEP, light=True)
 
     for sign_x, sign_y in itertools.product((-1.0, 1.0), repeat=2):
         corner_x, corner_y = x + sign_x * (half_width - 0.025), y + sign_y * (half_depth - 0.025)
-        wood_box(b, frame, (corner_x - 0.025, corner_y - 0.025, z), (corner_x + 0.025, corner_y + 0.025, z + height), WOOD_DEEP, light=True)
+        bevel_box(b, frame, (corner_x - 0.025, corner_y - 0.025, z), (corner_x + 0.025, corner_y + 0.025, z + height), WOOD_DEEP, bevel=0.006, light=True)
 
-    for sign_y in (-1.0, 1.0):
+    for sign_y, row in itertools.product((-1.0, 1.0), range(3)):
         edge = y + sign_y * half_depth
-        wood_box(b, frame, (x - half_width + 0.05, min(edge, edge - sign_y * 0.02), z + height * 0.4), (x + half_width - 0.05, max(edge, edge - sign_y * 0.02), z + height * 0.6), WOOD_TOP, light=True)
+        low = z + 0.006 + row * (slat + 0.012)
+        wood_box(b, frame, (x - half_width + 0.05, min(edge, edge - sign_y * 0.02), low), (x + half_width - 0.05, max(edge, edge - sign_y * 0.02), low + slat), tint if row % 2 == 0 else WOOD_TOP, light=True)
+
+    for sign_x in (-1.0, 1.0):
+        edge = x + sign_x * half_width
+        wood_box(b, frame, (min(edge, edge - sign_x * 0.02), y - half_depth + 0.05, z + 0.02), (max(edge, edge - sign_x * 0.02), y + half_depth - 0.05, z + height - 0.02), tint, light=True)
+
+    if width > 0.45:
+        wood_beam(b, frame, (x - half_width + 0.08, y - half_depth - 0.004, z + 0.06), (x + half_width - 0.08, y - half_depth - 0.004, z + height - 0.06), 0.04, 0.012, WOOD_DEEP, light=True)
 
 
 def crate_stack(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
@@ -427,17 +591,21 @@ def crate_stack(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
 
 
 def open_crate_shell(b: Builder, frame: Matrix, height: float) -> None:
-    """Open-topped crate 0.7 x 0.5: floor, four slat walls, corner posts."""
+    """Open-topped crate 0.7 x 0.5: floor, gapped slat walls, corner posts, rim."""
     wood_box(b, frame, (-0.35, -0.25, 0.0), (0.35, 0.25, 0.04), WOOD_DEEP, light=True)
-    wood_box(b, frame, (-0.35, -0.25, 0.04), (0.35, -0.22, height), WOOD_BODY, light=True)
-    wood_box(b, frame, (-0.35, 0.22, 0.04), (0.35, 0.25, height), WOOD_BODY, light=True)
-    wood_box(b, frame, (-0.35, -0.22, 0.04), (-0.32, 0.22, height), WOOD_BODY, light=True)
-    wood_box(b, frame, (0.32, -0.22, 0.04), (0.35, 0.22, height), WOOD_BODY, light=True)
-    wood_box(b, frame, (-0.35, -0.25, height * 0.45), (0.35, -0.22, height * 0.6), WOOD_TOP, light=True)
-    wood_box(b, frame, (-0.35, 0.22, height * 0.45), (0.35, 0.25, height * 0.6), WOOD_TOP, light=True)
+    wood_box(b, frame, (-0.33, -0.23, 0.04), (0.33, 0.23, height - 0.02), WOOD_DEEP, light=True)
+    slat = (height - 0.04) / 3.0 - 0.01
+
+    for row in range(3):
+        low = 0.04 + row * (slat + 0.01)
+        tone = WOOD_BODY if row % 2 == 0 else WOOD_TOP
+        wood_box(b, frame, (-0.35, -0.25, low), (0.35, -0.22, low + slat), tone, light=True)
+        wood_box(b, frame, (-0.35, 0.22, low), (0.35, 0.25, low + slat), tone, light=True)
+        wood_box(b, frame, (-0.35, -0.22, low), (-0.32, 0.22, low + slat), tone, light=True)
+        wood_box(b, frame, (0.32, -0.22, low), (0.35, 0.22, low + slat), tone, light=True)
 
     for corner_x, corner_y in itertools.product((-0.35, 0.3), (-0.25, 0.2)):
-        wood_box(b, frame, (corner_x, corner_y, 0.0), (corner_x + 0.05, corner_y + 0.05, height + 0.02), WOOD_DEEP, light=True)
+        bevel_box(b, frame, (corner_x, corner_y, 0.0), (corner_x + 0.05, corner_y + 0.05, height + 0.02), WOOD_DEEP, bevel=0.006, light=True)
 
 
 def contents_apples(b: Builder, frame: Matrix, generator: random.Random) -> None:
@@ -483,10 +651,14 @@ def crate_open(b: Builder, frame: Matrix, variant: str = "apples", seed: int = 1
 
 
 def sack(b: Builder, frame: Matrix, x: float, y: float, z: float, radius: float, height: float, tint: str) -> None:
-    """Sack: flat base, round belly, gathered neck, tied flared top."""
-    profile = [(0.75 * radius, 0.0), (radius, 0.18 * height), (radius, 0.45 * height), (0.8 * radius, 0.68 * height), (0.32 * radius, 0.84 * height), (0.45 * radius, 0.95 * height), (0.12 * radius, height)]
-    lathe(b, profile, 7, "paint", tint, frame, base=(x, y, z))
-    b.cylinder((x, y, z + 0.8 * height), 0.3 * radius, 0.05 * height, 6, "paint", srgb("8B5A3C"), frame=frame)
+    """Sack: flat base, round belly with a slump, gathered neck, rope tie, two dog-ear tips."""
+    profile = [(0.75 * radius, 0.0), (0.95 * radius, 0.1 * height), (radius, 0.3 * height), (0.97 * radius, 0.5 * height), (0.78 * radius, 0.68 * height), (0.34 * radius, 0.82 * height), (0.42 * radius, 0.92 * height), (0.16 * radius, height)]
+    lathe(b, profile, 8, "paint", tint, frame, base=(x, y, z))
+    ring(b, (x, y, z + 0.8 * height), 0.3 * radius, 0.012, "wood", "8B5A3C", frame, sides=8, tube_sides=3)
+
+    for degrees in (35, 215):
+        tip = (x + 0.24 * radius * math.cos(math.radians(degrees)), y + 0.24 * radius * math.sin(math.radians(degrees)), z + height * 1.0)
+        b.beam((x, y, z + 0.9 * height), tip, 0.1 * radius, 0.02, "paint", srgb(tint), frame=frame, uv=None)
 
 
 def sack_pile(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
@@ -495,12 +667,25 @@ def sack_pile(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
         sack(b, frame, sack_x, sack_y, sack_z, radius, height, color)
 
 
-def barrel(b: Builder, frame: Matrix, x: float, y: float, radius: float, height: float, tint: str = WOOD_HONEY) -> None:
-    profile = [(radius * 0.82, 0.0), (radius * 0.96, height * 0.22), (radius, height * 0.5), (radius * 0.96, height * 0.78), (radius * 0.82, height)]
-    lathe(b, profile, 10, "wood", tint, frame, base=(x, y, 0.0), uv=WOOD_LIGHT_UV)
+def barrel_profile(radius: float, height: float) -> list:
+    return [(radius * 0.8, 0.0), (radius * 0.9, height * 0.1), (radius * 0.97, height * 0.28), (radius, height * 0.5), (radius * 0.97, height * 0.72), (radius * 0.9, height * 0.9), (radius * 0.8, height)]
 
-    for hoop_z, hoop_radius in ((height * 0.12, radius * 0.94), (height * 0.82, radius * 0.98)):
-        b.cylinder((x, y, hoop_z), hoop_radius, height * 0.05, 10, "metal", srgb(IRON), frame=frame)
+
+def barrel(b: Builder, frame: Matrix, x: float, y: float, radius: float, height: float, tint: str = WOOD_HONEY) -> None:
+    """Staved barrel: bellied body, recessed lid with chime, bung, four iron hoops hugging the belly."""
+    profile = barrel_profile(radius, height)
+    lathe(b, profile, 12, "wood", tint, frame, base=(x, y, 0.0), uv=WOOD_LIGHT_UV)
+    b.cylinder((x, y, height - 0.03), radius * 0.74, 0.035, 12, "wood", srgb(WOOD_DEEP), frame=frame, uv=WOOD_LIGHT_UV)
+    ring(b, (x, y, height - 0.012), radius * 0.77, 0.014, "wood", WOOD_TOP, frame, sides=12, tube_sides=4)
+    b.cylinder((x + radius * 0.3, y - radius * 0.1, height - 0.005), 0.03, 0.02, 6, "wood", srgb("5A3A26"), frame=frame)
+
+    for hoop_fraction in (0.14, 0.34, 0.66, 0.86):
+        hoop_z = height * hoop_fraction
+        below = max((point for point in profile if point[1] <= hoop_z), key=lambda point: point[1])
+        above = min((point for point in profile if point[1] >= hoop_z), key=lambda point: point[1])
+        span = above[1] - below[1]
+        hoop_radius = below[0] + (above[0] - below[0]) * ((hoop_z - below[1]) / span if span > 1e-6 else 0.0)
+        ring(b, (x, y, hoop_z), hoop_radius, 0.011, "metal", IRON, frame, sides=12, tube_sides=4)
 
 
 def barrel_group(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
@@ -520,21 +705,36 @@ def rug(b: Builder, frame: Matrix, variant: str = "red", **options) -> None:
     for low, high in (((-0.96, -0.7, 0.008), (0.96, -0.6, 0.012)), ((-0.96, 0.6, 0.008), (0.96, 0.7, 0.012)), ((-0.96, -0.6, 0.008), (-0.86, 0.6, 0.012)), ((0.86, -0.6, 0.008), (0.96, 0.6, 0.012))):
         paint_box(b, frame, low, high, border)
 
-    b.hull([(0.0, -0.4, 0.012), (0.7, 0.0, 0.012), (0.0, 0.4, 0.012), (-0.7, 0.0, 0.012), (0.0, -0.4, 0.018), (0.7, 0.0, 0.018), (0.0, 0.4, 0.018), (-0.7, 0.0, 0.018)], "paint", srgb(accent), frame=frame)
-    b.hull([(0.0, -0.22, 0.018), (0.4, 0.0, 0.018), (0.0, 0.22, 0.018), (-0.4, 0.0, 0.018), (0.0, -0.22, 0.02), (0.4, 0.0, 0.02), (0.0, 0.22, 0.02), (-0.4, 0.0, 0.02)], "paint", srgb(border), frame=frame)
+    for low, high in (((-0.84, -0.58, 0.008), (0.84, -0.55, 0.0125)), ((-0.84, 0.55, 0.008), (0.84, 0.58, 0.0125)), ((-0.84, -0.55, 0.008), (-0.81, 0.55, 0.0125)), ((0.81, -0.55, 0.008), (0.84, 0.55, 0.0125))):
+        paint_box(b, frame, low, high, accent)
 
-    for fringe_x in (-1.0, 0.96):
-        paint_box(b, frame, (fringe_x, -0.66, 0.0), (fringe_x + 0.04, 0.66, 0.006), "F2E6CF")
+    diamond = [(0.0, -0.4), (0.7, 0.0), (0.0, 0.4), (-0.7, 0.0)]
+    inner = [(0.0, -0.22), (0.4, 0.0), (0.0, 0.22), (-0.4, 0.0)]
+    centre = [(0.0, -0.1), (0.18, 0.0), (0.0, 0.1), (-0.18, 0.0)]
+
+    for outline, tone, low, high in ((diamond, accent, 0.012, 0.018), (inner, border, 0.018, 0.02), (centre, accent, 0.02, 0.022)):
+        b.hull([(u, v, low) for u, v in outline] + [(u, v, high) for u, v in outline], "paint", srgb(tone), frame=frame)
+
+    corner_diamond = [(-0.07, 0.0), (0.0, -0.07), (0.07, 0.0), (0.0, 0.07)]
+
+    for corner_u, corner_v in itertools.product((-0.72, 0.72), (-0.42, 0.42)):
+        b.hull([(corner_u + du, corner_v + dv, 0.012) for du, dv in corner_diamond] + [(corner_u + du, corner_v + dv, 0.016) for du, dv in corner_diamond], "paint", srgb(border), frame=frame)
+
+    for fringe_x, fringe_y in itertools.product((-0.99, 0.97), [-0.62 + 0.1 * index for index in range(13)]):
+        paint_box(b, frame, (fringe_x, fringe_y, 0.0), (fringe_x + 0.03, fringe_y + 0.05, 0.006), "F2E6CF")
 
 
 def chest_gold(b: Builder, frame: Matrix, **options) -> None:
     frame = frame @ Matrix.Translation((0.0, -0.035, 0.0))  # centres body plus the open lid on the prop box
     body_top = 0.38
-    wood_box(b, frame, (-0.4, -0.22, 0.0), (0.4, 0.22, 0.05), WOOD_DEEP)
-    wood_box(b, frame, (-0.4, -0.22, 0.05), (0.4, -0.18, body_top), WOOD_BODY)
-    wood_box(b, frame, (-0.4, 0.18, 0.05), (0.4, 0.22, body_top), WOOD_BODY)
-    wood_box(b, frame, (-0.4, -0.18, 0.05), (-0.36, 0.18, body_top), WOOD_BODY)
-    wood_box(b, frame, (0.36, -0.18, 0.05), (0.4, 0.18, body_top), WOOD_BODY)
+    bevel_box(b, frame, (-0.4, -0.22, 0.0), (0.4, 0.22, 0.05), WOOD_DEEP, bevel=0.008)
+    bevel_box(b, frame, (-0.4, -0.22, 0.05), (0.4, -0.18, body_top), WOOD_BODY, bevel=0.008)
+    bevel_box(b, frame, (-0.4, 0.18, 0.05), (0.4, 0.22, body_top), WOOD_BODY, bevel=0.008)
+    bevel_box(b, frame, (-0.4, -0.18, 0.05), (-0.36, 0.18, body_top), WOOD_BODY, bevel=0.008)
+    bevel_box(b, frame, (0.36, -0.18, 0.05), (0.4, 0.18, body_top), WOOD_BODY, bevel=0.008)
+
+    for corner_x, corner_y in itertools.product((-0.37, 0.37), (-0.19, 0.19)):
+        b.sphere((corner_x, corner_y, 0.04), 0.03, "metal", srgb(BRASS), frame=frame, segments=6)
 
     for strap_x in (-0.3, 0.3):
         metal_box(b, frame, (strap_x - 0.035, -0.225, 0.0), (strap_x + 0.035, -0.18, body_top + 0.01), IRON)
@@ -623,9 +823,12 @@ PLANT_BUILDERS = {"fern": plant_fern, "flower": plant_flower, "bush": plant_bush
 
 
 def plant_pot(b: Builder, frame: Matrix, variant: str = "fern", seed: int = 1, **options) -> None:
-    profile = [(0.12, 0.0), (0.2, 0.28), (0.225, 0.28), (0.225, 0.34), (0.19, 0.34), (0.19, 0.3)]
-    lathe(b, profile, 10, "paint", "C9683F", frame)
-    b.cylinder((0.0, 0.0, 0.29), 0.19, 0.012, 10, "paint", srgb("5A3A26"), frame=frame)
+    """Terracotta pot on a saucer with a banded rim, dark soil and the plant."""
+    profile = [(0.12, 0.0), (0.14, 0.02), (0.2, 0.26), (0.205, 0.285), (0.225, 0.29), (0.225, 0.34), (0.19, 0.34), (0.19, 0.3)]
+    lathe(b, profile, 12, "paint", "C9683F", frame)
+    lathe(b, [(0.001, 0.0), (0.17, 0.0), (0.18, 0.012), (0.12, 0.02), (0.001, 0.02)], 12, "paint", "A9532F", frame)
+    ring(b, (0.0, 0.0, 0.22), 0.205, 0.012, "paint", "A9532F", frame, sides=12, tube_sides=4)
+    b.cylinder((0.0, 0.0, 0.29), 0.19, 0.012, 12, "paint", srgb("5A3A26"), frame=frame)
     PLANT_BUILDERS[variant](b, frame, random.Random(seed))
 
 
@@ -669,27 +872,31 @@ def wall_lantern(b: Builder, frame: Matrix, **options) -> None:
 
 def wheel_chandelier(b: Builder, frame: Matrix, **options) -> None:
     wheel_z = -0.9
-    ring(b, (0.0, 0.0, wheel_z), 0.5, 0.03, "metal", IRON, frame, sides=12, tube_sides=4)
-    b.cylinder((0.0, 0.0, wheel_z - 0.05), 0.07, 0.1, 6, "metal", srgb(IRON), frame=frame)
+    ring(b, (0.0, 0.0, wheel_z), 0.5, 0.03, "metal", IRON, frame, sides=14, tube_sides=4)
+    ring(b, (0.0, 0.0, wheel_z + 0.02), 0.27, 0.016, "metal", IRON, frame, sides=12, tube_sides=4)
+    lathe(b, [(0.001, wheel_z - 0.06), (0.05, wheel_z - 0.05), (0.09, wheel_z - 0.01), (0.07, wheel_z + 0.03), (0.04, wheel_z + 0.1), (0.001, wheel_z + 0.12)], 8, "metal", BRASS, frame)
+
+    for link in range(10):
+        ring(b, (0.0, 0.0, -0.06 - link * 0.07), 0.032, 0.007, "metal", IRON, frame @ Matrix.Rotation(math.pi / 2.0 * (link % 2), 4, "Z"), sides=6, tube_sides=3, axis="X")
 
     for degrees in range(0, 360, 90):
         spoke_end = (0.5 * math.cos(math.radians(degrees)), 0.5 * math.sin(math.radians(degrees)), wheel_z)
         b.beam((0.0, 0.0, wheel_z), spoke_end, 0.03, 0.03, "metal", srgb(IRON), frame=frame)
-        b.beam((0.0, 0.0, -0.05), spoke_end, 0.012, 0.012, "metal", srgb(IRON), frame=frame)
-
-    metal_box(b, frame, (-0.012, -0.012, -0.55), (0.012, 0.012, 0.0), IRON)
+        b.beam((0.0, 0.0, -0.1), spoke_end, 0.012, 0.012, "metal", srgb(IRON), frame=frame)
 
     for degrees in range(0, 360, 45):
         candle_x, candle_y = 0.5 * math.cos(math.radians(degrees)), 0.5 * math.sin(math.radians(degrees))
-        b.cylinder((candle_x, candle_y, wheel_z + 0.03), 0.026, 0.13, 6, "paint", srgb("F2E6CF"), frame=frame)
-        b.cylinder((candle_x, candle_y, wheel_z + 0.16), 0.024, 0.08, 4, "glow_warm", WHITE, top_radius=0.003, frame=frame)
+        b.cylinder((candle_x, candle_y, wheel_z + 0.03), 0.04, 0.02, 8, "metal", srgb(IRON), top_radius=0.03, frame=frame)
+        b.cylinder((candle_x, candle_y, wheel_z + 0.05), 0.026, 0.13, 6, "paint", srgb("F2E6CF"), frame=frame)
+        b.cylinder((candle_x, candle_y, wheel_z + 0.18), 0.024, 0.08, 4, "glow_warm", WHITE, top_radius=0.003, frame=frame)
 
 
 def hanging_lantern(b: Builder, frame: Matrix, **options) -> None:
+    """Lantern on a chain of round links with a ceiling rosette and a decorative bracket under the cap."""
+    ring(b, (0.0, 0.0, -0.03), 0.04, 0.008, "metal", IRON, frame, sides=8, tube_sides=3)
+
     for link in range(5):
-        link_z = -0.14 * (link + 1)
-        half = (0.012, 0.004) if link % 2 else (0.004, 0.012)
-        metal_box(b, frame, (-half[0], -half[1], link_z), (half[0], half[1], link_z + 0.15), IRON)
+        ring(b, (0.0, 0.0, -0.1 - link * 0.12), 0.026, 0.006, "metal", IRON, frame @ Matrix.Rotation(math.pi / 2.0 * (link % 2), 4, "Z"), sides=6, tube_sides=3, axis="X")
 
     b.cylinder((0.0, 0.0, -0.72), 0.03, 0.04, 6, "metal", srgb(IRON), top_radius=0.012, frame=frame)
     lantern_body(b, frame, (0.0, 0.0, -0.95))
@@ -734,7 +941,10 @@ def notice_board(b: Builder, frame: Matrix, seed: int = 1, **options) -> None:
     paint_box(b, frame, (-half_width + 0.06, 0.0, bottom + 0.06), (half_width - 0.06, 0.04, top - 0.06), "D9A25F")
 
     for low, high in (((-half_width, -0.04, bottom), (half_width, 0.04, bottom + 0.06)), ((-half_width, -0.04, top - 0.06), (half_width, 0.04, top)), ((-half_width, -0.04, bottom + 0.06), (-half_width + 0.06, 0.04, top - 0.06)), ((half_width - 0.06, -0.04, bottom + 0.06), (half_width, 0.04, top - 0.06))):
-        wood_box(b, frame, low, high, WOOD_DEEP)
+        bevel_box(b, frame, low, high, WOOD_DEEP, bevel=0.012)
+
+    for corner_x, corner_z in itertools.product((-half_width + 0.03, half_width - 0.03), (bottom + 0.03, top - 0.03)):
+        b.cylinder((corner_x, -0.04, corner_z), 0.012, 0.008, 6, "metal", srgb(BRASS), frame=frame, axis="Y")
 
     for column, row in itertools.product(range(3), range(2)):
         paper_x = -0.38 + column * 0.38 + generator.uniform(-0.05, 0.05)
@@ -743,6 +953,7 @@ def notice_board(b: Builder, frame: Matrix, seed: int = 1, **options) -> None:
         paint_box(b, frame, (paper_x - width / 2.0, -0.012, paper_z - height / 2.0), (paper_x + width / 2.0, 0.0, paper_z + height / 2.0), generator.choice(PAPER_PALETTE))
         paint_box(b, frame, (paper_x - 0.012, -0.02, paper_z + height / 2.0 - 0.03), (paper_x + 0.012, -0.012, paper_z + height / 2.0 - 0.006), "C9483B")
         paint_box(b, frame, (paper_x - width * 0.35, -0.014, paper_z - height * 0.1), (paper_x + width * 0.35, -0.012, paper_z - height * 0.1 + 0.015), "5A4A5E")
+        paint_box(b, frame, (paper_x - width * 0.3, -0.014, paper_z - height * 0.3), (paper_x + width * 0.2, -0.012, paper_z - height * 0.3 + 0.012), "5A4A5E")
 
 
 def price_board(b: Builder, frame: Matrix, seed: int = 1, **options) -> None:
@@ -766,35 +977,48 @@ def price_board(b: Builder, frame: Matrix, seed: int = 1, **options) -> None:
 # ---------- seating ----------
 
 def bench_long(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
-    wood_box(b, frame, (-0.9, -0.2, 0.43), (0.9, 0.2, 0.5), tint or WOOD_TOP, light=True)
+    """Plank bench: bevelled seat with a moulded edge, scalloped trestle ends, pegged stretcher."""
+    bevel_box(b, frame, (-0.9, -0.2, 0.43), (0.9, 0.2, 0.5), tint or WOOD_TOP, bevel=0.012, light=True)
+    run_profile(b, frame, -0.88, 0.88, cornice_profile(-0.18, 0.4, 0.02, 0.04), WOOD_DEEP)
+    foot = [(-0.17, 0.0), (-0.1, 0.0), (-0.085, 0.1), (0.085, 0.1), (0.1, 0.0), (0.17, 0.0), (0.17, 0.43), (-0.17, 0.43)]
 
-    for leg_x in (-0.75, 0.69):
-        wood_box(b, frame, (leg_x, -0.17, 0.0), (leg_x + 0.06, 0.17, 0.43), WOOD_BODY)
+    for leg_x in (-0.78, 0.7):
+        b.side_prism(foot, leg_x, leg_x + 0.08, "wood", srgb(WOOD_BODY), frame=frame, uv=WOOD_LIGHT_UV)
 
-    wood_box(b, frame, (-0.75, -0.02, 0.15), (0.75, 0.02, 0.2), WOOD_DEEP)
+    bevel_box(b, frame, (-0.72, -0.03, 0.17), (0.72, 0.03, 0.24), WOOD_DEEP, bevel=0.01)
+
+    for peg_x in (-0.7, 0.7):
+        b.cylinder((peg_x, -0.035, 0.205), 0.014, 0.012, 6, "wood", srgb(WOOD_TOP), frame=frame, axis="Y")
 
 
 def stool_round(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
-    wood_cylinder(b, frame, (0.0, 0.0, 0.41), 0.19, 0.05, 10, tint or WOOD_TOP)
+    """Three-legged stool: dished round seat with a rolled edge, splayed legs and a ring stretcher."""
+    lathe(b, [(0.001, 0.4), (0.15, 0.4), (0.19, 0.41), (0.2, 0.435), (0.19, 0.46), (0.12, 0.455), (0.001, 0.45)], 12, "wood", tint or WOOD_TOP, frame, uv=WOOD_LIGHT_UV)
 
     for degrees in (90, 210, 330):
         foot = (0.155 * math.cos(math.radians(degrees)), 0.155 * math.sin(math.radians(degrees)), 0.0)
         top = (0.1 * math.cos(math.radians(degrees)), 0.1 * math.sin(math.radians(degrees)), 0.42)
         wood_beam(b, frame, foot, top, 0.04, 0.04, WOOD_BODY)
 
+    ring(b, (0.0, 0.0, 0.18), 0.131, 0.012, "wood", WOOD_DEEP, frame, sides=12, tube_sides=4)
+
 
 def chair(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
+    """Dining chair: tapered front legs, tall back posts, piped cushion, vase-shaped splat under a crest rail."""
     for leg_x, leg_y in itertools.product((-0.2, 0.16), (-0.2, 0.16)):
         height = 0.9 if leg_y > 0 else 0.42
-        wood_box(b, frame, (leg_x, leg_y, 0.0), (leg_x + 0.04, leg_y + 0.04, height), WOOD_BODY)
+        bevel_box(b, frame, (leg_x, leg_y, 0.0), (leg_x + 0.04, leg_y + 0.04, height), WOOD_BODY, bevel=0.006)
 
-    wood_box(b, frame, (-0.21, -0.21, 0.4), (0.21, 0.21, 0.45), WOOD_TOP, light=True)
-    paint_box(b, frame, (-0.19, -0.19, 0.45), (0.19, 0.17, 0.49), tint or "B03A48")
+    bevel_box(b, frame, (-0.21, -0.21, 0.4), (0.21, 0.21, 0.45), WOOD_TOP, bevel=0.01, light=True)
+    bevel_box(b, frame, (-0.19, -0.19, 0.45), (0.19, 0.17, 0.49), tint or "B03A48", bevel=0.015, material="paint")
 
-    for rail_z in (0.58, 0.72):
-        wood_box(b, frame, (-0.2, 0.17, rail_z - 0.03), (0.2, 0.21, rail_z + 0.03), WOOD_TOP, light=True)
+    for rail_y in (-0.18, 0.18):
+        bevel_box(b, frame, (-0.17, rail_y - 0.008, 0.2), (0.17, rail_y + 0.008, 0.24), WOOD_DEEP, bevel=0.004)
 
-    wood_box(b, frame, (-0.2, 0.17, 0.84), (0.2, 0.21, 0.9), WOOD_TOP, light=True)
+    splat = [(-0.045, 0.5), (0.045, 0.5), (0.065, 0.58), (0.04, 0.66), (0.075, 0.76), (-0.075, 0.76), (-0.04, 0.66), (-0.065, 0.58)]
+    b.prism(splat, 0.18, 0.2, "wood", srgb(WOOD_TOP), frame=frame, uv=WOOD_LIGHT_UV)
+    bevel_box(b, frame, (-0.2, 0.17, 0.78), (0.2, 0.21, 0.9), WOOD_TOP, bevel=0.012, light=True)
+    bevel_box(b, frame, (-0.2, 0.17, 0.5), (0.2, 0.21, 0.54), WOOD_DEEP, bevel=0.006)
 
 
 # ---------- banner, stairs, railing ----------
@@ -854,6 +1078,311 @@ def railing(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
             wood_box(b, frame, (baluster_x - 0.015, -0.015, 0.0), (baluster_x + 0.015, 0.015, 0.93), WOOD_DEEP)
 
 
+def wainscot_a(b: Builder, frame: Matrix, tint: str = None, **options) -> None:
+    """Panelled dado 2.0 m wide, 1.05 m tall, flush against the wall: skirting, stiles, raised panels, chair rail.
+    The backing reaches 0.068 behind the origin because on_wall leaves the usual 3 cm gap to the wall."""
+    body = tint or WOOD_BODY
+    wood_box(b, frame, (-1.0, 0.0, 0.0), (1.0, 0.068, 1.05), WOOD_DEEP)
+    run_profile(b, frame, -1.0, 1.0, base_profile(0.0, 0.0, 0.04, 0.14), WOOD_DEEP)
+    run_profile(b, frame, -1.0, 1.0, cornice_profile(0.0, 0.97, 0.04, 0.08), WOOD_TOP)
+    bevel_box(b, frame, (-1.0, -0.025, 0.86), (1.0, 0.0, 0.97), body, bevel=0.006, light=True)
+
+    for stile_x in (-0.95, 0.0, 0.95):
+        bevel_box(b, frame, (stile_x - 0.05, -0.025, 0.14), (stile_x + 0.05, 0.0, 0.88), body, bevel=0.006, light=True)
+
+    for panel_from, panel_to in ((-0.9, -0.06), (0.06, 0.9)):
+        raised_panel(b, frame, panel_from, panel_to, 0.2, 0.82, -0.002, body, border=0.045, depth=0.014)
+
+
+def doorway_lintel_a(b: Builder, frame: Matrix, width: float = 2.0, height: float = 4.8, **options) -> None:
+    """Hanging wall infill above a doorway cut in an inner partition (0.3 thick): stone over a segmental arch with a
+    moulded ring and keystone on both faces, plus a pilaster strip down each jamb. z = 0 is the ceiling."""
+    half = width / 2.0
+    drop, rise = 1.7, 0.5
+    radius = (half * half + rise * rise) / (2.0 * rise)
+    arc = [(u, -drop + math.sqrt(radius * radius - u * u) - (radius - rise)) for u in [-half + width * index / 12.0 for index in range(13)]]
+    ring = arc + [(u, z + 0.16) for u, z in reversed(arc)]
+    crown = arc[6][1]
+
+    b.prism([(-half, 0.0), (half, 0.0)] + list(reversed(arc)), -0.15, 0.15, "stone", srgb(STONE["media"]), frame=frame)
+
+    for face, direction in ((-0.15, -1.0), (0.15, 1.0)):
+        b.prism(ring, min(face, face + direction * 0.02), max(face, face + direction * 0.02), "trim", srgb(STONE["clara"]), frame=frame, uv=SMOOTH_UV)
+        b.prism([(-0.16, crown + 0.2), (0.16, crown + 0.2), (0.11, crown - 0.05), (-0.11, crown - 0.05)], min(face, face + direction * 0.04), max(face, face + direction * 0.04), "trim", srgb(STONE["clara"]), frame=frame, uv=SMOOTH_UV)
+
+    for jamb_x, face_y in itertools.product((-half - 0.14, half), (-0.18, 0.15)):
+        bevel_box(b, frame, (jamb_x, face_y, -height + 0.3), (jamb_x + 0.14, face_y + 0.03, -drop - 0.1), WOOD_DEEP, bevel=0.008)
+        bevel_box(b, frame, (jamb_x - 0.03, face_y - 0.02, -height), (jamb_x + 0.17, face_y + 0.05, -height + 0.3), WOOD_DEEP, bevel=0.012)
+        bevel_box(b, frame, (jamb_x - 0.03, face_y - 0.02, -drop - 0.1), (jamb_x + 0.17, face_y + 0.05, -drop + 0.05), WOOD_TOP, bevel=0.012)
+
+
+def timber_screen_a(b: Builder, frame: Matrix, variant: str = "lattice", tint: str = None, **options) -> None:
+    """Free-standing screen 2.0 m wide, 2.3 m tall, 0.14 deep: turned posts with ball finials, a panelled kick board,
+    and either a diagonal timber lattice (lattice), iron spear-topped bars (bars) or raised panels (panels)."""
+    body = tint or WOOD_BODY
+    top = 2.2
+
+    for post_x in (-0.95, 0.95):
+        turned_leg(b, frame, post_x, 0.0, top, 0.055, WOOD_DEEP, "column")
+        b.sphere((post_x, 0.0, top + 0.07), 0.055, "wood", srgb(WOOD_DEEP), frame=frame, segments=7)
+
+    bevel_box(b, frame, (-1.0, -0.06, 0.0), (1.0, 0.06, 0.12), WOOD_DEEP, bevel=0.01)
+    bevel_box(b, frame, (-0.9, -0.05, 0.12), (0.9, 0.05, 0.9 if variant != "panels" else top - 0.1), body, bevel=0.01)
+
+    for panel_from in (-0.88, -0.28, 0.32):
+        raised_panel(b, frame, panel_from, panel_from + 0.56, 0.2, 0.82 if variant != "panels" else 1.1, -0.05, WOOD_TOP, border=0.05)
+
+    if variant == "panels":
+        for panel_from in (-0.88, -0.28, 0.32):
+            raised_panel(b, frame, panel_from, panel_from + 0.56, 1.2, top - 0.2, -0.05, WOOD_TOP, border=0.05)
+
+        bevel_box(b, frame, (-1.0, -0.07, top - 0.1), (1.0, 0.07, top), WOOD_TOP, bevel=0.012, light=True)
+        return
+
+    bevel_box(b, frame, (-0.9, -0.05, 0.9), (0.9, 0.05, 0.98), WOOD_TOP, bevel=0.01, light=True)
+    bevel_box(b, frame, (-1.0, -0.07, top - 0.1), (1.0, 0.07, top), WOOD_TOP, bevel=0.012, light=True)
+
+    if variant == "bars":
+        for bar_index in range(17):
+            bar_x = -0.85 + bar_index * 0.10625
+            b.cylinder((bar_x, 0.0, 0.98), 0.012, top - 1.08, 6, "metal", srgb(IRON), frame=frame)
+            b.cylinder((bar_x, 0.0, top - 0.14), 0.02, 0.05, 6, "metal", srgb(IRON), top_radius=0.002, frame=frame)
+
+        for rail_z in (1.35, 1.8):
+            metal_box(b, frame, (-0.9, -0.014, rail_z), (0.9, 0.014, rail_z + 0.03), IRON)
+
+        return
+
+    cell_width, cell_height = 0.45, (top - 0.1 - 0.98) / 2.0
+
+    for column, row in itertools.product(range(4), range(2)):
+        x_from, z_from = -0.9 + column * cell_width, 0.98 + row * cell_height
+        wood_beam(b, frame, (x_from, 0.0, z_from), (x_from + cell_width, 0.0, z_from + cell_height), 0.035, 0.03, body, light=True)
+        wood_beam(b, frame, (x_from + cell_width, 0.0, z_from), (x_from, 0.0, z_from + cell_height), 0.035, 0.03, WOOD_TOP, light=True)
+
+    for rail_z in (0.98 + cell_height - 0.02,):
+        bevel_box(b, frame, (-0.9, -0.04, rail_z), (0.9, 0.04, rail_z + 0.04), WOOD_DEEP, bevel=0.008)
+
+
+def forge_floor_a(b: Builder, frame: Matrix, **options) -> None:
+    """Slate apron 4.2 x 3.2 round a hearth: flagstones in two shades with a scorched middle, just above the floor."""
+    columns, rows = 6, 4
+    slab_width, slab_depth = 4.2 / columns, 3.2 / rows
+
+    for column, row in itertools.product(range(columns), range(rows)):
+        shade = ("4A4458", "5A5368", "3F3A4E", "665E78")[(column * 3 + row * 5) % 4]
+        x_from, y_from = -2.1 + column * slab_width, -1.6 + row * slab_depth
+        bevel_box(b, frame, (x_from + 0.012, y_from + 0.012, 0.0), (x_from + slab_width - 0.012, y_from + slab_depth - 0.012, 0.022), shade, bevel=0.008, material="stone")
+
+    paint_box(b, frame, (-0.7, 0.2, 0.022), (0.7, 1.4, 0.024), "2B2236")
+
+
+def guild_hearth_a(b: Builder, frame: Matrix, **options) -> None:
+    """Great hearth of dressed stone, 2.6 wide, against a wall: raised hearthstone, arched firebox with logs and
+    andirons, a heavy timber mantel with candlesticks, and a tapering hood rising to the ceiling beams."""
+    stone, trim = "D9C8A8", "EFE3C8"
+    mouth_half, mouth_top = 0.75, 1.5
+
+    bevel_box(b, frame, (-1.3, -0.62, 0.0), (1.3, 0.62, 0.12), "B9AA92", bevel=0.015, material="stone")
+    bevel_box(b, frame, (-1.3, 0.2, 0.12), (-mouth_half - 0.05, 0.62, 2.0), stone, bevel=0.012, material="stone")
+    bevel_box(b, frame, (mouth_half + 0.05, 0.2, 0.12), (1.3, 0.62, 2.0), stone, bevel=0.012, material="stone")
+    bevel_box(b, frame, (-1.3, 0.2, 1.5), (1.3, 0.62, 2.0), stone, bevel=0.012, material="stone")
+    b.prism(arch_outline_a(mouth_half + 0.14, 0.12, 1.1), 0.18, 0.22, "trim", srgb(trim), frame=frame, uv=SMOOTH_UV)
+    b.prism(arch_outline_a(mouth_half, 0.12, 1.1), 0.2, 0.62, "paint", srgb("2B2236"), frame=frame)
+    b.box((-mouth_half, 0.5, 0.12), (mouth_half, 0.62, 0.7), "glow_ember", WHITE, frame=frame)
+
+    for log_y, log_z, log_x in ((0.0, 0.3, -0.2), (0.12, 0.34, 0.15), (0.3, 0.3, 0.0)):
+        wood_cylinder(b, frame, (log_x - 0.35, log_y + 0.1, log_z), 0.07, 0.7, 7, "6B3E2A", axis="X")
+
+    for andiron_x in (-0.5, 0.5):
+        metal_box(b, frame, (andiron_x - 0.02, -0.15, 0.12), (andiron_x + 0.02, 0.5, 0.17), IRON)
+        b.cylinder((andiron_x, -0.15, 0.17), 0.02, 0.38, 6, "metal", srgb(IRON), frame=frame)
+        b.sphere((andiron_x, -0.15, 0.58), 0.035, "metal", srgb(BRASS), frame=frame, segments=6)
+
+    bevel_box(b, frame, (-1.45, -0.1, 2.0), (1.45, 0.62, 2.14), WOOD_DEEP, bevel=0.02)
+    run_profile(b, frame, -1.45, 1.45, cornice_profile(-0.1, 1.94, 0.08, 0.1), WOOD_TOP)
+
+    for candle_x in (-1.0, -0.55, 0.55, 1.0):
+        lathe(b, [(0.001, 2.14), (0.05, 2.14), (0.03, 2.19), (0.015, 2.34), (0.03, 2.38), (0.001, 2.38)], 8, "metal", BRASS, frame, base=(candle_x, 0.3, 0.0))
+        b.cylinder((candle_x, 0.3, 2.38), 0.016, 0.12, 6, "paint", srgb("F2E6CF"), frame=frame)
+        b.cylinder((candle_x, 0.3, 2.5), 0.012, 0.05, 4, "glow_warm", WHITE, top_radius=0.002, frame=frame)
+
+    hood_low, hood_high = 2.14, 6.4
+    hull_points = [(x, y, hood_low) for x, y in itertools.product((-1.3, 1.3), (0.0, 0.62))] + [(x, y, hood_high) for x, y in itertools.product((-0.55, 0.55), (0.38, 0.62))]
+    solid_hull(b, hull_points, "stone", stone, frame)
+
+    for course_z in (3.3, 4.5, 5.7):
+        shrink = 1.0 - (course_z - hood_low) / (hood_high - hood_low) * 0.58
+        bevel_box(b, frame, (-1.3 * shrink - 0.04, 0.0 + (1.0 - shrink) * 0.38 - 0.04, course_z), (1.3 * shrink + 0.04, 0.62, course_z + 0.1), trim, bevel=0.012, material="stone")
+
+    bevel_box(b, frame, (-0.62, 0.34, hood_high), (0.62, 0.62, hood_high + 0.2), trim, bevel=0.014, material="stone")
+
+
+def arch_outline_a(half_width: float, bottom: float, spring: float, segments: int = 10) -> list:
+    """Round-headed (u, z) outline: jambs from bottom to spring, half circle above."""
+    arc = [(half_width * math.cos(math.pi * index / segments), spring + half_width * math.sin(math.pi * index / segments)) for index in range(segments + 1)]
+
+    return [(-half_width, bottom), (half_width, bottom)] + arc
+
+
+def dagger_a(b: Builder, frame: Matrix, x: float, y: float, z: float, degrees: float, blade_tint: str = "E4ECF5") -> None:
+    """Small dagger lying flat at (x, y, z), pointing along `degrees` around Z (0 = +Y): blade, guard, grip, pommel."""
+    turn = Matrix.Rotation(math.radians(degrees), 4, "Z") @ Matrix.Translation((0.0, 0.0, 0.0))
+    local = frame @ Matrix.Translation((x, y, z)) @ turn
+    solid_hull(b, [(0.0, 0.06, 0.004), (-0.014, 0.06, 0.004), (0.014, 0.06, 0.004), (0.0, 0.2, 0.004), (-0.014, 0.075, 0.0), (0.014, 0.075, 0.0), (0.0, 0.075, 0.008)], "metal", blade_tint, local)
+    b.box((-0.03, 0.05, 0.0), (0.03, 0.065, 0.016), "metal", srgb(BRASS), frame=local)
+    b.cylinder((0.0, -0.04, 0.008), 0.009, 0.09, 6, "paint", srgb("6B3E2A"), frame=local, axis="Y")
+    b.sphere((0.0, -0.045, 0.008), 0.014, "metal", srgb(BRASS), frame=local, segments=6)
+
+
+def display_daggers(b: Builder, frame: Matrix, generator: random.Random, top: float) -> None:
+    """Fan of daggers on a red velvet cloth."""
+    paint_box(b, frame, (-0.55, -0.3, top), (0.55, 0.3, top + 0.012), "A8323C")
+
+    for index in range(7):
+        dagger_a(b, frame, -0.45 + index * 0.15, -0.2 + abs(index - 3) * 0.015, top + 0.012, -12.0 + index * 4.0 + generator.uniform(-2.0, 2.0), "E4ECF5" if index % 2 else "CDD8E6")
+
+
+def display_ingots(b: Builder, frame: Matrix, generator: random.Random, top: float) -> None:
+    """Two pyramids of metal bars."""
+    for centre_x, tone in ((-0.3, "B4C4DC"), (0.3, "D9824A")):
+        for row, count in enumerate((3, 2, 1)):
+            for index in range(count):
+                low = top + row * 0.05
+                span = (index - (count - 1) / 2.0) * 0.17
+                points = [(centre_x + span + sx * 0.08, sy * 0.06, low) for sx, sy in itertools.product((-1, 1), repeat=2)] + [(centre_x + span + sx * 0.065, sy * 0.045, low + 0.05) for sx, sy in itertools.product((-1, 1), repeat=2)]
+                solid_hull(b, points, "metal", tone if (row + index) % 2 else GOLD, frame)
+
+
+TABLE_GOODS.update({"daggers": display_daggers, "ingots": display_ingots})
+
+
+def dais_a(b: Builder, frame: Matrix, width: float = 3.6, depth: float = 2.4, carpet: str = "A8323C", **options) -> None:
+    """Low display dais 0.3 m high: plank top on a stone plinth with a moulded edge, two wide steps on the customer
+    side (-Y), a carpet runner with a gold border and brass corner studs. Carries its own collider so props on it can
+    be put at z = 0.35 without a footprint clash; it is not 'solid' in the PROPS sense."""
+    half_w, half_d, top = width / 2.0, depth / 2.0, 0.3
+    step_depth = 0.34
+    bevel_box(b, frame, (-half_w, -half_d + step_depth * 2, 0.0), (half_w, half_d, 0.12), WOOD_DEEP, bevel=0.02)
+    bevel_box(b, frame, (-half_w + 0.04, -half_d + step_depth * 2 + 0.04, 0.12), (half_w - 0.04, half_d - 0.04, top - 0.02), WOOD_BODY, bevel=0.01, light=True)
+    bevel_box(b, frame, (-half_w, -half_d + step_depth * 2 - 0.02, top - 0.04), (half_w, half_d, top), WOOD_TOP, bevel=0.012, light=True)
+    run_profile(b, frame, -half_w, half_w, cornice_profile(-half_d + step_depth * 2 - 0.02, 0.0, 0.02, 0.03), WOOD_DEEP)
+
+    for step_index in range(2):
+        low = -half_d + step_depth * step_index
+        step_top = 0.1 + 0.1 * step_index
+        bevel_box(b, frame, (-half_w + 0.3 * (1 - step_index), low, 0.0), (half_w - 0.3 * (1 - step_index), low + step_depth, step_top), WOOD_BODY, bevel=0.015)
+        bevel_box(b, frame, (-half_w + 0.3 * (1 - step_index) + 0.02, low - 0.01, step_top - 0.03), (half_w - 0.3 * (1 - step_index) - 0.02, low + step_depth, step_top), WOOD_TOP, bevel=0.008, light=True)
+
+    runner_half = min(0.55, half_w * 0.3)
+    paint_box(b, frame, (-runner_half, -half_d + 0.02, 0.1 + 0.001), (runner_half, -half_d + step_depth, 0.1 + 0.006), carpet)
+    paint_box(b, frame, (-runner_half, -half_d + step_depth + 0.02, 0.2 + 0.001), (runner_half, -half_d + step_depth * 2, 0.2 + 0.006), carpet)
+    paint_box(b, frame, (-half_w + 0.35, -half_d + step_depth * 2 + 0.2, top), (half_w - 0.35, half_d - 0.2, top + 0.008), carpet)
+    paint_box(b, frame, (-half_w + 0.35, -half_d + step_depth * 2 + 0.2, top + 0.008), (half_w - 0.35, -half_d + step_depth * 2 + 0.26, top + 0.011), GOLD)
+    paint_box(b, frame, (-half_w + 0.35, half_d - 0.26, top + 0.008), (half_w - 0.35, half_d - 0.2, top + 0.011), GOLD)
+
+    for stud_x, stud_y in itertools.product((-half_w + 0.12, half_w - 0.12), (-half_d + step_depth * 2 + 0.12, half_d - 0.12)):
+        b.sphere((stud_x, stud_y, top), 0.028, "metal", srgb(BRASS), frame=frame, segments=6)
+
+    b.collider((-half_w, -half_d, 0.0), (half_w, half_d, top), frame)
+
+
+DRESS_STYLES_A = {
+    "dress": ("E56C94", "FFE3A0"),
+    "gown": ("5B7BD6", "F4EFE6"),
+    "cloak": ("3C8F6B", "E8B84F"),
+}
+
+
+def dress_form_a(b: Builder, frame: Matrix, variant: str = "dress", tint: str = None, **options) -> None:
+    """Tailor's mannequin on a turned post and tripod: padded torso under a draped dress with ruffled hem and a
+    ribbon belt (dress), a long gown with a train (gown) or a hooded cloak over a linen form (cloak)."""
+    colour, accent = DRESS_STYLES_A[variant]
+    colour = tint or colour
+
+    for angle in (90.0, 210.0, 330.0):
+        foot = (0.27 * math.cos(math.radians(angle)), 0.27 * math.sin(math.radians(angle)), 0.0)
+        wood_beam(b, frame, (0.0, 0.0, 0.3), foot, 0.045, 0.04, WOOD_DEEP)
+        b.sphere(foot, 0.028, "wood", srgb(WOOD_BODY), frame=frame, segments=6)
+
+    turned_leg(b, frame, 0.0, 0.0, 1.0, 0.032, WOOD_BODY, "baluster")
+    ring(b, (0.0, 0.0, 0.3), 0.05, 0.012, "metal", BRASS, frame, sides=8, tube_sides=4)
+
+    if variant == "cloak":
+        lathe(b, [(0.2, 0.9), (0.16, 1.05), (0.19, 1.2), (0.17, 1.34), (0.09, 1.44), (0.001, 1.47)], 12, "paint", "EADFC8", place_scale(frame, 0.78))
+        b.hull([(-0.2, -0.03, 1.46), (0.2, -0.03, 1.46), (-0.17, 0.12, 1.5), (0.17, 0.12, 1.5), (-0.32, 0.0, 0.5), (0.32, 0.0, 0.5), (-0.37, 0.28, 0.45), (0.37, 0.28, 0.45), (0.0, 0.24, 1.66)], "paint", srgb(colour), frame=frame)
+        b.hull([(-0.12, 0.1, 1.5), (0.12, 0.1, 1.5), (-0.06, 0.2, 1.72), (0.06, 0.2, 1.72), (0.0, 0.0, 1.44)], "paint", srgb(colour), frame=frame)
+        b.sphere((0.0, -0.17, 1.4), 0.04, "metal", srgb(accent), frame=frame, segments=6)
+        return
+
+    hem = 0.16 if variant == "gown" else 0.46
+    hem_radius = 0.4 if variant == "gown" else 0.33
+    lathe(b, [(hem_radius, hem), (0.3, 0.7), (0.15, 0.96), (0.115, 1.0), (0.17, 1.2), (0.185, 1.3), (0.14, 1.4), (0.07, 1.47), (0.001, 1.49)], 12, "paint", colour, place_scale(frame, 0.82))
+    ring(b, (0.0, 0.0, hem + 0.02), hem_radius, 0.02, "paint", accent, place_scale(frame, 0.82), sides=12, tube_sides=4)
+    ring(b, (0.0, 0.0, hem + 0.22), hem_radius * 0.88, 0.015, "paint", accent, place_scale(frame, 0.82), sides=12, tube_sides=4)
+    ring(b, (0.0, 0.0, 1.0), 0.125, 0.015, "paint", accent, place_scale(frame, 0.82), sides=12, tube_sides=4)
+    b.sphere((0.0, -0.11, 1.0), 0.032, "paint", srgb(accent), frame=frame, segments=6)
+    b.cylinder((0.0, 0.0, 1.46), 0.03, 0.1, 8, "wood", srgb(WOOD_TOP), frame=frame)
+    b.sphere((0.0, 0.0, 1.6), 0.07, "wood", srgb(WOOD_TOP), frame=frame, segments=8)
+    ring(b, (0.0, 0.0, 1.4), 0.1, 0.012, "paint", accent, place_scale(frame, 0.82), sides=10, tube_sides=4)
+
+    if variant == "gown":
+        b.hull([(-0.22, 0.1, 0.3), (0.22, 0.1, 0.3), (-0.4, 0.5, 0.03), (0.4, 0.5, 0.03), (-0.2, 0.3, 1.0), (0.2, 0.3, 1.0)], "paint", srgb(colour), frame=frame)
+
+
+def place_scale(frame: Matrix, depth_scale: float) -> Matrix:
+    """Frame squashed along local Y (round forms read better a little flat from the side)."""
+    return frame @ Matrix.Diagonal((1.0, depth_scale, 1.0, 1.0))
+
+
+def hanging_fabrics_a(b: Builder, frame: Matrix, **options) -> None:
+    """Dyed cloth hung from a pole on two chains, z = 0 at the ceiling: five bolts draped in scalloped swags with
+    gilded hems, wooden finials on the pole. Looks good in any shop that sells or sews."""
+    pole_z = -0.85
+    colours = ("C9483B", "3561B0", "E8B84F", "5FA862", "9A5AB8")
+
+    for chain_x in (-0.95, 0.95):
+        b.cylinder((chain_x, 0.0, pole_z), 0.007, -pole_z, 6, "metal", srgb(IRON), frame=frame)
+        ring(b, (chain_x, 0.0, -0.04), 0.03, 0.007, "metal", IRON, frame, sides=8, tube_sides=3, axis="Y")
+
+    b.cylinder((-1.08, 0.0, pole_z), 0.028, 2.16, 8, "wood", srgb(WOOD_DEEP), frame=frame, axis="X")
+
+    for finial_x in (-1.1, 1.1):
+        b.sphere((finial_x, 0.0, pole_z), 0.045, "wood", srgb(WOOD_TOP), frame=frame, segments=7)
+
+    for index, colour in enumerate(colours):
+        left, right = -0.95 + index * 0.38, -0.95 + (index + 1) * 0.38 - 0.02
+        drop_left, drop_right = 0.5 + 0.12 * (index % 2), 0.5 + 0.12 * ((index + 1) % 2)
+        middle = (left + right) / 2.0
+        swag = [(left, pole_z + 0.03), (right, pole_z + 0.03), (right, pole_z - drop_right), (middle + 0.06, pole_z - drop_right - 0.06), (middle - 0.06, pole_z - drop_left - 0.1), (left, pole_z - drop_left)]
+        b.prism(swag, -0.025, 0.025, "paint", srgb(colour), frame=frame)
+        b.prism([(left + 0.03, pole_z - 0.05), (middle, pole_z - 0.05), (middle - 0.02, pole_z - drop_left * 0.8), (left + 0.03, pole_z - drop_left * 0.85)], -0.04, -0.025, "paint", srgb(colours[(index + 2) % 5]), frame=frame)
+        b.prism([(left, pole_z - drop_left), (right, pole_z - drop_right), (right, pole_z - drop_right - 0.03), (left, pole_z - drop_left - 0.03)], -0.027, 0.027, "metal", srgb(GOLD), frame=frame)
+
+
+def bunting_a(b: Builder, frame: Matrix, **options) -> None:
+    """Festive string of triangular pennants sagging between two ceiling hooks, z = 0 at the ceiling: 3.6 m of cord,
+    ten two-tone flags and a tassel at each end."""
+    span = 3.6
+    colours = ("C9483B", "F4EFE6", "3561B0", "E8B84F", "5FA862")
+    cord = [(-span / 2.0 + span * step / 20.0, -0.12 - 0.3 * math.sin(math.pi * step / 20.0)) for step in range(21)]
+
+    for start, end in zip(cord, cord[1:]):
+        b.beam((start[0], 0.0, start[1]), (end[0], 0.0, end[1]), 0.012, 0.012, "paint", srgb("8B6B4A"), frame=frame)
+
+    for flag in range(10):
+        centre_x, centre_z = cord[1 + flag * 2]
+        b.prism([(centre_x - 0.13, centre_z), (centre_x + 0.13, centre_z), (centre_x, centre_z - 0.3)], -0.008, 0.008, "paint", srgb(colours[flag % 5]), frame=frame)
+        b.prism([(centre_x - 0.13, centre_z), (centre_x + 0.13, centre_z), (centre_x + 0.07, centre_z - 0.1), (centre_x - 0.07, centre_z - 0.1)], -0.01, 0.01, "paint", srgb(colours[(flag + 2) % 5]), frame=frame)
+
+    for end_x in (-span / 2.0, span / 2.0):
+        b.sphere((end_x, 0.0, -0.14), 0.03, "metal", srgb(GOLD), frame=frame, segments=6)
+        b.cylinder((end_x, 0.0, -0.26), 0.025, 0.12, 6, "paint", srgb("C9483B"), frame=frame, top_radius=0.005)
+
+
+# @@NEW
+
+
 PROPS.update(
     {
         "display_table": {"build": display_table, "size": (1.4, 0.9, 1.2), "solid": True, "clearance": 0.6, "variants": list(TABLE_GOODS)},
@@ -878,5 +1407,14 @@ PROPS.update(
         "ceiling_beam_hooks": {"build": ceiling_beam_hooks, "size": (2.0, 0.3, 1.1), "solid": False, "hang": True, "variants": list(HOOK_GOODS)},
         "stairs_straight": {"build": stairs_straight, "size": (1.4, 4.8, 4.2), "solid": True, "clearance": 0.8, "beside_window": True},
         "railing": {"build": railing, "size": (2.0, 0.1, 1.0), "solid": True},
+        "dress_form_a": {"build": dress_form_a, "size": (0.9, 1.0, 1.78), "solid": True, "variants": list(DRESS_STYLES_A)},
+        "hanging_fabrics_a": {"build": hanging_fabrics_a, "size": (2.3, 0.12, 1.6), "solid": False, "hang": True},
+        "bunting_a": {"build": bunting_a, "size": (3.7, 0.1, 0.8), "solid": False, "hang": True},
+        "dais_a": {"build": dais_a, "size": (3.6, 2.4, 0.3), "solid": False},
+        "wainscot_a": {"build": wainscot_a, "size": (2.0, 0.08, 1.05), "solid": False},
+        "doorway_lintel_a": {"build": doorway_lintel_a, "size": (2.6, 0.4, 4.9), "solid": False, "hang": True},
+        "timber_screen_a": {"build": timber_screen_a, "size": (2.0, 0.14, 2.3), "solid": True, "variants": ["lattice", "bars", "panels"]},
+        "forge_floor_a": {"build": forge_floor_a, "size": (4.2, 3.2, 0.03), "solid": False},
+        "guild_hearth_a": {"build": guild_hearth_a, "size": (2.9, 1.24, 6.6), "solid": True, "clearance": 1.5, "beside_window": True, "light": ((0.0, 0.3, 0.6), "FF8A3A", 2.6, 8.0)},
     }
 )

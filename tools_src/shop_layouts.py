@@ -25,11 +25,29 @@ def furnish_generic(f) -> None:
 
 
 def furnish_guild(f) -> None:
-    """Adventurers' guild (24 m): nave from the portal to the three-wicket counter under the world map, quest board
-    on the right wall, fireplace lounge on the left, party tables by the columns, a dragon skull overhead and the
-    guild bank (tellers, deposit boxes, vault) in the back right corner."""
+    """Adventurers' guild (24 m, 7 m tall): the nave from the portal to the three-wicket counter under the world map,
+    the registry crystal on a carpeted dais, a panelled hall with banners and trophies, a hearth lounge on the left
+    cut off by timber screens, the quest board wall on the right, and the guild bank in the back right corner behind
+    a stone partition with an arched doorway (teller counter, deposit boxes, vault door, coin table)."""
+    f.put("guild_hearth_a", -10.9, 9.65, 90.0)
+    f.put("wall_lantern", -6.2, 4.0)
+    f.on_wall("right", "wall_lantern", 8.6)
+    f.put("doorway_lintel_a", 6.2, 13.2, 90.0, width=2.0, height=4.6)
+
+    for along in [1.4 + 2.0 * index for index in range(9)]:
+        f.on_wall("left", "wainscot_a", along)
+        f.on_wall("right", "wainscot_a", along)
+
+    f.wall("back", ["wainscot_a"] * 12, start=f.left, gap=0.0)
+
+    for along in (12.5, 15.3, 17.3):
+        f.put("wainscot_a", 6.03, along, -90.0)
+
+    # nave
     f.put("rug", 0.0, 6.2, variant="red")
-    f.put("registry_crystal", 0.0, 11.2)
+    f.put("rug", 0.0, 8.2, variant="red")
+    f.put("dais_a", 0.0, 11.2, width=3.6, depth=2.4)
+    f.put("registry_crystal", 0.0, 11.4, 0.0, z=0.35)
     f.put("dragon_skull_hanging", 0.0, 8.0)
     f.put("guild_counter", 0.0, 15.7)
     f.on_wall("back", "world_map_wall", 0.0)
@@ -38,92 +56,172 @@ def furnish_guild(f) -> None:
     f.on_wall("back", "monster_trophy", -5.6, variant="horns")
     f.on_wall("back", "trophy_case", -8.0)
     f.on_wall("back", "rank_board", 5.4)
+    f.on_wall("back", "plant_pot", -10.6, variant="bush")
+    f.on_wall("front", "armor_stand_a", -3.4, variant="knight_gold")
+    f.on_wall("front", "armor_stand_a", 3.4, variant="plate")
+    f.on_wall("front", "plant_pot", -10.8, variant="bush")
+    f.on_wall("front", "plant_pot", 10.8, variant="bush")
+    f.put("group_table", -2.6, 5.2)
+    f.put("group_table", 3.0, 5.2)
 
+    # quest wall on the right
     f.on_wall("right", "notice_board", 3.6)
     f.on_wall("right", "quest_board", 6.6)
     f.on_wall("right", "wanted_posters", 9.6)
-    f.put("bench_long", 5.4, 7.6, 90.0)
-    f.put("teller_counter", 7.6, 14.6, -90.0)
+    f.put("bench_long", 9.2, 8.6, 90.0)
+    f.put("bench_long", 9.2, 4.4, 90.0)
+    f.put("group_table", 7.2, 8.4, 90.0)
+
+    # bank
+    f.put("teller_counter", 8.9, 15.3, -90.0)
     f.on_wall("back", "vault_door", 9.6)
     f.on_wall("right", "deposit_boxes", 14.6)
-    f.put("money_sacks", 10.6, 12.2)
-    f.put("coin_table", 10.0, 16.6, -90.0)
-    f.put("chest_gold", 10.8, 16.2)
+    f.put("money_sacks", 10.7, 13.2)
+    f.put("coin_table", 10.4, 17.4, 90.0)
+    f.put("chest_gold", 11.1, 16.2, 90.0)
+    f.put("rug", 7.4, 15.0, 90.0, variant="gold")
 
-    f.on_wall("left", "fireplace", 9.7)
+    # hearth lounge on the left behind timber screens
+    f.put("timber_screen_a", -6.2, 6.6, 90.0, variant="lattice")
+    f.put("timber_screen_a", -6.2, 12.8, 90.0, variant="lattice")
+    f.put("armchair", -8.2, 7.4, -60.0)
+    f.put("armchair", -8.2, 11.8, -120.0)
+    f.put("rug", -8.4, 9.65, 90.0, variant="gold")
     f.on_wall("left", "monster_trophy", 5.6, variant="claw")
     f.on_wall("left", "monster_trophy", 13.6, variant="skull")
-    f.put("armchair", -8.4, 7.8, -60.0)
-    f.put("armchair", -8.4, 11.6, -120.0)
-    f.put("rug", -8.8, 9.7, 90.0, variant="gold")
     f.on_wall("left", "weapon_rental_rack", 16.6)
-    f.put("group_table", -7.4, 3.9)
-    f.put("group_table", 7.4, 3.6)
-    f.put("group_table", -6.4, 15.2)
-    f.on_wall("front", "armor_stand", -3.4, variant="knight_gold")
-    f.on_wall("front", "armor_stand", 3.4, variant="plate")
-    f.on_wall("front", "plant_pot", -10.8, variant="bush")
-    f.on_wall("front", "plant_pot", 10.8, variant="bush")
+    f.put("group_table", -7.4, 15.4)
+    f.put("crate_stack", -10.3, 3.6)
+    f.put("barrel_group", -9.4, 17.8)
     f.grid("wheel_chandelier", (-7.2, 7.2), (4.5, 13.5), 2, 2)
-    f.scatter([("group_table", 0.0, {}), ("armor_stand", 0.0, {"variant": "mail"}), ("barrel_group", 0.0, {}), ("group_table", 90.0, {}), ("crate_stack", 0.0, {}), ("plant_pot", 0.0, {"variant": "fern"})], (-9.6, -2.6), (3.4, 13.4), 3, 4)
-    f.scatter([("group_table", 0.0, {}), ("armor_stand", 0.0, {"variant": "mail"}), ("barrel_group", 0.0, {}), ("group_table", 90.0, {}), ("crate_stack", 0.0, {}), ("plant_pot", 0.0, {"variant": "fern"})], (2.6, 9.6), (3.4, 13.4), 3, 4)
-    f.scatter([("group_table", 0.0, {}), ("bench_long", 90.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("crate_open", 0.0, {"variant": "apples"}), ("barrel_group", 0.0, {})], (-10.4, -2.4), (3.0, 13.8), 4, 6, aisle=0.6)
-    f.scatter([("group_table", 0.0, {}), ("bench_long", 90.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("crate_open", 0.0, {"variant": "apples"}), ("barrel_group", 0.0, {})], (2.4, 10.4), (3.0, 13.8), 4, 6, aisle=0.6)
 
 
 def furnish_smith(f) -> None:
-    """Blacksmith (24 m): sales hall on the left (weapons on every wall, counter at the back), forge yard on the
-    right, open to the street: forge and bellows at the back wall, anvil, quench barrel and grindstone around it."""
+    """Blacksmith (24 m): the sales hall on the left (panelled walls, a showpiece plinth on a rug by the lane, weapons
+    on every wall, a barred stock alcove behind the counter) and the forge yard on the right behind a stone partition
+    with an arched doorway: hearth on slate flags at the back wall, anvils, quench barrel, grindstone, a workbench with
+    a vise and tool racks hanging from the beams; the yard is open to the street."""
+    f.on_wall("back", "forge", 8.2)
+    f.put("forge_floor_a", 7.4, 16.9)
+    f.put("hanging_lantern", -5.0, 5.0)
+    f.put("hanging_lantern", -5.0, 11.8)
+    f.put("doorway_lintel_a", 3.1, 13.3, 90.0, width=2.0, height=f.ceiling)
+
+    for along in [1.4 + 2.0 * index for index in range(9)]:
+        f.on_wall("left", "wainscot_a", along)
+
+    f.wall("back", ["wainscot_a"] * 7, start=f.left, gap=0.0)
+
+    for along in (9.5, 15.3, 17.3):
+        f.put("wainscot_a", 2.88, along, -90.0)
+
+    # sales hall: counter, lane, showpiece
     f.put("counter_till", -5.0, 14.0)
     f.put("rug", -5.0, 11.4, variant="gold")
-    f.wall("back", ["shield_wall", "axe_mace_rack", ("sword_wall", {"seed": 2}), "spear_rack", "helmet_shelf", "giant_sword"], start=-11.3, gap=0.4)
-    window_wall(f, "left", [[], [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "mail"})], [("wall_shelf", {"variant": "helmets"})], ["spear_rack", ("armor_stand", {"variant": "leather"})]], ["boots_rack", "crate_stack", "gauntlet_basket", None], gap=0.5)
-    f.put("floor_shelf", -8.4, 9.6, 90.0, variant="tools")
-    f.put("floor_shelf", -1.6, 9.6, 90.0, variant="helmets")
-    f.put("ingot_crates", 0.8, 4.2)
-    f.put("blade_shelf", 2.6, 11.4, -90.0)
-    f.put("spear_rack", 2.7, 14.4, -90.0)
-    f.put("plans_table", 1.6, 17.2, -90.0)
+    f.put("rug", -2.4, 5.0, variant="red")
+    f.put("masterwork_plinth_a", -2.4, 5.0)
+    f.wall("back", ["shield_wall", ("sword_wall", {"seed": 2}), "helmet_shelf", "giant_sword"], start=-7.0, gap=0.4)
+    window_wall(f, "left", [[("armor_stand_a", {"variant": "knight_gold"})], [("armor_stand_a", {"variant": "plate"}), ("armor_stand_a", {"variant": "mail"})], [("wall_shelf", {"variant": "helmets"})], ["spear_rack", ("armor_stand_a", {"variant": "leather"})]], ["boots_rack", "crate_stack", "gauntlet_basket", None], gap=0.5)
+    f.put("floor_shelf", -8.4, 10.8, 90.0, variant="tools")
+    f.put("floor_shelf", -1.6, 10.8, 90.0, variant="helmets")
+    f.put("armor_stand_a", -8.9, 3.6, 20.0, variant="plate")
+    f.put("axe_mace_rack", -8.9, 5.6, 90.0)
+    f.put("ingot_crates", 0.8, 3.0)
+    f.put("weapon_barrel", 2.2, 5.8)
+    f.put("blade_shelf", 2.6, 10.6, -90.0)
+    f.put("spear_rack", 2.7, 16.6, -90.0)
+    f.put("plans_table", 1.3, 18.0, -90.0)
     f.grid("wheel_chandelier", (-8.4, -1.6), (5.0, 12.0), 2, 2)
-    f.scatter([("armor_stand", 0.0, {"variant": "plate"}), ("floor_shelf", 90.0, {"variant": "tools"}), ("crate_open", 0.0, {"variant": "ingots"}), ("axe_mace_rack", 0.0, {}), ("floor_shelf", 90.0, {"variant": "helmets"}), ("barrel_group", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"})], (-9.8, 1.2), (4.2, 11.4), 5, 3)
 
-    f.on_wall("back", "forge", 8.2)
+    # stock alcove behind bars in the back left corner
+    f.put("timber_screen_a", -10.5, 17.0, 0.0, variant="bars")
+    f.put("timber_screen_a", -8.5, 17.0, 0.0, variant="bars")
+    f.wall("back", [("wall_shelf", {"variant": "tools"}), ("wall_shelf", {"variant": "boxes"})], start=-11.4, gap=0.1)
+    f.put("crate_stack", -10.3, 17.95, 0.0)
+    f.put("barrel_group", -8.5, 17.95, 0.0)
+    f.put("display_table", -9.8, 7.9, variant="daggers")
+    f.put("display_table", -2.0, 1.8, 0.0, variant="ingots")
+
+    # forge yard
     f.put("bellows", 6.0, 17.5, -20.0)
-    f.put("anvil_block", 6.8, 14.0, 30.0)
-    f.put("quench_barrel", 9.4, 13.4)
-    f.put("grindstone", 5.2, 10.8, 90.0)
-    f.on_wall("right", "coal_pile", 16.8)
+    f.put("anvil_block", 7.0, 15.2, 30.0)
+    f.put("quench_barrel", 9.6, 15.2)
+    f.put("grindstone", 5.2, 11.6, 90.0)
+    f.on_wall("right", "workbench_vise_a", 11.9)
+    f.on_wall("right", "coal_pile", 17.0)
     f.on_wall("right", "tool_wall_rack", 13.9)
     f.on_wall("right", "ingot_crates", 8.4)
-    f.put("plans_table", 3.9, 15.6, 90.0)
-    f.put("blade_shelf", 3.6, 12.2, 90.0)
+    f.put("hanging_tool_rack_a", 7.4, 12.0)
+    f.put("hanging_tool_rack_a", 8.8, 6.0)
     f.put("barrel_group", 10.4, 4.6)
     f.put("crate_stack", 10.6, 6.6)
-    f.put("ceiling_beam_hooks", 7.4, 11.8)
-    f.put("hanging_lantern", 7.4, 6.5)
-    f.scatter([("crate_open", 0.0, {"variant": "ingots"}), ("sack_pile", 0.0, {}), ("barrel_group", 0.0, {})], (5.0, 9.8), (3.0, 9.0), 3, 3)
+    f.put("anvil_block", 7.8, 3.4, -20.0)
+    f.put("weapon_barrel", 5.4, 3.2)
+    f.put("ceiling_beam_hooks", 5.0, 8.0, 90.0)
+    f.put("forge_floor_a", 8.0, 7.2)
+    f.put("coal_pile", 5.6, 7.4, 90.0)
+    f.put("plate_pile", 4.8, 4.6)
+    f.put("grindstone", 9.8, 9.6, -90.0)
 
 
 def furnish_armor(f) -> None:
-    """Armourer: showroom of mannequins along both walls and on the floor, a fitting platform with a mirror in the
-    middle, shields and helmets behind the counter, a small plate workshop in the back corner."""
+    """Armourer (17 m): the showroom behind the shop windows with mannequins on both sides of a red lane, a fitting
+    booth of timber screens with a mirror, the counter under a wall of shields, a raised dais with the masterwork
+    suit in the back left corner and, behind an arched stone partition on the right, the plate workshop with its
+    own forge, anvil and tool racks. Panelled walls, shields and racks hang from the beams."""
+    f.on_wall("right", "forge", 16.6)
+    f.put("forge_floor_a", 6.3, 16.6, 90.0)
+    f.put("hanging_lantern", 0.0, 6.4)
+    f.put("hanging_lantern", -5.8, 15.6)
+    f.put("doorway_lintel_a", 3.5, 15.3, 90.0, width=2.0, height=f.ceiling)
+
+    for along in [1.4 + 2.0 * index for index in range(9)]:
+        f.on_wall("left", "wainscot_a", along)
+
+    f.wall("back", ["wainscot_a"] * 8, start=f.left, gap=0.0)
+
+    for along in range(0, 12, 2):
+        f.on_wall("right", "wainscot_a", 1.4 + along)
+
+    for along in (13.3, 17.3):
+        f.put("wainscot_a", 3.28, along, -90.0)
+
+    # showroom
     f.put("counter_straight", 0.0, 14.7)
     f.put("rug", 0.0, 5.6, variant="red")
-    f.put("fitting_platform", 0.0, 9.6)
-    f.put("standing_mirror", 1.7, 11.2, 30.0)
+    f.put("rug", 0.0, 9.2, variant="red")
     f.on_wall("back", "shield_wall", 0.0)
     f.on_wall("back", "helmet_shelf", -3.6)
-    f.on_wall("back", "helmet_shelf", 3.6)
-    f.on_wall("back", "guild_banner", 6.6, tint="7A2F3A")
-    window_wall(f, "left", [[], [("armor_stand", {"variant": "plate"}), ("armor_stand", {"variant": "knight_gold"})], [("armor_stand", {"variant": "mail"}), ("armor_stand", {"variant": "leather"})], ["chainmail_stand", ("armor_stand", {"variant": "plate"})]], ["boots_rack", "gauntlet_basket", "boots_rack", None], gap=0.5)
-    f.wall("right", [("wall_shelf", {"variant": "helmets"}), ("armor_stand", {"variant": "leather"}), "shield_wall", "gauntlet_basket", ("armor_stand", {"variant": "plate"}), "plate_pile", "crate_stack"], start=3.4, gap=0.6)
-    f.grid("armor_stand", (-5.6, 5.6), (5.6, 11.6), 2, 2, variant="knight_gold")
-    f.put("floor_shelf", -5.6, 8.6, 90.0, variant="helmets")
-    f.put("floor_shelf", 5.6, 8.6, 90.0, variant="shoes")
-    f.put("anvil_block", -6.4, 17.2, 20.0)
-    f.put("plans_table", -6.8, 14.8, 90.0)
+    f.on_wall("back", "helmet_shelf", 2.2)
+    window_wall(f, "left", [[], [("armor_stand_a", {"variant": "plate"}), ("armor_stand_a", {"variant": "knight_gold"})], [("armor_stand_a", {"variant": "mail"}), ("armor_stand_a", {"variant": "leather"})], ["chainmail_stand", ("armor_stand_a", {"variant": "plate"})]], ["boots_rack", "gauntlet_basket", "boots_rack", None], gap=0.5)
+    f.wall("right", [("wall_shelf", {"variant": "helmets"}), ("armor_stand_a", {"variant": "leather"}), "shield_wall", "gauntlet_basket", ("armor_stand_a", {"variant": "plate"})], start=2.6, gap=0.6)
+    f.put("armor_stand_a", -2.6, 3.6, -20.0, variant="knight_gold")
+    f.put("armor_stand_a", 2.6, 3.6, 20.0, variant="plate")
+    f.put("floor_shelf", 5.6, 8.0, 90.0, variant="shoes")
+    f.put("floor_shelf", -5.6, 5.4, 90.0, variant="helmets")
+
+    # fitting booth in the left middle
+    f.put("fitting_platform", -4.4, 9.8)
+    f.put("standing_mirror", -4.4, 11.6)
+    f.put("timber_screen_a", -6.5, 9.8, 90.0, variant="lattice")
+    f.put("timber_screen_a", -2.3, 9.8, 90.0, variant="lattice")
+    f.put("timber_screen_a", -4.4, 12.5, 0.0, variant="panels")
+
+    # dais with the masterwork suit
+    f.put("dais_a", -5.8, 17.5, width=3.6, depth=2.4)
+    f.put("armor_stand_a", -5.8, 17.9, 0.0, z=0.35, variant="knight_gold")
+    f.on_wall("back", "guild_banner", -8.2, tint="7A2F3A")
+    f.put("armor_stand_row_a", -2.2, 17.6, 0.0)
+
+    # plate workshop behind the partition
+    f.put("anvil_block", 5.6, 16.8, 20.0)
+    f.put("quench_barrel", 7.9, 13.6)
+    f.on_wall("back", "tool_wall_rack", 6.4)
+    f.put("hanging_tool_rack_a", 5.8, 14.6)
+    f.put("plate_pile", 4.7, 18.1)
+    f.put("coal_pile", 7.8, 18.4)
+    f.put("workbench_vise_a", 4.9, 13.2, 0.0)
     f.grid("wheel_chandelier", (0.0, 0.0), (5.0, 12.5), 1, 2)
-    f.scatter([("armor_stand", 0.0, {"variant": "mail"}), ("gauntlet_basket", 0.0, {}), ("chainmail_stand", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("plate_pile", 0.0, {}), ("boots_rack", 90.0, {})], (-6.6, 6.6), (3.4, 13.0), 6, 4)
 
 
 def furnish_tavern(f) -> None:
@@ -323,83 +421,136 @@ def furnish_alchemy(f) -> None:
 
 
 def furnish_tailor(f) -> None:
-    """Tailor: dress forms in a ring on a rug in the middle, fabric shelves, clothes rails and hat shelves on the
-    walls, a fitting booth and a mirror by the counter, the cutting table, spinning wheel and loom at the back, and
-    the jewel wing by the left window (glass cases, necklace busts, the goldsmith's bench and a safe)."""
+    """Tailor and jeweler (17 m): the cloth hall with a ring of dress forms on a rug, fabric walls, rails and hat
+    shelves, the counter in the middle, a fitting dais with a mirror and panelled screen by the right windows, the
+    cutting table and spinning wheel at the back, and the jeweler's parlour in the back left corner behind a
+    partition with an arched doorway (glass cases, necklace busts, the goldsmith's bench and a safe)."""
+    f.put("hanging_lantern", -6.2, 15.3)
+    f.put("hanging_lantern", 5.7, 15.0)
+    f.put("hanging_lantern", 0.0, 5.0)
+    f.put("hanging_fabrics_a", -4.6, 6.0, 90.0)
+    f.put("hanging_fabrics_a", 4.6, 10.4, 90.0)
+    f.put("bunting_a", 0.0, 3.4)
+    f.put("doorway_lintel_a", -3.6, 15.3, 90.0, width=2.0, height=3.7)
+
+    for along in [1.4 + 2.0 * index for index in range(9)]:
+        f.on_wall("left", "wainscot_a", along, tint="E6C9A4")
+        f.on_wall("right", "wainscot_a", along, tint="E6C9A4")
+
+    f.wall("back", ["wainscot_a"] * 8, start=f.left, gap=0.0)
+
+    for along in (13.3, 17.3):
+        f.put("wainscot_a", -3.38, along, 90.0)
+        f.put("wainscot_a", -3.82, along, -90.0)
+
+    # cloth hall
     f.put("rug", 0.0, 9.7, variant="red")
-    f.put("dress_form", -1.3, 8.6, variant="dress")
-    f.put("dress_form", 1.3, 8.6, variant="gown")
-    f.put("dress_form", -1.3, 10.8, variant="cloak")
-    f.put("dress_form", 1.3, 10.8, variant="dress")
+    f.put("rug", 0.0, 6.2, variant="gold")
+    f.put("dress_form_a", -1.3, 8.6, variant="dress")
+    f.put("dress_form_a", 1.3, 8.6, variant="gown")
+    f.put("dress_form_a", -1.3, 10.8, variant="cloak")
+    f.put("dress_form_a", 1.3, 10.8, variant="dress")
     f.put("counter_straight", 0.0, 14.2)
     f.put("stool_round", 0.9, 16.0)
-    f.put("fitting_platform", 5.6, 14.6)
-    f.put("standing_mirror", 7.5, 14.6, -90.0)
-
-    window_wall(f, "back", [["fabric_shelf"], ["fabric_shelf", 1.0, "wall_banner", 1.0, "fabric_shelf"], ["fitting_booth"]], ["hat_shelf", "hat_shelf"])
-    f.put("cutting_table", -4.8, 16.4)
-    f.put("chair", -4.8, 17.4)
-    f.on_wall("left", "spinning_wheel", 17.6)
-
-    f.on_wall("left", "iron_safe", 0.9)
-    f.on_wall("left", "goldsmith_bench", 2.6)
-    f.grid("jewel_case", (-5.4, -5.4), (2.6, 5.0), 1, 2, 90.0)
-    f.put("jewel_case", -3.9, 1.4)
-    f.put("rug", -6.6, 3.8, 90.0, variant="gold")
-    side_wall(f, "left", ["fabric_shelf", "clothes_rail", ("wall_shelf", {"variant": "shoes"}), "clothes_rail", "hat_shelf"], ["yarn_basket", ("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "gown"}), "yarn_basket", ("crate_open", {"variant": "cloth"})], start=6.6)
-
-    window_wall(f, "right", [[("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "dress"})], [("dress_form", {"variant": "cloak"}), ("plant_pot", {"variant": "flower"})], ["clothes_rail"]], ["yarn_basket", "spinning_wheel", ("crate_open", {"variant": "cloth"}), None])
-
+    f.put("cutting_table", 1.4, 17.7, 0.0)
+    f.put("chair", -0.4, 17.9, 180.0)
+    window_wall(f, "back", [[], ["fabric_shelf", 0.4, "wall_banner", 0.4, "fabric_shelf"], []], [None, "hat_shelf"])
+    f.on_wall("back", "spinning_wheel", 7.4)
+    side_wall(f, "left", ["fabric_shelf", "clothes_rail", ("wall_shelf", {"variant": "shoes"}), "clothes_rail", "hat_shelf"], ["yarn_basket", ("crate_open", {"variant": "cloth"}), ("dress_form_a", {"variant": "gown"}), "yarn_basket", ("crate_open", {"variant": "cloth"})], start=1.6)
+    window_wall(f, "right", [[("crate_open", {"variant": "cloth"}), ("dress_form_a", {"variant": "dress"})], [("dress_form_a", {"variant": "cloak"}), ("plant_pot", {"variant": "flower"})], ["clothes_rail"]], ["yarn_basket", "spinning_wheel", ("crate_open", {"variant": "cloth"}), None])
+    f.wall("front", [("dress_form_a", {"variant": "gown"}), ("crate_open", {"variant": "cloth"}), ("dress_form_a", {"variant": "dress"}), "yarn_basket"], start=f.door_u + 2.0, gap=0.5)
     f.wall("front", ["necklace_busts", ("plant_pot", {"variant": "flower"}), "necklace_busts"], start=f.left + 1.2)
-    f.wall("front", [("dress_form", {"variant": "gown"}), ("crate_open", {"variant": "cloth"}), ("dress_form", {"variant": "dress"}), "yarn_basket"], start=f.door_u + 2.0, gap=0.5)
-
-    f.put("display_table", -5.7, 9.7, variant="cloth")
-    f.put("yarn_basket", -5.7, 11.4)
-    f.put("clothes_rail", -5.7, 12.8, 90.0)
+    f.put("display_table", -5.7, 8.2, variant="cloth")
+    f.put("display_table", -4.4, 4.4, variant="cloth")
+    f.put("display_table", 4.4, 4.4, variant="cloth")
+    f.put("rug", -4.4, 4.4, variant="gold")
+    f.put("rug", 4.4, 4.4, variant="gold")
+    f.put("bench_long", -2.7, 3.0, 0.0)
+    f.put("plant_pot", 2.5, 3.0, variant="flower")
+    f.put("yarn_basket", -5.7, 10.0)
     shelf_island(f, 5.7, 5.0, ("cloth", "shoes"))
-    shelf_island(f, 5.7, 9.7, ("cloth", "cloth"))
-
+    shelf_island(f, 5.7, 9.2, ("cloth", "cloth"))
     f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 12.0), 2, 2)
-    f.put("hanging_lantern", -5.4, 3.8)
+
+    # fitting dais
+    f.put("dais_a", 5.6, 13.4, 90.0, width=3.0, depth=2.0)
+    f.put("dress_form_a", 5.7, 13.5, 0.0, z=0.35, variant="gown")
+    f.put("standing_mirror", 7.6, 13.4, -90.0)
+    f.put("timber_screen_a", 5.7, 14.9, 0.0, variant="panels")
+
+    # jeweler's parlour
+    f.on_wall("left", "iron_safe", 18.4)
+    f.on_wall("left", "goldsmith_bench", 16.4)
+    f.on_wall("left", "iron_safe", 13.0)
+    f.put("jewel_case", -5.9, 18.5, 0.0)
+    f.put("jewel_case", -4.9, 17.1, 90.0)
+    f.put("jewel_case", -5.9, 12.8, 0.0)
+    f.put("necklace_busts", -7.6, 14.3, 90.0)
+    f.put("rug", -6.1, 15.4, 90.0, variant="gold")
 
 
 def furnish_general(f) -> None:
-    """General store: shelves of everything on every wall, gondolas down both aisles, produce tables in the middle,
-    barrels, sacks and crates, a till counter with the pastry case beside it, and the bakery corner at the back
-    right (stone oven, dough table, bread racks, flour sacks)."""
+    """General store and bakery (17 m): the produce market by the door, the till counter with the pastry case under
+    shelves of jars and bottles, grocery and hardware shelves down the blind left wall and floor-shelf aisles in
+    the middle, a cafe nook on a raised dais behind a timber screen by the right windows and, behind an arched
+    stone partition in the back right corner, the bakery with its stone oven, dough table, bread racks and flour."""
+    f.on_wall("back", "stone_oven", 5.9)
+    f.put("hanging_lantern", 6.0, 15.0)
+    f.put("hanging_lantern", -1.0, 5.0)
+    f.put("bunting_a", 0.0, 7.6)
+    f.put("bunting_a", 0.0, 12.0)
+    f.put("doorway_lintel_a", 3.5, 15.3, 90.0, width=2.0, height=f.ceiling)
+
+    for along in [1.4 + 2.0 * index for index in range(9)]:
+        f.on_wall("left", "wainscot_a", along, tint="EBD9B8")
+        f.on_wall("right", "wainscot_a", along, tint="EBD9B8")
+
+    f.wall("back", ["wainscot_a"] * 8, start=f.left, gap=0.0)
+
+    for along in (13.3, 17.3):
+        f.put("wainscot_a", 3.28, along, -90.0)
+
+    # market hall and counter
     f.put("rug", 0.0, 5.2, variant="gold")
     f.put("display_table", 0.0, 5.6, variant="fruit")
     f.put("display_table", 0.0, 9.7, variant="pottery")
+    f.put("display_table", -3.6, 3.6, variant="pottery")
+    f.put("display_table", 3.6, 3.6, variant="bread")
+    f.put("rug", -3.6, 3.6, variant="gold")
+    f.put("rug", 3.6, 3.6, variant="red")
+    f.put("rug", 0.0, 9.7, variant="red")
     f.put("counter_till", -1.0, 14.2)
     f.put("pastry_case", 1.5, 14.2)
-    f.put("cake_stand", 3.2, 15.2)
+    f.put("cake_stand", 2.4, 15.6)
     f.put("stool_round", -0.2, 16.0)
     f.put("ceiling_beam_hooks", -1.0, 15.6, variant="sausages")
-
     window_wall(f, "back", [[("wall_shelf", {"variant": "jars"})], [("wall_shelf", {"variant": "bottles"}), ("wall_shelf", {"variant": "boxes"})]], [("crate_open", {"variant": "apples"})])
-    f.on_wall("back", "bread_rack", 3.3)
-    f.on_wall("back", "stone_oven", 5.6)
-    f.put("dough_table", 5.4, 16.2)
     f.put("chest_gold", -5.6, 16.8)
-
+    f.put("blanket_pile", -3.9, 17.6)
     side_wall(f, "left", [("wall_shelf", {"variant": "jars"}), "sack_pile", "tool_rack", "crate_stack", "backpack_wall", "barrel_group", ("wall_shelf", {"variant": "boxes"}), "step_ladder"], ["sack_pile", ("crate_open", {"variant": "apples"}), "crate_stack", ("wicker_basket", {"variant": "fruit"}), "barrel_group", ("crate_open", {"variant": "roots"}), ("plant_pot", {"variant": "bush"})], start=0.8)
-    side_wall(f, "right", [("wall_shelf", {"variant": "bottles"}), "crate_stack", ("wall_shelf", {"variant": "books"}), "barrel_group", ("wall_shelf", {"variant": "shoes"}), "flour_sacks", "jam_shelf", "bread_rack"], [("crate_open", {"variant": "ingots"}), "barrel_group", ("wicker_basket", {"variant": "wool"}), "crate_stack", ("crate_open", {"variant": "cloth"}), "flour_sacks", "jam_shelf"], start=0.8)
-
+    window_wall(f, "right", [[("wall_shelf", {"variant": "bottles"})], [("wall_shelf", {"variant": "books"})], []], [("crate_open", {"variant": "ingots"}), "barrel_group", ("wicker_basket", {"variant": "wool"}), None])
     f.wall("front", [("crate_open", {"variant": "apples"}), ("wicker_basket", {"variant": "fruit"}), ("crate_open", {"variant": "roots"}), ("wicker_basket", {"variant": "bread"}), ("plant_pot", {"variant": "bush"})], start=f.left + 1.2)
     f.wall("front", [("plant_pot", {"variant": "bush"}), "barrel_group", ("crate_open", {"variant": "cloth"}), ("wicker_basket", {"variant": "wool"})], start=f.door_u + 2.0)
-
     shelf_island(f, -5.7, 5.0, ("jars", "bottles"))
     shelf_island(f, -5.7, 9.7, ("tools", "boxes"))
     f.put("barrel_group", -5.7, 12.6)
-    shelf_island(f, 5.7, 5.0, ("bread", "jars"))
-    shelf_island(f, 5.7, 9.7, ("cloth", "shoes"))
-    f.put("cafe_table_set", 5.7, 12.5)
-
+    f.put("cat_sleeping", 1.0, 12.4)
     f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 11.4), 3, 2)
     f.grid("hanging_goods", (-5.7, 5.7), (7.35, 7.35), 2, 1)
-    f.put("blanket_pile", -3.9, 17.6)
-    f.put("cat_sleeping", 1.0, 12.4)
-    f.grid("hanging_lantern", (-1.6, 1.6), (2.0, 2.0), 2, 1)
+
+    # cafe nook on a dais behind a screen
+    f.put("dais_a", 5.5, 8.4, width=3.0, depth=2.4)
+    f.put("cafe_table_set", 5.5, 8.5, 0.0, z=0.35)
+    f.put("timber_screen_a", 3.8, 8.4, 90.0, variant="lattice")
+    f.put("plant_pot", 7.3, 6.4, variant="fern")
+    shelf_island(f, 5.7, 4.6, ("bread", "jars"))
+
+    # bakery behind the partition
+    f.put("dough_table", 6.4, 14.0)
+    f.on_wall("back", "bread_rack", 7.7)
+    f.put("flour_sacks", 4.3, 16.9)
+    f.on_wall("right", "jam_shelf", 13.4)
+    f.put("barrel_group", 7.8, 16.6)
 
 
 def furnish_library(f) -> None:
@@ -462,21 +613,21 @@ def furnish_library(f) -> None:
 PLANS = {
     "school": dict(keeper=(0.0, 16.6), furnish=furnish_school),
     "seminary": dict(keeper=(0.0, 16.8), posts=((-4.4, 6.47), (4.4, 6.47), (-4.4, 12.93), (4.4, 12.93)), furnish=furnish_seminary),
-    "guild": dict(keeper=(0.0, 17.3), furnish=furnish_guild),
-    "smith": dict(keeper=(-5.0, 15.6), posts=((-8.4, 7.0), (-1.6, 7.0), (-8.4, 13.4), (-1.6, 13.4)), partitions=(("u", 3.1, 8.5, 19.1),), furnish=furnish_smith),
-    "armor": dict(keeper=(0.0, 16.2), furnish=furnish_armor),
+    "guild": dict(keeper=(0.0, 17.3), partitions=(("d", 12.0, 6.2, 11.55), ("u", 6.2, 14.2, 19.1)), furnish=furnish_guild),
+    "smith": dict(keeper=(-5.0, 15.6), posts=((-8.4, 7.0), (-1.6, 7.0), (-8.4, 13.4), (-1.6, 13.4)), partitions=(("u", 3.1, 8.5, 12.3), ("u", 3.1, 14.3, 19.1)), furnish=furnish_smith),
+    "armor": dict(keeper=(0.0, 16.2), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_armor),
     "tavern": dict(keeper=(5.0, 17.6), furnish=furnish_tavern),
     "magic": dict(keeper=(0.0, 15.6), furnish=furnish_magic),
     "alchemy": dict(keeper=(0.0, 15.6), furnish=furnish_alchemy),
-    "tailor": dict(keeper=(0.0, 15.6), furnish=furnish_tailor),
-    "general": dict(keeper=(-1.0, 15.6), furnish=furnish_general),
+    "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),
+    "general": dict(keeper=(-1.0, 15.6), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_general),
     "library": dict(keeper=(0.0, 16.0), furnish=furnish_library),
 }
 FILL = {  # prédio -> ilhas soltas que enchem o chão livre dos dois lados do corredor da porta (fill_floor)
-    "smith": [("armor_stand", 0.0, {"variant": "plate"}), ("crate_open", 0.0, {"variant": "ingots"}), ("weapon_barrel", 0.0, {}), ("plate_pile", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("weapon_barrel", 0.0, {"seed": 2}), ("barrel_group", 0.0, {})],
-    "armor": [("armor_stand", 0.0, {"variant": "plate"}), ("plate_pile", 0.0, {}), ("chainmail_stand", 0.0, {}), ("gauntlet_basket", 0.0, {}), ("armor_stand", 0.0, {"variant": "leather"}), ("boots_rack", 90.0, {}), ("standing_mirror", 0.0, {})],
+    "smith": [],
+    "armor": [],
     "magic": [("mana_crystal_crate", 0.0, {}), ("rune_pillar", 0.0, {}), ("wand_case", 90.0, {}), ("giant_hourglass", 0.0, {}), ("mage_hat_stand", 0.0, {}), ("celestial_globe", 0.0, {}), ("crystal_ball_pedestal", 0.0, {})],
     "alchemy": [("planter_box", 90.0, {}), ("glowing_jar", 0.0, {}), ("drying_rack_herbs", 90.0, {}), ("mortar_table", 90.0, {}), ("flower_steps", 0.0, {}), ("crate_open", 0.0, {"variant": "roots"}), ("skeleton_stand", 0.0, {}), ("barrel_group", 0.0, {})],
-    "tailor": [("dress_form", 0.0, {}), ("clothes_rail", 90.0, {}), ("yarn_basket", 0.0, {}), ("necklace_busts", 90.0, {}), ("display_table", 0.0, {"variant": "cloth"}), ("blanket_pile", 0.0, {}), ("jewel_case", 90.0, {}), ("spinning_wheel", 90.0, {})],
-    "general": [("display_table", 0.0, {"variant": "fruit"}), ("crate_open", 0.0, {"variant": "apples"}), ("barrel_group", 0.0, {}), ("sack_pile", 0.0, {}), ("display_table", 0.0, {"variant": "pottery"}), ("wicker_basket", 0.0, {}), ("cake_stand", 0.0, {}), ("crate_stack", 0.0, {})],
+    "tailor": [],
+    "general": [],
 }
