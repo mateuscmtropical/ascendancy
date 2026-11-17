@@ -526,6 +526,14 @@ def add_buildings(scene: SceneWriter) -> None:
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     add_town_lots(scene, lots)
+    add_casarao(scene, lots)
+
+
+def add_casarao(scene: SceneWriter, lots: list) -> None:
+    """The mansion that dresses the three halls of the block in front of the cathedral and adds its upper storeys."""
+    frame_lot = next(lot for lot in lots if lot.get("shop") == CASARAO_FRAME_HALL)
+
+    place(scene, "Casarao", "Buildings", "res://art/town/casarao.gltf", frame_lot["position"], frame_lot["rotation"])
 
 
 # ---------- farm: block 5 behind the apse and the fields beyond the east wall ----------
@@ -621,8 +629,10 @@ FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da
 }
 SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
     "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
-    "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"), "library": ("bookshop",),
-}
+    "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"),
+}  # biblioteca, escola e seminário: salões do casarão, sem placa pendurada
+CASARAO_HALLS = ("library", "school", "seminary")
+CASARAO_FRAME_HALL = "school"  # o casarão (build_casarao.py) usa o lote da escola, no meio da quadra, como origem
 SHOP_FRONT_OVERHANG = 2.6  # toldos e mercadoria na calçada
 ROW_START_SIDE = {"S": "left", "N": "right", "E": "right", "W": "left"}  # lado do modelo (u < 0 = left) na ponta inicial da fileira
 INTERIOR_VISIBLE_DISTANCE = 60.0  # o recheio das lojas some além disto (features/hub/shop_interior.gd)
