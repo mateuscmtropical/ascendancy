@@ -1,16 +1,16 @@
 {
  "aabb_min": [
-  -8.52,
+  -8.56,
   0.046,
-  -19.07
+  -19.11
  ],
  "aabb_max": [
-  8.52,
-  4.21,
+  8.56,
+  4.2,
   -0.33
  ],
  "shop": "alchemy",
- "props": 59,
+ "props": 74,
  "lights": [
   {
    "position": [
@@ -24,23 +24,23 @@
   },
   {
    "position": [
-    3.62,
-    1.1,
-    -18.685
+    -1.6,
+    3.35,
+    -6.4
    ],
-   "color": "8FD8FF",
-   "energy": 0.5,
-   "range": 3.0
+   "color": "FFB347",
+   "energy": 1.6,
+   "range": 7.0
   },
   {
    "position": [
-    5.72,
-    1.1,
-    -8.38
+    -1.6,
+    3.35,
+    -12.6
    ],
-   "color": "8FD8FF",
-   "energy": 0.5,
-   "range": 3.0
+   "color": "FFB347",
+   "energy": 1.6,
+   "range": 7.0
   }
  ],
  "markers": {}

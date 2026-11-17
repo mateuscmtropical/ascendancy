@@ -155,15 +155,31 @@ def rng(options: dict) -> random.Random:
 # ---------- shared furniture ----------
 
 def table(b: Builder, frame: Matrix, width: float, depth: float, height: float, tone: str = WOOD["media"], top_tone: str = WOOD["mel"], leg: float = 0.07, inset: float = 0.06, shelf: bool = False) -> float:
-    """Table with a thick top, four legs, an apron and an optional low shelf; returns the top height."""
+    """Table with a bevelled top, four turned legs, a beaded apron, stretchers and an optional low shelf; returns the
+    top height."""
     half_x, half_y = width / 2.0, depth / 2.0
     leg_x, leg_y = half_x - inset - leg / 2.0, half_y - inset - leg / 2.0
+    radius = leg * 0.5
+    turning = [(radius * 0.8, 0.0), (radius * 1.1, 0.04), (radius * 0.8, 0.1), (radius * 0.85, height * 0.42), (radius * 1.15, height * 0.48), (radius * 0.85, height * 0.54), (radius * 0.85, height - 0.3), (radius * 1.25, height - 0.2), (radius * 1.25, height - 0.06)]
 
     box(b, frame, (-half_x, -half_y, height - 0.05), (half_x, half_y, height), "wood_light", top_tone)
-    box(b, frame, (-leg_x, -leg_y, height - 0.16), (leg_x, leg_y, height - 0.05), "wood", tone)
+    box(b, frame, (-half_x + 0.015, -half_y + 0.015, height - 0.075), (half_x - 0.015, half_y - 0.015, height - 0.05), "wood", tone)
 
     for sign_x, sign_y in itertools.product((-1.0, 1.0), repeat=2):
-        block(b, frame, (sign_x * leg_x, sign_y * leg_y, (height - 0.05) / 2.0), (leg, leg, height - 0.05), "wood", tone)
+        spin(b, frame, turning, "wood", tone, sides=6, base=(sign_x * leg_x, sign_y * leg_y, 0.0))
+
+    for sign_y in (-1.0, 1.0):
+        box(b, frame, (-leg_x, sign_y * leg_y - 0.012, height - 0.2), (leg_x, sign_y * leg_y + 0.012, height - 0.075), "wood", tone)
+        box(b, frame, (-leg_x, sign_y * leg_y - 0.02, height - 0.2), (leg_x, sign_y * leg_y + 0.02, height - 0.18), "wood_light", top_tone)
+
+    for sign_x in (-1.0, 1.0):
+        box(b, frame, (sign_x * leg_x - 0.012, -leg_y, height - 0.2), (sign_x * leg_x + 0.012, leg_y, height - 0.075), "wood", tone)
+
+    if width > 1.2:
+        rod(b, frame, (-leg_x, 0.0, 0.2), (leg_x, 0.0, 0.2), 0.035, "wood", tone)
+
+    for sign_x in (-1.0, 1.0):
+        rod(b, frame, (sign_x * leg_x, -leg_y, 0.2), (sign_x * leg_x, leg_y, 0.2), 0.035, "wood", tone)
 
     if shelf:
         box(b, frame, (-leg_x, -leg_y, 0.14), (leg_x, leg_y, 0.18), "wood", tone)
@@ -951,13 +967,24 @@ def pillar_marble(b: Builder, frame: Matrix, **options) -> None:
 def tall_bookcase(b: Builder, frame: Matrix, **options) -> None:
     """Floor-to-ceiling bookcase (4 m) on an indigo back: six boards of books, a glowing jar and a fern."""
     generator = rng(options)
-    boards = shelf_unit(b, frame, 2.0, 0.4, 4.0, [0.62, 1.2, 1.78, 2.36, 2.94, 3.52], DARK_WOOD, back=options.get("tint", "3E3263"), crown=WOOD["mel"])
+    boards = shelf_unit(b, frame, 2.0, 0.4, 3.84, [0.62, 1.2, 1.78, 2.36, 2.94, 3.52], DARK_WOOD, back=options.get("tint", "3E3263"), crown=WOOD["mel"])
     surfaces = (0.08, *boards[:-1])
 
     for index, surface in enumerate(surfaces):
         x_to = 0.35 if index == 2 else 0.93
         book_row(b, frame, -0.93, x_to, 0.0, surface, 0.3, 0.46, generator)
 
+    for side in (-1.0, 1.0):
+        box(b, frame, (side * 0.96 - 0.035, -0.21, 0.1), (side * 0.96 + 0.035, -0.19, 3.78), "wood", WOOD["mel"])
+        box(b, frame, (side * 0.96 - 0.05, -0.215, 0.1), (side * 0.96 + 0.05, -0.2, 0.18), "wood", DARK_WOOD)
+        box(b, frame, (side * 0.96 - 0.05, -0.215, 3.7), (side * 0.96 + 0.05, -0.2, 3.78), "wood", DARK_WOOD)
+
+    for plate_z in (0.62, 1.2, 1.78, 2.36, 2.94, 3.52):
+        box(b, frame, (-0.1, -0.215, plate_z - 0.045), (0.1, -0.2, plate_z - 0.015), "metal", BRASS)
+
+    box(b, frame, (-1.0, -0.21, 3.84), (1.0, 0.2, 3.9), "wood", DARK_WOOD)
+    b.hull([(-0.55, -0.21, 3.9), (0.55, -0.21, 3.9), (-0.55, 0.0, 3.9), (0.55, 0.0, 3.9), (0.0, -0.2, 4.0), (0.0, 0.0, 4.0)], "wood", srgb(DARK_WOOD), frame=frame)
+    gem(b, frame, (0.0, -0.215, 3.935), 0.04, "metal", GOLD, scale=(1.0, 0.3, 1.0))
     cyl(b, frame, (0.6, 0.0, surfaces[2]), 0.11, 0.26, "glow_amber", sides=8)
     cyl(b, frame, (0.6, 0.0, surfaces[2] + 0.26), 0.09, 0.05, "wood_light", WOOD["mel"], sides=8)
     cyl(b, frame, (0.84, 0.0, surfaces[2]), 0.07, 0.12, "paint", "D0745A", sides=6, top=0.08)
@@ -968,6 +995,11 @@ def tall_bookcase(b: Builder, frame: Matrix, **options) -> None:
     ball(b, frame, (0.55, 0.0, boards[-1] + 0.12), 0.12, "paint", BONE, scale=(0.85, 1.0, 1.0), segments=6)
     gem(b, frame, (0.85, 0.0, boards[-1] + 0.1), 0.07, "glow_cyan")
     ball(b, frame, (0.84, 0.0, surfaces[2] + 0.2), 0.11, "paint", LEAF, scale=(1.0, 1.0, 0.8), segments=6)
+
+
+def tall_bookcase_slim(b: Builder, frame: Matrix, **options) -> None:
+    """The tall bookcase narrowed to 1.92 m so it fits a corner pier between two windows."""
+    tall_bookcase(b, frame @ Matrix.Scale(0.96, 4, (1.0, 0.0, 0.0)), **options)
 
 
 def rolling_ladder(b: Builder, frame: Matrix, **options) -> None:
@@ -1777,6 +1809,896 @@ def cat_sleeping(b: Builder, frame: Matrix, **options) -> None:
     rod(b, frame, (0.1, -0.13, 0.07), (-0.04, -0.15, 0.07), 0.035, "paint", "F2E6CF")
 
 
+# ---------- architecture: screens, doorways, wainscot, galleries, stairs ----------
+
+PLASTER = "F1E4CB"
+INDIGO = "3E3263"
+SCREEN_HEIGHT = 3.0
+RUG_PALETTES = {  # variant -> (field, border, medallion, motif)
+    "red": ("B5333F", "E8B64A", "7A1F33", "F2E6CF"),
+    "blue": ("2F4FA3", "E8B64A", "1C2D6B", "BFD8F2"),
+    "green": ("2F7A4F", "E8B64A", "1F5236", "F2E6CF"),
+    "plum": ("7A3F8E", "F2C86B", "4A2A63", "F5D9F2"),
+}
+
+
+def arch_outline(half: float, spring: float, rise: float, segments: int = 8) -> list:
+    """Points (x, z) of an elliptic arch from the left springing to the right one."""
+    return [(-half * math.cos(math.pi * step / segments), spring + rise * math.sin(math.pi * step / segments)) for step in range(segments + 1)]
+
+
+def screen_panels(b: Builder, frame: Matrix, x_from: float, x_to: float, z_from: float, z_to: float, tone: str, thickness: float = 0.07) -> None:
+    """A field of wood with a raised panel proud of each face, centred on y = 0."""
+    box(b, frame, (x_from, -thickness, z_from), (x_to, thickness, z_to), "wood_light", tone)
+
+    for sign in (-1.0, 1.0):
+        near, far = sorted((sign * thickness, sign * (thickness + 0.018)))
+        box(b, frame, (x_from + 0.07, near, z_from + 0.07), (x_to - 0.07, far, z_to - 0.07), "wood", DARK_WOOD)
+
+
+def panel_screen(b: Builder, frame: Matrix, **options) -> None:
+    """Freestanding timber partition run, 2.0 m: plinth, raised-panel dado, mid rail, glazed, lattice or panelled
+    upper band, end posts and a moulded cornice. variant: glazed, lattice or solid."""
+    variant = options.get("variant", "glazed")
+    top = options.get("height", SCREEN_HEIGHT)
+    wood = options.get("tint", DARK_WOOD)
+    band_from, band_to = 1.12, top - 0.14
+    band_middle = (band_from + band_to) / 2.0
+
+    box(b, frame, (-1.0, -0.115, 0.0), (1.0, 0.115, 0.14), "wood", wood)
+    box(b, frame, (-1.0, -0.12, 0.14), (1.0, 0.12, 0.17), "trim", PLASTER)
+    screen_panels(b, frame, -0.94, 0.94, 0.17, 1.02, WOOD["mel"])
+    box(b, frame, (-1.0, -0.115, 1.02), (1.0, 0.115, band_from), "wood", wood)
+    box(b, frame, (-1.0, -0.125, band_from), (1.0, 0.125, band_from + 0.025), "trim", PLASTER)
+
+    if variant == "solid":
+        screen_panels(b, frame, -0.94, 0.94, band_from + 0.025, band_to, WOOD["mel"])
+    elif variant == "lattice":
+        for index in range(19):
+            spindle_x = -0.9 + index * 0.1
+            box(b, frame, (spindle_x - 0.015, -0.015, band_from + 0.025), (spindle_x + 0.015, 0.015, band_to), "wood", wood)
+
+        box(b, frame, (-0.94, -0.05, band_middle - 0.02), (0.94, 0.05, band_middle + 0.02), "wood", wood)
+    else:
+        box(b, frame, (-0.94, -0.008, band_from + 0.025), (0.94, 0.008, band_to), "vitrine")
+
+        for mullion_x in (-0.47, 0.0, 0.47):
+            box(b, frame, (mullion_x - 0.02, -0.045, band_from + 0.025), (mullion_x + 0.02, 0.045, band_to), "wood", wood)
+
+        box(b, frame, (-0.94, -0.045, band_middle - 0.015), (0.94, 0.045, band_middle + 0.015), "wood", wood)
+
+    box(b, frame, (-0.94, -0.1, band_to), (0.94, 0.1, top - 0.1), "wood", wood)
+    box(b, frame, (-1.0, -0.14, top - 0.1), (1.0, 0.14, top - 0.04), "wood", WOOD["mel"])
+    box(b, frame, (-1.0, -0.12, top - 0.04), (1.0, 0.12, top), "trim", PLASTER)
+
+    for side in (-1.0, 1.0):
+        box(b, frame, (side * 0.97 - 0.04, -0.1, 0.0), (side * 0.97 + 0.04, 0.1, top - 0.1), "wood", wood)
+
+
+def partition_doorway(b: Builder, frame: Matrix, **options) -> None:
+    """Doorway between two screen runs (2.0 m slot, 1.5 m opening): posts, a corbelled lintel and a panelled or
+    plastered arch header up to the screen height. variant: timber or arch."""
+    style = options.get("variant", "timber")
+    top = options.get("height", SCREEN_HEIGHT)
+    wood = options.get("tint", DARK_WOOD)
+    door_top = 2.25
+
+    for side in (-1.0, 1.0):
+        box(b, frame, (side * 0.875 - 0.125, -0.115, 0.0), (side * 0.875 + 0.125, 0.115, top - 0.1), "wood", wood)
+        box(b, frame, (side * 0.875 - 0.14, -0.13, 0.0), (side * 0.875 + 0.14, 0.13, 0.14), "trim", PLASTER)
+
+    box(b, frame, (-1.0, -0.14, top - 0.1), (1.0, 0.14, top - 0.04), "wood", WOOD["mel"])
+    box(b, frame, (-1.0, -0.12, top - 0.04), (1.0, 0.12, top), "trim", PLASTER)
+
+    if style == "arch":
+        spring, rise = door_top - 0.25, 0.55
+        arc = arch_outline(0.75, spring, rise)
+        infill = [(-0.75, top - 0.1), *arc, (0.75, top - 0.1)]
+        band = arch_outline(0.89, spring, rise + 0.14) + list(reversed(arc))
+
+        b.prism(infill, -0.085, 0.085, "paint", srgb(options.get("plaster", PLASTER)), frame=frame)
+        b.prism(band, -0.125, 0.125, "trim", srgb(PLASTER), frame=frame)
+        gem(b, frame, (0.0, -0.13, spring + rise + 0.1), 0.06, "metal", GOLD, scale=(1.0, 0.4, 1.3))
+        return
+
+    box(b, frame, (-0.95, -0.13, door_top), (0.95, 0.13, door_top + 0.18), "wood", wood)
+    box(b, frame, (-0.95, -0.14, door_top + 0.18), (0.95, 0.14, door_top + 0.21), "trim", PLASTER)
+    screen_panels(b, frame, -0.75, 0.75, door_top + 0.21, top - 0.1, WOOD["mel"])
+
+    for side in (-1.0, 1.0):
+        corners = [(side * 0.75, -0.12, door_top - 0.3), (side * 0.75, 0.12, door_top - 0.3), (side * 0.75, -0.12, door_top), (side * 0.75, 0.12, door_top), (side * 0.5, -0.12, door_top), (side * 0.5, 0.12, door_top)]
+
+        b.hull(corners, "wood", srgb(wood), frame=frame)
+
+
+def wainscot(b: Builder, frame: Matrix, **options) -> None:
+    """Wall dado 2.0 m x 1.1 m: skirting, raised panels between stiles, chair rail; its back sits on the wall."""
+    wood = options.get("tint", WOOD["mel"])
+    stile_x = (-1.0, -0.34, 0.34, 1.0)
+
+    box(b, frame, (-1.0, -0.04, 0.0), (1.0, 0.08, 0.13), "wood", DARK_WOOD)
+    box(b, frame, (-1.0, -0.03, 0.13), (1.0, 0.08, 0.16), "trim", PLASTER)
+    box(b, frame, (-1.0, -0.01, 0.16), (1.0, 0.08, 0.96), "wood_light", wood)
+
+    for x_from, x_to in zip(stile_x, stile_x[1:]):
+        box(b, frame, (x_from + 0.06, -0.03, 0.26), (x_to - 0.06, -0.01, 0.86), "wood", DARK_WOOD)
+        box(b, frame, (x_from + 0.1, -0.035, 0.3), (x_to - 0.1, -0.03, 0.82), "wood_light", wood)
+
+    box(b, frame, (-1.0, -0.04, 0.96), (1.0, 0.08, 1.04), "wood", DARK_WOOD)
+    box(b, frame, (-1.0, -0.055, 1.04), (1.0, 0.08, 1.1), "wood_light", WOOD["mel"])
+
+
+def stock_bay(b: Builder, frame: Matrix, boards: list, x_from: float, x_to: float, depth: float, clearance: float, generator: random.Random) -> None:
+    """Books on every board of one bay (boards are the tops, the first row stands on the plinth at 0.08)."""
+    for surface in (0.08, *boards[:-1]):
+        book_row(b, frame, x_from, x_to, 0.0, surface, depth, clearance, generator)
+
+
+def baluster_run(b: Builder, frame: Matrix, x_from: float, x_to: float, y: float, z: float, height: float, pitch: float, tone: str) -> None:
+    """Rail with turned balusters from x_from to x_to at depth y, standing on z."""
+    count = max(2, int(round((x_to - x_from) / pitch)))
+
+    box(b, frame, (x_from, y - 0.045, z + height - 0.05), (x_to, y + 0.045, z + height), "wood_light", WOOD["mel"])
+    box(b, frame, (x_from, y - 0.03, z + 0.08), (x_to, y + 0.03, z + 0.12), "wood", tone)
+
+    for index in range(count + 1):
+        baluster_x = x_from + (x_to - x_from) * index / count
+        spin(b, frame, [(0.02, z + 0.12), (0.03, z + 0.3), (0.018, z + 0.5), (0.03, z + 0.7), (0.02, z + height - 0.05)], "wood", tone, sides=4, base=(baluster_x, y, 0.0))
+
+
+def book_gallery(b: Builder, frame: Matrix, **options) -> None:
+    """Two-tier library bay against a wall, 4.0 m: a lower bookcase, a deck on turned posts with corbels and a
+    balustrade, and the upper bookcase behind it. open_end -1 or 1 leaves that end of the railing open for a stair."""
+    generator = rng(options)
+    wood = options.get("tint", DARK_WOOD)
+    open_end = options.get("open_end", 0)
+    wall_y = 0.65
+    deck_z = 2.56
+    rail_z = deck_z + 0.16
+    lower = at(frame, (0.0, wall_y - 0.2, 0.0))
+    upper = at(frame, (0.0, wall_y - 0.2, rail_z))
+    lower_boards = shelf_unit(b, lower, 4.0, 0.4, deck_z - 0.01, [0.62, 1.2, 1.78, 2.36], wood, back=INDIGO, bays=2)
+    upper_boards = shelf_unit(b, upper, 4.0, 0.4, 2.14, [0.5, 1.0, 1.5, 2.0], wood, back=INDIGO, crown=WOOD["mel"], bays=2)
+
+    for x_from, x_to in ((-1.93, -0.04), (0.04, 1.93)):
+        stock_bay(b, lower, lower_boards, x_from, x_to, 0.3, 0.46, generator)
+        stock_bay(b, upper, upper_boards, x_from, x_to, 0.3, 0.4, generator)
+
+    box(b, frame, (-2.06, -wall_y - 0.04, deck_z), (2.06, wall_y, rail_z), "wood_light", WOOD["mel"])
+    box(b, frame, (-2.08, -wall_y - 0.07, deck_z - 0.1), (2.08, -wall_y, deck_z + 0.2), "wood", wood)
+    box(b, frame, (-2.08, -wall_y - 0.075, deck_z + 0.1), (2.08, -wall_y - 0.03, deck_z + 0.14), "metal", BRASS)
+
+    for post_x in (-1.8, 0.0, 1.8):
+        spin(b, frame, [(0.1, 0.0), (0.1, 0.1), (0.06, 0.16), (0.07, 0.5), (0.05, 0.6), (0.05, 1.7), (0.08, 1.78), (0.06, 1.9), (0.06, 2.2), (0.1, 2.3), (0.1, deck_z - 0.1)], "wood", wood, sides=8, base=(post_x, -wall_y + 0.12, 0.0))
+
+        for direction in (-1.0, 1.0):
+            if abs(post_x + direction * 0.5) > 2.0:
+                continue
+
+            rod(b, frame, (post_x + direction * 0.07, -wall_y + 0.06, deck_z - 0.5), (post_x + direction * 0.5, -wall_y + 0.06, deck_z - 0.1), 0.05, "wood", wood, depth=0.07)
+
+    baluster_run(b, frame, -1.93, 1.93, -wall_y + 0.06, rail_z, 0.94, 0.15, wood)
+
+    for end in (-1.0, 1.0):
+        if end != open_end:
+            baluster_run(b, at(frame, (end * 1.97, 0.0, 0.0), 90.0), -wall_y + 0.06, wall_y - 0.06, 0.0, rail_z, 0.94, 0.15, wood)
+
+    for newel_x in (-1.98, 1.98):
+        box(b, frame, (newel_x - 0.05, -wall_y + 0.01, rail_z), (newel_x + 0.05, -wall_y + 0.11, rail_z + 1.0), "wood", wood)
+        ball(b, frame, (newel_x, -wall_y + 0.06, rail_z + 1.07), 0.065, "metal", BRASS, segments=6)
+
+    for lamp_x in (-1.0, 1.0):
+        rod(b, frame, (lamp_x, wall_y - 0.45, rail_z + 1.5), (lamp_x, wall_y - 0.2, rail_z + 1.62), 0.02, "metal", BRASS)
+        candle(b, frame, (lamp_x, wall_y - 0.45, rail_z + 1.5), 0.1)
+
+
+def gallery_stair(b: Builder, frame: Matrix, **options) -> None:
+    """Spiral stair of 13 wedge treads round a turned newel up to the gallery deck at 2.72 m, with a baluster
+    rail and handrail on the outer edge. winding 1 climbs counter-clockwise (ends toward -X), -1 the mirror."""
+    wood = options.get("tint", DARK_WOOD)
+    winding = options.get("winding", 1)
+    steps, deck = 13, 2.72
+    rise = deck / steps
+    half_turn = math.radians(10.8)
+    posts = []
+
+    spin(b, frame, [(0.12, 0.0), (0.12, 0.12), (0.08, 0.2), (0.08, deck - 0.15), (0.11, deck - 0.05), (0.11, deck + 0.05), (0.05, deck + 0.12)], "wood", wood, sides=8)
+
+    for step in range(steps):
+        angle = math.radians(-90.0) + winding * math.radians(20.8) * step
+        edges = [angle - half_turn, angle + half_turn]
+        top = (step + 1) * rise
+        inner = [(0.09 * math.cos(edge), 0.09 * math.sin(edge)) for edge in edges]
+        outer = [(0.86 * math.cos(edge), 0.86 * math.sin(edge)) for edge in edges]
+        points = [(x, y, top) for x, y in inner + outer] + [(x, y, top - 0.07) for x, y in inner + outer]
+
+        b.hull(points, *resolve("wood_light", WOOD["mel"])[:2], frame=frame)
+        b.hull([(x, y, top - 0.07) for x, y in outer] + [(x * 0.96, y * 0.96, top - 0.2) for x, y in outer], *resolve("wood", wood)[:2], frame=frame)
+        post = (0.82 * math.cos(angle), 0.82 * math.sin(angle))
+        rod(b, frame, (*post, top), (*post, top + 0.9), 0.035, "wood", wood)
+        posts.append((*post, top + 0.9))
+
+    for start, end in zip(posts, posts[1:]):
+        rod(b, frame, start, end, 0.05, "wood_light", WOOD["mel"], depth=0.05)
+
+    ball(b, frame, posts[0], 0.05, "metal", BRASS, segments=6)
+    ball(b, frame, posts[-1], 0.05, "metal", BRASS, segments=6)
+
+
+# ---------- rugs and floor pieces ----------
+
+def rug_build(b: Builder, frame: Matrix, width: float, length: float, variant: str) -> None:
+    """Woven rug: fringe, field, double border, a corner motif and a stepped medallion with a star."""
+    field, border, medallion, motif = RUG_PALETTES[variant]
+    half_x, half_y = width / 2.0, length / 2.0
+    inner_x, inner_y = half_x - 0.3, half_y - 0.3
+    middle = min(inner_x, inner_y) * 0.62
+
+    for sign in (-1.0, 1.0):
+        box(b, frame, (-half_x, sign * (half_y + 0.001) + min(0.0, sign * 0.06), 0.0), (half_x, sign * (half_y + 0.001) + max(0.0, sign * 0.06), 0.004), "paint", motif)
+
+    box(b, frame, (-half_x, -half_y, 0.0), (half_x, half_y, 0.008), "paint", border)
+    box(b, frame, (-half_x + 0.07, -half_y + 0.07, 0.008), (half_x - 0.07, half_y - 0.07, 0.012), "paint", medallion)
+    box(b, frame, (-half_x + 0.12, -half_y + 0.12, 0.012), (half_x - 0.12, half_y - 0.12, 0.016), "paint", field)
+    box(b, frame, (-inner_x, -inner_y, 0.016), (inner_x, inner_y, 0.02), "paint", border)
+    box(b, frame, (-inner_x + 0.04, -inner_y + 0.04, 0.02), (inner_x - 0.04, inner_y - 0.04, 0.024), "paint", field)
+
+    for sign_x, sign_y in itertools.product((-1.0, 1.0), repeat=2):
+        corner = [(sign_x * inner_x, sign_y * inner_y, 0.024), (sign_x * (inner_x - 0.5), sign_y * inner_y, 0.024), (sign_x * inner_x, sign_y * (inner_y - 0.5), 0.024)]
+
+        b.hull(corner + [(x, y, 0.028) for x, y, _ in corner], *resolve("paint", motif)[:2], frame=frame)
+
+    for scale, color, lift in ((1.0, medallion, 0.024), (0.78, motif, 0.028), (0.56, border, 0.032), (0.36, medallion, 0.036)):
+        radius = middle * scale
+        diamond = [(radius * 1.5 * x_sign * (axis == 0), radius * y_sign * (axis == 1), lift) for axis, x_sign, y_sign in ((0, 1, 0), (0, -1, 0), (1, 0, 1), (1, 0, -1))]
+
+        b.hull(diamond + [(x, y, lift + 0.004) for x, y, _ in diamond], *resolve("paint", color)[:2], frame=frame)
+
+
+def rug_ornate(b: Builder, frame: Matrix, **options) -> None:
+    rug_build(b, frame, 3.0, 2.0, options.get("variant", "red"))
+
+
+def rug_runner(b: Builder, frame: Matrix, **options) -> None:
+    rug_build(b, frame, 1.2, 4.0, options.get("variant", "red"))
+
+
+# ---------- library, school and seminary pieces ----------
+
+PAPER_WHITE = "F7F2E6"
+CHALK_COLORS = ("F7F2E6", "F2C86B", "8FD8F2", "F59AD8")
+SLATE = "2F4F4A"
+VELVET = "8E2F45"
+
+
+def screen_post(b: Builder, frame: Matrix, **options) -> None:
+    """Square corner post for screen runs: stone foot, chamfered shaft and a capped head."""
+    height = options.get("height", SCREEN_HEIGHT)
+    wood = options.get("tint", DARK_WOOD)
+
+    box(b, frame, (-0.14, -0.14, 0.0), (0.14, 0.14, 0.14), "trim", PLASTER)
+    box(b, frame, (-0.11, -0.11, 0.14), (0.11, 0.11, height - 0.1), "wood", wood)
+    box(b, frame, (-0.14, -0.14, height - 0.1), (0.14, 0.14, height - 0.04), "wood", WOOD["mel"])
+    box(b, frame, (-0.12, -0.12, height - 0.04), (0.12, 0.12, height), "trim", PLASTER)
+
+
+def study_chair(b: Builder, frame: Matrix, **options) -> None:
+    """Library chair: turned legs with a stretcher ring, padded seat, a back with splats and a carved top rail."""
+    wood = options.get("tint", DARK_WOOD)
+    cushion = options.get("cushion", VELVET)
+
+    for leg_x, leg_y in itertools.product((-0.19, 0.19), repeat=2):
+        profile = [(0.025, 0.0), (0.03, 0.06), (0.02, 0.2), (0.03, 0.28), (0.025, 0.45)]
+
+        spin(b, frame, profile, "wood", wood, sides=6, base=(leg_x, leg_y, 0.0))
+
+    for rail_y in (-0.19, 0.19):
+        rod(b, frame, (-0.19, rail_y, 0.17), (0.19, rail_y, 0.17), 0.025, "wood", wood)
+
+    for rail_x in (-0.19, 0.19):
+        rod(b, frame, (rail_x, -0.19, 0.17), (rail_x, 0.19, 0.17), 0.025, "wood", wood)
+
+    box(b, frame, (-0.23, -0.23, 0.43), (0.23, 0.23, 0.46), "wood", wood)
+    box(b, frame, (-0.21, -0.21, 0.46), (0.21, 0.21, 0.51), "paint", cushion)
+    box(b, frame, (-0.19, -0.19, 0.51), (0.19, 0.19, 0.525), "paint", options.get("trim", "E8B64A"))
+
+    for post_x in (-0.19, 0.19):
+        spin(b, frame, [(0.025, 0.46), (0.03, 0.7), (0.025, 0.88), (0.035, 0.9)], "wood", wood, sides=6, base=(post_x, 0.2, 0.0))
+
+    for splat_x in (-0.07, 0.07):
+        box(b, frame, (splat_x - 0.018, 0.19, 0.52), (splat_x + 0.018, 0.21, 0.82), "wood", wood)
+
+    box(b, frame, (-0.2, 0.18, 0.78), (0.2, 0.22, 0.84), "wood_light", WOOD["mel"])
+    b.hull([(-0.21, 0.18, 0.84), (0.21, 0.18, 0.84), (-0.21, 0.22, 0.84), (0.21, 0.22, 0.84), (0.0, 0.18, 0.93), (0.0, 0.22, 0.93)], *resolve("wood", wood)[:2], frame=frame)
+
+
+def card_catalog(b: Builder, frame: Matrix, **options) -> None:
+    """Card catalogue: a moulded cabinet of 4 x 5 labelled drawers with brass pulls, a banker's lamp, an open
+    index book and a stack of cards on top."""
+    wood = options.get("tint", DARK_WOOD)
+    columns, rows = 4, 5
+    drawer_width, drawer_height = 1.28 / columns, 0.85 / rows
+
+    box(b, frame, (-0.68, -0.28, 0.0), (0.68, 0.28, 0.1), "wood", wood)
+    box(b, frame, (-0.66, -0.26, 0.1), (0.66, 0.26, 1.02), "wood_light", WOOD["media"])
+    box(b, frame, (-0.72, -0.3, 1.02), (0.72, 0.3, 1.07), "wood_light", WOOD["mel"])
+    box(b, frame, (-0.7, -0.285, 1.0), (0.7, -0.26, 1.02), "wood", wood)
+
+    for column, row in itertools.product(range(columns), range(rows)):
+        x = -0.64 + (column + 0.5) * drawer_width
+        z = 0.13 + (row + 0.5) * drawer_height
+
+        box(b, frame, (x - drawer_width / 2.0 + 0.012, -0.275, z - drawer_height / 2.0 + 0.012), (x + drawer_width / 2.0 - 0.012, -0.26, z + drawer_height / 2.0 - 0.012), "wood", WOOD["mel"])
+        box(b, frame, (x - 0.04, -0.286, z + 0.02), (x + 0.04, -0.275, z + 0.045), "paint", PAPER_WHITE)
+        box(b, frame, (x - 0.03, -0.295, z - 0.035), (x + 0.03, -0.275, z - 0.025), "metal", BRASS)
+
+    spin(b, frame, [(0.07, 1.07), (0.05, 1.1), (0.025, 1.15), (0.03, 1.26)], "metal", BRASS, sides=8, base=(-0.45, 0.0, 0.0))
+    box(b, frame, (-0.62, -0.1, 1.27), (-0.28, 0.1, 1.32), "paint", "2F7A4F")
+    box(b, frame, (-0.62, -0.1, 1.255), (-0.28, 0.1, 1.27), "metal", BRASS)
+    floating_book(b, at(frame, (0.1, 0.0, 1.095), 8.0), "28356E", True)
+
+    for layer in range(5):
+        box(b, at(frame, (0.5, 0.05, 1.07 + layer * 0.012), 3.0 * layer), (-0.07, -0.05, 0.0), (0.07, 0.05, 0.011), "paint", PAPER_WHITE)
+
+
+def school_desk(b: Builder, frame: Matrix, **options) -> None:
+    """Two-seat pupils' desk, 1.5 m: sloped lid with ink wells and a groove, a book shelf underneath, timber
+    A-frame ends and a plank bench behind (pupils look toward -Y)."""
+    wood = options.get("tint", WOOD["media"])
+    generator = rng(options)
+
+    for end in (-1.0, 1.0):
+        x = end * 0.68
+        box(b, frame, (x - 0.025, -0.44, 0.0), (x + 0.025, -0.34, 0.74), "wood", wood)
+        box(b, frame, (x - 0.025, -0.06, 0.0), (x + 0.025, 0.04, 0.6), "wood", wood)
+        box(b, frame, (x - 0.025, 0.2, 0.0), (x + 0.025, 0.4, 0.06), "wood", wood)
+        box(b, frame, (x - 0.025, 0.28, 0.06), (x + 0.025, 0.34, 0.42), "wood", wood)
+        rod(b, frame, (x, -0.39, 0.12), (x, 0.0, 0.5), 0.04, "wood", wood, depth=0.04)
+
+    lid = at(frame, (0.0, -0.2, 0.74), 11.0, "X")
+    box(b, lid, (-0.74, -0.27, -0.025), (0.74, 0.27, 0.0), "wood_light", WOOD["mel"])
+    box(b, lid, (-0.74, 0.26, 0.0), (0.74, 0.3, 0.035), "wood", wood)
+
+    for well_x in (-0.38, 0.38):
+        cyl(b, lid, (well_x, -0.1, 0.0), 0.035, 0.012, "metal", BRASS, sides=8)
+        cyl(b, lid, (well_x, -0.1, 0.012), 0.022, 0.004, "paint", "23306B", sides=8)
+
+    box(b, lid, (-0.68, -0.22, 0.0), (-0.52, -0.1, 0.012), "paint", generator.choice(BOOK_COLORS))
+    box(b, lid, (0.1, -0.02, 0.0), (0.42, 0.2, 0.012), "paint", PAPER_WHITE)
+    box(b, frame, (-0.7, -0.38, 0.32), (0.7, -0.04, 0.35), "wood_light", WOOD["mel"])
+    box(b, frame, (-0.66, 0.18, 0.4), (0.66, 0.46, 0.44), "wood_light", WOOD["mel"])
+    box(b, frame, (-0.66, 0.18, 0.4), (0.66, 0.22, 0.425), "wood", wood)
+
+
+def teacher_desk(b: Builder, frame: Matrix, **options) -> None:
+    """Master's desk, 2.0 m: two drawer pedestals, a leather-inlaid top with a raised book rest, a hand bell,
+    a stack of exercise books, an inkwell with quill and a brass lamp."""
+    wood = options.get("tint", DARK_WOOD)
+
+    for side in (-1.0, 1.0):
+        x = side * 0.78
+        box(b, frame, (x - 0.2, -0.4, 0.0), (x + 0.2, 0.4, 0.08), "wood", wood)
+        box(b, frame, (x - 0.18, -0.38, 0.08), (x + 0.18, 0.38, 0.72), "wood_light", WOOD["media"])
+
+        for drawer in range(3):
+            z = 0.12 + drawer * 0.2
+            box(b, frame, (x - 0.16, -0.395, z), (x + 0.16, -0.38, z + 0.17), "wood", WOOD["mel"])
+            box(b, frame, (x - 0.05, -0.41, z + 0.07), (x + 0.05, -0.395, z + 0.09), "metal", BRASS)
+
+    box(b, frame, (-0.6, 0.2, 0.08), (0.6, 0.38, 0.72), "wood", wood)
+    box(b, frame, (-1.0, -0.44, 0.72), (1.0, 0.44, 0.78), "wood_light", WOOD["mel"])
+    box(b, frame, (-1.02, -0.46, 0.78), (1.02, 0.46, 0.8), "wood", wood)
+    box(b, frame, (-0.9, -0.34, 0.8), (0.9, 0.34, 0.805), "paint", "2F7A4F")
+    box(b, frame, (-0.9, -0.34, 0.8), (-0.88, 0.34, 0.812), "metal", GOLD)
+    box(b, frame, (0.88, -0.34, 0.8), (0.9, 0.34, 0.812), "metal", GOLD)
+
+    rest = at(frame, (-0.35, 0.1, 0.805), 22.0, "X")
+    box(b, rest, (-0.24, -0.16, 0.0), (0.24, 0.16, 0.025), "wood", wood)
+    floating_book(b, at(rest, (0.0, 0.0, 0.05), 0.0), "28356E", True)
+
+    spin(b, frame, [(0.04, 0.805), (0.045, 0.83), (0.02, 0.9), (0.015, 0.93), (0.045, 0.99)], "metal", BRASS, sides=8, base=(0.5, 0.15, 0.0))
+
+    for layer in range(4):
+        box(b, at(frame, (0.15, 0.1, 0.805 + layer * 0.04), 7.0 * layer), (-0.14, -0.1, 0.0), (0.14, 0.1, 0.038), "paint", BOOK_COLORS[layer * 2])
+
+    cyl(b, frame, (0.62, -0.15, 0.805), 0.035, 0.05, "paint", NAVY, sides=6)
+    rod(b, frame, (0.62, -0.15, 0.85), (0.7, -0.08, 1.08), 0.01, "paint", PAPER_WHITE, depth=0.03)
+    spin(b, frame, [(0.04, 0.805), (0.035, 0.84), (0.015, 0.86)], "metal", BRASS, sides=8, base=(-0.8, -0.2, 0.0))
+
+
+def blackboard_big(b: Builder, frame: Matrix, **options) -> None:
+    """Classroom board 3.2 m wide hung at 0.9 m: wooden frame with a gabled crown, slate panel with chalk
+    diagrams and writing, a ledge with chalk and a felt rubber."""
+    generator = rng(options)
+    wood = options.get("tint", DARK_WOOD)
+    bottom, top = 0.9, 2.6
+
+    box(b, frame, (-1.6, 0.0, bottom - 0.12), (1.6, 0.08, top + 0.1), "wood", wood)
+    box(b, frame, (-1.5, -0.01, bottom), (1.5, 0.0, top), "paint", options.get("slate", SLATE))
+    box(b, frame, (-1.62, -0.07, bottom - 0.14), (1.62, 0.04, bottom - 0.06), "wood_light", WOOD["mel"])
+    box(b, frame, (-1.65, -0.02, top + 0.1), (1.65, 0.1, top + 0.17), "wood_light", WOOD["mel"])
+    b.hull([(-0.5, -0.02, top + 0.17), (0.5, -0.02, top + 0.17), (-0.5, 0.1, top + 0.17), (0.5, 0.1, top + 0.17), (0.0, 0.0, top + 0.34), (0.0, 0.1, top + 0.34)], *resolve("wood", wood)[:2], frame=frame)
+
+    for chalk_ring, (x, z, radius) in enumerate(((-0.9, 1.9, 0.32), (-0.9, 1.9, 0.18))):
+        cyl(b, frame, (x, -0.011, z), radius, 0.004, "paint", CHALK_COLORS[chalk_ring], sides=14, axis="Y", top=radius)
+
+    cyl(b, frame, (-0.9, -0.016, 1.9), 0.15, 0.004, "paint", SLATE, sides=14, axis="Y")
+    rod(b, frame, (-1.3, -0.012, 1.55), (-0.4, -0.012, 2.25), 0.012, "paint", CHALK_COLORS[1], depth=0.004)
+
+    for line in range(5):
+        x_from = 0.1 + generator.uniform(0.0, 0.2)
+        x_to = x_from + generator.uniform(0.6, 1.2)
+        rod(b, frame, (x_from, -0.012, 2.3 - line * 0.22), (x_to, -0.012, 2.3 - line * 0.22), 0.016, "paint", CHALK_COLORS[line % 2], depth=0.004)
+
+    for chalk in range(3):
+        cyl(b, frame, (-0.6 + chalk * 0.07, -0.05, bottom - 0.06), 0.012, 0.09, "paint", CHALK_COLORS[chalk], sides=5, axis="X")
+
+    box(b, frame, (0.9, -0.06, bottom - 0.06), (1.1, -0.02, bottom - 0.02), "paint", "8E2F45")
+    box(b, frame, (0.9, -0.06, bottom - 0.02), (1.1, -0.02, bottom + 0.01), "paint", "F2E6CF")
+
+
+def coat_rack_wall(b: Builder, frame: Matrix, **options) -> None:
+    """Wall board 2.0 m with eight pegs: cloaks, a satchel, caps and a scarf hang from them, a hat shelf above."""
+    wood = options.get("tint", DARK_WOOD)
+    cloaks = ("2F4FA3", "B5333F", "2F7A4F", "7A3F8E")
+
+    box(b, frame, (-1.0, 0.0, 1.35), (1.0, 0.07, 1.85), "wood_light", WOOD["media"])
+    box(b, frame, (-1.04, -0.02, 1.85), (1.04, 0.1, 1.9), "wood", wood)
+    box(b, frame, (-1.04, -0.12, 1.9), (1.04, 0.1, 1.94), "wood_light", WOOD["mel"])
+    box(b, frame, (-1.0, -0.02, 1.32), (1.0, 0.07, 1.36), "wood", wood)
+
+    for peg in range(8):
+        x = -0.875 + peg * 0.25
+
+        rod(b, frame, (x, 0.0, 1.5), (x, -0.16, 1.54), 0.03, "wood", wood)
+        ball(b, frame, (x, -0.17, 1.54), 0.032, "wood_light", WOOD["mel"], segments=6)
+
+        if peg % 2 == 0:
+            cloak = cloaks[(peg // 2) % len(cloaks)]
+            b.hull([(x - 0.08, -0.12, 1.5), (x + 0.08, -0.12, 1.5), (x - 0.12, -0.15, 0.7), (x + 0.12, -0.15, 0.7), (x - 0.1, -0.02, 1.48), (x + 0.1, -0.02, 1.48), (x - 0.13, -0.05, 0.7), (x + 0.13, -0.05, 0.7)], "paint", srgb(cloak), frame=frame)
+            ball(b, frame, (x, -0.13, 1.52), 0.035, "metal", BRASS, segments=6)
+
+    box(b, frame, (0.38, -0.22, 0.95), (0.62, -0.14, 1.2), "paint", "C08A55")
+    box(b, frame, (0.4, -0.24, 1.1), (0.6, -0.2, 1.22), "paint", "8B5A3C")
+
+    for cap_x, color in ((-0.7, "B5333F"), (-0.25, "2F4FA3"), (0.4, "E8B64A")):
+        ball(b, frame, (cap_x, -0.05, 1.99), 0.1, "paint", color, scale=(1.3, 1.0, 0.7), segments=6)
+
+
+def easel(b: Builder, frame: Matrix, **options) -> None:
+    """Painter's easel: A-frame with a rear leg, a canvas with a small landscape and a paint tray with a palette."""
+    wood = options.get("tint", WOOD["mel"])
+    sky, hill, sun = "8FC8F2", "7FC46A", "F2C86B"
+
+    for leg_x in (-0.3, 0.3):
+        rod(b, frame, (leg_x, -0.2, 0.0), (leg_x * 0.5, 0.0, 1.75), 0.05, "wood_light", wood, depth=0.04)
+
+    rod(b, frame, (0.0, 0.5, 0.0), (0.0, 0.08, 1.45), 0.045, "wood_light", wood, depth=0.04)
+    box(b, frame, (-0.42, -0.25, 0.55), (0.42, -0.19, 0.6), "wood", wood)
+    box(b, frame, (-0.42, -0.26, 0.6), (0.42, -0.18, 0.62), "wood_light", WOOD["media"])
+    canvas = at(frame, (0.0, -0.22, 0.0), -6.0, "X")
+    box(b, canvas, (-0.37, 0.0, 0.62), (0.37, 0.025, 1.4), "paint", PAPER_WHITE)
+    box(b, canvas, (-0.34, -0.003, 0.7), (0.34, 0.0, 1.37), "paint", sky)
+    b.hull([(-0.34, -0.004, 0.7), (0.34, -0.004, 0.7), (-0.34, -0.004, 0.95), (0.34, -0.004, 1.0), (0.0, -0.004, 1.12)], "paint", srgb(hill), frame=canvas)
+    cyl(b, canvas, (0.2, -0.004, 1.2), 0.07, 0.003, "paint", sun, sides=10, axis="Y", top=0.07)
+    box(b, canvas, (0.36, -0.01, 0.7), (0.38, 0.0, 1.37), "wood", wood)
+    box(b, frame, (-0.2, -0.38, 0.62), (0.2, -0.26, 0.64), "wood_light", WOOD["media"])
+
+    for dab, color in enumerate(("B5333F", "F2C86B", "2F4FA3", "2F7A4F")):
+        ball(b, frame, (-0.14 + dab * 0.09, -0.32, 0.66), 0.03, "paint", color, scale=(1.0, 1.0, 0.5), segments=6)
+
+
+def lab_bench(b: Builder, frame: Matrix, **options) -> None:
+    """Teaching lab bench, 2.2 m: stone top on a timber frame with a lower shelf, a spirit burner with a
+    flask on a tripod, a brass microscope, a rack of test tubes and a few beakers."""
+    wood = options.get("tint", DARK_WOOD)
+
+    for leg_x, leg_y in itertools.product((-1.0, 1.0), (-0.34, 0.34)):
+        spin(b, frame, [(0.05, 0.0), (0.05, 0.08), (0.035, 0.14), (0.035, 0.7), (0.05, 0.78), (0.05, 0.9)], "wood", wood, sides=6, base=(leg_x, leg_y, 0.0))
+
+    box(b, frame, (-1.05, -0.38, 0.14), (1.05, 0.38, 0.18), "wood_light", WOOD["mel"])
+    box(b, frame, (-1.05, -0.4, 0.76), (1.05, 0.4, 0.86), "wood", wood)
+    box(b, frame, (-1.12, -0.46, 0.86), (1.12, 0.46, 0.92), "stone", STONE["clara"])
+    box(b, frame, (-1.12, -0.46, 0.86), (1.12, -0.44, 0.94), "trim", PLASTER)
+    box(b, frame, (-0.95, -0.4, 0.35), (-0.1, 0.38, 0.7), "paint", "4F3A66")
+    box(b, frame, (0.1, 0.1, 0.18), (0.9, 0.34, 0.45), "wood", WOOD["media"])
+
+    for tripod_leg in range(3):
+        angle = math.radians(90.0 + 120.0 * tripod_leg)
+        rod(b, frame, (-0.6 + 0.1 * math.cos(angle), 0.1 * math.sin(angle), 0.92), (-0.6, 0.0, 1.1), 0.012, "metal", DARK_IRON)
+
+    hoop(b, frame, (-0.6, 0.0, 1.1), 0.08, 0.008, "metal", DARK_IRON, sides=10, tube_sides=3)
+    spin(b, frame, [(0.03, 0.92), (0.04, 0.96), (0.03, 0.99)], "metal", BRASS, sides=8, base=(-0.6, 0.0, 0.0))
+    gem(b, frame, (-0.6, 0.0, 1.0), 0.02, "glow_amber", scale=(0.8, 0.8, 1.8))
+    flask(b, frame, (-0.6, 0.0, 1.12), 0.07, 0.22, "vitrine", None, shape="round", cork=True)
+    cyl(b, frame, (-0.6, 0.0, 1.14), 0.052, 0.07, "glow_green", sides=8)
+
+    cyl(b, frame, (0.35, -0.1, 0.92), 0.09, 0.02, "metal", BRASS, sides=8)
+    rod(b, frame, (0.35, -0.1, 0.94), (0.35, -0.02, 1.1), 0.03, "metal", BRASS)
+    cyl(b, at(frame, (0.35, -0.1, 1.04), 25.0, "X"), (0.0, 0.0, 0.0), 0.025, 0.2, "metal", BRASS, sides=8)
+    cyl(b, frame, (0.35, -0.16, 0.92), 0.05, 0.1, "metal", BRASS, sides=8)
+
+    box(b, frame, (0.6, 0.1, 0.92), (0.95, 0.24, 0.94), "wood", wood)
+
+    for tube in range(5):
+        flask(b, frame, (0.65 + tube * 0.06, 0.17, 0.94), 0.02, 0.2, "vitrine", None, shape="cone")
+
+    for beaker, color in enumerate(("glow_cyan", "glow_pink", "glow_amber")):
+        cyl(b, frame, (0.55 + beaker * 0.16, -0.25, 0.92), 0.045, 0.1, "vitrine", sides=8)
+        cyl(b, frame, (0.55 + beaker * 0.16, -0.25, 0.925), 0.04, 0.05, color, sides=8)
+
+
+def planet_mobile(b: Builder, frame: Matrix, **options) -> None:
+    """Ceiling prop: a brass orrery mobile of six painted planets on arms round a glowing gold sun, hung on a chain."""
+    arms = ((0.28, -1.05, 0.06, "C9483B"), (0.45, -0.95, 0.09, "4F8FC9"), (0.62, -1.1, 0.07, "7FC46A"), (0.52, -1.25, 0.1, "F2B13C"), (0.38, -1.2, 0.05, "B57FE0"), (0.68, -1.3, 0.08, "5FD9C0"))
+
+    cyl(b, frame, (0.0, 0.0, -0.04), 0.05, 0.04, "metal", BRASS, sides=8)
+    rod(b, frame, (0.0, 0.0, -0.04), (0.0, 0.0, -0.9), 0.012, "metal", BRASS)
+    ball(b, frame, (0.0, 0.0, -1.0), 0.12, "glow_warm", segments=8)
+
+    for index, (reach, drop, radius, color) in enumerate(arms):
+        angle = math.radians(index * 60.0 + 15.0)
+        tip = (reach * math.cos(angle), reach * math.sin(angle), drop)
+
+        flat_ring(b, frame, reach, 0.012, "metal", GOLD, sides=24, z=drop + 0.0)
+        rod(b, frame, (0.0, 0.0, -0.9), tip, 0.008, "metal", BRASS)
+        ball(b, frame, tip, radius, "paint", color, segments=8)
+
+    hoop(b, frame, (0.0, 0.0, -1.0), 0.22, 0.008, "metal", GOLD, sides=16, tube_sides=3, axis="Y")
+
+
+def school_bell(b: Builder, frame: Matrix, **options) -> None:
+    """Ceiling prop: a brass hand bell on an iron bracket with a long knotted pull rope."""
+    spin(b, frame, [(0.03, -0.2), (0.05, -0.26), (0.11, -0.4), (0.2, -0.6), (0.23, -0.66), (0.2, -0.66), (0.01, -0.6)], "metal", BRASS, sides=10)
+    box(b, frame, (-0.2, -0.04, -0.2), (0.2, 0.04, -0.14), "metal", DARK_IRON)
+
+    for side in (-1.0, 1.0):
+        box(b, frame, (side * 0.17 - 0.015, -0.04, -0.18), (side * 0.17 + 0.015, 0.04, -0.06), "metal", DARK_IRON)
+
+    ball(b, frame, (0.0, 0.0, -0.64), 0.05, "metal", DARK_IRON, segments=6)
+    rod(b, frame, (0.0, 0.0, -0.66), (0.0, 0.0, -1.9), 0.012, "paint", "C9A26B")
+
+    for knot in (-1.2, -1.55, -1.9):
+        ball(b, frame, (0.0, 0.0, knot), 0.03, "paint", "C9A26B", segments=6)
+
+    cyl(b, frame, (0.0, 0.0, -2.05), 0.018, 0.16, "paint", "B5333F", sides=6, top=0.04)
+
+
+def pew(b: Builder, frame: Matrix, **options) -> None:
+    """Chapel pew, 2.4 m: carved poppy-head ends with an arched cut-out, seat, a tall panelled back, a hymn-book
+    ledge and a padded kneeler on the front foot (sitters face -Y; the pew behind has its back at +Y)."""
+    wood = options.get("tint", WOOD["media"])
+    cushion = options.get("cushion", "7A1F33")
+
+    for end in (-1.0, 1.0):
+        x = end * 1.16
+        outline = [(-0.4, 0.0), (0.4, 0.0), (0.4, 0.75), (0.33, 0.95), (0.0, 1.05), (-0.33, 0.95), (-0.4, 0.75)]
+
+        b.side_prism(outline, x - 0.04, x + 0.04, "wood", srgb(wood), frame=frame)
+        ball(b, frame, (x, 0.0, 1.07), 0.05, "wood_light", WOOD["mel"], segments=6)
+        box(b, frame, (x - 0.05, -0.4, 0.0), (x + 0.05, 0.4, 0.06), "wood", DARK_WOOD)
+
+    box(b, frame, (-1.12, -0.18, 0.43), (1.12, 0.22, 0.47), "wood_light", WOOD["mel"])
+    box(b, frame, (-1.12, 0.2, 0.47), (1.12, 0.26, 0.98), "wood_light", WOOD["media"])
+    box(b, frame, (-1.12, 0.17, 0.95), (1.12, 0.29, 1.0), "wood", DARK_WOOD)
+    box(b, frame, (-1.12, 0.2, 0.27), (1.12, 0.26, 0.3), "wood", DARK_WOOD)
+
+    for panel in range(6):
+        x = -0.93 + panel * 0.372
+        box(b, frame, (x - 0.14, 0.185, 0.58), (x + 0.14, 0.2, 0.9), "wood", DARK_WOOD)
+
+    box(b, frame, (-1.1, -0.34, 0.25), (1.1, -0.1, 0.29), "wood", DARK_WOOD)
+    box(b, frame, (-1.06, -0.32, 0.29), (1.06, -0.12, 0.34), "paint", cushion)
+    box(b, frame, (-1.1, -0.2, 0.7), (1.1, -0.14, 0.73), "wood", DARK_WOOD)
+
+    for book_index in range(3):
+        box(b, frame, (-0.6 + book_index * 0.9, -0.2, 0.73), (-0.45 + book_index * 0.9, -0.14, 0.77), "paint", BOOK_COLORS[book_index])
+
+
+def candle_stand(b: Builder, frame: Matrix, **options) -> None:
+    """Tall wrought-iron floor candelabrum: three-footed base, twisted-look stem and five candles on drip pans."""
+    iron = options.get("tint", DARK_IRON)
+
+    for foot in range(3):
+        angle = math.radians(90.0 + 120.0 * foot)
+        rod(b, frame, (0.0, 0.0, 0.2), (0.22 * math.cos(angle), 0.22 * math.sin(angle), 0.02), 0.03, "metal", iron)
+
+    spin(b, frame, [(0.04, 0.2), (0.05, 0.4), (0.03, 0.6), (0.05, 0.8), (0.03, 1.0), (0.05, 1.2), (0.03, 1.4), (0.06, 1.5)], "metal", iron, sides=6)
+
+    for arm in range(5):
+        angle = math.radians(arm * 72.0)
+        tip = (0.2 * math.cos(angle), 0.2 * math.sin(angle), 1.56 + 0.05 * (arm % 2))
+
+        rod(b, frame, (0.0, 0.0, 1.5), tip, 0.02, "metal", iron)
+        cyl(b, frame, (tip[0], tip[1], tip[2]), 0.045, 0.02, "metal", BRASS, sides=8)
+        candle(b, frame, (tip[0], tip[1], tip[2] + 0.02), 0.16 + 0.03 * (arm % 3))
+
+
+def chancel_altar(b: Builder, frame: Matrix, **options) -> None:
+    """Chapel altar against the wall, 3.6 m: a stone table with arcaded front, a gold-fringed linen cloth, a
+    chalice, a missal and candlesticks, backed by a tall arched reredos with a rose and a gilded cross."""
+    stone = options.get("tint", STONE["clara"])
+    gold = GOLD
+
+    box(b, frame, (-1.7, -0.62, 0.0), (1.7, -0.3, 0.07), "stone", STONE["media"])
+    box(b, frame, (-1.6, -0.34, 0.07), (1.6, 0.3, 0.92), "stone", stone)
+    box(b, frame, (-1.66, -0.4, 0.92), (1.66, 0.34, 1.0), "stone", STONE["clara"])
+
+    for arcade in range(5):
+        x = -1.28 + arcade * 0.64
+        arch_points = arch_outline(0.24, 0.52, 0.2)
+        b.prism([(x - 0.24, 0.16), *[(x + px, pz) for px, pz in arch_points], (x + 0.24, 0.16)], -0.37, -0.33, "paint", srgb("C9B6D9"), frame=frame)
+
+    box(b, frame, (-1.3, -0.5, 1.0), (1.3, 0.3, 1.012), "paint", PAPER_WHITE)
+    box(b, frame, (-1.3, -0.5, 0.78), (1.3, -0.48, 1.0), "paint", PAPER_WHITE)
+    box(b, frame, (-1.3, -0.505, 0.78), (1.3, -0.495, 0.84), "metal", gold)
+
+    outline = [(-1.5, 0.0), (1.5, 0.0), (1.5, 2.45), (0.75, 3.05), (0.0, 3.2), (-0.75, 3.05), (-1.5, 2.45)]
+    box(b, frame, (-1.6, 0.34, 0.0), (1.6, 0.62, 1.0), "stone", stone)
+    b.prism(outline, 0.4, 0.62, "paint", srgb("E9D9F2"), frame=frame)
+    b.prism([(-1.2, 1.1), (1.2, 1.1), (1.2, 2.35), (0.6, 2.8), (0.0, 2.92), (-0.6, 2.8), (-1.2, 2.35)], 0.38, 0.4, "paint", srgb(WINE), frame=frame)
+
+    for start, end in zip(outline, outline[1:] + outline[:1]):
+        if start[1] > 0.0 or end[1] > 0.0:
+            rod(b, frame, (start[0], 0.385, start[1]), (end[0], 0.385, end[1]), 0.07, "metal", gold, depth=0.03)
+
+    cyl(b, frame, (0.0, 0.376, 2.2), 0.3, 0.012, "glow_warm", sides=12, axis="Y", top=0.3)
+    cyl(b, frame, (0.0, 0.372, 2.2), 0.25, 0.012, "paint", WINE, sides=12, axis="Y", top=0.25)
+
+    for ray in range(6):
+        angle = math.radians(ray * 30.0)
+        rod(b, frame, (0.0, 0.36, 2.2), (0.27 * math.cos(angle), 0.36, 2.2 + 0.27 * math.sin(angle)), 0.025, "metal", gold, depth=0.012)
+
+    box(b, frame, (-0.04, 0.37, 2.52), (0.04, 0.395, 2.9), "metal", gold)
+    box(b, frame, (-0.2, 0.37, 2.72), (0.2, 0.395, 2.78), "metal", gold)
+
+    spin(b, frame, [(0.05, 1.012), (0.03, 1.04), (0.02, 1.1), (0.05, 1.15), (0.07, 1.25), (0.05, 1.28)], "metal", gold, sides=8, base=(0.0, -0.05, 0.0))
+    floating_book(b, at(frame, (-0.55, -0.1, 1.04), 10.0), "7A1F33", True)
+
+    for candle_x in (-1.2, -0.9, 0.9, 1.2):
+        spin(b, frame, [(0.07, 1.012), (0.03, 1.05), (0.03, 1.2), (0.05, 1.23)], "metal", gold, sides=8, base=(candle_x, -0.05, 0.0))
+        candle(b, frame, (candle_x, -0.05, 1.23), 0.3)
+
+
+def reading_pulpit(b: Builder, frame: Matrix, **options) -> None:
+    """Refectory reader's pulpit: an octagonal panelled drum on a stone plinth with a few steps, a slanted book
+    rest with a bound book and a brass lamp arm."""
+    wood = options.get("tint", WOOD["media"])
+
+    box(b, frame, (-0.5, -0.5, 0.0), (0.5, 0.5, 0.1), "stone", STONE["media"])
+    box(b, frame, (-0.4, -0.5, 0.1), (0.4, -0.3, 0.2), "stone", STONE["clara"])
+    spin(b, frame, [(0.34, 0.2), (0.4, 0.25), (0.4, 1.0), (0.46, 1.06), (0.5, 1.12), (0.5, 1.2)], "wood", wood, sides=8, base=(0.0, 0.1, 0.0))
+
+    for panel in range(8):
+        angle = math.radians(22.5 + panel * 45.0)
+        box(b, at(frame, (0.4 * math.cos(angle), 0.1 + 0.4 * math.sin(angle), 0.0), math.degrees(angle) - 90.0), (-0.12, -0.035, 0.38), (0.12, 0.0, 0.92), "wood_light", WOOD["mel"])
+
+    rest = at(frame, (0.0, 0.1, 1.2), 25.0, "X")
+    box(b, rest, (-0.3, -0.22, 0.0), (0.3, 0.22, 0.03), "wood", DARK_WOOD)
+    floating_book(b, at(rest, (0.0, 0.0, 0.07), 0.0), "6A2E6E", True)
+    rod(b, frame, (0.4, 0.4, 1.2), (0.4, 0.4, 1.7), 0.03, "metal", BRASS)
+    rod(b, frame, (0.4, 0.4, 1.68), (0.15, 0.2, 1.62), 0.02, "metal", BRASS)
+    candle(b, frame, (0.15, 0.2, 1.62), 0.1)
+
+
+def refectory_table(b: Builder, frame: Matrix, **options) -> None:
+    """Long refectory table, 3.4 m, with a bench each side: trestle ends with a stretcher, a scrubbed top set with
+    bowls, bread, jugs and candles."""
+    wood = options.get("tint", WOOD["media"])
+    generator = rng(options)
+
+    for end in (-1.4, 1.4):
+        box(b, frame, (end - 0.05, -0.38, 0.0), (end + 0.05, 0.38, 0.1), "wood", DARK_WOOD)
+        box(b, frame, (end - 0.04, -0.36, 0.1), (end + 0.04, 0.36, 0.72), "wood", wood)
+        b.hull([(end - 0.04, -0.36, 0.72), (end + 0.04, -0.36, 0.72), (end - 0.04, -0.1, 0.4), (end + 0.04, -0.1, 0.4)], *resolve("wood", wood)[:2], frame=frame)
+
+    rod(b, frame, (-1.4, 0.0, 0.3), (1.4, 0.0, 0.3), 0.07, "wood", DARK_WOOD, depth=0.07)
+    box(b, frame, (-1.7, -0.45, 0.72), (1.7, 0.45, 0.78), "wood_light", WOOD["mel"])
+    box(b, frame, (-1.72, -0.47, 0.76), (1.72, 0.47, 0.8), "wood", DARK_WOOD)
+
+    for side in (-1.0, 1.0):
+        bench_y = side * 0.72
+
+        box(b, frame, (-1.5, bench_y - 0.17, 0.42), (1.5, bench_y + 0.17, 0.46), "wood_light", WOOD["mel"])
+
+        for leg_x in (-1.3, 1.3):
+            box(b, frame, (leg_x - 0.04, bench_y - 0.15, 0.0), (leg_x + 0.04, bench_y + 0.15, 0.42), "wood", wood)
+
+    for place in range(6):
+        x = -1.35 + place * 0.54
+
+        for side in (-1.0, 1.0):
+            cyl(b, frame, (x, side * 0.25, 0.8), 0.1, 0.012, "paint", PAPER_WHITE, sides=10, top=0.12)
+            cyl(b, frame, (x, side * 0.25, 0.812), 0.07, 0.035, "paint", "C9A26B", sides=8, top=0.09)
+
+    for loaf_x in (-0.6, 0.4):
+        b.sphere((loaf_x, 0.0, 0.84), 0.08, "paint", srgb("D9A05B"), scale=(1.4, 0.9, 0.6), frame=frame, segments=6)
+
+    for jug_x in (-0.1, 0.9):
+        spin(b, frame, [(0.04, 0.8), (0.07, 0.86), (0.07, 0.95), (0.04, 1.0), (0.05, 1.03)], "paint", "C9A26B", sides=8, base=(jug_x, generator.uniform(-0.1, 0.1), 0.0))
+
+    for candle_x in (-1.0, 0.0, 1.0):
+        candle(b, frame, (candle_x, 0.0, 0.8), 0.1 + generator.uniform(0.0, 0.1))
+
+
+def cell_curtain(b: Builder, frame: Matrix, **options) -> None:
+    """Dormitory curtain on a frame: two posts with a rail and a pleated linen curtain gathered to one side."""
+    wood = options.get("tint", DARK_WOOD)
+    cloth = options.get("cloth", "C9B6D9")
+    pleats = 7
+
+    for side in (-1.0, 1.0):
+        box(b, frame, (side * 0.55 - 0.04, -0.05, 0.0), (side * 0.55 + 0.04, 0.05, 2.0), "wood", wood)
+        ball(b, frame, (side * 0.55, 0.0, 2.04), 0.045, "metal", BRASS, segments=6)
+
+    box(b, frame, (-0.55, -0.025, 1.92), (0.55, 0.025, 1.97), "wood", wood)
+
+    for pleat in range(pleats):
+        x = -0.5 + pleat * 0.09
+        depth = 0.045 * (1 if pleat % 2 else -1)
+        b.hull([(x - 0.03, depth, 1.92), (x + 0.03, depth, 1.92), (x - 0.04, -depth, 0.15), (x + 0.04, -depth, 0.15), (x - 0.03, 0.0, 1.92), (x + 0.03, 0.0, 1.92), (x - 0.04, 0.0, 0.15), (x + 0.04, 0.0, 0.15)], "paint", srgb(cloth), frame=frame)
+
+    box(b, frame, (-0.04, -0.02, 1.9), (0.08, 0.02, 1.95), "metal", GOLD)
+
+
+def censer_hanging(b: Builder, frame: Matrix, **options) -> None:
+    """Ceiling prop: brass censer on three chains with an openwork bowl, a domed lid and a glowing ember."""
+    for chain in range(3):
+        angle = math.radians(chain * 120.0 + 30.0)
+
+        rod(b, frame, (0.0, 0.0, 0.0), (0.09 * math.cos(angle), 0.09 * math.sin(angle), -1.1), 0.012, "metal", DARK_IRON)
+
+    ball(b, frame, (0.0, 0.0, -0.05), 0.05, "metal", BRASS, segments=6)
+    spin(b, frame, [(0.04, -1.2), (0.12, -1.28), (0.14, -1.4), (0.07, -1.5), (0.03, -1.52)], "metal", BRASS, sides=8)
+    spin(b, frame, [(0.14, -1.4), (0.13, -1.28), (0.09, -1.2), (0.04, -1.12), (0.02, -1.08)], "metal", GOLD, sides=8)
+    gem(b, frame, (0.0, 0.0, -1.34), 0.05, "glow_ember", scale=(1.0, 1.0, 0.8))
+    hoop(b, frame, (0.0, 0.0, -1.4), 0.14, 0.012, "metal", GOLD, sides=10, tube_sides=3)
+
+
+# ---------- magic and alchemy centrepieces ----------
+
+def summoning_dais(b: Builder, frame: Matrix, **options) -> None:
+    """Three-step round dais of lilac stone, 3.4 m: a gilded rim, glowing rune rings, an inlaid hexagram and
+    eight rune stones set into the lowest step (walkable: it stays below 0.3 m)."""
+    stone = options.get("tint", LILAC_STONE)
+
+    spin(b, frame, [(1.7, 0.0), (1.7, 0.1), (1.5, 0.1), (1.5, 0.2), (1.3, 0.2), (1.3, 0.3)], "paint", stone, sides=16)
+    flat_ring(b, frame, 1.62, 0.05, "metal", GOLD, sides=16, z=0.1)
+    flat_ring(b, frame, 1.42, 0.04, "metal", GOLD, sides=16, z=0.2)
+    flat_ring(b, frame, 1.15, 0.05, "glow_cyan", sides=24, z=0.3)
+    flat_ring(b, frame, 0.55, 0.04, "glow_pink", sides=16, z=0.3)
+
+    points = [(0.95 * math.cos(math.radians(90.0 + 60.0 * corner)), 0.95 * math.sin(math.radians(90.0 + 60.0 * corner))) for corner in range(6)]
+
+    for corner in range(6):
+        start, end = points[corner], points[(corner + 2) % 6]
+
+        rod(b, frame, (*start, 0.305), (*end, 0.305), 0.035, "glow_cyan", depth=0.01)
+
+    for stone_index in range(8):
+        angle = math.radians(stone_index * 45.0 + 22.5)
+
+        gem(b, frame, (1.6 * math.cos(angle), 1.6 * math.sin(angle), 0.12), 0.07, ("glow_pink", "glow_cyan")[stone_index % 2], scale=(1.0, 1.0, 0.7))
+
+
+def orrery(b: Builder, frame: Matrix, **options) -> None:
+    """Brass orrery on a carved plum-wood stand: a glowing gold sun, four tilted orbit rings with painted planets,
+    an armillary hoop pair and a little moon on its own arm."""
+    wood = options.get("tint", PLUM_WOOD)
+    planets = ((0.28, 0.09, "C9483B", 0.0), (0.46, 0.1, "4F8FC9", 90.0), (0.64, 0.12, "7FC46A", 180.0), (0.8, 0.14, "F2B13C", 270.0))
+
+    spin(b, frame, [(0.62, 0.0), (0.62, 0.06), (0.55, 0.1), (0.45, 0.16), (0.3, 0.24), (0.2, 0.34), (0.08, 0.44), (0.1, 0.7), (0.06, 0.8), (0.07, 1.0)], "wood", wood, sides=8)
+    hoop(b, frame, (0.0, 0.0, 0.12), 0.58, 0.02, "metal", GOLD, sides=16, tube_sides=4)
+
+    for leg in range(4):
+        angle = math.radians(leg * 90.0 + 45.0)
+
+        rod(b, frame, (0.18 * math.cos(angle), 0.18 * math.sin(angle), 0.9), (0.55 * math.cos(angle), 0.55 * math.sin(angle), 0.28), 0.04, "wood", wood)
+
+    ball(b, frame, (0.0, 0.0, 1.2), 0.15, "glow_warm", segments=10)
+    hoop(b, frame, (0.0, 0.0, 1.2), 0.2, 0.01, "metal", GOLD, sides=12, tube_sides=3, axis="X")
+
+    for index, (radius, size, color, start) in enumerate(planets):
+        orbit = at(frame, (0.0, 0.0, 1.2), 0.0)
+        angle = math.radians(start)
+        tilt = at(orbit, (0.0, 0.0, 0.0), 8.0 * (index - 1.5), "X")
+
+        hoop(b, tilt, (0.0, 0.0, 0.0), radius, 0.008, "metal", BRASS, sides=24, tube_sides=3)
+        rod(b, tilt, (0.0, 0.0, 0.0), (radius * math.cos(angle), radius * math.sin(angle), 0.0), 0.012, "metal", BRASS)
+        ball(b, tilt, (radius * math.cos(angle), radius * math.sin(angle), 0.0), size, "paint", color, segments=8)
+
+    ball(b, frame, (0.64 * math.cos(math.radians(180.0)) + 0.14, 0.64 * math.sin(math.radians(180.0)) + 0.12, 1.3), 0.04, "paint", BONE, segments=6)
+    hoop(b, frame, (0.0, 0.0, 1.2), 0.95, 0.012, "metal", GOLD, sides=24, tube_sides=3, axis="Y")
+
+
+def floating_candles(b: Builder, frame: Matrix, **options) -> None:
+    """Ceiling prop: eleven candles hovering at different heights in a loose spiral, each with a flame and a
+    drip of wax, held by nothing but magic (a faint rune ring on the ceiling)."""
+    generator = rng(options)
+
+    flat_ring(b, at(frame, (0.0, 0.0, 0.0), 180.0, "X"), 0.4, 0.03, "glow_amber", sides=16)
+
+    for index in range(11):
+        angle = math.radians(index * 137.5)
+        reach = 0.12 + 0.065 * index
+        base = (reach * math.cos(angle), reach * math.sin(angle), -0.55 - index * 0.12 - generator.uniform(0.0, 0.08))
+
+        candle(b, frame, base, generator.uniform(0.18, 0.3), radius=0.035)
+        cyl(b, frame, (base[0], base[1], base[2] - 0.03), 0.045, 0.03, "paint", CANDLE_WAX, sides=6, top=0.03)
+
+
+def copper_pipes(b: Builder, frame: Matrix, **options) -> None:
+    """Ceiling prop: a run of copper pipes 3.2 m long with flanges, elbows, a brass valve wheel, hanging
+    brackets and a glass catch-flask dripping at the low end."""
+    run_z = -0.38
+
+    for bracket in (-1.4, 0.0, 1.4):
+        box(b, frame, (bracket - 0.03, -0.08, run_z), (bracket + 0.03, 0.08, 0.0), "metal", DARK_IRON)
+        box(b, frame, (bracket - 0.05, -0.1, run_z - 0.03), (bracket + 0.05, 0.1, run_z), "metal", DARK_IRON)
+
+    cyl(b, frame, (-1.6, 0.0, run_z + 0.0), 0.06, 3.2, "metal", COPPER, sides=8, axis="X")
+    cyl(b, frame, (-1.6, 0.0, run_z - 0.2), 0.04, 3.2 * 0.5, "metal", COPPER, sides=8, axis="X")
+
+    for flange in (-1.0, -0.2, 0.7, 1.3):
+        hoop(b, frame, (flange, 0.0, run_z), 0.068, 0.014, "metal", BRASS, sides=8, tube_sides=3, axis="X")
+
+    ball(b, frame, (-1.6, 0.0, run_z), 0.075, "metal", COPPER, segments=8)
+    ball(b, frame, (1.6, 0.0, run_z), 0.075, "metal", COPPER, segments=8)
+    cyl(b, frame, (1.6, 0.0, run_z - 0.7), 0.06, 0.7, "metal", COPPER, sides=8)
+    cyl(b, frame, (-0.6, 0.0, run_z - 0.2), 0.04, 0.2, "metal", COPPER, sides=8)
+    rod(b, frame, (0.35, 0.0, run_z), (0.35, 0.0, run_z + 0.22), 0.025, "metal", BRASS)
+    hoop(b, frame, (0.35, 0.0, run_z + 0.24), 0.09, 0.012, "metal", BRASS, sides=10, tube_sides=3)
+    rod(b, frame, (0.26, 0.0, run_z + 0.24), (0.44, 0.0, run_z + 0.24), 0.012, "metal", BRASS)
+    rod(b, frame, (0.35, 0.0, run_z + 0.15), (0.35, 0.0, run_z + 0.33), 0.012, "metal", BRASS)
+    flask(b, frame, (1.6, 0.0, run_z - 1.1), 0.1, 0.22, "vitrine", None, shape="round", cork=False)
+    cyl(b, frame, (1.6, 0.0, run_z - 1.08), 0.075, 0.1, "glow_green", sides=8)
+    gem(b, frame, (1.6, 0.0, run_z - 0.8), 0.015, "glow_green", scale=(0.8, 0.8, 1.6))
+
+
+def athanor_furnace(b: Builder, frame: Matrix, **options) -> None:
+    """Alchemist's furnace against the wall, 1.8 m: a brick body with a stone cap, a glowing firebox door with a
+    brass handle, an ash drawer, a copper hood and a chimney pipe up to the ceiling joists."""
+    brick = options.get("brick", BRICK["tudor"])
+
+    box(b, frame, (-0.9, -0.55, 0.0), (0.9, 0.55, 0.12), "stone", STONE["media"])
+    box(b, frame, (-0.8, -0.48, 0.12), (0.8, 0.5, 1.2), "brick", brick)
+    box(b, frame, (-0.86, -0.52, 1.2), (0.86, 0.54, 1.3), "stone", STONE["clara"])
+    box(b, frame, (-0.5, -0.5, 0.46), (0.5, -0.46, 1.04), "metal", DARK_IRON)
+    box(b, frame, (-0.4, -0.52, 0.56), (0.4, -0.5, 0.94), "glow_ember")
+    box(b, frame, (-0.44, -0.54, 0.52), (0.44, -0.5, 0.56), "metal", DARK_IRON)
+    box(b, frame, (-0.44, -0.54, 0.94), (0.44, -0.5, 0.98), "metal", DARK_IRON)
+
+    for bar in range(5):
+        box(b, frame, (-0.34 + bar * 0.17, -0.545, 0.56), (-0.32 + bar * 0.17, -0.52, 0.94), "metal", DARK_IRON)
+
+    box(b, frame, (-0.3, -0.5, 0.2), (0.3, -0.46, 0.36), "metal", DARK_IRON)
+    box(b, frame, (-0.08, -0.53, 0.26), (0.08, -0.5, 0.3), "metal", BRASS)
+    rod(b, frame, (0.45, -0.54, 0.6), (0.45, -0.58, 0.9), 0.02, "metal", BRASS)
+
+    spin(b, frame, [(0.55, 1.3), (0.5, 1.45), (0.36, 1.7), (0.2, 1.9), (0.13, 2.0)], "metal", COPPER, sides=10, base=(0.0, 0.0, 0.0))
+    hoop(b, frame, (0.0, 0.0, 1.45), 0.5, 0.025, "metal", BRASS, sides=10, tube_sides=3)
+    hoop(b, frame, (0.0, 0.0, 1.9), 0.2, 0.02, "metal", BRASS, sides=10, tube_sides=3)
+    cyl(b, frame, (0.0, 0.0, 2.0), 0.12, 2.0, "metal", COPPER, sides=10)
+
+    for collar in (2.6, 3.3):
+        hoop(b, frame, (0.0, 0.0, collar), 0.13, 0.02, "metal", BRASS, sides=10, tube_sides=3)
+
+    for kettle_x in (-0.4, 0.3):
+        spin(b, frame, [(0.1, 1.3), (0.13, 1.36), (0.14, 1.44), (0.1, 1.5), (0.04, 1.52)], "metal", COPPER, sides=8, base=(kettle_x, 0.05, 0.0))
+
+
+def hearth_ring(b: Builder, frame: Matrix, **options) -> None:
+    """Flat stone hearth under the big cauldron: a ring of wedge-cut flags round a sooty pit."""
+    spin(b, frame, [(1.0, 0.0), (1.0, 0.025)], "paint", "3B2C3A", sides=16)
+    spin(b, frame, [(1.0, 0.0), (1.32, 0.0), (1.32, 0.12), (1.0, 0.12)], "stone", STONE["media"], sides=16, closed=True)
+    spin(b, frame, [(1.0, 0.12), (1.32, 0.12), (1.34, 0.14), (1.0, 0.14)], "stone", STONE["clara"], sides=16, closed=True)
+
+    for flag in range(16):
+        angle = math.radians(flag * 22.5)
+
+        rod(b, frame, (1.0 * math.cos(angle), 1.0 * math.sin(angle), 0.145), (1.33 * math.cos(angle), 1.33 * math.sin(angle), 0.145), 0.012, "paint", "8E8AA0", depth=0.004)
+
+
 PROPS = {
     "crystal_ball_pedestal": {"build": crystal_ball_pedestal, "size": (0.56, 0.57, 1.49), "solid": True, "light": ((0.0, 0.0, 1.32), "8FD8FF", 1.0, 4.0)},
     "staff_rack": {"build": staff_rack, "size": (1.85, 0.5, 1.96), "solid": True},
@@ -1805,6 +2727,7 @@ PROPS = {
     "iron_safe": {"build": iron_safe, "size": (0.84, 0.84, 1), "solid": True, "clearance": 1.0},
     "pillar_marble": {"build": pillar_marble, "size": (0.82, 0.82, 4), "solid": True},
     "tall_bookcase": {"build": tall_bookcase, "size": (2, 0.4, 4), "solid": True, "clearance": 1.0},
+    "tall_bookcase_slim": {"build": tall_bookcase_slim, "size": (1.92, 0.4, 4), "solid": True, "clearance": 1.0},
     "rolling_ladder": {"build": rolling_ladder, "size": (0.5, 0.74, 3.4), "solid": True},
     "reading_table": {"build": reading_table, "size": (2, 1, 1.11), "solid": True},
     "lectern": {"build": lectern, "size": (0.62, 0.52, 1.18), "solid": True, "clearance": 0.8},
@@ -1841,3 +2764,49 @@ PROPS = {
     "cat_sleeping": {"build": cat_sleeping, "size": (0.39, 0.44, 0.26), "solid": False},
     "mana_crystal_crate": {"build": mana_crystal_crate, "size": (0.8, 0.67, 0.7), "solid": True, "light": ((0.0, 0.0, 0.6), "8FD8FF", 0.6, 3.0)},
 }
+
+PROPS.update(
+    {
+        "panel_screen": {"build": panel_screen, "size": (2.0, 0.28, 3.0), "solid": True, "variants": ["glazed", "lattice", "solid"]},
+        "partition_doorway": {"build": partition_doorway, "size": (2.0, 0.28, 3.0), "solid": False, "variants": ["timber", "arch"]},
+        "wainscot": {"build": wainscot, "size": (2.0, 0.12, 1.1), "solid": False},
+        "book_gallery": {"build": book_gallery, "size": (4.16, 1.4, 4.9), "solid": True, "clearance": 1.0},
+        "gallery_stair": {"build": gallery_stair, "size": (1.8, 1.8, 3.7), "solid": True, "clearance": 0.8},
+        "rug_ornate": {"build": rug_ornate, "size": (3.0, 2.12, 0.04), "solid": False, "variants": list(RUG_PALETTES)},
+        "rug_runner": {"build": rug_runner, "size": (1.2, 4.12, 0.04), "solid": False, "variants": list(RUG_PALETTES)},
+    }
+)
+
+PROPS.update(
+    {
+        "screen_post": {"build": screen_post, "size": (0.28, 0.28, 3.0), "solid": True},
+        "study_chair": {"build": study_chair, "size": (0.5, 0.5, 0.95), "solid": True, "clearance": 0.4},
+        "card_catalog": {"build": card_catalog, "size": (1.44, 0.62, 1.4), "solid": True, "clearance": 0.8},
+        "school_desk": {"build": school_desk, "size": (1.5, 0.96, 0.95), "solid": True},
+        "teacher_desk": {"build": teacher_desk, "size": (2.06, 0.94, 1.1), "solid": True, "clearance": 1.0},
+        "blackboard_big": {"build": blackboard_big, "size": (3.3, 0.18, 2.95), "solid": False},
+        "coat_rack_wall": {"build": coat_rack_wall, "size": (2.1, 0.34, 2.08), "solid": False},
+        "easel": {"build": easel, "size": (0.9, 1.0, 1.8), "solid": True},
+        "lab_bench": {"build": lab_bench, "size": (2.24, 0.92, 1.45), "solid": True, "clearance": 0.8},
+        "planet_mobile": {"build": planet_mobile, "size": (1.4, 1.4, 1.45), "solid": False, "hang": True},
+        "school_bell": {"build": school_bell, "size": (0.5, 0.5, 2.1), "solid": False, "hang": True},
+        "pew": {"build": pew, "size": (2.56, 0.8, 1.12), "solid": True},
+        "candle_stand": {"build": candle_stand, "size": (0.5, 0.5, 1.9), "solid": True},
+        "chancel_altar": {"build": chancel_altar, "size": (3.4, 1.3, 3.25), "solid": True, "clearance": 1.0},
+        "reading_pulpit": {"build": reading_pulpit, "size": (1.0, 1.1, 1.8), "solid": True},
+        "refectory_table": {"build": refectory_table, "size": (3.44, 1.8, 1.1), "solid": True},
+        "cell_curtain": {"build": cell_curtain, "size": (1.2, 0.12, 2.1), "solid": True},
+        "censer_hanging": {"build": censer_hanging, "size": (0.3, 0.3, 1.55), "solid": False, "hang": True},
+    }
+)
+
+PROPS.update(
+    {
+        "summoning_dais": {"build": summoning_dais, "size": (3.4, 3.4, 0.34), "solid": False, "light": ((0.0, 0.0, 0.5), "8FD8FF", 1.2, 4.5)},
+        "orrery": {"build": orrery, "size": (1.92, 1.9, 2.16), "solid": True},
+        "floating_candles": {"build": floating_candles, "size": (1.6, 1.6, 2.1), "solid": False, "hang": True, "light": ((0.0, 0.0, -1.2), "FFC27A", 1.0, 4.5)},
+        "copper_pipes": {"build": copper_pipes, "size": (3.4, 0.3, 1.5), "solid": False, "hang": True},
+        "athanor_furnace": {"build": athanor_furnace, "size": (1.8, 1.2, 4.0), "solid": True, "light": ((0.0, -0.7, 0.75), "FF8A3A", 1.6, 4.5), "clearance": 1.0},
+        "hearth_ring": {"build": hearth_ring, "size": (2.7, 2.7, 0.16), "solid": False},
+    }
+)
