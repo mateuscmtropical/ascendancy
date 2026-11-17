@@ -356,29 +356,56 @@ def furnish_school(f) -> None:
 
 
 def furnish_seminary(f) -> None:
-    """Seminary (30 m): a study chapel in the middle (lectern, rows of benches), the refectory on the left, the
-    dormitory on the right, books and candles along the walls."""
+    """Seminary (30 m): a chapel nave in the middle (two blocks of pews on a runner, chancel altar with a gilded
+    reredos and candle stands, lectern, censers on chains), the refectory partitioned off on the left (long tables,
+    a high table, a reading pulpit, hearth and stove), the dormitory partitioned off on the right (beds between
+    curtains, wardrobes, washstands) and an entrance hall with a parlour hearth on one side and a study nook on the
+    other."""
+    f.on_wall("left", "fireplace_tall", 5.5, height=5.0)
+    f.grid("wheel_chandelier", (-2.9, 2.9), (4.4, 11.0), 2, 2)
+
+    f.on_wall("back", "chancel_altar", 0.0)
+    f.put("candle_stand", -2.5, 18.2)
+    f.put("candle_stand", 2.5, 18.2)
     f.put("lectern", 0.0, 15.4)
-    f.on_wall("back", "star_tapestry", 0.0)
-    f.on_wall("back", "tall_bookcase", -1.95)
-    f.on_wall("back", "tall_bookcase", 1.95)
-    f.grid("bench_long", (-1.2, 1.2), (5.0, 12.2), 2, 5)
-    f.put("rug", 0.0, 13.8, variant="red")
+    f.put("rug_runner", 0.0, 9.0, variant="red")
+    f.put("censer_hanging", 0.0, 6.0)
+    f.put("censer_hanging", 0.0, 13.0)
 
-    f.grid("tavern_table_set", (-11.4, -6.6), (5.0, 12.4), 2, 3, 90.0)
-    f.on_wall("left", "fireplace", 9.7)
-    f.on_wall("back", "kitchen_stove", -11.6)
-    f.on_wall("back", "plate_rack", -9.4)
-    f.on_wall("back", "bread_rack", -7.2)
-    f.put("barrel_group", -13.4, 16.6)
+    for pew_u in (-2.9, 2.9):
+        f.grid("pew", (pew_u, pew_u), (4.2, 11.2), 1, 6, 180.0)
 
-    f.grid("bed_single", (6.2, 12.2), (16.6, 16.6), 4, 1)
-    f.grid("bed_single", (6.2, 12.2), (5.6, 5.6), 4, 1, 180.0)
-    f.grid("nightstand", (7.2, 11.2), (17.8, 17.8), 3, 1)
-    f.wall("right", ["wardrobe", "washstand", "wardrobe", ("wall_shelf", {"variant": "books"}), "wardrobe"], start=7.6, gap=0.7)
-    f.put("reading_table", 8.6, 11.0)
-    f.put("chest_gold", 13.4, 4.0)
-    f.grid("wheel_chandelier", (-9.0, 9.0), (5.0, 13.0), 3, 2)
+    back_room_b(f, f.left, 4, 5, door_on="right", door_slot=2, variant="lattice", has_left=False)
+    f.on_wall("left", "fireplace_tall", 13.85, height=5.0)
+    f.on_wall("left", "reading_pulpit", 10.2)
+    f.grid("refectory_table", (-9.2, -9.2), (11.3, 14.9), 1, 2, 90.0)
+    f.put("refectory_table", -10.4, 17.6)
+    f.put("rug_ornate", -12.0, 14.0, 90.0, variant="green")
+    f.on_wall("back", "kitchen_stove", -7.3)
+    f.on_wall("back", "bread_rack", -13.4)
+    f.put("barrel_group", -12.9, 17.6, 90.0)
+    f.put("hanging_pots", -12.0, 11.5)
+
+    back_room_b(f, f.right - 8.0 - SCREEN_HALF_B, 4, 5, door_on="left", door_slot=2, variant="lattice", has_right=False)
+    f.grid("bed_single", (f.right - 1.05, f.right - 1.05), (10.4, 16.0), 1, 3, -90.0)
+    f.grid("cell_curtain", (f.right - 0.7, f.right - 0.7), (11.8, 14.6), 1, 2)
+    f.put("wardrobe", 13.7, 9.45, 180.0)
+    f.put("wardrobe", 12.4, 9.45, 180.0)
+    f.put("washstand", 7.4, 9.45, 180.0)
+    f.put("rug_ornate", 10.4, 13.6, 90.0, variant="plum")
+    f.put("chest_gold", 9.0, 18.3)
+    f.put("candle_stand", 8.0, 12.0)
+
+    f.put("rug_ornate", -9.6, 4.6, 90.0, variant="red")
+    f.put("armchair", -11.4, 4.3, -70.0)
+    f.put("armchair", -11.4, 6.7, -110.0)
+    f.put("plant_pot", -7.4, 2.0, variant="fern")
+
+    f.put("rug_ornate", 10.0, 4.8, variant="green")
+    f.put("reading_table", 10.0, 4.8)
+    f.grid("study_chair", (9.4, 10.6), (3.85, 3.85), 2, 1, 180.0)
+    f.grid("study_chair", (9.4, 10.6), (5.75, 5.75), 2, 1)
+    f.grid("tall_bookcase", (f.right - 0.23, f.right - 0.23), (1.4, 7.7), 1, 4, -90.0)
 
 
 SHELF_PAIR_OFFSET = 0.25  # half the depth of a floor_shelf: two of them stand back to back
