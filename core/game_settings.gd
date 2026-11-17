@@ -76,28 +76,29 @@ const RESOLUTION_LABELS: PackedStringArray = [
 ]
 const VSYNC_LABELS: PackedStringArray = ["Desligado", "Ligado", "Adaptativo", "Mailbox"]
 const MAX_FPS_LABELS: PackedStringArray = ["Sem limite", "30", "60", "120", "144", "165", "240"]
-const RENDER_SCALE_LABELS: PackedStringArray = ["50%", "67%", "77%", "85%", "100%"]
 const MSAA_LABELS: PackedStringArray = ["Desligado", "2x", "4x", "8x"]
 const SHADOW_LABELS: PackedStringArray = ["Baixa", "Média", "Alta", "Ultra"]
-const VOLUME_LABELS: PackedStringArray = [
-	"0%", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"
-]
+## Ajustes contínuos viram slider em porcentagem: a opção escolhida é o próprio valor.
+const SLIDER_RANGE: Dictionary[Setting, Vector2i] = {
+	Setting.RENDER_SCALE: Vector2i(50, 100),
+	Setting.MASTER_VOLUME: Vector2i(0, 100),
+	Setting.AMBIENT_VOLUME: Vector2i(0, 100),
+	Setting.EFFECTS_VOLUME: Vector2i(0, 100),
+	Setting.MUSIC_VOLUME: Vector2i(0, 100),
+}
+## Sliders gravam com outra chave: a versão em passos guardava o índice da opção.
+const SLIDER_KEY_SUFFIX: String = "_PERCENT"
 const FIXED_OPTION_LABELS: Dictionary[Setting, PackedStringArray] = {
 	Setting.WINDOW_MODE: WINDOW_MODE_LABELS,
 	Setting.RESOLUTION: RESOLUTION_LABELS,
 	Setting.VSYNC: VSYNC_LABELS,
 	Setting.MAX_FPS: MAX_FPS_LABELS,
-	Setting.RENDER_SCALE: RENDER_SCALE_LABELS,
 	Setting.MSAA: MSAA_LABELS,
 	Setting.FXAA: OFF_ON,
 	Setting.SHADOWS: SHADOW_LABELS,
 	Setting.AMBIENT_OCCLUSION: OFF_ON,
 	Setting.INDIRECT_LIGHT: OFF_ON,
 	Setting.GLOW: OFF_ON,
-	Setting.MASTER_VOLUME: VOLUME_LABELS,
-	Setting.AMBIENT_VOLUME: VOLUME_LABELS,
-	Setting.EFFECTS_VOLUME: VOLUME_LABELS,
-	Setting.MUSIC_VOLUME: VOLUME_LABELS,
 }
 ## Padrão = o que o projeto já usa (project.godot e o Environment da praça).
 const DEFAULT_OPTION: Dictionary[Setting, int] = {
@@ -106,17 +107,17 @@ const DEFAULT_OPTION: Dictionary[Setting, int] = {
 	Setting.RESOLUTION: 2,
 	Setting.VSYNC: 0,
 	Setting.MAX_FPS: 0,
-	Setting.RENDER_SCALE: 4,
+	Setting.RENDER_SCALE: 100,
 	Setting.MSAA: 2,
 	Setting.FXAA: 1,
 	Setting.SHADOWS: 2,
 	Setting.AMBIENT_OCCLUSION: 1,
 	Setting.INDIRECT_LIGHT: 1,
 	Setting.GLOW: 1,
-	Setting.MASTER_VOLUME: 8,
-	Setting.AMBIENT_VOLUME: 10,
-	Setting.EFFECTS_VOLUME: 10,
-	Setting.MUSIC_VOLUME: 6,
+	Setting.MASTER_VOLUME: 80,
+	Setting.AMBIENT_VOLUME: 100,
+	Setting.EFFECTS_VOLUME: 100,
+	Setting.MUSIC_VOLUME: 60,
 }
 const WINDOW_MODES: Array[DisplayServer.WindowMode] = [
 	DisplayServer.WINDOW_MODE_WINDOWED,
@@ -136,9 +137,8 @@ const VSYNC_MODES: Array[DisplayServer.VSyncMode] = [
 	DisplayServer.VSYNC_ADAPTIVE,
 	DisplayServer.VSYNC_MAILBOX,
 ]
-const VOLUME_STEP: float = 0.1
+const PERCENT: float = 0.01
 const MAX_FPS_VALUES: Array[int] = [0, 30, 60, 120, 144, 165, 240]
-const RENDER_SCALES: Array[float] = [0.5, 0.67, 0.77, 0.85, 1.0]
 const MSAA_MODES: Array[Viewport.MSAA] = [
 	Viewport.MSAA_DISABLED,
 	Viewport.MSAA_2X,
@@ -171,8 +171,8 @@ var _appliers: Dictionary[Setting, Callable] = {
 	Setting.GLOW: _apply_glow,
 	Setting.MASTER_VOLUME: _apply_volume.bind(&"Master"),
 	Setting.AMBIENT_VOLUME: _apply_volume.bind(&"Ambient"),
-	Setting.EFFECTS_VOLUME: _apply_volume.bind(&"Efeitos"),
-	Setting.MUSIC_VOLUME: _apply_volume.bind(&"Música"),
+	Setting.EFFECTS_VOLUME: _apply_volume.bind(&"Effects"),
+	Setting.MUSIC_VOLUME: _apply_volume.bind(&"Music"),
 }
 
 
@@ -200,7 +200,19 @@ func settings_in(section: Section) -> Array[Setting]:
 
 
 func option_labels_of(setting: Setting) -> PackedStringArray:
-	return _option_labels[setting]
+	return _option_labels.get(setting, PackedStringArray())
+
+
+func is_slider(setting: Setting) -> bool:
+	return SLIDER_RANGE.has(setting)
+
+
+## Menor e maior opção válida: índice da lista ou faixa do slider.
+func option_range(setting: Setting) -> Vector2i:
+	if is_slider(setting):
+		return SLIDER_RANGE[setting]
+
+	return Vector2i(0, _option_labels[setting].size() - 1)
 
 
 func chosen_option(setting: Setting) -> int:
@@ -241,19 +253,27 @@ func _load() -> void:
 		return
 
 	for setting in _chosen_options:
-		var key: String = Setting.find_key(setting)
-		var saved_option: int = config.get_value(SETTINGS_SECTION, key, _chosen_options[setting])
+		var saved_option: int = config.get_value(
+			SETTINGS_SECTION, _key_of(setting), _chosen_options[setting]
+		)
+		var valid_range: Vector2i = option_range(setting)
 
-		_chosen_options[setting] = clampi(saved_option, 0, _option_labels[setting].size() - 1)
+		_chosen_options[setting] = clampi(saved_option, valid_range.x, valid_range.y)
 
 
 func _save() -> void:
 	var config: ConfigFile = ConfigFile.new()
 
 	for setting in _chosen_options:
-		config.set_value(SETTINGS_SECTION, Setting.find_key(setting), _chosen_options[setting])
+		config.set_value(SETTINGS_SECTION, _key_of(setting), _chosen_options[setting])
 
 	config.save(SETTINGS_PATH)
+
+
+func _key_of(setting: Setting) -> String:
+	var key: String = Setting.find_key(setting)
+
+	return key + SLIDER_KEY_SUFFIX if is_slider(setting) else key
 
 
 func _apply_all() -> void:
@@ -309,7 +329,7 @@ func _apply_max_fps(option: int) -> void:
 
 
 func _apply_render_scale(option: int) -> void:
-	var scale: float = RENDER_SCALES[option]
+	var scale: float = option * PERCENT
 	var is_upscaled: bool = scale < 1.0
 
 	get_viewport().scaling_3d_mode = (
@@ -360,10 +380,10 @@ func _apply_glow(option: int) -> void:
 	environment.glow_enabled = option == 1
 
 
-## Volume em passos de 10%; zero silencia o canal de vez.
+## Volume em porcentagem; zero silencia o canal de vez.
 func _apply_volume(option: int, bus_name: StringName) -> void:
 	var bus_index: int = AudioServer.get_bus_index(bus_name)
-	var volume: float = option * VOLUME_STEP
+	var volume: float = option * PERCENT
 
 	AudioServer.set_bus_mute(bus_index, option == 0)
 	AudioServer.set_bus_volume_db(bus_index, linear_to_db(volume))

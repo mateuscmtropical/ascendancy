@@ -1430,6 +1430,7 @@ def build_farm_fields() -> dict:
     check_plots_clear_of_tracks()
 
     b.collider(world(gate_x, 3.0, track_top - 0.08), world(max_x, -3.0, track_top), name="Path")
+    gate_ramp(b, gate_x - 0.6, min_x, YARD_TOP, track_top)
     b.collider(world(min_x + 0.6, max_z - 1.0, track_top - 0.08), world(min_x + 3.6, min_z + 1.0, track_top), name="Path")
     dirt_track(b, FIELD_LANE, track_top, SEED + 72)
 
@@ -1450,6 +1451,16 @@ def build_farm_fields() -> dict:
     farm_cart(b, frame_at_world(113.0, -21.4, track_top, 90.0), load="produce", seed=9)
 
     return finish_model(b, "farm_fields", {"origin": "world", "doors": []})
+
+
+def gate_ramp(b: Builder, start_x: float, end_x: float, start_top: float, end_top: float) -> None:
+    """Gentle collision ramp across the wall gap: the quadra stands 13 cm above the field and the chamfered kerb
+    alone made the capsule snag (you had to jump through the gate off its middle)."""
+    run = end_x - start_x
+    drop = start_top - end_top
+    frame = Matrix.Translation(world(start_x, 0.0, start_top)) @ Matrix.Rotation(math.atan2(drop, run), 4, "Y")
+
+    b.collider((0.0, -FARM_GATE_Z[1], -0.3), (math.hypot(run, drop), -FARM_GATE_Z[0], 0.0), frame=frame, name="Path")
 
 
 def gate_post(b: Builder, position: tuple) -> None:
