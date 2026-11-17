@@ -593,6 +593,12 @@ FARM_SHADE_TREES = {  # nome -> (tipo em PLANT_MODELS, variante, x, z, escala): 
 CANOPY_RADIUS = {"tree_old": 8.0, "tree_bloom": 4.9}  # maior alcance da copa em escala 1 (medido nos glTF de build_trees.py)
 KITCHEN_GARDEN = ("garden", 95.6, 101.2, -43.2, -34.8)  # horta ao lado da casa-grande, atrás da tulha
 MULA = {"position": (112.5, 32.0), "rotation": math.pi}  # x, z no pasto além do muro, de frente para a estradinha
+FARM_MILL = {"position": (141.0, 30.0), "rotation": math.pi}  # casa do moinho no canto leste do pasto: frente para a estradinha, roda a oeste
+FARM_MONJOLO = {"position": (131.5, 37.9), "rotation": math.pi}  # monjolo a oeste da calha do moinho, que dá a água dele; cocho para leste
+FARM_MACHINES = {  # nó -> (modelo de build_farm.py, marcador no sidecar de farm_fields, script que o move, giro)
+    "WaterWheel": ("res://art/town/farm/water_wheel.gltf", "water_wheel", "res://features/hub/water_wheel.gd", FARM_MILL["rotation"]),
+    "MonjoloBeam": ("res://art/town/farm/monjolo_beam.gltf", "monjolo_beam", "res://features/hub/monjolo.gd", FARM_MONJOLO["rotation"]),
+}
 
 
 # ---------- town plan: lots, archetypes and shops (seções C e D) ----------
@@ -1568,6 +1574,7 @@ def add_farm(scene: SceneWriter) -> None:
         place(scene, name, "Farm", plant_models(kind)[variant], (x, 0.03, z), rotation_y=x * 0.7, scale=scale)
 
     add_farm_animals(scene)
+    add_farm_machines(scene)
 
 
 PALM_ALLEY_X = tuple(108.0 + 7.0 * index for index in range(6))  # alameda de palmeiras-imperiais ao longo da estradinha, depois do portão
@@ -1689,6 +1696,27 @@ def add_farm_animals(scene: SceneWriter) -> None:
                 "body_size": vector(*FARM_ANIMAL_BODY[pen]),
                 "obstacles": f"PackedVector3Array({trunk_text})",
             })
+
+
+def add_farm_machines(scene: SceneWriter) -> None:
+    """The parts that move by water: the mill wheel and the monjolo beam, each at its marker in the farm_fields
+    sidecar (build_farm.py draws the fixed rest around them). Outside the navmesh group: they turn, and the fixed
+    colliders of farm_fields already block where they swing."""
+    markers = model_sidecar("res://art/town/farm/farm_fields.gltf").get("markers", {})
+    machines = [(name, model, markers[marker], script, rotation) for name, (model, marker, script, rotation) in FARM_MACHINES.items() if model_exists(model) and marker in markers]
+
+    if len(machines) < len(FARM_MACHINES):
+        print("AVISO: moinho ou monjolo ausente; rode tools_src/build_farm.py no Blender")
+
+    if machines:
+        scene.add_node("FarmMachines", ".", "Node3D")
+
+    for name, model, position, script, rotation in machines:
+        scene.add_node(name, "FarmMachines", instance=scene.external_id("PackedScene", model), properties={
+            "position": vector(*position),
+            "rotation": vector(0.0, rotation, 0.0),
+            "script": f'ExtResource("{scene.external_id("Script", script)}")',
+        })
 
 
 def rounded_loop(corners: list, radius: float, steps: int = 4) -> list:
