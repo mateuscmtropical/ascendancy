@@ -1,46 +1,46 @@
 {
  "aabb_min": [
-  -11.52,
+  -11.55,
   0.05,
-  -19.07
+  -19.098
  ],
  "aabb_max": [
-  11.52,
+  12.45,
   7.0,
   -0.32
  ],
  "shop": "guild",
- "props": 59,
+ "props": 84,
  "lights": [
   {
    "position": [
-    0.0,
-    1.65,
-    -11.2
-   ],
-   "color": "8FD8FF",
-   "energy": 1.5,
-   "range": 5.0
-  },
-  {
-   "position": [
-    -10.82,
+    -11.2,
     0.65,
-    -9.7
+    -9.65
    ],
-   "color": "FF8A3D",
-   "energy": 2.5,
-   "range": 6.0
+   "color": "FF8A3A",
+   "energy": 2.6,
+   "range": 8.0
   },
   {
    "position": [
-    -7.2,
-    6.15,
-    -4.5
+    -6.2,
+    1.8,
+    -3.94
    ],
    "color": "FFB347",
-   "energy": 1.6,
-   "range": 7.0
+   "energy": 1.2,
+   "range": 5.5
+  },
+  {
+   "position": [
+    11.3,
+    1.8,
+    -8.6
+   ],
+   "color": "FFB347",
+   "energy": 1.2,
+   "range": 5.5
   }
  ],
  "markers": {}
