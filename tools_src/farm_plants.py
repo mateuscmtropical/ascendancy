@@ -45,6 +45,12 @@ CORN_LEAF_TINTS = ("FFFFFF", "E4F0C8")
 CABBAGE_HEAD = "C9E39A"
 CABBAGE_OUTER_TINTS = ("7FB094", "8FBF8A")
 CABBAGE_INNER = "F4FFD8"
+COFFEE_LEAF_TINTS = ("2C6A38", "357642", "265E32")
+COFFEE_CHERRY = "C23A2E"
+CANE_STALK_TINTS = ("8DB04A", "A58A3C", "7FA43E")
+CANE_LEAF_TINTS = ("FFFFFF", "DDEBB0")
+CASSAVA_STEM = "A9754E"
+CASSAVA_LEAF_TINTS = ("C4E8A0", "A9DB86")
 CARROT_ROOT = "E8822E"
 CARROT_TINTS = ("FFFFFF", "DDF0C4")
 MEADOW_TINTS = ("8FC462", "A9D070", "79B356")
@@ -586,6 +592,48 @@ def carrot_plant(generator: random.Random) -> list:
     ]
 
     return [(shoulder, PAINT_MATERIAL, CARROT_ROOT), (merged(fronds), CROP_MATERIAL, generator.choice(CARROT_TINTS))]
+
+
+def coffee_plant(generator: random.Random) -> list:
+    """Coffee shrub (cafeeiro): a tiered dark-green dome of leaves with ripe cherries studding the lower tiers."""
+    scale = generator.uniform(0.7, 0.9)
+    dome = lathe_shape([(0.06, 0.0), (0.42 * scale, 0.28), (0.55 * scale, 0.6), (0.45 * scale, 0.95), (0.2 * scale, 1.22), (0.03, 1.32)], 7)
+    cherries = [
+        moved(lathe_shape([(0.004, 0.0), (0.03, 0.025), (0.004, 0.055)], 5), transform((math.cos(angle) * 0.5 * scale, math.sin(angle) * 0.5 * scale, height), 0.0, 0.0))
+        for angle, height in ((generator.uniform(0.0, 6.28), generator.uniform(0.3, 0.75)) for _ in range(7))
+    ]
+
+    return [(dome, PAINT_MATERIAL, generator.choice(COFFEE_LEAF_TINTS)), (merged(cherries), PAINT_MATERIAL, COFFEE_CHERRY)]
+
+
+def cane_plant(generator: random.Random) -> list:
+    """Sugar cane clump: tall jointed stalks leaning apart, long blades arching from the crown."""
+    twist = generator.uniform(0.0, 360.0)
+    stalks = [
+        moved(lathe_shape([(0.028, 0.0), (0.024, 1.4), (0.014, generator.uniform(2.5, 3.1))], 5), transform((0.0, 0.0, 0.0), twist + index * 90.0, generator.uniform(4.0, 11.0)))
+        for index in range(4)
+    ]
+    blades = [
+        moved(
+            ribbon(arc_path(generator.uniform(0.9, 1.2), generator.uniform(42.0, 62.0), generator.uniform(90.0, 130.0), 3), 0.1, "corn_leaf", along="u"),
+            transform((0.0, 0.0, generator.uniform(2.1, 2.8)), twist + index * 51.0 + generator.uniform(-20.0, 20.0)),
+        )
+        for index in range(7)
+    ]
+
+    return [(merged(stalks), PAINT_MATERIAL, generator.choice(CANE_STALK_TINTS)), (merged(blades), CROP_MATERIAL, generator.choice(CANE_LEAF_TINTS))]
+
+
+def cassava_plant(generator: random.Random) -> list:
+    """Cassava (mandioca): a few woody stems crowned by hands of long-fingered leaves."""
+    twist = generator.uniform(0.0, 360.0)
+    stems = [moved(lathe_shape([(0.022, 0.0), (0.016, 0.6), (0.01, generator.uniform(0.95, 1.2))], 4), transform((0.0, 0.0, 0.0), twist + index * 120.0, generator.uniform(6.0, 14.0))) for index in range(3)]
+    leaves = [
+        moved(ribbon(arc_path(generator.uniform(0.35, 0.5), generator.uniform(20.0, 55.0), generator.uniform(10.0, 50.0), 2), 0.3, "carrot"), transform((0.0, 0.0, generator.uniform(0.9, 1.5)), twist + index * 47.0))
+        for index in range(8)
+    ]
+
+    return [(merged(stems), PAINT_MATERIAL, CASSAVA_STEM), (merged(leaves), CROP_MATERIAL, generator.choice(CASSAVA_LEAF_TINTS))]
 
 
 def tuft_variants(tints: tuple, width: float = 0.5, height: float = 0.45) -> list:

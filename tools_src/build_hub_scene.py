@@ -536,8 +536,8 @@ TOWN_WALL_THICKNESS = 1.2
 FARM_FIELDS = (CITY_MAX[0] + TOWN_WALL_THICKNESS, 150.0, -46.0, 46.0)  # campo aberto além do muro leste
 FARM_GATE_Z = (-3.0, 3.0)  # vão no muro leste por onde a estradinha da fazenda sai para o campo
 FARM_LANE_HALF_WIDTH = 2.0
-FARMHOUSE = {"position": (FARM_YARD[0] + 1.5, 0.0, -37.0), "rotation": SIDE_ROTATION["W"], "width": 12.0, "depth": 10.0}  # de frente para a abside
-BARN = {"position": (94.5, 0.0, -27.0), "rotation": 0.0, "width": 13.0, "depth": 15.0}  # portões para o terreiro (+z)
+FARMHOUSE = {"position": (85.5, 0.0, -34.6), "rotation": 0.0, "width": 16.8, "depth": 9.4}  # casa-grande ao norte do terreiro, varanda para o sul (+z)
+BARN = {"position": (94.6, 0.0, -17.0), "rotation": SIDE_ROTATION["W"], "width": 18.0, "depth": 6.4}  # tulha ao longo do muro leste, portas para o terreiro (-x)
 FARM_PENS = {  # cercado -> (min x, max x, min z, max z) por dentro da cerca
     "cows": (77.0, 100.5, 4.0, 28.0),
     "pigs": (85.0, 100.5, 31.0, 43.5),
@@ -551,12 +551,12 @@ FARM_ANIMAL_SEED = 5150
 FARM_ANIMAL_GAP = 1.6  # distância mínima entre bichos ao nascer, em comprimentos do corpo
 FARM_ANIMAL_TRIES = 60
 FARM_FIELD_PLOTS = {  # canteiro -> (cultura, min x, max x, min z, max z): fileiras correm ao longo de x
-    # Uma faixa por cultura: horta (repolho, cenoura) junto do portão, grãos adiante, trigo na faixa do fundo,
+    # Uma faixa por cultura: mandioca e cana junto do portão, milho adiante, cafezal na faixa do fundo,
     # feno ao sul. A estradinha (z = 0) fica com 1,8 m de margem de cada lado e as trilhas com 1,4 m.
-    "Wheat": ("wheat", 108.0, 147.0, -44.0, -24.0),
-    "Cabbage": ("cabbage", 108.0, 124.0, -19.0, -5.0),
+    "Coffee": ("coffee", 108.0, 147.0, -44.0, -24.0),
+    "Cassava": ("cassava", 108.0, 124.0, -19.0, -5.0),
     "Corn": ("corn", 127.0, 147.0, -19.0, -5.0),
-    "Carrot": ("carrot", 108.0, 124.0, 5.0, 19.0),
+    "Cane": ("cane", 108.0, 124.0, 5.0, 19.0),
     "HayField": ("hayfield", 127.0, 147.0, 5.0, 19.0),
     "Meadow": ("meadow", 108.0, 147.0, 23.0, 44.0),
 }
@@ -566,7 +566,7 @@ FARM_SHADE_TREES = {  # nome -> (tipo em PLANT_MODELS, variante, x, z, escala): 
     "PigBloom": ("tree_bloom", 1, 89.0, 35.2, 0.7),
 }
 CANOPY_RADIUS = {"tree_old": 8.0, "tree_bloom": 4.9}  # maior alcance da copa em escala 1 (medido nos glTF de build_trees.py)
-KITCHEN_GARDEN = ("garden", 77.0, 86.0, -28.5, -20.0)  # horta ao lado da casa do fazendeiro
+KITCHEN_GARDEN = ("garden", 95.6, 101.2, -43.2, -34.8)  # horta ao lado da casa-grande, atrás da tulha
 MULA = {"position": (112.5, 32.0), "rotation": math.pi}  # x, z no pasto além do muro, de frente para a estradinha
 
 
@@ -1494,7 +1494,7 @@ def add_backdrop(scene: SceneWriter) -> None:
 
 FARM_MODELS = ("farm_yard", "farm_fields")
 FARMHANDS = {  # nome -> (corpo, cabelo, posição, para onde olha, animação)
-    "Farmer": ("villager_male", "brown", (86.4, -15.0), (88.0, -15.0), "ual1/Idle"),
+    "Farmer": ("villager_male", "brown", (85.5, -17.0), (88.0, -17.0), "ual1/Idle"),
     "Milkmaid": ("villager_female", "blond", (88.0, 3.2), (88.0, 8.0), "ual1/Idle_Talking"),
     "Swineherd": ("villager_male", "grey", (90.0, 30.2), (93.0, 36.0), "ual2/Idle_FoldArms"),
 }
@@ -1539,11 +1539,24 @@ def add_farm(scene: SceneWriter) -> None:
         npc(scene, name, body, hair, stand(position, facing_yaw(position, target), animation, 0.0, height=0.03))
 
     check_shade_trees()
+    add_palm_alley(scene)
 
     for name, (kind, variant, x, z, scale) in FARM_SHADE_TREES.items():
         place(scene, name, "Farm", plant_models(kind)[variant], (x, 0.03, z), rotation_y=x * 0.7, scale=scale)
 
     add_farm_animals(scene)
+
+
+PALM_ALLEY_X = tuple(108.0 + 7.0 * index for index in range(6))  # alameda de palmeiras-imperiais ao longo da estradinha, depois do portão
+PALM_ALLEY_Z = 4.2  # metros de cada lado do eixo da estradinha (pista de 3,8 m + borda)
+
+
+def add_palm_alley(scene: SceneWriter) -> None:
+    """Royal palms in two rows flanking the lane out of the gate, one every 7 m, alternating the two taller kinds."""
+    models = plant_models("palm")[1:]
+
+    for index, (side, x) in enumerate(itertools.product((-1, 1), PALM_ALLEY_X)):
+        place(scene, f"AlleyPalm{index:02d}", "Farm", models[index % len(models)], (x, -STREET_DROP, side * PALM_ALLEY_Z), rotation_y=index * 1.3, scale=1.0)
 
 
 def spread_points(generator: random.Random, area: tuple, count: int, gap: float, trunks: tuple = ()) -> list:

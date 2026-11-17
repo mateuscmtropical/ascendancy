@@ -1,16 +1,22 @@
-"""Model the farm that feeds the town (block 5 behind the cathedral apse and the open fields past the east wall).
+"""Model the fazenda that feeds the town (block 5 behind the cathedral apse and the open fields past the east wall),
+a 19th-century Brazilian coffee farm.
 
 Outputs in art/town/farm/, each with a JSON sidecar (AABB in Godot coords, doors, lights, markers):
-  farmhouse.gltf    the farmer's house: stone ground storey, half-timbered loft, porch, chimney, woodpile
-  barn.gltf         red board barn with stone plinth, big double doors, hayloft door and hoist beam
-  farm_yard.gltf    everything else inside the block: dirt yard and wandering cart lane, kitchen garden, cow
-                    pasture with shelter, hay rack and trough, pigsty with mud and hut, well with a little roof,
-                    cart, wheelbarrow, hay bales and heaps, baskets of produce, sacks, split-rail fences
-  farm_fields.gltf  the fields past the wall: wheat, corn, cabbage, carrots, a hay field in windrows, a mown
+  farmhouse.gltf    the casa-grande (farm_sede.py): stone base, whitewashed walls, blue shutters, hipped capa-e-canal
+                    roof, front alpendre with turned posts and balustrade, stone stair, chimney
+  barn.gltf         the tulha (farm_rural.py): whitewashed walls in a dark timber frame on a stone base, hipped roof,
+                    big plank doors, raised loading door with platform and ladder (file name kept)
+  farm_yard.gltf    everything else inside the block: lawn and lane, terreiro de cafe (brick paving, white kerbs,
+                    coffee drying in beds, rakes, sacks, baskets), horta, curral and pigsty with heavy fences and
+                    porteiras, ranchos on round posts, cacimba with sarilho, spring box with bamboo bica and trough
+  farm_fields.gltf  the fields past the wall: cafezal, mandioca, sugar cane, milho, a hay field in windrows, a mown
                     meadow, scarecrows, the lane out of the gate, footpaths, gate posts and the outer fence
   farm_wagon.gltf   two-wheeled covered wagon pulled by a horse along the streets (features/hub/carriage.gd):
                     shafts up to the harness rings, driver's bench (sidecar marker driver_seat)
   hay_cart.gltf     open cart heaped with hay, the other wagon of the street loop
+
+The palm alley along the lane is placed by build_hub_scene.py (add_palm_alley). Shared colonial pieces live in
+farm_colonial.py, water works in farm_water.py.
 
 The yard and the fields are modelled in world coordinates (origin of the model = origin of the town), so the
 scene places them at (0, 0, 0) without rotation; layout numbers come from build_hub_scene.py (FARM_*). Blender
@@ -20,7 +26,7 @@ small solids, stamped with numpy and batched one mesh per (material, tint): a fi
 a handful of objects.
 
 Ground colliders are named for the footsteps (features/audio/tag_ground_surfaces.gd reads the name without its
-number): Yard<n>, Path<n> and Field<n> sound like dirt, Bed<n> like grass.
+number): Yard<n>, Path<n> and Field<n> sound like dirt, Bed<n> like grass, Terreiro like stone.
 
 Usage:
   blender -b --factory-startup -P tools_src/build_farm.py -- [farmhouse barn farm_yard farm_fields farm_wagon hay_cart]
@@ -32,11 +38,12 @@ import math
 import random
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 import bmesh
 import bpy
 import numpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -61,11 +68,6 @@ from build_town_houses import (  # noqa: E402
     WOOD_LIGHT_BAND,
     WORLD_TILE,
     Builder,
-    House,
-    draw_chimney,
-    draw_door,
-    draw_window,
-    Opening,
     plain_material,
     srgb,
     textured_material,
@@ -77,7 +79,10 @@ from farm_plants import (  # noqa: E402
     PlantBatch,
     arc_path,
     cabbage_plant,
+    cane_plant,
     carrot_plant,
+    cassava_plant,
+    coffee_plant,
     corn_plant,
     crop_atlas,
     hay_texture,
@@ -88,19 +93,18 @@ from farm_plants import (  # noqa: E402
     transforms,
     tuft_variants,
     variants_of,
-    wheat_variants,
 )
+from farm_rural import rancho, tulha  # noqa: E402
+from farm_sede import casa_grande  # noqa: E402
+from farm_water import cacimba, spring_box  # noqa: E402
 from shop_props_common import barrel, lathe, sack  # noqa: E402
 
 FARM_DIR = Path(__file__).resolve().parent.parent / "art" / "town" / "farm"
 CITY_EAST_WALL_X = FARM_YARD[1]
 TOWN_GATE_DEPTH = FARM_FIELDS[0] - FARM_YARD[1]  # espessura do muro: o caminho atravessa o vão
-ROOF_PITCH = 48.0
 OUTSIDE_GROUND = -STREET_DROP  # além do muro o chão é o do campo, na altura das ruas
 YARD_TOP = 0.03  # piso de terra da quadra: 3 cm acima do calçamento que ele cobre
 FIELD_RAISE = 0.06  # canteiros levemente acima do campo
-FENCE_HEIGHT = 1.15
-FENCE_POST_SPACING = 2.4
 SEED = 5150
 
 # Palette (style bible: clean and bright, warm wood, never dead grey).
@@ -108,12 +112,8 @@ SOIL = "A07C55"
 SOIL_DARK = "7E5A3A"
 SOIL_PATH = "C4A57C"
 SOIL_RUT = "A08462"
-STUBBLE = "B89A5E"
 STRAW = "E3C474"
 MUD = "5E4128"
-BARN_RED = "A8473A"
-BARN_TRIM = "F2EEE6"
-FENCE_WOOD = "9A6B45"
 WATER = "5A8FA8"
 BURLAP = "C8A878"
 CROP_CARD_MATERIAL = "M_FarmCrops"
@@ -122,6 +122,7 @@ CROP_CARD_MATERIAL = "M_FarmCrops"
 # vértice do material que aparece pela primeira vez como superfície 0 de uma malha.
 CROPS_PREFIX = "Crops"
 WORLD_TILE["hay"] = 1.1  # metros por repetição da palha
+WORLD_TILE["paving"] = 1.0  # a textura de tijolo já traz 10 fiadas por metro
 FARM_TEXTURES = {}  # pintadas uma vez por execução
 
 
@@ -207,6 +208,7 @@ def farm_builder(name: str) -> Builder:
     b.materials["soil"] = textured_material("M_FarmSoil", soil_texture(), roughness=0.95)
     b.materials["hay"] = textured_material("M_FarmHay", textures["hay"], roughness=0.95)
     b.materials["crops"] = crop_material(textures["crops"])
+    b.materials["paving"] = textured_material("M_FarmPaving", TEXTURE_DIR / "T_BrickPaving_BaseColor.png", TEXTURE_DIR / "T_BrickPaving_Normal.png", roughness=0.9)
     b.materials["glass"] = plain_material("M_FarmGlass", srgb("3A4E66"), 0.12, 0.4)
     b.materials["lantern"] = plain_material("M_FarmLantern", srgb("C9B48A"), 0.2)
     b.plants = PlantBatch(b, srgb)
@@ -256,56 +258,137 @@ def rounded_blob(b: Builder, center: tuple, radii: tuple, top: float, tint: str,
     b._link(patch, material, srgb(tint), None, Matrix.Identity(4))
 
 
-def fence_run(b: Builder, points: list, ground: float, seed: int, gaps: tuple = ()) -> None:
-    """Split-rail fence through world points (x, z): posts every FENCE_POST_SPACING, two rails with a little sag,
-    one thin box collider per straight stretch. gaps = (start, end) stretches along the run left open."""
+class FenceStyle(NamedTuple):
+    height: float
+    post: float  # thickness of the (square, rough) posts
+    rails: tuple  # height of each sawn rail
+    rail_width: float  # board height
+    spacing: float
+    post_wood: str
+    rail_wood: str
+
+
+FENCE_STYLES = {  # heavy Brazilian fences: thick rough posts, sawn boards nailed on, alternating faces
+    "curral": FenceStyle(1.5, 0.2, (0.28, 0.64, 1.0, 1.36), 0.15, 2.4, "6B4A32", "A9794C"),
+    "horta": FenceStyle(1.0, 0.13, (0.3, 0.62, 0.92), 0.1, 2.0, "7A5438", "B48A58"),
+    "campo": FenceStyle(1.35, 0.17, (0.3, 0.7, 1.1), 0.13, 2.6, "6B4A32", "A9794C"),
+}
+RAIL_THICKNESS = 0.05
+
+
+def fence_run(b: Builder, points: list, ground: float, seed: int, gaps: tuple = (), style: str = "curral", gates: tuple = ()) -> None:
+    """Fence through world points (x, z): posts about every style.spacing, sawn rails, one thin box collider per
+    straight stretch. gaps = (start, end) stretches along the run left open; gates = (stretch, segment) pairs where a
+    porteira stands between two posts."""
     generator = random.Random(seed)
     stretches = list(zip(points, points[1:]))
     travelled = 0.0
 
-    for start, end in stretches:
+    for index, (start, end) in enumerate(stretches):
         length = math.dist(start, end)
-        fence_stretch(b, start, end, ground, generator, [(gap_start - travelled, gap_end - travelled) for gap_start, gap_end in gaps])
+        stretch_gates = [segment for stretch, segment in gates if stretch == index]
+        fence_stretch(b, start, end, ground, generator, [(gap_start - travelled, gap_end - travelled) for gap_start, gap_end in gaps], FENCE_STYLES[style], stretch_gates)
         travelled += length
 
 
-def fence_stretch(b: Builder, start: tuple, end: tuple, ground: float, generator: random.Random, gaps: list) -> None:
+def fence_stretch(b: Builder, start: tuple, end: tuple, ground: float, generator: random.Random, gaps: list, style: FenceStyle, gate_segments: list) -> None:
     length = math.dist(start, end)
     direction = ((end[0] - start[0]) / length, (end[1] - start[1]) / length)
-    post_count = max(1, round(length / FENCE_POST_SPACING))
+    post_count = max(1, round(length / style.spacing))
     stations = [length * index / post_count for index in range(post_count + 1)]
-    is_open = [any(gap_start - 0.01 <= (first + second) / 2.0 <= gap_end + 0.01 for gap_start, gap_end in gaps) for first, second in zip(stations, stations[1:])]
-    wood = srgb(FENCE_WOOD)
+    segments = list(zip(stations, stations[1:]))
+    is_open = [any(gap_start - 0.01 <= (first + second) / 2.0 <= gap_end + 0.01 for gap_start, gap_end in gaps) for first, second in segments]
+    wood = srgb(style.post_wood)
 
     def at(distance: float) -> tuple:
         return start[0] + direction[0] * distance, start[1] + direction[1] * distance
 
     for station in stations:
         x, z = at(station)
-        lean = generator.uniform(-0.03, 0.03)
-        b.box(world(x - 0.07, z + 0.07, ground - 0.1), world(x + 0.07 + lean, z - 0.07, ground + FENCE_HEIGHT + 0.08), "wood", wood, uv=("band", *WOOD_DARK_BAND, 1.5))
+        fence_post(b, world(x, z, ground), style, generator.uniform(-0.025, 0.025))
 
-    for (first, second), opened in zip(zip(stations, stations[1:]), is_open):
+    for index, ((first, second), opened) in enumerate(zip(segments, is_open)):
         if opened:
             continue
 
         a, c = at(first), at(second)
-        for rail_height in (0.45, 0.95):
-            sag = generator.uniform(0.0, 0.05)
-            middle = ((a[0] + c[0]) / 2.0, (a[1] + c[1]) / 2.0)
-            b.beam(world(*a, ground + rail_height), world(*middle, ground + rail_height - sag), 0.09, 0.06, "wood", wood, uv=("band", *WOOD_LIGHT_BAND, 1.5))
-            b.beam(world(*middle, ground + rail_height - sag), world(*c, ground + rail_height), 0.09, 0.06, "wood", wood, uv=("band", *WOOD_LIGHT_BAND, 1.5))
 
-        fence_collider(b, a, c, ground)
+        if index in gate_segments:
+            porteira(b, a, c, ground, style)
+        else:
+            fence_rails(b, a, c, ground, style, index, generator)
+
+        fence_collider(b, a, c, ground, style.height)
 
 
-def fence_collider(b: Builder, start: tuple, end: tuple, ground: float) -> None:
+def segment_frame(start: tuple, end: tuple, ground: float) -> tuple:
+    """(frame, length): origin at the middle of a world segment (x, z) on the ground, local X along it, Y across."""
     length = math.dist(start, end)
     yaw = math.atan2(-(end[1] - start[1]), end[0] - start[0])
     middle = ((start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0)
-    frame = Matrix.Translation(world(*middle)) @ Matrix.Rotation(yaw, 4, "Z")
 
-    b.collider((-length / 2.0, -0.1, ground), (length / 2.0, 0.1, ground + FENCE_HEIGHT + 0.1), frame=frame, name="Fence")
+    return Matrix.Translation(world(*middle, ground)) @ Matrix.Rotation(yaw, 4, "Z"), length
+
+
+def fence_post(b: Builder, base: tuple, style: FenceStyle, lean: float) -> None:
+    """Thick rough post sunk into the ground with a chamfered cap."""
+    half = style.post / 2.0
+    top = style.height + 0.08
+    wood = srgb(style.post_wood)
+    frame = Matrix.Translation(base)
+
+    b.box((-half, -half, -0.12), (half, half, top), "wood", wood, frame=frame @ Matrix.Rotation(lean, 4, "Y"), uv=("band", *WOOD_DARK_BAND, 1.5))
+    b.hull([(-half - 0.02, -half - 0.02, top), (half + 0.02, -half - 0.02, top), (-half - 0.02, half + 0.02, top), (half + 0.02, half + 0.02, top), (-half * 0.5, -half * 0.5, top + 0.06), (half * 0.5, -half * 0.5, top + 0.06), (-half * 0.5, half * 0.5, top + 0.06), (half * 0.5, half * 0.5, top + 0.06)], "wood", shade_tint(wood, 0.8), frame=frame @ Matrix.Rotation(lean, 4, "Y"))
+
+
+def shade_tint(tint: tuple, factor: float) -> tuple:
+    return tuple(channel * factor for channel in tint)
+
+
+def fence_rails(b: Builder, start: tuple, end: tuple, ground: float, style: FenceStyle, index: int, generator: random.Random) -> None:
+    """Sawn rails between two posts, nailed on the faces alternately so the ends overlap like hand work."""
+    frame, length = segment_frame(start, end, ground)
+    rail = srgb(style.rail_wood)
+    face = style.post / 2.0 + RAIL_THICKNESS / 2.0
+
+    for number, height in enumerate(style.rails):
+        side = 1.0 if (index + number) % 2 == 0 else -1.0
+        reach = generator.uniform(0.0, 0.08)
+        tint = shade_tint(rail, generator.uniform(0.85, 1.05))
+
+        b.box((-length / 2.0 - reach, side * face - RAIL_THICKNESS / 2.0, height - style.rail_width / 2.0), (length / 2.0 + reach, side * face + RAIL_THICKNESS / 2.0, height + style.rail_width / 2.0), "wood", tint, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+
+
+def porteira(b: Builder, start: tuple, end: tuple, ground: float, style: FenceStyle) -> None:
+    """Closed farm gate between two posts: stiles, sawn boards, a diagonal brace from the hinge-side bottom to the
+    latch-side top, iron hinge straps, a chain and a latch block."""
+    frame, length = segment_frame(start, end, ground)
+    rail = srgb(style.rail_wood)
+    stile = srgb(style.post_wood)
+    iron = srgb("3A3438")
+    half = length / 2.0 - style.post / 2.0 - 0.04
+    top = style.rails[-1] + style.rail_width / 2.0
+    face = style.post / 2.0 + RAIL_THICKNESS / 2.0
+
+    for end_side in (-1, 1):
+        b.box((end_side * half - 0.07, face - 0.03, 0.12), (end_side * half + 0.07, face + 0.05, top + 0.05), "wood", stile, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    for height in style.rails:
+        b.box((-half, face - 0.025, height - style.rail_width / 2.0), (half, face + 0.025, height + style.rail_width / 2.0), "wood", rail, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+
+    b.beam((-half + 0.1, face + 0.04, style.rails[0]), (half - 0.1, face + 0.04, style.rails[-1]), 0.13, 0.04, "wood", shade_tint(rail, 0.8), frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+
+    for height in (style.rails[0], style.rails[-1]):
+        b.box((-half - 0.1, face + 0.05, height - 0.03), (-half + 0.5, face + 0.07, height + 0.03), "metal", iron, frame=frame)
+
+    b.box((half - 0.12, face + 0.05, style.rails[1] - 0.05), (half + 0.12, face + 0.12, style.rails[1] + 0.05), "metal", iron, frame=frame)
+    b.beam((half + 0.04, face + 0.13, style.rails[1]), (half + 0.04, face + 0.13, style.rails[1] - 0.35), 0.03, 0.03, "metal", iron, frame=frame, uv=None)
+
+
+def fence_collider(b: Builder, start: tuple, end: tuple, ground: float, height: float) -> None:
+    frame, length = segment_frame(start, end, ground)
+
+    b.collider((-length / 2.0, -0.1, 0.0), (length / 2.0, 0.1, height + 0.1), frame=frame, name="Fence")
 
 
 def rectangle_loop(rectangle: tuple) -> list:
@@ -498,9 +581,10 @@ PRODUCE_SHAPES = {
     "apple": lathe_shape([(0.012, 0.0), (0.05, 0.02), (0.056, 0.055), (0.04, 0.095), (0.01, 0.1)], 7),
     "potato": lathe_shape([(0.01, 0.0), (0.045, 0.02), (0.05, 0.05), (0.03, 0.085), (0.008, 0.09)], 6),
     "carrot": lathe_shape([(0.004, 0.0), (0.016, 0.07), (0.026, 0.2), (0.012, 0.215)], 6),
+    "coffee": lathe_shape([(0.006, 0.0), (0.022, 0.012), (0.026, 0.03), (0.016, 0.05), (0.005, 0.055)], 6),
 }
-PRODUCE_TINTS = {"apple": ("C9302C", "D8452F", "E0B23A"), "potato": ("C9A26A", "B88E58", "D2B07A")}
-BASKET_LINING = {"apple": "A82A26", "potato": "A88458", "carrot": "C96A22", "cabbage": "7FB094"}
+PRODUCE_TINTS = {"apple": ("C9302C", "D8452F", "E0B23A"), "potato": ("C9A26A", "B88E58", "D2B07A"), "coffee": ("B8402F", "C9502F", "8F2E24")}
+BASKET_LINING = {"apple": "A82A26", "potato": "A88458", "carrot": "C96A22", "cabbage": "7FB094", "coffee": "8F2E24"}
 
 
 def fill_with_cabbages(b: Builder, frame: Matrix, radius: float, top: float, generator: random.Random) -> None:
@@ -534,7 +618,7 @@ def fill_with_round(produce: str):
     return fill
 
 
-BASKET_FILLS = {"cabbage": fill_with_cabbages, "carrot": fill_with_carrots, "apple": fill_with_round("apple"), "potato": fill_with_round("potato")}
+BASKET_FILLS = {"cabbage": fill_with_cabbages, "carrot": fill_with_carrots, "apple": fill_with_round("apple"), "potato": fill_with_round("potato"), "coffee": fill_with_round("coffee")}
 
 
 def basket(b: Builder, frame: Matrix, produce: str, seed: int, radius: float = 0.27, height: float = 0.3) -> None:
@@ -635,8 +719,6 @@ CART_WHEEL_RADIUS = 0.64
 SEAT_HEIGHT = 1.46
 SEAT_Y = -1.3  # centro do assento, além da parede da frente (as canelas do condutor descem livres): Blender -Y é a frente (+Z no Godot)
 FOOTBOARD_REACH = 0.62  # da parede da frente até a ponta do estribo, onde os pés do condutor apoiam
-BARN_PLANKS_UV = ("band", *WOOD_LIGHT_BAND, 1.5)
-BARN_BOARD_WIDTH = 0.3  # cada tábua da parede pega uma faixa do atlas: uma caixa do tamanho da parede esticava uma tábua só por 4 m
 HORSE_OFFSET = 3.9  # Carriage.horse_offset: do eixo às patas do cavalo
 HARNESS_SIDECAR = FARM_DIR / "animals" / "horse_harness.json"
 HARNESS_RING = (0.275, 1.149, 0.241)  # argola direita do arreio no cavalo (Godot: x lado, y altura, z à frente)
@@ -808,35 +890,11 @@ def wheelbarrow(b: Builder, frame: Matrix, seed: int = 7) -> None:
 
 # ---------- shelters and feeders ----------
 
-def lean_to(b: Builder, frame: Matrix, width: float, depth: float, front_height: float, back_height: float) -> None:
-    """Open-fronted animal shelter (front at local y = 0, back at y = depth): posts, board-and-batten walls on the
-    back and the two sides, front beam on braces, shingled mono-pitch roof and straw bedding on the floor."""
-    wood = srgb(WOOD["media"])
-    boards, batten = srgb("8C6448"), srgb("7A5438")
+def farm_rancho(b: Builder, frame: Matrix, width: float, depth: float, eave: float) -> None:
+    """Rancho on round posts (farm_rural.py) with straw bedding on its floor."""
     half = width / 2.0
-    post_xs = [-half, 0.0, half] if width > 5.0 else [-half, half]
-    batten_count = int(width / 0.45)
-    braces = [(x, reach) for x, reach in itertools.product(post_xs, (-1, 1)) if abs(x + reach * 0.7) < half]
 
-    for x, y in itertools.product(post_xs, (0.0, depth)):
-        b.box((x - 0.09, y - 0.09, 0.0), (x + 0.09, y + 0.09, front_height if y == 0.0 else back_height), "wood", wood, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    b.box((-half, depth - 0.05, 0.0), (half, depth + 0.05, back_height - 0.05), "wood", boards, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 2.0))
-    b.box((-half - 0.1, -0.1, front_height - 0.2), (half + 0.1, 0.1, front_height), "wood", wood, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
-    b.collider((-half, depth - 0.1, 0.0), (half, depth + 0.1, back_height), frame=frame)
-
-    for index in range(batten_count + 1):
-        x = -half + 0.2 + index * (width - 0.4) / batten_count
-        b.box((x - 0.03, depth - 0.085, 0.0), (x + 0.03, depth - 0.05, back_height - 0.05), "wood", batten, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    for side in (-1, 1):
-        b.side_prism([(0.0, 0.0), (depth, 0.0), (depth, back_height - 0.05), (0.0, front_height - 0.05)], side * half - 0.05, side * half + 0.05, "wood", boards, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 2.0))
-        b.collider((side * half - 0.1, 0.0, 0.0), (side * half + 0.1, depth, front_height), frame=frame)
-
-    for x, reach in braces:
-        b.beam((x, 0.0, front_height - 0.9), (x + reach * 0.7, 0.0, front_height - 0.2), 0.07, 0.07, "wood", wood, frame=frame)
-
-    b.hull([(-half - 0.3, -0.4, front_height + 0.12), (half + 0.3, -0.4, front_height + 0.12), (-half - 0.3, depth + 0.3, back_height + 0.02), (half + 0.3, depth + 0.3, back_height + 0.02), (-half - 0.3, -0.4, front_height), (half + 0.3, -0.4, front_height), (-half - 0.3, depth + 0.3, back_height - 0.1), (half + 0.3, depth + 0.3, back_height - 0.1)], "slate", srgb("9A948A"), frame=frame)
+    rancho(b, frame, width, depth, eave)
     lumpy_mound(b, frame @ Matrix.Translation((0.0, depth * 0.55, 0.0)), (half * 0.86, depth * 0.4), 0.09, int(width * 100))
     straw_tufts(b, frame @ Matrix.Translation((0.0, depth * 0.5, 0.0)), (half * 0.95, depth * 0.48), 0.08, int(width * depth), int(width * 10))
 
@@ -858,26 +916,6 @@ def hay_rack(b: Builder, frame: Matrix, length: float) -> None:
 
     hay_pile(b, frame @ Matrix.Translation((0.0, 0.0, 0.95)), (length * 0.9, 0.8, 0.5), 41)
     b.collider((-length / 2.0, -0.5, 0.0), (length / 2.0, 0.5, 1.3), frame=frame)
-
-
-def well(b: Builder, frame: Matrix) -> None:
-    """Round stone well with a little tiled roof on two posts, windlass, rope and bucket."""
-    wood = srgb(WOOD["escura"])
-
-    lathe(b, [(0.95, 0.0), (0.95, 0.85), (0.72, 0.85), (0.72, 0.1)], 16, "stone", STONE["media"], frame, closed=True)
-    b.cylinder((0.0, 0.0, 0.85), 1.0, 0.1, 16, "trim", srgb(STONE["clara"]), frame=frame)
-    b.cylinder((0.0, 0.0, 0.25), 0.72, 0.02, 16, "paint", srgb("2E4A5A"), frame=frame)
-
-    for side in (-1, 1):
-        b.box((side * 0.85 - 0.08, -0.08, 0.85), (side * 0.85 + 0.08, 0.08, 2.5), "wood", wood, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
-        b.hull([(-1.25, 0.0, 2.85), (1.25, 0.0, 2.85), (-1.25, side * 1.05, 2.25), (1.25, side * 1.05, 2.25), (-1.25, 0.0, 2.93), (1.25, 0.0, 2.93), (-1.25, side * 1.05, 2.33), (1.25, side * 1.05, 2.33)], "tiles", srgb("C9674E"), frame=frame)
-
-    b.beam((-0.85, 0.0, 2.45), (0.85, 0.0, 2.45), 0.12, 0.12, "wood", wood, frame=frame)
-    b.cylinder((-0.6, 0.0, 1.75), 0.12, 1.2, 8, "wood", srgb(WOOD["mel"]), frame=frame, axis="X")
-    b.beam((0.85, 0.0, 1.75), (1.05, 0.0, 1.55), 0.05, 0.05, "wood", wood, frame=frame)
-    b.cylinder((0.0, 0.0, 1.05), 0.015, 0.7, 4, "paint", srgb(BURLAP), frame=frame)
-    lathe(b, [(0.14, 0.0), (0.17, 0.25), (0.15, 0.25), (0.12, 0.02)], 8, "wood", WOOD["media"], frame, base=(0.0, 0.0, 0.8), closed=True)
-    b.collider((-1.0, -1.0, 0.0), (1.0, 1.0, 0.95), frame=frame)
 
 
 def scarecrow(b: Builder, frame: Matrix, shirt: str) -> None:
@@ -940,7 +978,7 @@ def plant_spots(plot: tuple, spacing_across: float, spacing_along: float, seed: 
 
 def plot_bed(b: Builder, plot: tuple, ground: float, ridge_spacing: float, tint: str = SOIL) -> None:
     """Soil of a plot with a low ridge under every row (the walkable collider is the flat bed); no ridges when
-    ridge_spacing is None (wheat is sown broadcast)."""
+    ridge_spacing is None."""
     _crop, min_x, max_x, min_z, max_z = plot
 
     ground_patch(b, (min_x, max_x, min_z, max_z), ground + FIELD_RAISE, "soil", tint, collider="Field", thickness=FIELD_RAISE + 0.02)
@@ -955,38 +993,16 @@ def row_frame() -> Matrix:
     return Matrix.Diagonal((1.0, -1.0, 1.0, 1.0))
 
 
-def wheat_matrices(spots: list, top: float, generator: random.Random, heading: float, spread: float) -> numpy.ndarray:
-    """Row cards standing at the spots, turned around `heading` (either way round), swaying a little."""
-    points = [(x, -z, top) for x, z in spots]
-    yaws = [heading + generator.uniform(-spread, spread) + generator.choice((0.0, 180.0)) for _ in spots]
-    tilts = [generator.uniform(-7.0, 7.0) for _ in spots]
-    heights = [generator.uniform(0.86, 1.08) for _ in spots]
-
-    return transforms(points, yaws, tilts, 1.0, heights)
-
-
-def wheat_field(b: Builder, plot: tuple, ground: float, seed: int) -> None:
-    """Ripe wheat standing thick: cards of culms, dry leaves and bearded ears zigzag along close rows, shorter
-    cards cross them so the field is full from every side."""
-    generator = random.Random(seed)
-    _crop, min_x, max_x, min_z, max_z = plot
-    top = ground + FIELD_RAISE
-    rows = numpy.arange(min_z + 0.4, max_z - 0.3, 0.36)
-    variants = wheat_variants()
-    row_spots = [(x + generator.uniform(-0.25, 0.25), z + generator.uniform(-0.06, 0.06)) for z, x in itertools.product(rows, numpy.arange(min_x + 1.1, max_x - 1.0, 1.55))]
-    cross_spots = [(x + generator.uniform(-0.2, 0.2), z + generator.uniform(-0.1, 0.1)) for z, x in itertools.product(rows, numpy.arange(min_x + 0.6, max_x - 0.5, 0.9))]
-
-    stamp_variants(b.plants, [variants[0], variants[3]], wheat_matrices(row_spots, top, generator, 0.0, 20.0), generator)
-    stamp_variants(b.plants, variants[1:3], wheat_matrices(cross_spots, top, generator, 90.0, 35.0), generator)
-
-
 CROPS = {  # cultura -> (planta, entre fileiras, entre plantas, desvio, tamanho, inclinação em graus)
+    "coffee": (coffee_plant, 2.4, 1.7, 0.12, (0.9, 1.15), 1.5),
+    "cane": (cane_plant, 1.5, 1.0, 0.1, (0.85, 1.15), 3.0),
+    "cassava": (cassava_plant, 1.2, 1.0, 0.08, (0.9, 1.15), 2.0),
     "corn": (corn_plant, 0.9, 0.6, 0.07, (0.88, 1.1), 4.0),
     "cabbage": (cabbage_plant, 0.8, 0.8, 0.06, (0.85, 1.15), 0.0),
     "carrot": (carrot_plant, 0.6, 0.4, 0.05, (0.8, 1.15), 0.0),
 }
-RIDGE_SPACING = {"wheat": None, "corn": 0.9, "cabbage": 0.8, "carrot": 0.6}
-BED_TINT = {"wheat": STUBBLE, "corn": SOIL, "cabbage": SOIL, "carrot": SOIL}
+RIDGE_SPACING = {"coffee": 2.4, "cane": 1.5, "cassava": 1.2, "corn": 0.9, "cabbage": 0.8, "carrot": 0.6}
+BED_TINT = {"coffee": SOIL_DARK, "cane": SOIL, "cassava": SOIL, "corn": SOIL, "cabbage": SOIL, "carrot": SOIL}
 
 
 def plant_crop(b: Builder, crop: str, plot: tuple, ground: float, seed: int) -> None:
@@ -1038,7 +1054,6 @@ def build_plot(b: Builder, name: str, plot: tuple) -> None:
     crop = plot[0]
     seed = SEED + len(name) * 7
     pastures = {"meadow": meadow_field, "hayfield": hay_field}
-    sowers = {"wheat": lambda: wheat_field(b, plot, OUTSIDE_GROUND, seed)}
 
     if crop in pastures:
         pastures[crop](b, plot, OUTSIDE_GROUND, seed)
@@ -1046,266 +1061,68 @@ def build_plot(b: Builder, name: str, plot: tuple) -> None:
         return
 
     plot_bed(b, plot, OUTSIDE_GROUND, RIDGE_SPACING[crop], BED_TINT[crop])
-    sowers.get(crop, lambda: plant_crop(b, crop, plot, OUTSIDE_GROUND, seed))()
+    plant_crop(b, crop, plot, OUTSIDE_GROUND, seed)
     b.plants.flush(CROPS_PREFIX)
 
 
 # ---------- buildings ----------
 
 def build_farmhouse() -> dict:
-    """Rustic farmer's house: whitewashed stone ground floor, half-timbered loft under a steep tiled roof, wooden
-    porch over the door, chimney, flower boxes and a woodpile against the side wall."""
+    """The sede (casa-grande): see farm_sede.py."""
     b = farm_builder("farmhouse")
-    house = House(FARMHOUSE["width"], FARMHOUSE["depth"], (3.2, 2.6), "caiada", "velha", "verde", 77)
-    wood = srgb(WOOD["escura"])
-    timber_rows = (house.levels[1], house.top)
+    sidecar = casa_grande(b, FARMHOUSE["width"] / 2.0, FARMHOUSE["depth"])
 
-    b.box((-house.half, 0.0, 0.0), (house.half, house.depth, house.levels[1]), "stone", srgb(STONE["clara"]))
-    b.box((-house.half, 0.0, house.levels[1]), (house.half, house.depth, house.top), "plaster", srgb("F4EEDF"))
-    b.collider((-house.half, 0.0, 0.0), (house.half, house.depth, house.top))
-
-    for u in (-house.half, -house.half / 3.0, house.half / 3.0, house.half):
-        b.box((u - 0.12, -0.06, timber_rows[0]), (u + 0.12, 0.0, timber_rows[1]), "wood", wood, uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    for z in timber_rows:
-        b.box((-house.half, -0.07, z - 0.1), (house.half, 0.0, z + 0.1), "wood", wood, uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    for left, right in ((-house.half, -house.half / 3.0), (house.half / 3.0, house.half)):
-        b.beam((left, -0.04, timber_rows[0] + 0.1), (right, -0.04, timber_rows[1] - 0.1), 0.14, 0.05, "wood", wood)
-
-    rise = house.depth / 2.0 * math.tan(math.radians(ROOF_PITCH))
-    ridge = house.top + rise
-
-    b.side_prism([(0.0, house.top), (house.depth, house.top), (house.depth / 2.0, ridge)], -house.half, house.half, "plaster", srgb("F4EEDF"))
-    roof_slabs(b, (-house.half - 0.45, house.half + 0.45), (-0.55, house.depth + 0.55), house.top, ridge, srgb("A85F4A"))
-
-    for u in (-3.6, 3.6):
-        draw_window(b, house, Opening(u, 1.0, 1.0, 1.2, "flat"), shutters=True, bars=1, frame_tint=srgb(STONE["clara"]))
-
-    for u in (-2.4, 2.4):
-        draw_window(b, house, Opening(u, 0.8, house.levels[1] + 0.6, 1.0, "flat"), shutters=True, bars=1, frame_tint=srgb(WOOD["mel"]))
-
-    draw_door(b, house, 0.0, 1.2, 2.3, "flat")
-
-    for side in (-1, 1):
-        dress_gable_side(b, house, side, ridge)
-
-    for side in (-1, 1):
-        b.box((side * 1.25 - 0.08, -1.8, 0.0), (side * 1.25 + 0.08, -1.64, 2.7), "wood", wood, uv=("band", *WOOD_DARK_BAND, 1.5))
-        b.beam((side * 1.25, -1.72, 2.4), (side * 1.25, -0.2, 2.9), 0.1, 0.1, "wood", wood)
-
-    b.hull([(-1.6, -2.1, 2.7), (1.6, -2.1, 2.7), (-1.6, 0.0, 3.25), (1.6, 0.0, 3.25), (-1.6, -2.1, 2.82), (1.6, -2.1, 2.82), (-1.6, 0.0, 3.37), (1.6, 0.0, 3.37)], "tiles", srgb("A85F4A"))
-    b.box((-1.5, -1.9, 0.0), (1.5, 0.0, 0.12), "wood", srgb(WOOD["media"]), uv=("band", *WOOD_LIGHT_BAND, 1.0))
-    b.collider((-1.5, -1.9, 0.0), (1.5, 0.0, 0.12), name="WoodFloor")
-
-    for u in (-3.6, 3.6):
-        b.box((u - 0.6, -0.3, 0.86), (u + 0.6, 0.0, 1.0), "wood", srgb(WOOD["media"]))
-        for flower in range(5):
-            b.sphere((u - 0.45 + flower * 0.22, -0.15, 1.08), 0.1, "paint", srgb(("D9483B", "F2C544", "E9A6C0", "F4EFE6", "D9483B")[flower]), segments=6)
-
-    draw_chimney(b, house, 3.5, house.depth / 2.0 + 1.0, ridge + 0.6, material="stone", pots=1)
-    log_pile(b, Matrix.Translation((house.half + 0.6, house.depth / 2.0, 0.0)) @ Matrix.Rotation(math.pi / 2.0, 4, "Z"), 2.4, 3)
-    b.marker("door", (0.0, -2.4, 0.0))
-
-    return finish_model(b, "farmhouse", {"lot_width": FARMHOUSE["width"], "lot_depth": FARMHOUSE["depth"], "doors": house.doors})
-
-
-def roof_slabs(b: Builder, across: tuple, depth: tuple, eave: float, ridge: float, tint: tuple, material: str = "tiles", thickness: float = 0.14) -> None:
-    """Gable roof as two sloped slabs meeting at the ridge (ridge parallel to Blender X), with eave overhang."""
-    middle = (depth[0] + depth[1]) / 2.0
-    slope = (ridge - eave) / (middle - depth[0] + 0.55)
-    eave_drop = 0.55 * slope
-
-    for edge in depth:
-        points = [(u, edge, eave - eave_drop + offset) for u in across for offset in (0.0, thickness)]
-        points += [(u, middle, ridge + offset) for u in across for offset in (0.0, thickness)]
-        b.hull(points, material, tint)
-
-
-def dress_gable_side(b: Builder, house: House, side: int, ridge: float) -> None:
-    """Gable wall of the farmhouse: a shuttered window downstairs, timber frame and a small loft window above."""
-    wall = side * house.half
-    outward = (wall, wall + side * 0.07)
-    low, high = min(outward), max(outward)
-    timber = srgb(WOOD["escura"])
-    middle = house.depth / 2.0
-
-    for d in (0.0, middle - 1.6, middle + 1.6, house.depth):
-        b.box((low, d - 0.12, house.levels[1]), (high, d + 0.12, house.top), "wood", timber, uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    b.box((low, 0.0, house.levels[1] - 0.1), (high, house.depth, house.levels[1] + 0.1), "wood", timber, uv=("band", *WOOD_DARK_BAND, 1.5))
-    b.box((low, 0.0, house.top - 0.1), (high, house.depth, house.top + 0.08), "wood", timber, uv=("band", *WOOD_DARK_BAND, 1.5))
-    b.beam((wall + side * 0.035, 0.3, house.top + 0.05), (wall + side * 0.035, middle - 0.1, ridge - 0.25), 0.16, 0.07, "wood", timber)
-    b.beam((wall + side * 0.035, house.depth - 0.3, house.top + 0.05), (wall + side * 0.035, middle + 0.1, ridge - 0.25), 0.16, 0.07, "wood", timber)
-    gable_window(b, wall, side, middle, 1.0, 1.0, 1.2, srgb(STONE["clara"]), shutters=True, accent=house.accent)
-    gable_window(b, wall, side, middle, house.levels[1] + 0.5, 0.8, 1.0, srgb(WOOD["mel"]), shutters=True, accent=house.accent)
-    gable_window(b, wall, side, middle, house.top + 0.5, 0.6, 0.7, srgb(WOOD["mel"]))
-
-
-def gable_window(b: Builder, wall: float, side: int, d: float, bottom: float, width: float, height: float, frame_tint: tuple, shutters: bool = False, accent: tuple = WHITE) -> None:
-    """Window in a side wall (facing +-X): frame, dark glass, sill and optional shutters."""
-    def span(offset_from: float, offset_to: float) -> tuple:
-        first, second = wall + side * offset_from, wall + side * offset_to
-
-        return min(first, second), max(first, second)
-
-    frame_low, frame_high = span(0.0, 0.07)
-    glass_low, glass_high = span(0.0, 0.03)
-    sill_low, sill_high = span(0.0, 0.16)
-
-    b.box((frame_low, d - width / 2.0 - 0.1, bottom - 0.1), (frame_high, d + width / 2.0 + 0.1, bottom + height + 0.1), "trim", frame_tint, uv=("band", 0.44, 0.66, 1.0))
-    b.box((glass_low - 0.001 * side, d - width / 2.0, bottom), (glass_high + 0.05, d + width / 2.0, bottom + height), "glass", WHITE)
-    b.box((sill_low, d - width / 2.0 - 0.14, bottom - 0.12), (sill_high, d + width / 2.0 + 0.14, bottom - 0.04), "trim", frame_tint)
-
-    if not shutters:
-        return
-
-    shutter_low, shutter_high = span(0.04, 0.1)
-
-    for shutter_side in (-1, 1):
-        middle = d + shutter_side * (width * 0.75 + 0.12)
-        b.box((shutter_low, middle - width / 4.0, bottom), (shutter_high, middle + width / 4.0, bottom + height), "paint", accent)
+    return finish_model(b, "farmhouse", sidecar)
 
 
 def build_barn() -> dict:
-    """Red board-and-batten barn on a stone plinth, gable to the yard: double doors with white braces, hayloft door
-    with a hoist beam, a small window each side and a vent cupola on the ridge."""
+    """The tulha (file name kept: barn.gltf): see farm_rural.py. Sacks and barrels by the doors."""
     b = farm_builder("barn")
     width, depth = BARN["width"], BARN["depth"]
-    half = width / 2.0
-    eave = 4.6
-    rise = half * math.tan(math.radians(42.0))
-    red, trim = srgb(BARN_RED), srgb(BARN_TRIM)
-    door_half = 2.0
+    sidecar = tulha(b, width / 2.0, depth)
 
-    b.box((-half, 0.0, 0.0), (half, depth, 0.7), "stone", srgb(STONE["media"]))
-    b.box((-half + 0.05, 0.05, 0.7), (half - 0.05, depth - 0.05, eave), "wood", red, uv=BARN_PLANKS_UV)
-    b.prism([(-half + 0.05, eave), (half - 0.05, eave), (0.0, eave + rise - 0.1)], 0.05, depth - 0.05, "wood", red, uv=BARN_PLANKS_UV)
-    barn_boards(b, half - 0.05, depth, eave, rise - 0.1, red)
-    b.collider((-half, 0.0, 0.0), (half, depth, eave))
-
-    battens_per_side = int(half / (2.0 * BARN_BOARD_WIDTH))
-
-    for batten in range(2 * battens_per_side + 1):
-        u = (batten - battens_per_side) * 2.0 * BARN_BOARD_WIDTH
-        if abs(u) < door_half + 0.1:
-            continue
-        b.box((u - 0.03, -0.02, 0.7), (u + 0.03, 0.05, eave), "wood", srgb("8E3A2F"), uv=("band", *WOOD_DARK_BAND, 1.5))
-
-    for side in (-1, 1):
-        b.hull([(side * (half + 0.6), -0.6, eave - 0.15), (side * (half + 0.6), depth + 0.6, eave - 0.15), (0.0, -0.6, eave + rise + 0.15), (0.0, depth + 0.6, eave + rise + 0.15), (side * (half + 0.6), -0.6, eave - 0.02), (side * (half + 0.6), depth + 0.6, eave - 0.02), (0.0, -0.6, eave + rise + 0.28), (0.0, depth + 0.6, eave + rise + 0.28)], "slate", srgb("7E7A82"))
-
-    for side in (-1, 1):
-        leaf_from, leaf_to = sorted((0.0, side * door_half))
-        board_panel(b, (leaf_from, leaf_to), 0.0, lambda u: 3.4, (-0.1, 0.02), red, 40 + side)
-        b.box((leaf_from, -0.14, 0.0), (leaf_to, -0.1, 0.14), "wood", trim)
-        b.box((leaf_from, -0.14, 3.26), (leaf_to, -0.1, 3.4), "wood", trim)
-        b.box((side * door_half - 0.07, -0.14, 0.0), (side * door_half + 0.07, -0.1, 3.4), "wood", trim)
-        b.beam((leaf_from + 0.08, -0.13, 0.14), (leaf_to - 0.08, -0.13, 3.26), 0.12, 0.04, "wood", trim)
-        b.beam((leaf_to - 0.08, -0.13, 0.14), (leaf_from + 0.08, -0.13, 3.26), 0.12, 0.04, "wood", trim)
-
-    b.box((-0.04, -0.15, 0.0), (0.04, -0.1, 3.4), "wood", trim)
-    b.box((-door_half - 0.15, -0.15, 3.4), (door_half + 0.15, -0.0, 3.55), "wood", trim)
-    b.box((-0.8, -0.1, 5.1), (0.8, 0.02, 6.6), "wood", srgb("8E3A2F"), uv=("band", *WOOD_LIGHT_BAND, 1.5))
-    b.box((-0.9, -0.14, 5.0), (0.9, -0.1, 5.1), "wood", trim)
-    b.box((-0.9, -0.14, 6.6), (0.9, -0.1, 6.7), "wood", trim)
-    hay_pile(b, Matrix.Translation((0.0, -0.05, 5.1)), (1.4, 0.3, 0.35), 17)
-    b.beam((0.0, 0.0, 7.0), (0.0, -1.5, 7.0), 0.2, 0.2, "wood", srgb(WOOD["escura"]))
-    b.cylinder((0.0, -1.35, 6.2), 0.012, 0.8, 4, "paint", srgb(BURLAP))
-    b.sphere((0.0, -1.35, 6.15), 0.08, "metal", srgb("4A4448"), segments=6)
-
-    for side in (-1, 1):
-        draw_side_window(b, side * half, depth * 0.5, trim)
-
-    b.box((-0.5, depth / 2.0 - 0.5, eave + rise - 0.2), (0.5, depth / 2.0 + 0.5, eave + rise + 0.8), "wood", trim)
-    b.hull([(-0.75, depth / 2.0 - 0.75, eave + rise + 0.75), (0.75, depth / 2.0 - 0.75, eave + rise + 0.75), (-0.75, depth / 2.0 + 0.75, eave + rise + 0.75), (0.75, depth / 2.0 + 0.75, eave + rise + 0.75), (0.0, depth / 2.0, eave + rise + 1.4)], "slate", srgb("7E7A82"))
-    b.cylinder((0.0, depth / 2.0, eave + rise + 1.35), 0.02, 0.6, 4, "metal", srgb("4A4448"))
-    weather_vane(b, (0.0, depth / 2.0, eave + rise + 1.95))
-
-    sack(b, Matrix.Identity(4), 2.7, -0.6, 0.0, 0.27, 0.45, "E8D7B0")
-    sack(b, Matrix.Identity(4), 3.15, -0.45, 0.0, 0.27, 0.45, "DDAE62")
-    sack(b, Matrix.Identity(4), 2.9, -0.55, 0.42, 0.25, 0.4, "C98F4F")
-    barrel(b, Matrix.Translation((-3.0, -0.6, 0.0)), 0.0, 0.0, 0.32, 0.95)
-    barrel(b, Matrix.Translation((-3.6, -0.5, 0.0)), 0.0, 0.0, 0.3, 0.9, WOOD["mel"])
-    b.collider((2.4, -0.9, 0.0), (3.5, -0.1, 0.9))
-    b.collider((-4.0, -0.95, 0.0), (-2.6, -0.2, 0.95))
-
-    return finish_model(b, "barn", {"lot_width": width, "lot_depth": depth, "doors": [{"x": 0.0, "width": 2.0 * door_half, "enterable": False}]})
-
-
-def barn_boards(b: Builder, wall_half: float, depth: float, eave: float, gable_rise: float, red: tuple) -> None:
-    """Vertical boards over the walls and gables of the barn, 3 cm proud of the core box, seams meeting at the ridge."""
-    gable_top = lambda u: eave + gable_rise * (1.0 - abs(u) / wall_half)
-    wall_top = lambda u: eave
-    side_frames = {1: Matrix.Rotation(math.pi / 2.0, 4, "Z"), -1: Matrix.Rotation(-math.pi / 2.0, 4, "Z") @ Matrix.Translation((-depth, 0.0, 0.0))}
-
-    for seed, (u_span, depth_span) in enumerate((((-wall_half, 0.0), (0.02, 0.05)), ((0.0, wall_half), (0.02, 0.05)), ((-wall_half, 0.0), (depth - 0.05, depth - 0.02)), ((0.0, wall_half), (depth - 0.05, depth - 0.02)))):
-        board_panel(b, u_span, 0.7, gable_top, depth_span, red, seed * 50)
-
-    for side, frame in side_frames.items():
-        board_panel(b, (0.05, depth - 0.05), 0.7, wall_top, (-wall_half - 0.03, -wall_half), red, 300 + side * 50, frame)
-
-
-def board_panel(b: Builder, u_span: tuple, bottom: float, top_at, depth_span: tuple, tint: tuple, seed: int, frame: Matrix = None) -> None:
-    """Row of vertical boards from u_span[0] to u_span[1], tops following top_at(u), each a slightly different red."""
-    u_from, u_to = u_span
-    count = math.ceil((u_to - u_from) / BARN_BOARD_WIDTH - 1e-6)
-
-    for index in range(count):
-        u0 = u_from + index * BARN_BOARD_WIDTH
-        u1 = min(u0 + BARN_BOARD_WIDTH, u_to)
-        shade = 0.88 + 0.16 * ((seed + index) * 7919 % 13) / 12.0
-        board_tint = tuple(channel * shade for channel in tint)
-        b.prism([(u0, bottom), (u1, bottom), (u1, top_at(u1)), (u0, top_at(u0))], *depth_span, "wood", board_tint, frame=frame, uv=BARN_PLANKS_UV)
-
-
-def weather_vane(b: Builder, top: tuple) -> None:
-    """Arrow vane on the cupola: a ball on the rod, the arrow along the ridge with a fletched tail."""
-    x, y, z = top
-    iron = srgb("4A4448")
-
-    b.sphere((x, y, z - 0.03), 0.06, "metal", srgb("C9A24A"), segments=6)
-    b.box((x - 0.015, y - 0.4, z + 0.04), (x + 0.015, y + 0.35, z + 0.07), "metal", iron)
-    b.hull([(x, y - 0.55, z + 0.055), (x - 0.015, y - 0.4, z - 0.03), (x + 0.015, y - 0.4, z - 0.03), (x - 0.015, y - 0.4, z + 0.14), (x + 0.015, y - 0.4, z + 0.14)], "metal", iron)
-    b.hull([(x - 0.01, y + 0.2, z + 0.055), (x + 0.01, y + 0.2, z + 0.055), (x - 0.01, y + 0.42, z - 0.07), (x + 0.01, y + 0.42, z - 0.07), (x - 0.01, y + 0.42, z + 0.18), (x + 0.01, y + 0.42, z + 0.18)], "metal", iron)
-
-
-def draw_side_window(b: Builder, u: float, d: float, trim: tuple) -> None:
-    outward = 1.0 if u > 0 else -1.0
-
-    b.box((u - 0.02 * outward if outward > 0 else u - 0.1, d - 0.5, 2.0), (u + 0.1 if outward > 0 else u + 0.02, d + 0.5, 3.0), "glass", WHITE)
-    b.box((u if outward > 0 else u - 0.14, d - 0.62, 1.9), (u + 0.14 if outward > 0 else u, d + 0.62, 2.0), "wood", trim)
-    b.box((u if outward > 0 else u - 0.14, d - 0.62, 3.0), (u + 0.14 if outward > 0 else u, d + 0.62, 3.1), "wood", trim)
+    return finish_model(b, "barn", sidecar)
 
 
 # ---------- the yard (block 5) ----------
 
 YARD_LANE = [(75.0, 0.3), (80.0, -0.5), (86.0, 0.6), (92.0, -0.4), (97.0, 0.4), (102.0, 0.0)]  # da rua ao portão do muro
-BARN_PATH = [(89.5, -2.4), (90.5, -9.0), (93.5, -14.5), (94.6, -20.0), (94.5, -26.6)]  # da estradinha ao portão do celeiro
-YARD_GRASS_PATCHES = (  # (x, z, raio x, raio z): grama que resiste nas beiradas do terreiro pisado
-    (77.6, -4.6, 2.4, 1.4),
-    (99.6, -11.0, 1.8, 3.2),
-    (84.0, -4.2, 2.6, 0.9),
-    (99.8, -21.5, 1.4, 2.2),
+YARD_VERGE = 5.0  # a terra batida vai da pista até aqui; ao norte é gramado
+YARD_GRASS_PATCHES = (  # (x, z, raio x, raio z): grama que resiste nas beiradas da terra batida do sul
     (80.5, 43.4, 3.0, 1.2),
-    (77.2, -44.0, 1.6, 0.8),
+    (99.6, 8.0, 1.6, 2.4),
 )
+TERREIRO = (76.5, 94.1, -29.4, -5.0)  # terreiro de tijolo em frente da casa-grande, até o limiar da tulha
+TERREIRO_TOP = YARD_TOP + 0.05
+TERREIRO_BORDER = 0.5
+TERREIRO_PATH = (83.9, 87.1)  # lajedo da escada da casa até a pista
+KERB_TINT = "F4F0E6"
+BRICK_TINT = "F7DDC2"
+COFFEE_TINTS = {"cereja": "B8402F", "passa": "7A3A28", "seco": "4E3A2A", "verde": "9A8A3E"}
+COFFEE_BEDS = {  # leito -> (min x, max x, estado de cada retângulo, do norte para o sul)
+    "west": (77.5, 83.1, ("seco", "passa", "cereja", "cereja", "passa", "seco")),
+    "east": (88.2, 91.4, ("cereja", None, "passa", "seco", "cereja", None)),
+}
+COFFEE_BED_DEPTH = 2.6
+COFFEE_BED_START = -28.2
+COFFEE_BED_PITCH = 3.8
+BURLAP_TINTS = ("C8A878", "B8955F", "D4B88A")
 
 
 def build_farm_yard() -> dict:
     """Ground, fences and props of the farm block, in world coordinates."""
     b = farm_builder("farm_yard")
     min_x, max_x, min_z, max_z = FARM_YARD
-    cows, pigs = FARM_PENS["cows"], FARM_PENS["pigs"]
+    cows = FARM_PENS["cows"]
 
     ground_patch(b, (cows[0] - 1.0, max_x, cows[2] - 1.0, cows[3] + 1.0), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
     ground_patch(b, (min_x, max_x, FARM_LANE_HALF_WIDTH, cows[2] - 1.0), YARD_TOP, "soil", SOIL, collider="Yard")
     ground_patch(b, (min_x, cows[0] - 1.0, cows[2] - 1.0, max_z), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
     ground_patch(b, (cows[0] - 1.0, max_x, cows[3] + 1.0, max_z), YARD_TOP, "soil", SOIL, collider="Yard")
     ground_patch(b, (min_x, max_x, -FARM_LANE_HALF_WIDTH, FARM_LANE_HALF_WIDTH), YARD_TOP, "soil", SOIL, collider="Path")
-    ground_patch(b, (min_x, max_x, min_z, -FARM_LANE_HALF_WIDTH), YARD_TOP, "soil", SOIL, collider="Yard")
+    ground_patch(b, (min_x, max_x, -YARD_VERGE, -FARM_LANE_HALF_WIDTH), YARD_TOP, "soil", SOIL, collider="Yard")
+    ground_patch(b, (min_x, max_x, min_z, -YARD_VERGE), YARD_TOP, "lawn", "FFFFFF", collider="Bed")
     dirt_track(b, YARD_LANE, YARD_TOP + 0.012, SEED + 70)
-    dirt_track(b, BARN_PATH, YARD_TOP + 0.012, SEED + 71, half_width=1.2, cart_ruts=False)
 
     for index, (x, z, rx, rz) in enumerate(((92.5, 35.8, 2.6, 1.8), (96.5, 33.8, 1.8, 1.3), (88.5, 41.0, 1.6, 1.2))):
         rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.012, MUD, SEED + index)
@@ -1317,30 +1134,156 @@ def build_farm_yard() -> dict:
         rounded_blob(b, (x, z), (rx, rz), YARD_TOP + 0.008, "FFFFFF", SEED + 50 + index, material="lawn")
 
     scatter_tufts(b, YARD_GRASS_PATCHES, SEED + 60)
+    terreiro(b)
     build_kitchen_garden(b, KITCHEN_GARDEN[1:])
-    fence_run(b, rectangle_loop(cows), YARD_TOP, SEED + 20)
-    fence_run(b, rectangle_loop(pigs), YARD_TOP, SEED + 21)
+    build_curral(b)
+    build_water_corner(b)
 
-    # Abrigos inteiros dentro do cercado: fundo e beiral a mais de 1,3 m da cerca.
-    lean_to(b, frame_at_world(93.5, 21.2, YARD_TOP, 180.0), 9.0, 5.0, 3.0, 2.4)
-    hay_rack(b, frame_at_world(85.5, 24.8, YARD_TOP, 0.0), 3.0)
-    trough(b, frame_at_world(88.0, 5.6, YARD_TOP, 0.0), 2.6)
-    lean_to(b, frame_at_world(96.0, 38.0, YARD_TOP, 180.0), 6.5, 3.8, 2.2, 1.7)
-    trough(b, frame_at_world(94.0, 32.2, YARD_TOP, 0.0), 2.0)
-    hay_pile(b, frame_at_world(88.0, 42.2, YARD_TOP), (2.2, 1.0, 0.5), 61)
-
-    well(b, frame_at_world(88.0, -15.0, YARD_TOP))
-    farm_cart(b, frame_at_world(98.0, -15.5, YARD_TOP, 20.0), load="hay", seed=3)
-    wheelbarrow(b, frame_at_world(84.5, -11.0, YARD_TOP, -60.0))
-    haycock(b, frame_at_world(80.5, -7.0, YARD_TOP, 10.0), 1.3, 1.15, 71, fork=True)
-    trough(b, frame_at_world(97.5, -6.0, YARD_TOP, 0.0), 2.0)
-    bale_stack(b, frame_at_world(99.6, -23.0, YARD_TOP, 90.0), 3, 2, 3, 80)
-    produce_stand(b, frame_at_world(88.2, -21.6, YARD_TOP, 15.0), 90)
+    farm_cart(b, frame_at_world(98.0, -5.0, YARD_TOP, 20.0), load="hay", seed=3)
+    haycock(b, frame_at_world(80.5, -3.6, YARD_TOP, 10.0), 1.1, 1.0, 71, fork=True)
     bale_stack(b, frame_at_world(79.0, 40.0, YARD_TOP, 0.0), 4, 2, 3, 81)
     haycock(b, frame_at_world(78.6, 32.6, YARD_TOP, 30.0), 1.2, 1.05, 82)
     haycock(b, frame_at_world(81.8, 35.4, YARD_TOP, 80.0), 1.0, 0.9, 83)
 
     return finish_model(b, "farm_yard", {"origin": "world", "doors": []})
+
+
+def build_curral(b: Builder) -> None:
+    """The pens: heavy fences with a porteira each, ranchos on round posts, troughs, hay rack."""
+    cows, pigs = FARM_PENS["cows"], FARM_PENS["pigs"]
+
+    fence_run(b, rectangle_loop(cows), YARD_TOP, SEED + 20, gates=((0, 6),))
+    fence_run(b, rectangle_loop(pigs), YARD_TOP, SEED + 21, gates=((0, 1),))
+
+    # Ranchos inteiros dentro do cercado: fundo e beiral a mais de 1,3 m da cerca.
+    farm_rancho(b, frame_at_world(93.5, 21.2, YARD_TOP, 180.0), 9.0, 5.0, 2.7)
+    hay_rack(b, frame_at_world(85.5, 24.8, YARD_TOP, 0.0), 3.0)
+    trough(b, frame_at_world(88.0, 5.6, YARD_TOP, 0.0), 2.6)
+    farm_rancho(b, frame_at_world(96.0, 38.0, YARD_TOP, 180.0), 6.5, 3.8, 2.4)
+    trough(b, frame_at_world(94.0, 32.2, YARD_TOP, 0.0), 2.0)
+    hay_pile(b, frame_at_world(88.0, 42.2, YARD_TOP), (2.2, 1.0, 0.5), 61)
+
+
+def terreiro(b: Builder) -> None:
+    """Paved drying yard in front of the casa-grande: brick field inside a border of cut stone and a white kerb, a stone
+    path from the stair to the lane, drying beds of coffee in rectangles raked into ridges, rakes, sacks, baskets,
+    sieves. The whole slab is one walkable collider named Terreiro (it sounds like stone)."""
+    min_x, max_x, min_z, max_z = TERREIRO
+    inner = (min_x + TERREIRO_BORDER, max_x - TERREIRO_BORDER, min_z + TERREIRO_BORDER, max_z - TERREIRO_BORDER)
+    border_rectangles = (
+        (min_x, max_x, min_z, min_z + TERREIRO_BORDER),
+        (min_x, max_x, max_z - TERREIRO_BORDER, max_z),
+        (min_x, min_x + TERREIRO_BORDER, min_z + TERREIRO_BORDER, max_z - TERREIRO_BORDER),
+        (max_x - TERREIRO_BORDER, max_x, min_z + TERREIRO_BORDER, max_z - TERREIRO_BORDER),
+    )
+
+    b.collider(world(min_x, max_z, YARD_TOP - 0.05), world(max_x, min_z, TERREIRO_TOP), name="Terreiro")
+    ground_patch(b, inner, TERREIRO_TOP, "paving", BRICK_TINT, thickness=0.1)
+
+    for rectangle in border_rectangles:
+        ground_patch(b, rectangle, TERREIRO_TOP, "stone", STONE["clara"], thickness=0.1)
+
+    ground_patch(b, (TERREIRO_PATH[0], TERREIRO_PATH[1], min_z + TERREIRO_BORDER, max_z - TERREIRO_BORDER), TERREIRO_TOP + 0.012, "stone", STONE["clara"], thickness=0.02)
+    kerb_loop(b, (min_x - 0.12, max_x + 0.12, min_z - 0.12, max_z + 0.12), YARD_TOP + 0.02, 0.2, 0.14)
+
+    for index, (bed_min, bed_max, states) in enumerate(COFFEE_BEDS.values()):
+        for row, state in enumerate(states):
+            z_low = COFFEE_BED_START + row * COFFEE_BED_PITCH
+            coffee_bed(b, (bed_min, bed_max, z_low, z_low + COFFEE_BED_DEPTH), state, SEED + 100 * index + row)
+
+    terreiro_props(b)
+
+
+def kerb_loop(b: Builder, rectangle: tuple, ground: float, height: float, width: float, tint: str = KERB_TINT) -> None:
+    """White kerb (guia caiada) around a rectangle: four low boxes standing on the ground, no collider."""
+    min_x, max_x, min_z, max_z = rectangle
+    sides = (
+        (min_x, max_x, min_z, min_z + width),
+        (min_x, max_x, max_z - width, max_z),
+        (min_x, min_x + width, min_z + width, max_z - width),
+        (max_x - width, max_x, min_z + width, max_z - width),
+    )
+
+    for side in sides:
+        ground_patch(b, side, ground + height, "plaster", tint, thickness=height)
+
+
+def coffee_bed(b: Builder, rectangle: tuple, state: str, seed: int) -> None:
+    """One drying bed: white kerb, a layer of coffee (state picks the stage: ripe cherry, half dried, dry) and the
+    furrows the rodo leaves in it. state None leaves bare brick."""
+    min_x, max_x, min_z, max_z = rectangle
+
+    kerb_loop(b, rectangle, TERREIRO_TOP, 0.07, 0.1)
+
+    if state is None:
+        return
+
+    generator = random.Random(seed)
+    tint = COFFEE_TINTS[state]
+    fill_top = TERREIRO_TOP + 0.035
+
+    ground_patch(b, (min_x + 0.1, max_x - 0.1, min_z + 0.1, max_z - 0.1), fill_top, "soil", tint, thickness=0.04)
+
+    for ridge_z in [min_z + 0.35 + index * 0.37 for index in range(int((max_z - min_z - 0.5) / 0.37) + 1)]:
+        ridge_tint = shade_tint(srgb(tint), generator.uniform(0.82, 1.06))
+        ridge_row(b, min_x + 0.2, max_x - 0.2, ridge_z, fill_top, ridge_tint)
+
+
+def ridge_row(b: Builder, x_from: float, x_to: float, z: float, ground: float, tint: tuple) -> None:
+    """Furrow ridge left by the rake: a long low triangular prism along x."""
+    along = Matrix.Translation(world(x_from, z, ground))
+
+    b.side_prism([(-0.15, 0.0), (0.15, 0.0), (0.0, 0.07)], 0.0, x_to - x_from, "soil", tint, frame=along @ Matrix.Rotation(math.pi / 2.0, 4, "Z"))
+
+
+def rodo(b: Builder, frame: Matrix) -> None:
+    """Coffee rake lying on the ground: long pole, wide board head with a lip."""
+    wood = srgb(WOOD["mel"])
+
+    b.cylinder((0.0, 0.0, 0.05), 0.022, 2.3, 6, "wood", wood, frame=frame @ Matrix.Rotation(math.pi / 2.0, 4, "Y"), uv=("band", *WOOD_LIGHT_BAND, 1.0))
+    b.box((2.28, -0.36, 0.0), (2.36, 0.36, 0.13), "wood", srgb(WOOD["media"]), frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+    b.box((2.2, -0.36, 0.0), (2.28, 0.36, 0.04), "wood", wood, frame=frame, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+
+
+def peneira(b: Builder, frame: Matrix) -> None:
+    """Round wicker sieve lying flat with a handful of cherries on it."""
+    b.cylinder((0.0, 0.0, 0.0), 0.5, 0.05, 14, "paint", srgb("C49A5E"), frame=frame)
+    b.cylinder((0.0, 0.0, 0.05), 0.5, 0.04, 14, "paint", srgb("96703E"), top_radius=0.46, frame=frame)
+    b.cylinder((0.0, 0.0, 0.05), 0.42, 0.03, 14, "soil", srgb(COFFEE_TINTS["cereja"]), frame=frame)
+
+
+def burlap_pile(b: Builder, frame: Matrix) -> None:
+    """Sacks of coffee (sacas de juta) piled three, two and one, standing, a lying one in front."""
+    rows = ((0.0, 0.0, 0.0), (0.55, 0.0, 0.0), (1.1, 0.0, 0.0), (0.27, 0.0, 0.42), (0.82, 0.0, 0.42), (0.55, 0.0, 0.84))
+
+    for index, (x, y, z) in enumerate(rows):
+        sack(b, frame, x, y, z, 0.27, 0.5, BURLAP_TINTS[index % 3])
+
+    lying_sack(b, frame, (0.55, -0.62, 0.0), 80.0, 0.22, 0.62, BURLAP_TINTS[1])
+    b.collider((-0.3, -0.3, 0.0), (1.4, 0.3, 1.3), frame=frame)
+
+
+def terreiro_props(b: Builder) -> None:
+    """Rakes on the beds, sacks of coffee by the tulha door, balaios of cherries, sieves, a wheelbarrow."""
+    top = TERREIRO_TOP
+
+    rodo(b, frame_at_world(79.0, -26.4, top + 0.1, 8.0))
+    rodo(b, frame_at_world(88.6, -13.2, top + 0.1, -170.0))
+    rodo(b, frame_at_world(80.2, -10.0, top + 0.1, 188.0))
+    peneira(b, frame_at_world(84.6, -9.0, top + 0.012, 0.0))
+    peneira(b, frame_at_world(85.9, -7.6, top + 0.012, 30.0))
+    burlap_pile(b, frame_at_world(91.6, -25.2, top, 90.0))
+    burlap_pile(b, frame_at_world(91.6, -9.6, top, 90.0))
+    basket(b, frame_at_world(87.8, -21.0, top, 20.0), "coffee", 301, radius=0.3, height=0.34)
+    basket(b, frame_at_world(88.3, -20.3, top, 80.0), "coffee", 302, radius=0.27, height=0.3)
+    basket(b, frame_at_world(83.5, -28.6, top, 0.0), "coffee", 303, radius=0.3, height=0.34)
+    wheelbarrow(b, frame_at_world(90.0, -6.2, top, -60.0))
+
+
+def build_water_corner(b: Builder) -> None:
+    """East end of the sede's garden: cacimba with sarilho, and the spring box with its bamboo bica over a stone trough."""
+    cacimba(b, frame_at_world(96.6, -29.0, YARD_TOP, 0.0))
+    spring_box(b, frame_at_world(99.9, -32.2, YARD_TOP, 180.0))
 
 
 def scatter_tufts(b: Builder, patches: tuple, seed: int) -> None:
@@ -1356,7 +1299,7 @@ def scatter_tufts(b: Builder, patches: tuple, seed: int) -> None:
 
 
 def build_kitchen_garden(b: Builder, rectangle: tuple) -> None:
-    """Farmhouse vegetable patch: cabbage and carrot rows in a low fence with a gap toward the lane."""
+    """Sede's vegetable patch: cabbage and carrot rows in a low fence with a gap toward the sede."""
     min_x, max_x, min_z, max_z = rectangle
     half_z = (min_z + max_z) / 2.0
     ground = YARD_TOP + 0.04 - FIELD_RAISE
@@ -1364,7 +1307,7 @@ def build_kitchen_garden(b: Builder, rectangle: tuple) -> None:
     ground_patch(b, rectangle, YARD_TOP + 0.04, "soil", SOIL_DARK, collider="Field", thickness=0.06)
     plant_crop(b, "cabbage", ("cabbage", min_x + 0.5, max_x - 0.5, min_z + 0.4, half_z - 0.2), ground - 0.08, SEED + 30)
     plant_crop(b, "carrot", ("carrot", min_x + 0.5, max_x - 0.5, half_z + 0.2, max_z - 0.4), ground - 0.08, SEED + 31)
-    fence_run(b, [(max_x - 2.0, max_z), (min_x, max_z), (min_x, min_z), (max_x, min_z), (max_x, max_z)], YARD_TOP, SEED + 32)
+    fence_run(b, [(min_x, max_z), (min_x, min_z), (max_x, min_z), (max_x, max_z), (min_x + 1.6, max_z)], YARD_TOP, SEED + 32, style="horta")
 
 
 # ---------- the fields past the wall ----------
