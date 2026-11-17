@@ -96,7 +96,7 @@ const PROMO: Array[Dictionary] = [
 	{
 		"kind": PromoDirector.ShotKind.FLY,
 		"seconds": 5.0,
-		"caption": "Trigo, milho e hortas além do muro",
+		"caption": "Cafezal, milho e mandioca além do muro",
 		"eye_from": Vector3(101, 5, -1),
 		"eye_to": Vector3(138, 9, -1),
 		"look_from": Vector3(128, 0, -30),
