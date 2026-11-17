@@ -1,8 +1,8 @@
-"""Plants of the farm (wheat, corn, cabbage, carrot, grass and straw tufts) for build_farm.py.
+"""Plants of the farm (coffee, corn, sugar cane, cassava, cabbage, carrot, grass and straw tufts) for build_farm.py.
 
 Two pieces keep a field of thousands of plants cheap:
-  * one alpha-cut atlas painted here (T_FarmCrops_BaseColor.png): the fine detail of a plant (ears with grains
-    and awns, leaf veins, tassel spikelets, lacy carrot fronds) lives in the texture, on a few bent cards;
+  * one alpha-cut atlas painted here (T_FarmCrops_BaseColor.png): the fine detail of a plant (leaf veins, tassel
+    spikelets, lacy carrot fronds) lives in the texture, on a few bent cards;
   * numpy instancing: each plant is modelled once as a Shape (vertices, UVs, triangles) and stamped all over
     the plot with one matrix per plant; a batch becomes one mesh per (material, tint).
 
@@ -19,25 +19,22 @@ from typing import NamedTuple
 import bpy
 import numpy
 
-ATLAS_SIZE = 1024
+ATLAS_SIZE = (1024, 512)  # largura, altura em pixels
 SUPERSAMPLE = 2
 ATLAS_NAME = "T_FarmCrops_BaseColor"
 HAY_NAME = "T_FarmHay_BaseColor"
 HAY_SIZE = 512
 REGIONS = {  # nome -> (x0, y0, x1, y1) em pixels do atlas, y de baixo para cima
-    "wheat": (0, 464, 1024, 1024),
     "tassel": (0, 208, 256, 464),
     "tuft": (256, 208, 512, 464),
     "cabbage": (512, 208, 768, 464),
     "carrot": (768, 208, 1024, 464),
     "corn_leaf": (0, 96, 640, 208),
 }
-WHEAT_CARD_SIZE = (2.0, 1.09)  # metros cobertos pela região do trigo (512 px por metro)
 CROP_MATERIAL = "crops"
 PAINT_MATERIAL = "paint"
 UV_LAYER = "Float2"  # nome que bmesh dá à camada das outras peças do Builder; o join funde as camadas pelo nome
 
-WHEAT_TINTS = ("FFFFFF", "F6E7C2", "FFF3D0")
 CORN_STALK = "8FAE52"
 CORN_HUSK = "B4CF74"
 CORN_SILK = "A85A34"
@@ -143,50 +140,6 @@ def heading_at(path: numpy.ndarray, index: int) -> float:
 
 def offset(point, heading: float, distance: float) -> numpy.ndarray:
     return numpy.asarray(point) + numpy.array([math.sin(math.radians(heading)), math.cos(math.radians(heading))]) * distance
-
-
-def paint_wheat_ear(canvas: Canvas, base, heading: float, generator: random.Random, depth: float) -> None:
-    """Ripe ear: two ranks of plump grains up a nodding axis, a long awn from every grain."""
-    nod = generator.choice((-1.0, 1.0)) * generator.uniform(0.0, 50.0)
-    axis = arc_points(base, heading, generator.uniform(80.0, 96.0), nod, 9)
-    husk, grain, awn = mix("9A7430", "B98F42", depth), mix("D9B25A", "F6DC8E", depth), mix("C9A552", "F2DFA0", depth)
-
-    for rank, side in itertools.product(range(9), (-1.0, 1.0)):
-        along = heading_at(axis, rank)
-        center = offset(axis[rank], along + side * 90.0, 5.0)
-        splay = along + side * (22.0 - rank)
-
-        canvas.stroke(arc_points(center, splay - side * 8.0, generator.uniform(58.0, 88.0) * (1.0 - rank * 0.03), -side * 10.0, 3), (2.3, 2.0, 1.7, 1.4), awn)
-        canvas.ellipse(center, (5.6, 9.2), splay, husk)
-        canvas.ellipse(offset(center, splay, 1.0), (3.9, 7.2), splay, grain)
-
-    canvas.ellipse(axis[-1], (4.6, 8.6), heading_at(axis, 9), husk)
-    canvas.ellipse(axis[-1], (3.0, 6.6), heading_at(axis, 9), grain)
-
-
-def paint_wheat(generator: random.Random) -> numpy.ndarray:
-    """A 2 m stretch of a ripe wheat row: thin culms, dry drooping leaves and bearded ears, darker at the back."""
-    width, height = REGIONS["wheat"][2] - REGIONS["wheat"][0], REGIONS["wheat"][3] - REGIONS["wheat"][1]
-    canvas = Canvas(width, height, "D9B65A")
-    stalk_count = 78
-
-    for index in range(70):
-        root = (generator.uniform(10.0, width - 10.0), 0.0)
-        lean = generator.uniform(-22.0, 22.0)
-        canvas.stroke(arc_points(root, lean, generator.uniform(120.0, 270.0), lean * generator.uniform(1.0, 3.0), 6), numpy.linspace(7.0, 1.6, 7), mix("9C7A36", "D2B062", generator.random()))
-
-    for index in range(stalk_count):
-        depth = index / (stalk_count - 1)
-        root = (generator.uniform(40.0, width - 40.0), 0.0)
-        culm = arc_points(root, generator.uniform(-5.0, 5.0), generator.uniform(250.0, 335.0), generator.uniform(-9.0, 9.0), 6)
-        side = generator.choice((-1.0, 1.0))
-        leaf_start = culm[generator.choice((2, 3, 4))]
-
-        canvas.stroke(culm, numpy.linspace(4.6, 3.2, 7), mix("A8833A", "E6C672", depth))
-        canvas.stroke(arc_points(leaf_start, side * generator.uniform(20.0, 45.0), generator.uniform(80.0, 140.0), side * generator.uniform(70.0, 120.0), 6), numpy.linspace(7.5, 1.6, 7), mix("B08C40", "EBD694", depth))
-        paint_wheat_ear(canvas, culm[-1], heading_at(culm, 6), generator, depth)
-
-    return canvas.finish()
 
 
 def paint_corn_leaf() -> numpy.ndarray:
@@ -333,10 +286,9 @@ def save_texture(name: str, pixels: numpy.ndarray, directory: Path) -> Path:
 def crop_atlas(directory: Path, seed: int) -> Path:
     """Paint every region of the crop atlas (deterministic: the same seed writes the same file)."""
     generator = random.Random(seed)
-    atlas = numpy.zeros((ATLAS_SIZE, ATLAS_SIZE, 4), dtype=numpy.float32)
+    atlas = numpy.zeros((ATLAS_SIZE[1], ATLAS_SIZE[0], 4), dtype=numpy.float32)
     atlas[..., :3] = rgb("B9C46A")
     painted = {
-        "wheat": paint_wheat(generator),
         "tassel": paint_tassel(generator),
         "tuft": paint_tuft(generator),
         "cabbage": paint_cabbage_leaf(generator),
@@ -421,7 +373,7 @@ def ribbon(path, width, region: str, along: str = "v", cup: float = 0.0, columns
     normal /= numpy.maximum(numpy.linalg.norm(normal, axis=1, keepdims=True), 1e-9)
     widths = numpy.broadcast_to(width, (rows,))[:, None, None]
     vertices = path[:, None, :] + side * across[None, :, None] * widths + normal[:, None, :] * (cup * (2.0 * across[None, :, None]) ** 2) * widths
-    x0, y0, x1, y1 = [(edge + inset) / ATLAS_SIZE for edge, inset in zip(REGIONS[region], (1.5, 1.5, -1.5, -1.5))]
+    x0, y0, x1, y1 = [(edge + inset) / ATLAS_SIZE[axis % 2] for axis, (edge, inset) in enumerate(zip(REGIONS[region], (1.5, 1.5, -1.5, -1.5)))]
     lengthwise = numpy.repeat(numpy.linspace(0.0, 1.0, rows), columns)
     crosswise = numpy.tile(span[0] + (across + 0.5) * (span[1] - span[0]), rows)
     uvs = {
@@ -524,15 +476,6 @@ def stamp_variants(batch: PlantBatch, variants: list, matrices: numpy.ndarray, g
 
 
 # ---------- the plants ----------
-
-def wheat_variants() -> list:
-    """Row cards: the full 2 m stretch and its two halves (for the short cards set across the row)."""
-    width, height = WHEAT_CARD_SIZE
-    path = [(0.0, 0.0, 0.0), (0.0, 0.03, height * 0.6), (0.0, 0.1, height)]
-    spans = (((0.0, 1.0), width), ((0.0, 0.5), width / 2.0), ((0.5, 1.0), width / 2.0), ((1.0, 0.0), width))
-
-    return [[(ribbon(path, card_width, "wheat", span=span), CROP_MATERIAL, tint)] for (span, card_width), tint in zip(spans, WHEAT_TINTS + WHEAT_TINTS[:1])]
-
 
 def corn_ear(generator: random.Random, height: float, yaw: float) -> list:
     """Cob wrapped in its husk leaning off the stalk, silk spilling from the tip."""

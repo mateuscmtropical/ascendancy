@@ -25,25 +25,47 @@ from farm_colonial import (
     tube,
     window,
 )
-from shop_props_common import lathe
+from shop_props_common import lathe, ring
 
 IDENTITY = Matrix.Identity(4)
 BAMBOO = "B9B35E"
 BAMBOO_NODE = "8E8A3E"
-ROPE = "B89A62"
+ROPE = "8A6A40"
 WOOD_BARE = "7A5438"
 WATER_KEY = "water"
+CURB_RADIUS = 0.95
+CURB_TOP = 0.82
+WELL_RADIUS = 0.66
+SARILHO_POST_X = 1.2  # fora da capa da borda (raio 1,02)
+AXLE_Z = 1.3  # altura do eixo: manivela entre 0,95 e 1,65 m, na mão de quem puxa
+AXLE_RADIUS = 0.075
+DRUM_RADIUS = 0.13
+DRUM_HALF_LENGTH = 0.5
+ROPE_RADIUS = 0.02
+ROPE_TURNS = 8
+ROPE_PITCH = 0.052  # voltas com um vão entre elas: lê como corda enrolada, não como um tubo liso
+CRANK_ARM = 0.34
+BUCKET_BAIL_RISE = 0.16
 
 
 def bucket(b: Builder, frame: Matrix, position: tuple, radius: float = 0.17, height: float = 0.3) -> None:
-    """Wooden bucket (balde) with two iron hoops and a rope handle."""
-    lathe(b, [(radius * 0.8, 0.0), (radius, height), (radius * 0.92, height), (radius * 0.72, 0.03)], 10, "wood", WOOD["media"], frame, base=position, closed=True, uv=("band", *WOOD_DARK_BAND, 1.0))
+    """Wooden bucket (balde) of staves: three iron hoops, water inside, an iron bail standing up over the rim."""
+    x, y, z = position
+    bail_points = 7
 
-    for level in (0.25, 0.78):
-        b.cylinder((position[0], position[1], position[2] + height * level), radius * (0.82 + 0.18 * level) + 0.008, 0.025, 10, "metal", srgb(IRON), frame=frame)
+    lathe(b, [(radius * 0.8, 0.0), (radius, height), (radius * 0.92, height), (radius * 0.72, 0.03)], 12, "wood", WOOD["media"], frame, base=position, closed=True, uv=("band", *WOOD_DARK_BAND, 1.0))
+    b.cylinder((x, y, z + height * 0.68), radius * 0.86, 0.01, 12, WATER_KEY, srgb("5A8FA8"), frame=frame)
 
-    b.beam((position[0] - radius, position[1], position[2] + height), (position[0], position[1], position[2] + height + 0.2), 0.015, 0.015, "paint", srgb(ROPE), frame=frame, uv=None)
-    b.beam((position[0], position[1], position[2] + height + 0.2), (position[0] + radius, position[1], position[2] + height), 0.015, 0.015, "paint", srgb(ROPE), frame=frame, uv=None)
+    for level in (0.12, 0.5, 0.88):
+        ring(b, (x, y, z + height * level), radius * (0.8 + 0.2 * level) + 0.006, 0.012, "metal", IRON, frame, sides=12, tube_sides=4)
+
+    for side in (-1, 1):
+        b.box((x + side * radius - 0.018, y - 0.025, z + height - 0.07), (x + side * radius + 0.018, y + 0.025, z + height + 0.01), "metal", srgb(IRON), frame=frame)
+
+    arc = [(x - math.cos(math.pi * index / (bail_points - 1)) * radius, y, z + height + math.sin(math.pi * index / (bail_points - 1)) * BUCKET_BAIL_RISE) for index in range(bail_points)]
+
+    for start, end in zip(arc, arc[1:]):
+        tube(b, start, end, 0.009, 4, "metal", IRON, frame=frame)
 
 
 def forked_post(b: Builder, frame: Matrix, x: float, y: float, height: float) -> None:
@@ -59,25 +81,65 @@ def forked_post(b: Builder, frame: Matrix, x: float, y: float, height: float) ->
 
 
 def cacimba(b: Builder, frame: Matrix) -> None:
-    """Hand-dug well with a masonry curb, a sarilho (windlass on two forked posts with a crank), rope and bucket,
-    a second bucket on the curb. The curb is axis-aligned; the windlass runs along local X."""
-    curb = [(0.95, 0.0), (0.95, 0.82), (0.66, 0.82), (0.66, 0.1)]
+    """Hand-dug well: masonry curb with a cream cap, and the sarilho over it. Two braced squared posts on stone
+    footings tied by a crossbar carry a round axle in iron collars; the middle of the axle is a drum with the rope wound
+    on it, the end past the +X post an iron crank with a wooden grip. The rope runs off the front of the drum
+    down to a bucket just under the cap; a second bucket stands on the cap. Windlass along local X."""
+    curb = [(CURB_RADIUS, 0.0), (CURB_RADIUS, CURB_TOP), (WELL_RADIUS, CURB_TOP), (WELL_RADIUS, 0.1)]
+    cap_top = CURB_TOP + 0.1
+    rope_y = DRUM_RADIUS + ROPE_RADIUS
+    rope_x = DRUM_HALF_LENGTH - 0.1 - ROPE_TURNS * ROPE_PITCH
+    hanging_bucket = (rope_x, rope_y, cap_top - 0.36)
 
     lathe(b, curb, 14, "stone", STONE["media"], frame, closed=True)
-    b.cylinder((0.0, 0.0, 0.82), 1.02, 0.1, 14, "trim", srgb(CREAM), frame=frame)
-    b.cylinder((0.0, 0.0, 0.3), 0.66, 0.02, 14, WATER_KEY, srgb("5A8FA8"), frame=frame)
+    lathe(b, [(WELL_RADIUS - 0.03, CURB_TOP), (CURB_RADIUS + 0.07, CURB_TOP), (CURB_RADIUS + 0.07, cap_top), (WELL_RADIUS - 0.03, cap_top)], 14, "trim", CREAM, frame, closed=True)
+    b.cylinder((0.0, 0.0, 0.3), WELL_RADIUS, 0.02, 14, WATER_KEY, srgb("5A8FA8"), frame=frame)
 
     for side in (-1, 1):
-        forked_post(b, frame, side * 1.2, 0.0, 2.1)
+        sarilho_post(b, frame, side * SARILHO_POST_X)
 
-    b.cylinder((-1.45, 0.0, 1.95), 0.11, 2.9, 8, "wood", srgb(WOOD["mel"]), frame=frame, axis="X", uv=TIMBER_UV)
-    b.cylinder((-0.35, 0.0, 1.95), 0.16, 0.75, 10, "paint", srgb(ROPE), frame=frame, axis="X")
-    b.beam((1.45, 0.0, 1.95), (1.45, 0.38, 1.95), 0.07, 0.07, "wood", srgb(WOOD_BARE), frame=frame, uv=None)
-    b.cylinder((1.45, 0.38, 1.95), 0.035, 0.45, 6, "wood", srgb(WOOD_BARE), frame=frame, axis="X", uv=None)
-    b.cylinder((0.0, 0.0, 1.05), 0.014, 0.9, 4, "paint", srgb(ROPE), frame=frame)
-    bucket(b, frame, (-0.35, 0.0, 0.75))
-    bucket(b, frame, (0.55, 0.78, 0.82))
-    b.collider((-1.4, -1.0, 0.0), (1.4, 1.0, 0.9), frame=frame)
+    b.box((-SARILHO_POST_X - 0.1, -0.07, AXLE_Z + 0.16), (SARILHO_POST_X + 0.1, 0.07, AXLE_Z + 0.28), "wood", srgb(TIMBER), frame=frame, uv=TIMBER_UV)
+    b.cylinder((-SARILHO_POST_X - 0.14, 0.0, AXLE_Z), AXLE_RADIUS, 2.0 * SARILHO_POST_X + 0.3, 12, "wood", srgb(WOOD["mel"]), frame=frame, axis="X", uv=TIMBER_UV)
+    b.cylinder((-DRUM_HALF_LENGTH, 0.0, AXLE_Z), DRUM_RADIUS, 2.0 * DRUM_HALF_LENGTH, 14, "wood", srgb(WOOD["media"]), frame=frame, axis="X", uv=TIMBER_UV)
+
+    for side in (-1, 1):
+        b.cylinder((side * DRUM_HALF_LENGTH - 0.025, 0.0, AXLE_Z), DRUM_RADIUS + 0.05, 0.05, 14, "wood", srgb(WOOD["escura"]), frame=frame, axis="X", uv=TIMBER_UV)
+
+    for side, offset in itertools.product((-1, 1), (-0.12, 0.12)):
+        ring(b, (side * SARILHO_POST_X + offset, 0.0, AXLE_Z), AXLE_RADIUS + 0.008, 0.014, "metal", IRON, frame, sides=12, tube_sides=4, axis="X")
+
+    for turn in range(ROPE_TURNS):
+        ring(b, (DRUM_HALF_LENGTH - 0.1 - turn * ROPE_PITCH, 0.0, AXLE_Z), DRUM_RADIUS + ROPE_RADIUS, ROPE_RADIUS, "paint", ROPE, frame, sides=14, tube_sides=6, axis="X")
+
+    crank(b, frame, SARILHO_POST_X + 0.2)
+    b.cylinder((rope_x, rope_y, hanging_bucket[2] + 0.3 + BUCKET_BAIL_RISE), ROPE_RADIUS, AXLE_Z - hanging_bucket[2] - 0.3 - BUCKET_BAIL_RISE, 6, "paint", srgb(ROPE), frame=frame)
+    bucket(b, frame, hanging_bucket)
+    bucket(b, frame, (0.48, 0.7, cap_top))
+    b.collider((-CURB_RADIUS - 0.07, -CURB_RADIUS - 0.07, 0.0), (CURB_RADIUS + 0.07, CURB_RADIUS + 0.07, cap_top), frame=frame)
+
+    for side in (-1, 1):
+        b.collider((side * SARILHO_POST_X - 0.18, -0.18, 0.0), (side * SARILHO_POST_X + 0.18, 0.18, AXLE_Z + 0.28), frame=frame)
+
+
+def sarilho_post(b: Builder, frame: Matrix, x: float) -> None:
+    """Squared post on a stone footing, braced front and back (the side toward the crank stays clear), the axle
+    passing through it at AXLE_Z."""
+    b.box((x - 0.18, -0.18, 0.0), (x + 0.18, 0.18, 0.2), "stone", srgb(STONE["media"]), frame=frame)
+    b.box((x - 0.08, -0.08, 0.2), (x + 0.08, 0.08, AXLE_Z + 0.16), "wood", srgb(TIMBER), frame=frame, uv=TIMBER_UV)
+
+    for side in (-1, 1):
+        b.beam((x, side * 0.5, 0.16), (x, side * 0.07, 0.95), 0.07, 0.07, "wood", srgb(TIMBER), frame=frame, uv=TIMBER_UV)
+        b.box((x - 0.1, side * 0.5 - 0.1, 0.0), (x + 0.1, side * 0.5 + 0.1, 0.16), "stone", srgb(STONE["media"]), frame=frame)
+
+
+def crank(b: Builder, frame: Matrix, x: float) -> None:
+    """Iron crank on the axle end at x: a hub, an arm hanging down and a wooden grip sticking out along +X."""
+    grip_z = AXLE_Z - CRANK_ARM
+
+    b.cylinder((x - 0.06, 0.0, AXLE_Z), AXLE_RADIUS + 0.025, 0.1, 10, "metal", srgb(IRON), frame=frame, axis="X")
+    b.box((x + 0.02, -0.03, grip_z - 0.03), (x + 0.06, 0.03, AXLE_Z + 0.03), "metal", srgb(IRON), frame=frame)
+    b.cylinder((x + 0.02, 0.0, grip_z), 0.014, 0.3, 6, "metal", srgb(IRON), frame=frame, axis="X")
+    b.cylinder((x + 0.07, 0.0, grip_z), 0.032, 0.2, 8, "wood", srgb(WOOD["escura"]), frame=frame, axis="X", uv=TIMBER_UV)
 
 
 def bamboo_pipe(b: Builder, frame: Matrix, start: tuple, end: tuple, radius: float = 0.055) -> None:

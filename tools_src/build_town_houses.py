@@ -17,6 +17,7 @@ Usage:
   blender -b --factory-startup -P tools_src/build_town_houses.py -- [model_name ...]
 """
 
+import hashlib
 import itertools
 import json
 import math
@@ -435,6 +436,7 @@ class Builder:
             export_active_vertex_color_when_no_material=True,
             use_visible=True,
         )
+        stamp_buffer_hash(output_path)
 
         sidecar = {
             "aabb_min": [round(value, 3) for value in godot_minimum],
@@ -446,6 +448,14 @@ class Builder:
         output_path.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8", newline="\n")
 
         return sidecar
+
+
+def stamp_buffer_hash(gltf_path: Path) -> None:
+    """Write the hash of the .bin into the .gltf: Godot only reimports when the .gltf text changes, and a rebuild
+    that only moves vertices or UVs changes nothing but the .bin."""
+    document = json.loads(gltf_path.read_text(encoding="utf-8"))
+    document["asset"]["extras"] = {"buffer_md5": hashlib.md5(gltf_path.with_suffix(".bin").read_bytes()).hexdigest()}
+    gltf_path.write_text(json.dumps(document, indent=1), encoding="utf-8", newline="\n")
 
 
 def blender_to_godot(point) -> list:

@@ -56,6 +56,22 @@ func test_hub_has_townsfolk_walking_and_standing() -> void:
 	assert_gte(standers.size(), 4)
 
 
+func test_farm_animals_start_with_the_whole_body_clear_of_pen_props() -> void:
+	var animals: Array[Node] = _hub.find_child("FarmAnimals", false, false).get_children()
+
+	assert_gt(animals.size(), 0)
+
+	for animal in animals:
+		var farm_animal: FarmAnimal = animal as FarmAnimal
+
+		assert_gt(farm_animal.obstacles.size(), 0, "%s knows the props of its pen" % animal.name)
+		assert_gte(
+			_room_around(farm_animal),
+			FarmAnimal.swing_radius(farm_animal.body_size),
+			"%s can turn in place without touching a prop" % animal.name
+		)
+
+
 func test_patrol_routes_avoid_fountains_and_stay_in_city() -> void:
 	for point in _patrol_route_points():
 		var ground_point: Vector2 = Vector2(point.x, point.z)
@@ -199,6 +215,19 @@ func _townsfolk_by_activity(activity: WalkingNpc.Activity) -> Array[WalkingNpc]:
 			matches.append(child)
 
 	return matches
+
+
+## Menor distância do bicho até a borda de um círculo de obstáculo do cercado dele.
+func _room_around(animal: FarmAnimal) -> float:
+	var ground_position: Vector2 = Vector2(animal.position.x, animal.position.z)
+	var room: float = INF
+
+	for obstacle in animal.obstacles:
+		var center: Vector2 = Vector2(obstacle.x, obstacle.y)
+
+		room = minf(room, ground_position.distance_to(center) - obstacle.z)
+
+	return room
 
 
 func _patrol_route_points() -> Array[Vector3]:

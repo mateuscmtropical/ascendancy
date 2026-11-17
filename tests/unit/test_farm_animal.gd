@@ -68,6 +68,15 @@ func test_path_through_a_trunk_is_blocked() -> void:
 	assert_true(FarmAnimal.is_path_clear(north_west, north_east, trunks, CLEARANCE))
 
 
+func test_swing_radius_reaches_the_corners_of_the_body() -> void:
+	var cow_body: Vector3 = Vector3(0.9, 1.4, 2.2)
+	var corner: Vector2 = Vector2(cow_body.x, cow_body.z) / 2.0
+	var reach: float = FarmAnimal.swing_radius(cow_body)
+
+	assert_almost_eq(reach, corner.length(), 0.001)
+	assert_gt(reach, cow_body.z / 2.0, "turning in place sweeps past half the length")
+
+
 func test_step_never_overshoots_the_target() -> void:
 	var target: Vector2 = Vector2(3.0, 0.0)
 	var halfway: Vector2 = FarmAnimal.step_toward(Vector2.ZERO, target, 1.5)

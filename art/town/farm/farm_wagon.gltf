@@ -1,7 +1,10 @@
 {
  "asset": {
   "generator": "Khronos glTF Blender I/O v5.2.41",
-  "version": "2.0"
+  "version": "2.0",
+  "extras": {
+   "buffer_md5": "b761168580f78a710793ffb9f7ea3733"
+  }
  },
  "scene": 0,
  "scenes": [
@@ -16,7 +19,7 @@
  "nodes": [
   {
    "mesh": 0,
-   "name": "Collider105-colonly"
+   "name": "Collider119-colonly"
   },
   {
    "mesh": 1,
@@ -71,7 +74,7 @@
  ],
  "meshes": [
   {
-   "name": "Collider105-colonly",
+   "name": "Collider119-colonly",
    "primitives": [
     {
      "attributes": {
@@ -83,7 +86,7 @@
    ]
   },
   {
-   "name": "P111",
+   "name": "P125",
    "primitives": [
     {
      "attributes": {
@@ -217,7 +220,7 @@
   {
    "bufferView": 7,
    "componentType": 5126,
-   "count": 2208,
+   "count": 2880,
    "max": [
     1.0199999809265137,
     1.8200000524520874,
@@ -233,26 +236,26 @@
   {
    "bufferView": 8,
    "componentType": 5126,
-   "count": 2208,
+   "count": 2880,
    "type": "VEC3"
   },
   {
    "bufferView": 9,
    "componentType": 5126,
-   "count": 2208,
+   "count": 2880,
    "type": "VEC2"
   },
   {
    "bufferView": 10,
    "componentType": 5123,
-   "count": 2208,
+   "count": 2880,
    "normalized": true,
    "type": "VEC4"
   },
   {
    "bufferView": 11,
    "componentType": 5123,
-   "count": 3372,
+   "count": 4380,
    "type": "SCALAR"
   },
   {
@@ -299,7 +302,7 @@
   {
    "bufferView": 17,
    "componentType": 5126,
-   "count": 3534,
+   "count": 4024,
    "max": [
     0.8550000190734863,
     2.315000057220459,
@@ -315,26 +318,26 @@
   {
    "bufferView": 18,
    "componentType": 5126,
-   "count": 3534,
+   "count": 4024,
    "type": "VEC3"
   },
   {
    "bufferView": 19,
    "componentType": 5126,
-   "count": 3534,
+   "count": 4024,
    "type": "VEC2"
   },
   {
    "bufferView": 20,
    "componentType": 5123,
-   "count": 3534,
+   "count": 4024,
    "normalized": true,
    "type": "VEC4"
   },
   {
    "bufferView": 21,
    "componentType": 5123,
-   "count": 7242,
+   "count": 7956,
    "type": "SCALAR"
   }
  ],
@@ -383,92 +386,92 @@
   },
   {
    "buffer": 0,
-   "byteLength": 26496,
+   "byteLength": 34560,
    "byteOffset": 1608,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 26496,
-   "byteOffset": 28104,
+   "byteLength": 34560,
+   "byteOffset": 36168,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 17664,
-   "byteOffset": 54600,
+   "byteLength": 23040,
+   "byteOffset": 70728,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 17664,
-   "byteOffset": 72264,
+   "byteLength": 23040,
+   "byteOffset": 93768,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 6744,
-   "byteOffset": 89928,
+   "byteLength": 8760,
+   "byteOffset": 116808,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 8592,
-   "byteOffset": 96672,
+   "byteOffset": 125568,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 8592,
-   "byteOffset": 105264,
+   "byteOffset": 134160,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 5728,
-   "byteOffset": 113856,
+   "byteOffset": 142752,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 5728,
-   "byteOffset": 119584,
+   "byteOffset": 148480,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 2544,
-   "byteOffset": 125312,
+   "byteOffset": 154208,
    "target": 34963
   },
   {
    "buffer": 0,
-   "byteLength": 42408,
-   "byteOffset": 127856,
+   "byteLength": 48288,
+   "byteOffset": 156752,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 42408,
-   "byteOffset": 170264,
+   "byteLength": 48288,
+   "byteOffset": 205040,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 28272,
-   "byteOffset": 212672,
+   "byteLength": 32192,
+   "byteOffset": 253328,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 28272,
-   "byteOffset": 240944,
+   "byteLength": 32192,
+   "byteOffset": 285520,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 14484,
-   "byteOffset": 269216,
+   "byteLength": 15912,
+   "byteOffset": 317712,
    "target": 34963
   }
  ],
@@ -480,7 +483,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 283700,
+   "byteLength": 333624,
    "uri": "farm_wagon.bin"
   }
  ]

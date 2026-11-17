@@ -551,6 +551,23 @@ FARM_PENS = {  # cercado -> (min x, max x, min z, max z) por dentro da cerca
     "pigs": (85.0, 100.5, 31.0, 43.5),
 }
 FARM_ANIMAL_MARGIN = 1.5  # bicho anda num retângulo afastado da cerca
+# Peças dentro dos cercados: (tipo, x, z, giro em graus, largura, fundo). build_farm.py desenha cada uma nesse
+# lugar e add_farm_animals cobre a pegada dela com círculos que o bicho contorna. O rancho é aberto na frente:
+# a origem fica no meio da frente e o fundo vai para trás dela; as outras peças são centradas na origem.
+FARM_PEN_PROPS = {
+    "cows": (
+        ("rancho", 93.5, 21.2, 180.0, 9.0, 5.0),
+        ("hay_rack", 85.5, 24.8, 0.0, 3.0, 1.0),
+        ("trough", 88.0, 5.6, 0.0, 2.6, 0.7),
+    ),
+    "pigs": (
+        ("rancho", 96.0, 38.0, 180.0, 6.5, 3.8),
+        ("trough", 94.0, 32.2, 0.0, 2.0, 0.7),
+        ("hay_pile", 88.0, 42.2, 0.0, 2.2, 1.0),
+    ),
+}
+FRONT_ANCHORED_PROPS = {"rancho"}
+PEN_PROP_WALL = 0.12  # folga da pegada: as paredes do rancho passam um pouco dos esteios, a borda do cocho dos pés
 FARM_ANIMALS = {  # cercado -> (modelo convertido por convert_farm_animals.py, quantos, velocidade em m/s)
     "cows": ("res://art/town/farm/animals/cow.gltf", 4, 0.55),
     "pigs": ("res://art/town/farm/animals/pig.gltf", 5, 0.5),
@@ -1509,10 +1526,6 @@ FARMHANDS = {  # nome -> (corpo, cabelo, posição, para onde olha, animação)
     "Swineherd": ("villager_male", "grey", (90.0, 30.2), (93.0, 36.0), "ual2/Idle_FoldArms"),
 }
 FARM_ANIMAL_BODY = {"cows": (0.9, 1.4, 2.2), "pigs": (0.6, 0.8, 1.2)}
-FARM_PEN_PROPS = {  # cercado -> (x, z, raio) de abrigo, cochos e comedouro de feno (posições de build_farm.py): o bicho não anda por cima deles
-    "cows": ((90.5, 23.7, 2.5), (93.5, 23.7, 2.5), (96.5, 23.7, 2.5), (88.0, 5.6, 1.5), (85.5, 24.8, 1.6)),
-    "pigs": ((94.5, 39.9, 2.0), (97.5, 39.9, 2.0), (94.0, 32.2, 1.2), (88.0, 42.2, 1.4)),
-}
 CARRIAGE_HORSE = "res://art/town/farm/animals/horse.gltf"
 CARRIAGE_HARNESSED_HORSE = "res://art/town/farm/animals/horse_harness.gltf"  # coelheira, selim e argolas dos varais
 CARRIAGE_DRIVERS = (("villager_male", "brown"), ("villager_female", "black"))  # (corpo, cabelo) de cada condutor
@@ -1584,15 +1597,46 @@ def spread_points(generator: random.Random, area: tuple, count: int, gap: float,
 
 
 def pen_trunks(pen: str) -> tuple:
-    """(x, z, radius) of what the animals of a pen must walk around: the shade trees and FARM_PEN_PROPS."""
+    """(x, z, radius) of what the animals of a pen must walk around: the shade trees with their roots and the
+    circles that cover every FARM_PEN_PROPS footprint."""
     min_x, max_x, min_z, max_z = FARM_PENS[pen]
     trunks = tuple(
-        (x, z, TRUNK_RADIUS[kind] * scale)
+        (x, z, ROOT_CLEARANCE.get(kind, TRUNK_RADIUS[kind]) * scale)
         for kind, _variant, x, z, scale in FARM_SHADE_TREES.values()
         if min_x < x < max_x and min_z < z < max_z
     )
+    props = tuple(circle for prop in FARM_PEN_PROPS[pen] for circle in covering_circles(pen_prop_footprint(*prop)))
 
-    return trunks + FARM_PEN_PROPS[pen]
+    return trunks + props
+
+
+def pen_prop_footprint(kind: str, x: float, z: float, yaw_degrees: float, width: float, depth: float) -> tuple:
+    """World rectangle (min x, max x, min z, max z) a pen prop stands on, turned like build_farm.frame_at_world
+    turns it (Blender local u, v; Godot z = -Blender y)."""
+    near = -PEN_PROP_WALL if kind in FRONT_ANCHORED_PROPS else -depth / 2.0
+    far = depth + PEN_PROP_WALL if kind in FRONT_ANCHORED_PROPS else depth / 2.0
+    half = width / 2.0 + PEN_PROP_WALL
+    yaw = math.radians(yaw_degrees)
+    corners = [(u * math.cos(yaw) - v * math.sin(yaw), -(u * math.sin(yaw) + v * math.cos(yaw))) for u, v in itertools.product((-half, half), (near, far))]
+    xs = [x + corner[0] for corner in corners]
+    zs = [z + corner[1] for corner in corners]
+
+    return min(xs), max(xs), min(zs), max(zs)
+
+
+def covering_circles(rectangle: tuple) -> tuple:
+    """Fewest equal circles in a row along the long side whose union holds the whole rectangle (every corner)."""
+    min_x, max_x, min_z, max_z = rectangle
+    width, depth = max_x - min_x, max_z - min_z
+    count = max(1, math.ceil(max(width, depth) / min(width, depth)))
+    radius = math.hypot(max(width, depth) / count, min(width, depth)) / 2.0
+    along_x = width >= depth
+    steps = [(index + 0.5) / count for index in range(count)]
+
+    return tuple(
+        (min_x + width * step if along_x else (min_x + max_x) / 2.0, (min_z + max_z) / 2.0 if along_x else min_z + depth * step, radius)
+        for step in steps
+    )
 
 
 def check_shade_trees() -> None:

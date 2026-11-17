@@ -200,7 +200,7 @@ const SHOTS: Array[Dictionary] = [
 		"beats": 8,
 		"camera": TrailerShots.CameraKind.DOLLY,
 		"time": 0.3,
-		"caption": "Trigo, milho e hortas",
+		"caption": "Cafezal, milho e mandioca",
 		"eye_from": Vector3(106.0, 4.0, -3.0),
 		"eye_to": Vector3(138.0, 9.0, -1.0),
 		"look_from": Vector3(128.0, 0.0, -30.0),
