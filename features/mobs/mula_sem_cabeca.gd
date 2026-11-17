@@ -46,7 +46,8 @@ const BURN_FADE_SECONDS: float = 1.6
 ## Morta, a lava das veias ainda fica em brasa fraca.
 const VEIN_BURN_WHEN_DEAD: float = 0.18
 ## Pegadas: o casco "pisa" quando o marcador desce abaixo de HOOF_CONTACT_HEIGHT (metros acima
-## do chão da mula) e só pisa de novo depois de subir acima de HOOF_LIFT_HEIGHT.
+## do chão da mula, no tamanho original; cresce junto com a escala do nó Model) e só pisa de novo
+## depois de subir acima de HOOF_LIFT_HEIGHT.
 const HOOF_MARKER_PATTERN: String = "FireHoof*"
 const STUMP_MARKER_NAME: String = "FireStump"
 const HOOF_CONTACT_HEIGHT: float = 0.1
@@ -78,7 +79,9 @@ var _hoof_markers: Array[Node3D] = []
 var _hoof_is_down: PackedByteArray = PackedByteArray()
 var _stump_marker: Node3D
 var _seconds_to_drip_stain: float = 0.0
+var _body_scale: float = 1.0
 
+@onready var _model: Node3D = $Model
 @onready var _skeleton: Skeleton3D = $Model.find_child("Skeleton3D") as Skeleton3D
 @onready
 var _animation_player: AnimationPlayer = $Model.find_child("AnimationPlayer") as AnimationPlayer
@@ -89,6 +92,8 @@ var _animation_player: AnimationPlayer = $Model.find_child("AnimationPlayer") as
 
 
 func _ready() -> void:
+	_body_scale = _model.scale.x
+
 	_veins.material_override = vein_material
 	_flames.material_override = flame_ribbon_material
 	_flames.extra_cull_margin = FLAME_CULL_MARGIN
@@ -130,7 +135,8 @@ func _loop_gait_animations() -> void:
 
 
 ## O esqueleto vem na escala do pacote (o modelo é reduzido pelo nó raiz); o fogo é desenhado
-## em metros, então cada cópia desfaz a escala do marcador.
+## em metros do tamanho original e cresce só com a escala do nó Model, então cada cópia desfaz
+## o resto da escala do marcador.
 func _hang_fire_on_markers() -> void:
 	var markers: Array[Node] = _skeleton.find_children(FIRE_MARKER_PATTERN, "Node3D", true, false)
 
@@ -173,7 +179,7 @@ func _hang_fire_on_marker(marker: Node3D) -> void:
 	var template_name: String = FIRE_TEMPLATE_BY_MARKER_KIND[marker_kind]
 	var template: Node3D = _fire_templates.get_node(template_name) as Node3D
 	var fire: Node3D = template.duplicate() as Node3D
-	var marker_scale: Vector3 = marker.global_basis.get_scale() / global_basis.get_scale()
+	var marker_scale: Vector3 = marker.global_basis.get_scale() / _model.global_basis.get_scale()
 
 	fire.scale = Vector3.ONE / marker_scale
 	marker.add_child(fire)
@@ -229,16 +235,16 @@ func _leave_footprints() -> void:
 		var hoof_position: Vector3 = _hoof_markers[hoof_index].global_position
 		var height: float = hoof_position.y - global_position.y
 		var was_down: bool = _hoof_is_down[hoof_index] == 1
-		var has_landed: bool = not was_down and height < HOOF_CONTACT_HEIGHT
+		var has_landed: bool = not was_down and height < HOOF_CONTACT_HEIGHT * _body_scale
 
-		if was_down and height > HOOF_LIFT_HEIGHT:
+		if was_down and height > HOOF_LIFT_HEIGHT * _body_scale:
 			_hoof_is_down[hoof_index] = 0
 
 		if has_landed:
 			_hoof_is_down[hoof_index] = 1
 			_lava_marks.stamp(
 				_ground_under(hoof_position),
-				FOOTPRINT_SIZE,
+				FOOTPRINT_SIZE * _body_scale,
 				global_rotation.y,
 				FOOTPRINT_FLAME_SHARE,
 				HORSESHOE
@@ -246,7 +252,9 @@ func _leave_footprints() -> void:
 
 
 func _leave_drip_stains(delta: float) -> void:
-	var scatter: Vector3 = Vector3(randf() - 0.5, 0.0, randf() - 0.5) * 2.0 * DRIP_STAIN_SPREAD
+	var scatter: Vector3 = (
+		Vector3(randf() - 0.5, 0.0, randf() - 0.5) * 2.0 * DRIP_STAIN_SPREAD * _body_scale
+	)
 
 	_seconds_to_drip_stain -= delta
 
@@ -256,7 +264,7 @@ func _leave_drip_stains(delta: float) -> void:
 	_seconds_to_drip_stain = DRIP_STAIN_SECONDS
 	_lava_marks.stamp(
 		_ground_under(_stump_marker.global_position + scatter),
-		DRIP_STAIN_SIZE,
+		DRIP_STAIN_SIZE * _body_scale,
 		randf() * TAU,
 		0.0,
 		STAIN
