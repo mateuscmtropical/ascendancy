@@ -1,46 +1,46 @@
 {
  "aabb_min": [
-  -11.52,
-  0.05,
-  -19.07
+  -11.55,
+  0.0,
+  -19.098
  ],
  "aabb_max": [
   11.54,
-  4.81,
-  -2.15
+  4.807,
+  -0.4
  ],
  "shop": "smith",
- "props": 61,
+ "props": 81,
  "lights": [
   {
    "position": [
-    -8.4,
-    3.95,
-    -5.0
+    8.2,
+    1.35,
+    -17.97
    ],
-   "color": "FFB347",
-   "energy": 1.6,
+   "color": "FF8A3A",
+   "energy": 3.0,
    "range": 7.0
   },
   {
    "position": [
-    -8.4,
-    3.95,
-    -12.0
-   ],
-   "color": "FFB347",
-   "energy": 1.6,
-   "range": 7.0
-  },
-  {
-   "position": [
-    -1.6,
-    3.95,
+    -5.0,
+    3.85,
     -5.0
    ],
    "color": "FFB347",
-   "energy": 1.6,
-   "range": 7.0
+   "energy": 1.0,
+   "range": 5.0
+  },
+  {
+   "position": [
+    -5.0,
+    3.85,
+    -11.8
+   ],
+   "color": "FFB347",
+   "energy": 1.0,
+   "range": 5.0
   }
  ],
  "markers": {}
