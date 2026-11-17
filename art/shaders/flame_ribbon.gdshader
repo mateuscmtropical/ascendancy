@@ -13,6 +13,8 @@ uniform float scroll_speed = 0.8;
 uniform float erosion = 1.0;
 uniform float lick_speed = 2.6;
 uniform float lick_reach = 0.3;
+uniform float root_dimming_floor = 0.4;
+uniform float root_dimming_reach = 0.45;
 // 1 = acesa; cai até 0 quando a mula morre e o fogo apaga (por instância: cada mula tem o seu).
 instance uniform float burn = 1.0;
 
@@ -56,7 +58,7 @@ void fragment() {
 	heat -= 1.0 - burn;
 
 	// muitas línguas nascem do mesmo ponto: a raiz de cada uma brilha menos para a soma não estourar
-	float root_dimming = mix(0.4, 1.0, smoothstep(0.0, 0.45, tip_share));
+	float root_dimming = mix(root_dimming_floor, 1.0, smoothstep(0.0, root_dimming_reach, tip_share));
 
 	ALBEDO = texture(heat_ramp, vec2(clamp(heat, 0.0, 1.0), 0.5)).rgb * energy * root_dimming;
 	ALPHA = smoothstep(0.02, 0.28, heat);

@@ -9,7 +9,9 @@ var _mula: MulaSemCabeca
 
 
 func before_each() -> void:
-	_mula = MULA_SCENE.instantiate() as MulaSemCabeca
+	var mula_scene: PackedScene = _mula_scene()
+
+	_mula = mula_scene.instantiate() as MulaSemCabeca
 	add_child_autofree(_mula)
 
 
@@ -100,3 +102,7 @@ func test_play_animation_switches_the_clip() -> void:
 	_mula.play_animation(MulaSemCabeca.ATTACK_ANIMATION)
 
 	assert_eq(player.current_animation, String(MulaSemCabeca.ATTACK_ANIMATION))
+
+
+func _mula_scene() -> PackedScene:
+	return MULA_SCENE
