@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://features/player/player_controller.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://features/player/character_model.tscn" id="2_model"]
 [ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="3_body"]
 [ext_resource type="Script" path="res://features/audio/footstep_player.gd" id="4_footsteps"]
+[ext_resource type="Script" path="res://features/combat/unarmed_fighter.gd" id="5_fighter"]
 
 [sub_resource type="CapsuleShape3D" id="capsule"]
 radius = 0.32
@@ -47,3 +48,6 @@ script = ExtResource("4_footsteps")
 [node name="GroundProbe" type="RayCast3D" parent="Footsteps"]
 position = Vector3(0, 0.3, 0)
 target_position = Vector3(0, -0.9, 0)
+
+[node name="UnarmedFighter" type="Node" parent="."]
+script = ExtResource("5_fighter")
