@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "71262f3bffcce0ead1ae86c7a1da1341"
+   "buffer_md5": "1de4329f5612806ff8e32d97ac1561d2"
   }
  },
  "scene": 0,
@@ -443,39 +443,39 @@
   },
   {
    "mesh": 83,
-   "name": "Collider356-colonly"
+   "name": "Collider565-colonly"
   },
   {
    "mesh": 84,
-   "name": "Collider373-colonly"
+   "name": "Collider582-colonly"
   },
   {
    "mesh": 85,
-   "name": "Collider378-colonly"
+   "name": "Collider587-colonly"
   },
   {
    "mesh": 86,
-   "name": "Collider383-colonly"
+   "name": "Collider592-colonly"
   },
   {
    "mesh": 87,
-   "name": "Collider388-colonly"
+   "name": "Collider597-colonly"
   },
   {
    "mesh": 88,
-   "name": "Collider393-colonly"
+   "name": "Collider602-colonly"
   },
   {
    "mesh": 89,
-   "name": "Collider398-colonly"
+   "name": "Collider607-colonly"
   },
   {
    "mesh": 90,
-   "name": "Collider403-colonly"
+   "name": "Collider612-colonly"
   },
   {
    "mesh": 91,
-   "name": "Collider408-colonly"
+   "name": "Collider617-colonly"
   },
   {
    "mesh": 92,
@@ -483,7 +483,7 @@
   },
   {
    "mesh": 93,
-   "name": "WoodFloor354-colonly"
+   "name": "WoodFloor563-colonly"
   }
  ],
  "materials": [
@@ -1565,7 +1565,7 @@
    ]
   },
   {
-   "name": "Collider356-colonly",
+   "name": "Collider565-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1577,7 +1577,7 @@
    ]
   },
   {
-   "name": "Collider373-colonly",
+   "name": "Collider582-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1589,7 +1589,7 @@
    ]
   },
   {
-   "name": "Collider378-colonly",
+   "name": "Collider587-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1601,7 +1601,7 @@
    ]
   },
   {
-   "name": "Collider383-colonly",
+   "name": "Collider592-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1613,7 +1613,7 @@
    ]
   },
   {
-   "name": "Collider388-colonly",
+   "name": "Collider597-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1625,7 +1625,7 @@
    ]
   },
   {
-   "name": "Collider393-colonly",
+   "name": "Collider602-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1637,7 +1637,7 @@
    ]
   },
   {
-   "name": "Collider398-colonly",
+   "name": "Collider607-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1649,7 +1649,7 @@
    ]
   },
   {
-   "name": "Collider403-colonly",
+   "name": "Collider612-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1661,7 +1661,7 @@
    ]
   },
   {
-   "name": "Collider408-colonly",
+   "name": "Collider617-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1738,7 +1738,7 @@
    ]
   },
   {
-   "name": "WoodFloor354-colonly",
+   "name": "WoodFloor563-colonly",
    "primitives": [
     {
      "attributes": {
@@ -4030,42 +4030,42 @@
   {
    "bufferView": 206,
    "componentType": 5126,
-   "count": 2112,
+   "count": 7128,
    "max": [
     14.550000190734863,
     5.599999904632568,
-    -0.3000001907348633
+    -0.29999983310699463
    ],
    "min": [
     -14.550000190734863,
     0,
-    -19.099998474121094
+    -19.100000381469727
    ],
    "type": "VEC3"
   },
   {
    "bufferView": 207,
    "componentType": 5126,
-   "count": 2112,
+   "count": 7128,
    "type": "VEC3"
   },
   {
    "bufferView": 208,
    "componentType": 5126,
-   "count": 2112,
+   "count": 7128,
    "type": "VEC2"
   },
   {
    "bufferView": 209,
    "componentType": 5123,
-   "count": 2112,
+   "count": 7128,
    "normalized": true,
    "type": "VEC4"
   },
   {
    "bufferView": 210,
    "componentType": 5123,
-   "count": 3168,
+   "count": 10692,
    "type": "SCALAR"
   },
   {
@@ -5371,74 +5371,74 @@
   },
   {
    "buffer": 0,
-   "byteLength": 25344,
+   "byteLength": 85536,
    "byteOffset": 469944,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 25344,
-   "byteOffset": 495288,
+   "byteLength": 85536,
+   "byteOffset": 555480,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 16896,
-   "byteOffset": 520632,
+   "byteLength": 57024,
+   "byteOffset": 641016,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 16896,
-   "byteOffset": 537528,
+   "byteLength": 57024,
+   "byteOffset": 698040,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 6336,
-   "byteOffset": 554424,
+   "byteLength": 21384,
+   "byteOffset": 755064,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 2304,
-   "byteOffset": 560760,
+   "byteOffset": 776448,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 2304,
-   "byteOffset": 563064,
+   "byteOffset": 778752,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 1536,
-   "byteOffset": 565368,
+   "byteOffset": 781056,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 1536,
-   "byteOffset": 566904,
+   "byteOffset": 782592,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 576,
-   "byteOffset": 568440,
+   "byteOffset": 784128,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 288,
-   "byteOffset": 569016,
+   "byteOffset": 784704,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 288,
-   "byteOffset": 569304,
+   "byteOffset": 784992,
    "target": 34962
   }
  ],
@@ -5450,7 +5450,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 569592,
+   "byteLength": 785280,
    "uri": "shop_library.bin"
   }
  ]

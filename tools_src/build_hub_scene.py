@@ -2090,6 +2090,13 @@ HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (o vestí
         "Balcony": ((0.0, 7.25, -6.0), (0.0, 7.0, 6.0)),
         "FromBalcony": ((0.0, 7.25, 1.1), (0.0, 6.0, 30.0)),
     },
+    "reading": {  # dormitory A: from its door, from the far end, and high in a corner under the beams
+        "DormDoor": ((-12.6, 1.6, -4.2), (14.0, 1.35, -4.4)),
+        "DormFar": ((14.2, 1.6, -4.2), (-11.0, 1.45, -4.0)),
+        "DormTop": ((13.6, 4.85, -0.9), (-4.0, 0.0, -6.0)),
+        "DormBeds": ((-9.0, 1.6, -4.2), (3.0, 0.9, -1.2)),
+        "Anteroom": ((-14.2, 1.6, -3.0), (-11.0, 1.4, -5.5)),
+    },
 }
 
 

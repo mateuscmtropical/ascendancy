@@ -16,6 +16,7 @@ import importlib
 import itertools
 import json
 import math
+import random
 import sys
 from pathlib import Path
 
@@ -28,7 +29,7 @@ import shop_layouts  # noqa: E402
 from build_hub_scene import CASARAO_UPPER_FLOOR, SHOP_LOTS, shop_lots, town_lots  # noqa: E402
 from build_town_houses import STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
 
-PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor")
+PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage")
 PLAN_FOLDER = ""  # --plan=<pasta>: grava a planta (pegadas dos móveis) de cada salão mobiliado
 CEILING_SLAB = 0.4
 PIER = 0.6  # parede cheia entre vãos e nos cantos da fachada
@@ -68,6 +69,22 @@ FEATURE_LIGHT_LIMIT = 3  # luzes de móveis por andar nas lojas do comércio (a 
 CONTACT_SHADOW_LAYERS = (0.0, 0.08, 0.16)  # quanto cada camada da sombra de contato passa da pegada do móvel
 CONTACT_SHADOW_ALPHA = 0.13  # cada camada; no meio da pegada somam-se
 CONTACT_SHADOW_LIFT = 0.004  # acima do piso, para não brigar com ele
+DADO_HEIGHT = 1.2  # a barra pintada de baixo das paredes dos cômodos do orfanato
+SKIRTING_HEIGHT = 0.14
+SKIRTING_DEPTH = 0.04
+DADO_DEPTH = 0.02
+RAIL_HEIGHT = 0.06
+RAIL_DEPTH = 0.05
+DOOR_FRAME_WIDTH = 0.1  # batente e guarnição de uma porta de divisória
+DOOR_FRAME_DEPTH = 0.03
+DOOR_LEAF_THICKNESS = 0.05
+DOOR_LEAF_OFFSET = 0.07  # a folha aberta fica a esta distância da parede, por fora do rodapé e do friso
+PARTITION_DOOR_LANE = 1.0  # chão livre dos dois lados de uma porta de divisória
+PLANK_LENGTH_RANGE = (2.4, 5.2)  # comprimento das tábuas do piso, de junta a junta
+PLANK_SHADE_RANGE = (0.84, 1.08)
+WALL_FINISHES = {  # nome -> cor da barra pintada e do rodapé/friso (os planos escolhem por nome, ver shop_layouts.py)
+    "dormitory": dict(dado="C9984F", trim="5A3A26"),
+}
 AMBIENT_MARGIN = 0.1  # o volume de ambiência do casarão entra isto nas paredes, para o reboco ficar dentro dele
 
 CASARAO_STOREYS = (CASARAO_UPPER_FLOOR, 5.6)  # o casarão em frente à catedral: térreo e andar nobre, os dois de salões andáveis
@@ -91,7 +108,7 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
     "library": dict(CASARAO_WING, floor="wood", light="FFF3E6", day_light="FFDFA8", inner_doors={"left": INNER_DOOR}),
     "school": dict(CASARAO_WING, floor="wood", light="FFF4E8", day_light="FFE2B0", inner_doors={"right": INNER_DOOR}),
-    "reading": dict(CASARAO_UPPER, floor="wood", light="FFF4E8", day_light="FFE2B8", inner_doors={"left": INNER_DOOR}),
+    "reading": dict(CASARAO_UPPER, floor="wood", light="FFF4E8", day_light="FFE2B8", inner_doors={"left": INNER_DOOR}, fixture_light=dict(share=0.7, energy=0.55, limit=24)),
     "seminary": dict(CASARAO_UPPER, floor="wood", light="FFF1E2", day_light="FFDCB0", inner_doors={"right": INNER_DOOR}),
     "vestibule": dict(CASARAO_HALL, storeys=CASARAO_STOREYS, floor="stone", light="FFF5EA", day_light="FFE4BC", door=(0.0, 3.4, 4.6, "round"), inner_doors={"left": INNER_DOOR, "right": INNER_DOOR}, door_leaves=False, shell="casarao_vestibule"),
 }
@@ -455,12 +472,42 @@ def build_floor(b: Builder, room: Room) -> None:
     board_count = round((room.right - room.left) / BOARD_WIDTH)
     board_width = (room.right - room.left) / board_count
 
-    for board_index in range(board_count):
-        board_left = room.left + board_index * board_width
-        shade = 1.0 if board_index % 3 else 0.9
-        b.box((board_left, room.front, 0.0), (board_left + board_width, room.back, FLOOR_TOP), "wood", tuple(shade * channel for channel in srgb(WOOD["mel"])), uv=("band", *WOOD_LIGHT_BAND, 2.0))
+    if room.spec.get("casarao"):
+        build_plank_floor(b, room, board_count, board_width)
+    else:
+        for board_index in range(board_count):
+            board_left = room.left + board_index * board_width
+            shade = 1.0 if board_index % 3 else 0.9
+            b.box((board_left, room.front, 0.0), (board_left + board_width, room.back, FLOOR_TOP), "wood", tuple(shade * channel for channel in srgb(WOOD["mel"])), uv=("band", *WOOD_LIGHT_BAND, 2.0))
 
     b.collider((room.left, room.front, 0.0), (room.right, room.back, FLOOR_TOP), name="WoodFloor")  # passos com som de madeira
+
+
+def plank_joints(rng: random.Random, room: Room) -> list:
+    """d of the end-to-end joints of one board, front to back: boards of PLANK_LENGTH_RANGE, the first one cut short at random."""
+    joints = [room.front]
+    reach = room.front + rng.uniform(0.3, PLANK_LENGTH_RANGE[1])
+
+    while reach < room.back - PLANK_LENGTH_RANGE[0] / 2.0:
+        joints.append(reach)
+        reach += rng.uniform(*PLANK_LENGTH_RANGE)
+
+    return joints + [room.back]
+
+
+def build_plank_floor(b: Builder, room: Room, board_count: int, board_width: float) -> None:
+    """Wide boards laid front to back, each cut into planks with its own shade and staggered end joints: the floor of
+    a lived-in hall is never one flat colour."""
+    rng = random.Random(town.hash_seed(room.shop_type))
+    base = srgb(WOOD["mel"])
+
+    for board_index in range(board_count):
+        board_left = room.left + board_index * board_width
+        joints = plank_joints(rng, room)
+
+        for plank_from, plank_to in zip(joints, joints[1:]):
+            shade = rng.uniform(*PLANK_SHADE_RANGE)
+            b.box((board_left, plank_from, 0.0), (board_left + board_width, plank_to, FLOOR_TOP), "wood", tuple(shade * channel for channel in base), uv=("band", *WOOD_LIGHT_BAND, 2.0))
 
 
 def build_ceiling(b: Builder, room: Room) -> None:
@@ -486,14 +533,154 @@ def build_ceiling(b: Builder, room: Room) -> None:
             b.beam((u, d + brace_sign * 0.1, room.ceiling - 1.4), (u, d + brace_sign * 1.0, room.ceiling - 0.42), 0.14, 0.14, "wood", house.wood_tint)
 
 
-def partition_box(room: Room, partition: tuple) -> tuple:
-    axis, fixed, span_from, span_to = partition
+def partition_options(partition: tuple) -> dict:
+    """Optional fifth item of a partition: doors=[dict(at, width, height, leaf=(face, direction), lane=(faces kept free))] and faces=(low finish, high finish)."""
+    return partition[4] if len(partition) > 4 else {}
+
+
+def partition_doors(partition: tuple) -> list:
+    """Doors of a partition as (from, to, door) along its span, in order."""
+    doors = sorted(partition_options(partition).get("doors", ()), key=lambda door: door["at"])
+
+    return [(door["at"] - door["width"] / 2.0, door["at"] + door["width"] / 2.0, door) for door in doors]
+
+
+def partition_piece(room: Room, partition: tuple, span_from: float, span_to: float, z_from: float = 0.0, z_to: float = None) -> tuple:
+    """Box (low, high corners, facade coords) of a stretch of an inner wall, from z_from up to the ceiling by default."""
+    axis, fixed = partition[0], partition[1]
+    top = room.ceiling if z_to is None else z_to
     boxes = {
-        "u": ((fixed - WALL / 2.0, span_from, 0.0), (fixed + WALL / 2.0, span_to, room.ceiling)),
-        "d": ((span_from, fixed - WALL / 2.0, 0.0), (span_to, fixed + WALL / 2.0, room.ceiling)),
+        "u": ((fixed - WALL / 2.0, span_from, z_from), (fixed + WALL / 2.0, span_to, top)),
+        "d": ((span_from, fixed - WALL / 2.0, z_from), (span_to, fixed + WALL / 2.0, top)),
     }
 
     return boxes[axis]
+
+
+def free_spans(span_from: float, span_to: float, cuts: list) -> list:
+    """(from, to) pieces of a span left once the cuts (not overlapping) are taken out of it."""
+    inside = sorted((max(cut_from, span_from), min(cut_to, span_to)) for cut_from, cut_to in cuts if cut_to > span_from and cut_from < span_to)
+    starts = [span_from] + [cut_to for _, cut_to in inside]
+    ends = [cut_from for cut_from, _ in inside] + [span_to]
+
+    return [(start, end) for start, end in zip(starts, ends) if end - start > 0.05]
+
+
+def face_reach(fixed: float, side: str) -> tuple:
+    """(from, to) across an inner wall on its low or high side, PARTITION_DOOR_LANE deep from the wall face."""
+    return {"low": (fixed - WALL / 2.0 - PARTITION_DOOR_LANE, fixed - WALL / 2.0), "high": (fixed + WALL / 2.0, fixed + WALL / 2.0 + PARTITION_DOOR_LANE)}[side]
+
+
+def partition_segments(partition: tuple) -> list:
+    """(from, to) of the solid stretches of a partition, the door gaps left out."""
+    return free_spans(partition[2], partition[3], [(door_from, door_to) for door_from, door_to, _ in partition_doors(partition)])
+
+
+def wall_slab(axis: str, face_at: float, normal: int, span: tuple, offset: float, thickness: float, z_range: tuple) -> tuple:
+    """Box standing on a wall face: axis is the wall's fixed coordinate (u | d), normal points into the room."""
+    near, far = sorted((face_at + normal * offset, face_at + normal * (offset + thickness)))
+    boxes = {"u": ((near, span[0], z_range[0]), (far, span[1], z_range[1])), "d": ((span[0], near, z_range[0]), (span[1], far, z_range[1]))}
+
+    return boxes[axis]
+
+
+def dress_wall_face(b: Builder, axis: str, face_at: float, normal: int, span: tuple, finish_name: str, cuts: list) -> None:
+    """Two-tone wall: painted dado (plaster tinted), skirting and a thin rail, over the stretches of the face the
+    cuts (doors, low windows) leave. The wall above the rail keeps the hall plaster."""
+    finish = WALL_FINISHES[finish_name]
+    dado_tint, trim_tint = srgb(finish["dado"]), srgb(finish["trim"])
+    wood_uv = ("band", *WOOD_DARK_BAND, 1.5)
+
+    for piece in free_spans(span[0], span[1], cuts):
+        b.box(*wall_slab(axis, face_at, normal, piece, 0.0, DADO_DEPTH, (SKIRTING_HEIGHT, DADO_HEIGHT)), "plaster", dado_tint)
+        b.box(*wall_slab(axis, face_at, normal, piece, 0.0, SKIRTING_DEPTH, (0.0, SKIRTING_HEIGHT)), "wood", trim_tint, uv=wood_uv)
+        b.box(*wall_slab(axis, face_at, normal, piece, 0.0, RAIL_DEPTH, (DADO_HEIGHT, DADO_HEIGHT + RAIL_HEIGHT)), "wood", trim_tint, uv=wood_uv)
+
+
+def hall_wall_faces(room: Room) -> dict:
+    """side -> (fixed axis, coordinate of the inner face, normal into the hall) of the four walls of a hall."""
+    return {"front": ("d", room.front, 1), "back": ("d", room.back, -1), "left": ("u", room.left, 1), "right": ("u", room.right, -1)}
+
+
+def hall_wall_cuts(room: Room, side: str) -> list:
+    """Stretches of an inner wall face (hall coords along it) with no dado: windows that start below it, doorways."""
+    front = [(opening.u - room.half - opening.width / 2.0, opening.u - room.half + opening.width / 2.0) for opening in front_openings(room) if opening.bottom < DADO_HEIGHT] if side == "front" else []
+    windows = [(span_from, span_to) for span_from, span_to, sill in window_spans(room).get(side, ()) if sill < DADO_HEIGHT]
+    doorway = room.inner_doors.get(side)
+    doorways = [(doorway[0] - doorway[1] / 2.0 - 0.2, doorway[0] + doorway[1] / 2.0 + 0.2)] if doorway else []
+
+    return sorted(front + windows + doorways)
+
+
+def build_wall_finishes(b: Builder, room: Room) -> None:
+    """Dado of the plan's `finishes`: (side, from, to, finish) along the inner face of the hall walls."""
+    faces = hall_wall_faces(room)
+
+    for side, span_from, span_to, finish_name in room.plan.get("finishes", ()):
+        axis, face_at, normal = faces[side]
+
+        dress_wall_face(b, axis, face_at, normal, (span_from, span_to), finish_name, hall_wall_cuts(room, side))
+
+
+def dress_partition_door(b: Builder, room: Room, partition: tuple, door: dict) -> None:
+    """Framed doorway of an inner wall: wall over the door to the ceiling, a frame (jambs and head) on both faces and,
+    when the plan asks for it, one leaf folded back against the wall."""
+    axis, fixed = partition[0], partition[1]
+    door_from, door_to = door["at"] - door["width"] / 2.0, door["at"] + door["width"] / 2.0
+    wood_uv = ("band", *WOOD_DARK_BAND, 1.5)
+    frame_tint = srgb(WOOD["escura"])
+
+    town.wall_piece(b, *partition_piece(room, partition, door_from, door_to, door["height"]), room.house.wall_material, room.house.wall_tint)
+
+    for normal in (-1, 1):
+        face_at = fixed + normal * WALL / 2.0
+
+        for jamb in ((door_from - DOOR_FRAME_WIDTH, door_from), (door_to, door_to + DOOR_FRAME_WIDTH)):
+            b.box(*wall_slab(axis, face_at, normal, jamb, 0.0, DOOR_FRAME_DEPTH, (0.0, door["height"] + DOOR_FRAME_WIDTH)), "wood", frame_tint, uv=wood_uv)
+
+        head = (door_from - DOOR_FRAME_WIDTH, door_to + DOOR_FRAME_WIDTH)
+
+        b.box(*wall_slab(axis, face_at, normal, head, 0.0, DOOR_FRAME_DEPTH, (door["height"], door["height"] + DOOR_FRAME_WIDTH)), "wood", frame_tint, uv=wood_uv)
+
+    if door.get("leaf"):
+        dress_door_leaf(b, partition, door)
+
+
+def dress_door_leaf(b: Builder, partition: tuple, door: dict) -> None:
+    """The leaf of door['leaf'] = (face, direction) folded flat against that face of the wall: face 'low' | 'high',
+    direction -1 | +1 along the span from the hinge jamb (the stretch of wall it covers must be free)."""
+    axis, fixed = partition[0], partition[1]
+    face, direction = door["leaf"]
+    normal = {"low": -1, "high": 1}[face]
+    hinge = door["at"] + direction * (door["width"] / 2.0 + DOOR_FRAME_WIDTH)
+    span = tuple(sorted((hinge, hinge + direction * (door["width"] - 0.04))))
+    inset = (span[0] + 0.1, span[1] - 0.1)
+    leaf_tint, panel_tint = srgb(WOOD["media"]), srgb(WOOD["mel"])
+    wood_uv = ("band", *WOOD_DARK_BAND, 1.5)
+    face_at = fixed + normal * WALL / 2.0
+    panels = ((0.15, door["height"] * 0.45), (door["height"] * 0.52, door["height"] - 0.2))
+
+    b.box(*wall_slab(axis, face_at, normal, span, DOOR_LEAF_OFFSET, DOOR_LEAF_THICKNESS, (0.02, door["height"] - 0.03)), "wood", leaf_tint, uv=wood_uv)
+
+    for panel in panels:
+        b.box(*wall_slab(axis, face_at, normal, inset, DOOR_LEAF_OFFSET + DOOR_LEAF_THICKNESS, 0.012, panel), "wood", panel_tint, uv=("band", *WOOD_LIGHT_BAND, 1.0))
+
+
+def build_partition(b: Builder, room: Room, partition: tuple) -> None:
+    """Inner wall to the ceiling with its doorways (framed, lintel wall above), both faces finished as the plan says."""
+    axis, fixed = partition[0], partition[1]
+    faces = partition_options(partition).get("faces", (None, None))
+    door_cuts = [(door_from - DOOR_FRAME_WIDTH, door_to + DOOR_FRAME_WIDTH) for door_from, door_to, _ in partition_doors(partition)]
+
+    for span_from, span_to in partition_segments(partition):
+        town.wall_piece(b, *partition_piece(room, partition, span_from, span_to), room.house.wall_material, room.house.wall_tint)
+
+    for _, _, door in partition_doors(partition):
+        dress_partition_door(b, room, partition, door)
+
+    for normal, finish_name in zip((-1, 1), faces):
+        if finish_name:
+            dress_wall_face(b, axis, fixed + normal * WALL / 2.0, normal, partition[2:4], finish_name, door_cuts)
 
 
 def build_awnings(b: Builder, room: Room, front: list) -> None:
@@ -559,7 +746,9 @@ def build_shell(shop_type: str) -> dict:
         build_roof(b, room)
 
     for partition in room.partitions:
-        town.wall_piece(b, *partition_box(room, partition), house.wall_material, house.wall_tint)
+        build_partition(b, room, partition)
+
+    build_wall_finishes(b, room)
 
     for u, row in itertools.product(light_us, LIGHT_ROWS):
         b.light((u, room.front + (room.back - room.front) * row, room.ceiling - 0.9), *day_lamp(room))
@@ -627,7 +816,27 @@ class Furnisher:
         self.footprints += [("porta", (door_u - door_width / 2.0 - 0.2, door_u + door_width / 2.0 + 0.2, room.front, room.front + DOOR_CLEARANCE))] if room.has_street_door and base == 0.0 else []
         self.footprints += [("porta", self.inner_door_lane(side, d, width)) for side, (d, width, _, _) in room.inner_doors.items()]
         self.footprints += [("pilar", (u - POST / 2.0, u + POST / 2.0, d - POST / 2.0, d + POST / 2.0)) for u, d in room.posts]
-        self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in (partition_box(room, partition) for partition in room.partitions)]
+        self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in self.partition_boxes()]
+        self.footprints += [("porta", lane) for lane in self.partition_door_lanes()]
+
+    def partition_boxes(self) -> list:
+        """Solid stretches of every partition (door gaps left out) as (low, high) corners."""
+        return [partition_piece(self.room, partition, span_from, span_to) for partition in self.room.partitions for span_from, span_to in partition_segments(partition)]
+
+    def partition_door_lanes(self) -> list:
+        """Floor kept free beside every partition door, (u from, u to, d from, d to): on the faces its `lane` lists
+        (both by default)."""
+        lanes = {
+            "u": lambda reach, door_from, door_to: (*reach, door_from - 0.2, door_to + 0.2),
+            "d": lambda reach, door_from, door_to: (door_from - 0.2, door_to + 0.2, *reach),
+        }
+        found = []
+
+        for partition in self.room.partitions:
+            for door_from, door_to, door in partition_doors(partition):
+                found += [lanes[partition[0]](face_reach(partition[1], side), door_from, door_to) for side in door.get("lane", ("low", "high"))]
+
+        return found
 
     def inner_door_lane(self, side: str, d: float, width: float) -> tuple:
         """Floor kept free behind an inner doorway."""
@@ -702,6 +911,16 @@ class Furnisher:
         spots = {"back": (along, self.back - across), "front": (along, self.front + across), "left": (self.left + across, along), "right": (self.right - across, along)}
 
         self.put(name, *spots[side], turns[side], z, **options)
+
+    def on_face(self, axis: str, face_at: float, normal: int, name: str, along: float, z: float = None, **options) -> None:
+        """One prop with its back to an inner wall (a partition), centred at along. axis is the wall's fixed coordinate
+        (u | d), face_at the coordinate of the face the prop stands on, normal points from the face into the room."""
+        depth = PROPS.get(name, {"size": (1.0, 0.5, 1.0)})["size"][1]
+        turns = {("d", -1): 0.0, ("d", 1): 180.0, ("u", -1): -90.0, ("u", 1): 90.0}
+        centre = face_at + normal * depth / 2.0
+        spots = {"d": (along, centre), "u": (centre, along)}
+
+        self.put(name, *spots[axis], turns[(axis, normal)], z, **options)
 
     def note_window_blocker(self, name: str, box: tuple, top: float) -> None:
         """Remember a prop that stands against a wall in front of one of its windows, above the sill."""

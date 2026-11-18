@@ -10,6 +10,8 @@ inner walls ("u" | "d", fixed coordinate, from, to). The back wall and the sides
 prop that covers one.
 """
 
+import itertools
+
 
 def furnish_generic(f) -> None:
     """Stand-in plan: counter at the back, shelves on the walls, tables of goods and rugs down the hall."""
@@ -900,55 +902,86 @@ def furnish_vestibule(f) -> None:
     gallery.put("plant_pot", -13.9, 12.2, variant="flower")
 
 
+WALL_HALF = 0.15  # half the thickness of an inner wall
+ANTEROOM_WALL = -11.21  # u of the wall between the anteroom and dormitory A (a pier of the facade)
+DORM_BACK = 8.2  # d of the wall between the front band (anteroom, dormitory A) and the back band of the reading hall
+DORM_PIERS = (-8.17, -5.13, -1.805, 1.805, 5.13, 8.17, 11.21)  # u of the piers of the facade between its windows
+DORM_BED_PITCH = 0.715  # a pair of beds stands this far either side of the night table between them
+DORM_BLANKETS = ("grey_blue", "grey_blue", "green", "grey_blue", "ochre")
+DORM_LAMPS = (-8.4, -2.8, 2.8, 8.4)  # pendant lamps down the aisle
+DORM_DOOR = dict(at=4.2, width=1.5, height=2.1, leaf=("high", -1), lane=("high",))
+
+
+def bed_pair(f, blankets, u: float, wall_d: float, normal: int) -> None:
+    """Two iron beds with a night table between them and a trunk at each foot, heads to the wall face at d = wall_d
+    (normal -1: the hall lies at smaller d, +1: at larger d)."""
+    foot_d = wall_d + normal * 2.0
+    trunk_d = foot_d + normal * 0.255
+
+    f.on_face("d", wall_d, normal, "night_table", u)
+
+    for side in (-1, 1):
+        f.on_face("d", wall_d, normal, "iron_bed", u + side * DORM_BED_PITCH, variant=next(blankets))
+        f.put("bed_trunk", u + side * DORM_BED_PITCH, trunk_d, 0.0 if normal < 0 else 180.0)
+
+
 def furnish_reading(f) -> None:
-    """Reading room on the casarão's upper floor, over the library, entered from the gallery of the stair by the
-    doorway at the front of the left wall: bookcases all along that wall and on the piers of the back wall, the
-    hearth on the axis behind the reader's desk, two rows of reading tables under the chandeliers and a sunlit
-    sitting wall on the right (sofas under the windows, consoles and the long-case clock between them)."""
-    f.on_wall("back", "fireplace_tall", 0.0, height=5.0)
-    f.grid("grand_chandelier", (-5.0, 5.0), (8.5, 8.5), 2, 1, drop=0.5)
+    """Upper floor of the right wing, front band: the anteroom by the gallery (linen press, coat pegs) and dormitory A,
+    a long ward under the street windows: iron beds with their heads to the facade piers and to the inner wall, in
+    pairs round a night table, a trunk at every foot, a 2.7 m aisle from the door to the end wall, the supervisor's
+    curtained bed by the door, a sconce over every bedside table, a crucifix and a kneeler on the end wall."""
+    facade_d, inner_d = f.front, DORM_BACK - WALL_HALF
+    blankets = itertools.cycle(DORM_BLANKETS)
 
-    f.put("teacher_desk", 0.0, 14.8)
-    f.put("rug_ornate", 0.0, 16.4, variant="red")
-    f.put("armchair", -3.0, 17.0, 60.0)
-    f.put("armchair", 3.0, 17.0, -60.0)
-    f.on_wall("back", "painting", -2.2, variant="portrait")
-    f.on_wall("back", "painting", 2.2, variant="lady")
+    for pier_u in DORM_PIERS:
+        bed_pair(f, blankets, pier_u, facade_d, 1)
+        f.on_face("d", facade_d, 1, "wall_sconce", pier_u)
 
-    for pier_u in (-13.575, 13.575):
-        f.on_wall("back", "tall_bookcase_slim", pier_u)
+    for pier_u in DORM_PIERS[1:6]:
+        bed_pair(f, blankets, pier_u, inner_d, -1)
+        f.on_face("d", inner_d, -1, "wall_sconce", pier_u)
 
-    for pier_u in (-9.83, -5.815, 5.815, 9.83):
-        f.on_wall("back", "tall_bookcase", pier_u)
+    f.put("supervisor_alcove", -9.76, inner_d - 1.3)
+    f.on_face("d", inner_d, -1, "iron_bed", -10.3, variant="dull_red")
+    f.on_face("d", inner_d, -1, "night_table", -9.55)
+    f.on_face("d", inner_d, -1, "washstand", -8.95)
+    f.put("oil_lamp_table", -9.55, inner_d - 0.21, z=0.73)
 
-    f.grid("tall_bookcase", (f.left + 0.23, f.left + 0.23), (5.6, 16.1), 1, 6, 90.0)
-    f.put("rug_runner", -9.2, 3.0, 90.0, variant="red")
-    f.put("plant_pot", f.left + 0.6, 0.95, variant="fern")
+    f.on_face("d", inner_d, -1, "clothes_pegs", -7.4)
+    f.on_face("d", inner_d, -1, "painting", -3.47, variant="portrait")
+    f.on_face("d", inner_d, -1, "painting", 6.65, variant="lady")
 
-    for table_d in (6.6, 10.6):
-        f.grid("reading_table", (-5.6, 5.6), (table_d, table_d), 3, 1)
-        f.grid("study_chair", (-5.6, 5.6), (table_d - 0.85, table_d - 0.85), 3, 1, 180.0)
-        f.grid("study_chair", (-5.6, 5.6), (table_d + 0.85, table_d + 0.85), 3, 1)
+    for press_u in (10.4, 12.2):
+        f.on_face("d", inner_d, -1, "linen_press", press_u)
 
-    f.put("rug_ornate", 0.0, 8.6, variant="blue")
-    f.put("globe_stand", -9.6, 12.6)
-    f.put("celestial_globe", 9.0, 3.4)
-    f.put("lectern", -3.2, 3.2)
+    f.on_face("d", inner_d, -1, "wall_crucifix", 0.0)
 
-    f.on_wall("right", "sofa", 7.6)
-    f.on_wall("right", "sofa", 11.8)
-    f.on_wall("right", "console_table", 5.5, seed=5)
-    f.on_wall("right", "long_case_clock", 9.7)
-    f.on_wall("right", "console_table", 13.9, seed=9)
-    f.put("rug_ornate", 11.6, 9.7, 90.0, variant="green")
-    f.put("armchair", 11.2, 7.6, 90.0)
-    f.put("armchair", 11.2, 11.8, 90.0)
-    f.put("plant_pot", f.right - 0.6, 0.95, variant="bush")
+    for lamp_u in DORM_LAMPS:
+        f.put("hanging_oil_lamp", lamp_u, DORM_DOOR["at"])
+
+    f.on_wall("right", "wall_crucifix", 5.35)
+    f.on_wall("right", "prie_dieu", 5.35)
+
+    for stand_d in (0.75, 1.7):
+        f.on_wall("right", "washstand", stand_d)
+
+    f.on_wall("left", "linen_press", 5.9)
+    f.on_face("d", inner_d, -1, "clothes_pegs", -13.0)
+    f.on_face("u", ANTEROOM_WALL - WALL_HALF, -1, "wall_sconce", 6.5)
 
 
 PLANS = {
     "vestibule": dict(keeper=(6.4, 7.4), posts=(), furnish=furnish_vestibule),
-    "reading": dict(keeper=(0.0, 16.0), furnish=furnish_reading),
+    "reading": dict(
+        keeper=(0.0, 16.0),
+        posts=(),
+        partitions=(
+            ("u", ANTEROOM_WALL, 0.3, DORM_BACK - WALL_HALF, dict(doors=[DORM_DOOR], faces=("dormitory", "dormitory"))),
+            ("d", DORM_BACK, -14.55, 14.55, dict(faces=("dormitory", None))),
+        ),
+        finishes=(("front", -14.55, 14.55, "dormitory"), ("left", 0.3, DORM_BACK - WALL_HALF, "dormitory"), ("right", 0.3, DORM_BACK - WALL_HALF, "dormitory")),
+        furnish=furnish_reading,
+    ),
     "school": dict(keeper=(0.0, 16.6), furnish=furnish_school),
     "seminary": dict(keeper=(0.0, 16.8), posts=((-4.4, 6.47), (4.4, 6.47), (-4.4, 12.93), (4.4, 12.93)), furnish=furnish_seminary),
     "guild": dict(keeper=(0.0, 17.3), partitions=(("d", 12.0, 6.2, 11.55), ("u", 6.2, 14.2, 19.1)), furnish=furnish_guild),
