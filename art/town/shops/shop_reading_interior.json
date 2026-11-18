@@ -1,0 +1,47 @@
+{
+ "aabb_min": [
+  -14.545,
+  0.05,
+  -19.07
+ ],
+ "aabb_max": [
+  14.545,
+  5.2,
+  -0.7
+ ],
+ "shop": "reading",
+ "props": 54,
+ "lights": [
+  {
+   "position": [
+    0.0,
+    0.65,
+    -18.37
+   ],
+   "color": "FF8A3D",
+   "energy": 2.5,
+   "range": 6.0
+  },
+  {
+   "position": [
+    -5.0,
+    3.6,
+    -8.5
+   ],
+   "color": "FFC873",
+   "energy": 2.2,
+   "range": 11.0
+  },
+  {
+   "position": [
+    5.0,
+    3.6,
+    -8.5
+   ],
+   "color": "FFC873",
+   "energy": 2.2,
+   "range": 11.0
+  }
+ ],
+ "markers": {}
+}

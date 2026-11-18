@@ -530,7 +530,7 @@ def add_buildings(scene: SceneWriter) -> None:
 
 
 def add_casarao(scene: SceneWriter, lots: list) -> None:
-    """The mansion that dresses the three halls of the block in front of the cathedral and adds its upper storeys."""
+    """The mansion that dresses the five halls of the block in front of the cathedral: facade, joints and roof."""
     frame_lot = next(lot for lot in lots if lot.get("shop") == CASARAO_FRAME_HALL)
 
     place(scene, "Casarao", "Buildings", "res://art/town/casarao.gltf", frame_lot["position"], frame_lot["rotation"])
@@ -640,7 +640,9 @@ SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio: 1/3 de quadra ou ma
     "general": (18, 20.0),
     "guild": (24, 20.0),
     "library": (30, 20.0),
+    "vestibule": (30, 20.0),
     "school": (30, 20.0),
+    "reading": (30, 20.0),
     "seminary": (30, 20.0),
 }
 FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da fileira; trechos sem lote fixo são preenchidos
@@ -648,14 +650,16 @@ FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da
     (1, "S"): [(-61.0, -43.0, "armor"), (-43.0, -25.0, "magic"), (-25.0, -7.0, "tailor")],
     (2, "S"): [(7.0, 25.0, "tavern"), (25.0, 43.0, "alchemy"), (43.0, 61.0, "general")],
     (3, "S"): [(75.0, 99.0, "guild")],
-    (4, "E"): [(-45.0, -15.0, "library"), (-15.0, 15.0, "school"), (15.0, 45.0, "seminary")],
+    (4, "E"): [(-45.0, -15.0, "library"), (-15.0, 15.0, "vestibule"), (15.0, 45.0, "school")],
 }
 SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
     "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
     "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"),
-}  # biblioteca, escola e seminário: salões do casarão, sem placa pendurada
-CASARAO_HALLS = ("library", "school", "seminary")
-CASARAO_FRAME_HALL = "school"  # o casarão (build_casarao.py) usa o lote da escola, no meio da quadra, como origem
+}  # os salões do casarão não têm placa pendurada
+CASARAO_HALLS = ("library", "vestibule", "school")  # térreo: o vestíbulo da escadaria no meio, um salão de cada lado
+CASARAO_UPPER_HALLS = {"reading": "library", "seminary": "school"}  # salão do andar nobre -> salão do térreo embaixo dele
+CASARAO_UPPER_FLOOR = 5.6  # altura do piso do andar nobre (o pé-direito do térreo com a laje)
+CASARAO_FRAME_HALL = "vestibule"  # o casarão (build_casarao.py) usa o lote do vestíbulo, no meio da quadra, como origem
 SHOP_FRONT_OVERHANG = 2.6  # toldos e mercadoria na calçada
 ROW_START_SIDE = {"S": "left", "N": "right", "E": "right", "W": "left"}  # lado do modelo (u < 0 = left) na ponta inicial da fileira
 INTERIOR_VISIBLE_DISTANCE = 60.0  # o recheio das lojas some além disto (features/hub/shop_interior.gd)
@@ -896,7 +900,9 @@ SHOPKEEPERS = {  # prédio -> (corpo, cabelo, animação) de quem atende atrás 
     "general": ("villager_female", "brown", "ual1/Idle_Talking"),
     "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
     "library": ("villager_female", "dark", "ual1/Idle"),
+    "vestibule": ("villager_male", "black", "ual1/Idle"),
     "school": ("villager_male", "brown", "ual1/Idle_Talking"),
+    "reading": ("villager_female", "auburn", "ual1/Idle"),
     "seminary": ("villager_male", "grey", "ual1/Idle"),
 }
 SHOP_SIGN_SCALE = 1.6  # as placas foram feitas para fachadas de 8 m
@@ -905,17 +911,43 @@ SHOP_SIGN_OFFSET = 0.45  # da borda da porta até o braço da placa, no pilar en
 
 def lot_to_world(lot: dict, point: tuple) -> tuple:
     """Model-local Godot point of a lot (x, y, z) to world coordinates."""
-    x, _, z = lot["position"]
+    x, y, z = lot["position"]
     cos_yaw, sin_yaw = math.cos(lot["rotation"]), math.sin(lot["rotation"])
 
-    return x + point[0] * cos_yaw + point[2] * sin_yaw, point[1], z - point[0] * sin_yaw + point[2] * cos_yaw
+    return x + point[0] * cos_yaw + point[2] * sin_yaw, y + point[1], z - point[0] * sin_yaw + point[2] * cos_yaw
+
+
+def shop_lots(lots: list) -> list:
+    """Every walk-in hall of the plan: the shop lots of the rows plus the halls of the casarão's upper floor, which
+    stand on the lot of the ground hall under them, one storey up."""
+    ground = [lot for lot in lots if lot.get("shop")]
+    by_shop = {lot["shop"]: lot for lot in ground}
+    upper = [upper_hall_lot(by_shop[below], shop_type) for shop_type, below in CASARAO_UPPER_HALLS.items()]
+
+    return ground + upper
+
+
+def upper_hall_lot(ground_lot: dict, shop_type: str) -> dict:
+    x, _, z = ground_lot["position"]
+
+    return {**ground_lot, "shop": shop_type, "model": f"res://art/town/shops/shop_{shop_type}.gltf", "position": (x, CASARAO_UPPER_FLOOR, z), "upper": True}
+
+
+def street_door(sidecar: dict) -> dict:
+    """The street door of a shop; halls reached from inside the casarão have none and answer with the facade axis."""
+    return (sidecar.get("doors") or [{"x": 0.0, "width": 0.0}])[0]
+
+
+def shop_entry(sidecar: dict) -> tuple:
+    """Model-local (x, z) of where customers come in: just outside the street door or the inner doorway."""
+    return tuple(sidecar["entry"]) if "entry" in sidecar else (street_door(sidecar)["x"], 1.0)
 
 
 def add_town_lots(scene: SceneWriter, lots: list) -> None:
     """Place the modelled houses, alley gates and enterable shops of the plan."""
     houses = [lot for lot in lots if lot["kind"] == "house"]
     alleys = [lot for lot in lots if lot["kind"] == "alley"]
-    shops = [lot for lot in lots if lot.get("shop")]
+    shops = shop_lots(lots)
 
     for index, lot in enumerate(houses):
         place(scene, f"House{index:03d}", "Buildings", lot["model"], lot["position"], lot["rotation"])
@@ -938,7 +970,7 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
     interior_model = lot["model"].replace(".gltf", "_interior.gltf")
     interior_sidecar = model_sidecar(interior_model)
     shop_name = f"Shop{index:02d}{shop_type.title()}"
-    door = sidecar["doors"][0]
+    door = street_door(sidecar)
     sign_reach = door["width"] / 2.0 + SHOP_SIGN_OFFSET
     interior_script = scene.external_id("Script", "res://features/hub/shop_interior.gd")
 
@@ -970,16 +1002,16 @@ def light_fade(place_kind: str) -> dict:
 
 def add_shopkeepers(scene: SceneWriter, lots: list) -> None:
     """One shopkeeper standing behind each shop counter, turned toward the door."""
-    shops = [lot for lot in lots if lot.get("shop")]
+    shops = shop_lots(lots)
 
     for index, lot in enumerate(shops):
         sidecar = model_sidecar(lot["model"])
         keeper_body, keeper_hair, keeper_animation = SHOPKEEPERS[lot["shop"]]
         keeper = lot_to_world(lot, sidecar["markers"]["shopkeeper"])
-        door = sidecar["doors"][0]
-        door_world = lot_to_world(lot, (door["x"], 0.0, 1.0))
-        facing = facing_yaw((keeper[0], keeper[2]), (door_world[0], door_world[2]))
-        npc(scene, f"Shopkeeper{index:02d}", keeper_body, keeper_hair, stand((keeper[0], keeper[2]), facing, keeper_animation, 0.0))
+        entry_x, entry_z = shop_entry(sidecar)
+        entry_world = lot_to_world(lot, (entry_x, 0.0, entry_z))
+        facing = facing_yaw((keeper[0], keeper[2]), (entry_world[0], entry_world[2]))
+        npc(scene, f"Shopkeeper{index:02d}", keeper_body, keeper_hair, stand((keeper[0], keeper[2]), facing, keeper_animation, 0.0, height=keeper[1]))
 
 
 SIDEWALK_DOOR_REACH = 1.6  # do pé da fachada até onde quem olha a vitrine para, no meio da calçada de 3 m
@@ -993,7 +1025,7 @@ WINDOW_SHOPPERS = {  # nome -> (lado da fileira, faixa de x ou z das portas, cor
 def shop_door_fronts(lots: list, side: str, span: tuple) -> list:
     """Sidewalk spots in front of each shop door of a row, in walking order along the row."""
     shops = [lot for lot in lots if lot.get("shop") and lot["side"] == side]
-    fronts = [lot_to_world(lot, (model_sidecar(lot["model"])["doors"][0]["x"], 0.0, SIDEWALK_DOOR_REACH)) for lot in shops]
+    fronts = [lot_to_world(lot, (street_door(model_sidecar(lot["model"]))["x"], 0.0, SIDEWALK_DOOR_REACH)) for lot in shops]
     along_axis = 0 if side in ("N", "S") else 2
     inside = [front for front in fronts if span[0] <= front[along_axis] <= span[1]]
 
@@ -2023,23 +2055,42 @@ SHOP_SHOT_VIEWS = {  # sufixo -> (olho, alvo) em coordenadas do lote: x ao longo
     "Out": ((0.0, 1.6, -15.0), (0.0, 1.6, 0.0)),
     "Top": ((0.0, 30.0, -9.5), (0.0, 0.0, -9.6)),
 }
+HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (o vestíbulo do casarão tem dois andares)
+    "vestibule": {
+        "Stair": ((0.0, 1.6, -6.5), (0.0, 3.2, -17.0)),
+        "Cross": ((-11.0, 1.6, -3.0), (14.0, 1.7, -3.0)),
+        "Lane": ((8.5, 1.6, -9.0), (2.0, 2.4, -17.0)),
+        "Landing": ((0.0, 4.45, -18.2), (0.0, 5.6, -4.0)),
+        "Flight": ((3.3, 5.0, -15.0), (3.3, 6.6, -6.0)),
+        "Gallery": ((0.0, 7.25, -2.4), (0.0, 6.6, -16.0)),
+        "GalleryCross": ((-11.0, 7.25, -3.0), (14.0, 7.3, -3.0)),
+        "GallerySide": ((12.0, 7.25, -17.0), (0.0, 6.0, -9.0)),
+        "Balcony": ((0.0, 7.25, -6.0), (0.0, 7.0, 6.0)),
+        "FromBalcony": ((0.0, 7.25, 1.1), (0.0, 6.0, 30.0)),
+    },
+}
 
 
 def build_shop_shots() -> str:
     """Shot scene with the same views of every shop, at the player's eye height (tools_src/shot.sh <Type><View>)."""
     scene = SceneWriter()
     capture = scene.external_id("Script", "res://tests/shots/shot_capture.gd")
-    shops = [lot for lot in town_lots() if lot.get("shop")]
+    shops = shop_lots(town_lots())
 
     scene.add_node("ShopShots", None, "Node3D")
     scene.add_node("Hub", ".", instance=scene.external_id("PackedScene", "res://features/hub/hub.tscn"))
     scene.add_node("ShotCapture", ".", "Node", properties={"script": f'ExtResource("{capture}")', "seconds_before_capture": "3.0"})
 
     for lot, (view, (eye, target)) in itertools.product(shops, SHOP_SHOT_VIEWS.items()):
-        door_x = model_sidecar(lot["model"]).get("doors", [{"x": 0.0}])[0]["x"] if view in ("Door", "Inside") else 0.0
+        door_x = street_door(model_sidecar(lot["model"]))["x"] if view in ("Door", "Inside") else 0.0
         world_eye = lot_to_world(lot, (eye[0] + door_x, eye[1], eye[2]))
         world_target = lot_to_world(lot, (target[0] + door_x, target[1], target[2]))
         scene.add_node(f"{lot['shop'].title()}{view}", ".", "Camera3D", properties={"position": vector(*world_eye), "rotation": look_rotation(world_eye, world_target), "fov": "75.0", "far": "400.0"})
+
+    for lot in shops:
+        for view, (eye, target) in HALL_SHOT_VIEWS.get(lot["shop"], {}).items():
+            world_eye, world_target = lot_to_world(lot, eye), lot_to_world(lot, target)
+            scene.add_node(f"{lot['shop'].title()}{view}", ".", "Camera3D", properties={"position": vector(*world_eye), "rotation": look_rotation(world_eye, world_target), "fov": "75.0", "far": "400.0"})
 
     return scene.render()
 
