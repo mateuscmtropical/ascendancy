@@ -109,7 +109,7 @@ def make_octagon_ring(name: str, outer_radius: float, inner_radius: float, heigh
 
 
 NYMPH_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_female.gltf"  # CC0, montada por build_characters.py
-NYMPH_PARTS = ("Head", "Hair_Buns", "Eyebrows", "Female_Peasant_Arms", "Female_Peasant_Body", "Female_Peasant_Feet")
+NYMPH_PARTS = ("Head_Skin", "Hair_Buns", "Eyebrows", "Female_Peasant_Arms", "Female_Peasant_Body", "Female_Peasant_Feet")
 NYMPH_POSE = [("upperarm_l", "Y", 66.0), ("upperarm_r", "Y", -66.0), ("lowerarm_l", "X", -78.0), ("lowerarm_r", "X", -78.0), ("lowerarm_l", "Z", -24.0), ("lowerarm_r", "Z", 24.0), ("Head", "X", 12.0)]
 FOUNTAIN_STATUE_RADIUS = 3.45
 
