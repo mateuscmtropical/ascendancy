@@ -1,0 +1,103 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://tests/shots/fight_reel.gd" id="2_reel"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.361, 0.561, 0.82, 1)
+sky_horizon_color = Color(0.843, 0.933, 0.961, 1)
+ground_horizon_color = Color(0.843, 0.933, 0.961, 1)
+ground_bottom_color = Color(0.486, 0.494, 0.596, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 1.0
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.4
+glow_blend_mode = 1
+glow_hdr_threshold = 1.0
+fog_enabled = true
+fog_light_color = Color(0.843, 0.933, 0.961, 1)
+fog_density = 0.002
+fog_sun_scatter = 0.2
+fog_aerial_perspective = 0.35
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.725, 0.667, 0.573, 1)
+roughness = 1.0
+
+[sub_resource type="PlaneMesh" id="ground_mesh_with_material"]
+size = Vector2(60, 60)
+material = SubResource("ground_material")
+
+[sub_resource type="WorldBoundaryShape3D" id="floor_shape"]
+
+[sub_resource type="LabelSettings" id="caption_settings"]
+font_size = 44
+outline_size = 10
+outline_color = Color(0.169, 0.133, 0.212, 1)
+
+[node name="FightReel" type="Node3D"]
+script = ExtResource("2_reel")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.698, 0.6, 0)
+light_color = Color(1, 0.902, 0.769, 1)
+light_energy = 1.3
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_max_distance = 60.0
+
+[node name="RimLight" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.35, 3.4, 0)
+light_color = Color(0.749, 0.902, 1, 1)
+light_energy = 0.5
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh_with_material")
+
+[node name="Floor" type="StaticBody3D" parent="."]
+
+[node name="Shape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="ReelThree" type="Camera3D" parent="."]
+position = Vector3(2.9, 1.45, 3.4)
+fov = 36.0
+current = true
+
+[node name="ReelSide" type="Camera3D" parent="."]
+position = Vector3(4.6, 1.15, 0.35)
+fov = 36.0
+
+[node name="ReelFront" type="Camera3D" parent="."]
+position = Vector3(-1.2, 1.3, 4.8)
+fov = 36.0
+
+[node name="ReelFace" type="Camera3D" parent="."]
+position = Vector3(0.2, 1.78, 0.9)
+fov = 24.0
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+
+[node name="Interface" type="CanvasLayer" parent="."]
+
+[node name="Caption" type="Label" parent="Interface"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 80.0
+offset_top = -150.0
+offset_right = 900.0
+offset_bottom = -70.0
+label_settings = SubResource("caption_settings")

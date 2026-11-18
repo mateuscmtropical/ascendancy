@@ -1,9 +1,11 @@
 class_name PlayerController
 extends CharacterBody3D
 ## Personagem do jogador em terceira pessoa: anda relativo à câmera, corpo gira para a direção.
+## Soco e chute param o passo e seguem a sequência de UnarmedFighter; depois o corpo fica
+## em guarda por um tempo.
 ## Em build de debug, dois toques no pulo ligam o voo livre (atravessa paredes).
 
-enum Stance { IDLE, WALK, RUN, SPRINT, AIRBORNE, HOVER, FLY }
+enum Stance { IDLE, WALK, RUN, SPRINT, AIRBORNE, HOVER, FLY, GUARD, ATTACK }
 
 const SPEED_BY_STANCE: Dictionary[Stance, float] = {
 	Stance.IDLE: 0.0,
@@ -12,6 +14,8 @@ const SPEED_BY_STANCE: Dictionary[Stance, float] = {
 	Stance.SPRINT: 8.2,
 	Stance.HOVER: 0.0,
 	Stance.FLY: 16.0,
+	Stance.GUARD: 0.0,
+	Stance.ATTACK: 0.0,
 }
 const ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
 	Stance.IDLE: &"ual1/Idle",
@@ -21,6 +25,7 @@ const ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
 	Stance.AIRBORNE: &"ual1/Jump",
 	Stance.HOVER: &"ual1/Swim_Idle",
 	Stance.FLY: &"ual1/Swim_Fwd",
+	Stance.GUARD: &"combat/Fight_Idle",
 }
 ## A corrida e o sprint usam o mesmo ciclo; o passo acompanha a velocidade.
 const ANIMATION_SPEED_BY_STANCE: Dictionary[Stance, float] = {
@@ -29,6 +34,20 @@ const ANIMATION_SPEED_BY_STANCE: Dictionary[Stance, float] = {
 }
 const JUMP_START_ANIMATION: StringName = &"ual1/Jump_Start"
 const JUMP_LAND_ANIMATION: StringName = &"ual1/Jump_Land"
+const ATTACK_BY_ACTION: Dictionary[StringName, UnarmedFighter.Attack] = {
+	&"attack_punch": UnarmedFighter.Attack.PUNCH,
+	&"attack_kick": UnarmedFighter.Attack.KICK,
+}
+const FACE_BY_STANCE: Dictionary[Stance, FaceAnimator.Mood] = {
+	Stance.GUARD: FaceAnimator.Mood.FOCUSED,
+	Stance.ATTACK: FaceAnimator.Mood.FOCUSED,
+}
+## Golpe entra seco: mistura curta com a pose anterior, senão o braço sai mole.
+const ATTACK_BLEND_SECONDS: float = 0.08
+## Saindo do descanso o corpo ainda tem de armar a guarda: mistura mais longa para não estalar.
+const FIRST_ATTACK_BLEND_SECONDS: float = 0.16
+## O esforço aparece no rosto no instante do acerto e some logo.
+const STRIKE_FACE_SECONDS: float = 0.22
 const GROUND_ACCELERATION: float = 22.0
 const AIR_ACCELERATION: float = 6.0
 const FLY_ACCELERATION: float = 40.0
@@ -60,6 +79,7 @@ var _ground_collision_mask: int
 var _camera_collision_mask: int
 
 @onready var _model: CharacterModel = $CharacterModel
+@onready var _fighter: UnarmedFighter = $UnarmedFighter
 @onready var _camera_yaw: Node3D = $CameraYaw
 @onready var _camera_pitch: Node3D = $CameraYaw/CameraPitch
 @onready var _camera: Camera3D = $CameraYaw/CameraPitch/SpringArm3D/Camera3D
@@ -70,6 +90,8 @@ var _camera_collision_mask: int
 func _ready() -> void:
 	_ground_collision_mask = collision_mask
 	_camera_collision_mask = _spring_arm.collision_mask
+	_fighter.move_started.connect(_on_move_started)
+	_fighter.strike_reached.connect(_on_strike_reached)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -86,12 +108,16 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"jump") and not event.is_echo():
 		_detect_double_jump_tap()
 
+	_request_attack_from(event)
+
 	if event is InputEventMouseMotion and is_mouse_captured:
 		_rotate_camera(event.relative)
 
 
 func _physics_process(delta: float) -> void:
 	var input_vector: Vector2 = _read_move_input()
+
+	_fighter.advance(delta)
 
 	if is_flying:
 		_fly(input_vector, delta)
@@ -111,6 +137,7 @@ func set_appearance(body_scene: PackedScene, hair_color: Color) -> void:
 
 func set_flying(should_fly: bool) -> void:
 	is_flying = should_fly
+	_fighter.cancel()
 	collision_mask = 0 if should_fly else _ground_collision_mask
 	_spring_arm.collision_mask = 0 if should_fly else _camera_collision_mask
 	velocity = Vector3.ZERO
@@ -137,6 +164,9 @@ func _walk(input_vector: Vector2, delta: float) -> void:
 	if is_grounded and is_input_enabled and Input.is_action_just_pressed(&"jump"):
 		velocity.y = JUMP_VELOCITY
 		stance = Stance.AIRBORNE
+
+	if stance == Stance.AIRBORNE:
+		_fighter.cancel()
 
 	if is_grounded:
 		climb_step(Vector3(velocity.x, 0.0, velocity.z) * STEP_PROBE_SECONDS)
@@ -240,12 +270,39 @@ func _detect_double_jump_tap() -> void:
 	set_flying(not is_flying)
 
 
+func _request_attack_from(event: InputEvent) -> void:
+	var can_attack: bool = is_on_floor() and not is_flying
+
+	if not can_attack or event.is_echo():
+		return
+
+	for action in ATTACK_BY_ACTION:
+		if event.is_action_pressed(action):
+			_fighter.request_attack(ATTACK_BY_ACTION[action])
+
+
+func _on_move_started(move: UnarmedFighter.Move) -> void:
+	var animation: StringName = _fighter.animation_of(move)
+	var animation_speed: float = _fighter.animation_speed_of(move)
+	var is_guard_up: bool = _stance == Stance.GUARD or _stance == Stance.ATTACK
+	var blend_seconds: float = ATTACK_BLEND_SECONDS if is_guard_up else FIRST_ATTACK_BLEND_SECONDS
+
+	_model.play_animation(animation, animation_speed, blend_seconds)
+
+
+func _on_strike_reached(_move: UnarmedFighter.Move) -> void:
+	_model.show_expression(FaceAnimator.Mood.EFFORT, STRIKE_FACE_SECONDS)
+
+
 func _choose_ground_stance(input_vector: Vector2) -> Stance:
 	if not is_on_floor():
 		return Stance.AIRBORNE
 
+	if _fighter.is_attacking():
+		return Stance.ATTACK
+
 	if input_vector.is_zero_approx():
-		return Stance.IDLE
+		return Stance.GUARD if _fighter.is_on_guard() else Stance.IDLE
 
 	if Input.is_action_pressed(&"sprint"):
 		return Stance.SPRINT
@@ -264,6 +321,11 @@ func _apply_stance(stance: Stance) -> void:
 		return
 
 	_stance = stance
+	_model.rest_expression(FACE_BY_STANCE.get(stance, FaceAnimator.Mood.NEUTRAL))
+
+	# O golpe já está tocando: quem escolhe a animação dele é o UnarmedFighter.
+	if stance == Stance.ATTACK:
+		return
 
 	if stance == Stance.AIRBORNE and velocity.y > 0.0:
 		_model.play_animation_then(JUMP_START_ANIMATION, ANIMATION_BY_STANCE[stance])

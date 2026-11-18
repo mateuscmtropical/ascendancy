@@ -1657,9 +1657,9 @@ def build_side_altar(side_sign: int, figure: list, materials: dict) -> None:
 
 
 STATUE_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_male.gltf"  # CC0, montado por build_characters.py
-STATUE_PARTS = ("Head", "Hair_Beard", "Hair_Buzzed", "Eyebrows", "Male_Peasant_Arms", "Male_Peasant_Body", "Male_Peasant_Feet")
+STATUE_PARTS = ("Head_Skin", "Hair_Beard", "Hair_Buzzed", "Eyebrows", "Male_Peasant_Arms", "Male_Peasant_Body", "Male_Peasant_Feet")
 MARY_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_female.gltf"
-MARY_PARTS = ("Head", "Eyebrows", "Female_Peasant_Arms", "Female_Peasant_Body", "Female_Peasant_Feet")
+MARY_PARTS = ("Head_Skin", "Eyebrows", "Female_Peasant_Arms", "Female_Peasant_Body", "Female_Peasant_Feet")
 CHRIST_SOURCE = PROJECT_DIR / "tools" / "vendor" / "ubc" / "Universal Base Characters[Standard]" / "Base Characters" / "Godot - UE" / "Superhero_Male_FullBody.gltf"
 CHRIST_HAIR_DIR = PROJECT_DIR / "tools" / "vendor" / "ubc" / "Universal Base Characters[Standard]" / "Hairstyles" / "Rigged to Head Bone" / "glTF (Godot -Unreal)"
 CHRIST_HAIR = ("Hair_Long", "Hair_Beard", "Eyebrows_Regular")

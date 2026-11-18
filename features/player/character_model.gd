@@ -1,6 +1,7 @@
 class_name CharacterModel
 extends Node3D
-## Visual de um personagem: corpo montado (art/characters) + animações UAL no mesmo esqueleto.
+## Visual de um personagem: corpo montado (art/characters) + animações no mesmo esqueleto
+## (bibliotecas UAL e os golpes de tools_src/build_combat_animations.py) + rosto animado.
 
 const HAIR_MATERIAL_PREFIX: String = "MI_Hair"
 # Cartões de cabelo têm dupla face; rugosidade baixa reflete o céu como mechas cinza-azuladas.
@@ -19,6 +20,7 @@ const SOLE_LIFT: float = 0.05
 var _current_animation: StringName
 
 @onready var _animation_player: AnimationPlayer = $AnimationPlayer
+@onready var _face: FaceAnimator = $FaceAnimator
 
 
 func _ready() -> void:
@@ -41,9 +43,23 @@ func set_body(new_body_scene: PackedScene, new_hair_color: Color) -> void:
 	_build_body()
 
 
-func play_animation(animation_name: StringName, speed: float = 1.0) -> void:
+## blend_seconds menor que o padrão serve para golpes, que não podem amolecer na entrada.
+func play_animation(
+	animation_name: StringName, speed: float = 1.0, blend_seconds: float = ANIMATION_BLEND_SECONDS
+) -> void:
 	_current_animation = animation_name
-	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS, speed)
+	_animation_player.play(animation_name, blend_seconds, speed)
+
+
+## Expressão do rosto; com hold_seconds ela passa e o rosto volta à de descanso.
+func show_expression(expression: FaceAnimator.Mood, hold_seconds: float = 0.0) -> void:
+	_face.show_expression(expression, hold_seconds)
+
+
+## Expressão para onde o rosto volta sozinho (neutra na cidade, concentrada em guarda).
+func rest_expression(expression: FaceAnimator.Mood) -> void:
+	_face.resting_expression = expression
+	_face.show_expression(expression)
 
 
 ## Toca um trecho único (impulso, aterrissagem) e emenda no ciclo seguinte.
@@ -61,6 +77,7 @@ func _build_body() -> void:
 	add_child(body)
 
 	_tint_hair(body.get_node(SKELETON_PATH))
+	_face.bind(body.get_node(SKELETON_PATH))
 	_animation_player.clear_caches()
 	_animation_player.play(_current_animation)
 	_animation_player.seek(start_offset_seconds, true)

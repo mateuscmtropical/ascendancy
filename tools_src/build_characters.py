@@ -13,6 +13,10 @@ from pathlib import Path
 import bmesh
 import bpy
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from face_shapes import add_face_shapes  # noqa: E402
+
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 VENDOR_DIR = PROJECT_DIR / "tools" / "vendor"
 OUTPUT_DIR = PROJECT_DIR / "art" / "characters"
@@ -22,6 +26,7 @@ HAIR_DIR = VENDOR_DIR / "ubc" / "Universal Base Characters[Standard]" / "Hairsty
 OUTFIT_DIR = VENDOR_DIR / "outfits" / "Modular Character Outfits - Fantasy[Standard]" / "Exports" / "glTF (Godot-Unreal)" / "Outfits"
 
 HEAD_BONES = ("Head", "neck_01")
+HEAD_MESH_NAME = "Head_Skin"
 MAX_TEXTURE_SIZE = 2048
 
 CHARACTERS = {
@@ -128,7 +133,8 @@ def attach_base_head(base_body_name: str, head_weight_to_keep: float, neck_shrin
 
     cut_body_to_head(body_mesh, head_weight_to_keep)
     shrink_lower_neck(body_mesh, neck_shrink_meters)
-    body_mesh.name = "Head"
+    # Not "Head": Godot renames the Head bone when a mesh node takes that name, and no clip moves the head.
+    body_mesh.name = HEAD_MESH_NAME
 
     for mesh_object in base_meshes:
         bind_mesh_to_armature(mesh_object, armature)
@@ -176,6 +182,7 @@ def build_character(character_name: str) -> Path:
     for hair_name in recipe["hair"]:
         attach_hair(hair_name, armature)
 
+    add_face_shapes(bpy.data.objects[HEAD_MESH_NAME], bpy.data.objects["Eyes"], bpy.data.objects["Eyebrows"])
     downscale_large_textures()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     bpy.ops.export_scene.gltf(
