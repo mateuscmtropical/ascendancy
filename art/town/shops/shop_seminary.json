@@ -7,17 +7,15 @@
  "aabb_max": [
   14.85,
   5.6,
-  0.3
+  0.12
  ],
  "lot_width": 30,
  "lot_depth": 20.0,
  "shop": "seminary",
- "doors": [
-  {
-   "x": 0.0,
-   "width": 2.6,
-   "enterable": true
-  }
+ "doors": [],
+ "entry": [
+  14.55,
+  -3.0
  ],
  "lights": [
   {
@@ -84,7 +82,7 @@
  "markers": {
   "shopkeeper": [
    0.0,
-   0.0,
+   0.05,
    -16.8
   ]
  }

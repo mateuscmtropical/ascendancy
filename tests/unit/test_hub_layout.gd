@@ -19,6 +19,8 @@ const SHOP_TYPES: Array[String] = [
 	"library",
 	"school",
 	"seminary",
+	"vestibule",
+	"reading",
 ]
 ## Todo prédio da praça comercial tem casca e salão mobiliado (placa não: o seminário não tem).
 const SHOP_PIECES: Array[String] = ["Building", "Interior"]
@@ -35,6 +37,10 @@ const NAVE_ENTRANCE_X: float = 16.0
 const CORETO_STAIRS_START: Vector3 = Vector3(-37.5, 0.1, -13.0)
 const CORETO_FLOOR_HEIGHT: float = 1.2
 const CORETO_FLOOR_X: float = -43.0
+## Diante da escadaria do casarão, nas coordenadas do vestíbulo (-Z entra no prédio).
+const CASARAO_STAIR_FOOT: Vector3 = Vector3(0.0, 0.1, -9.5)
+const CASARAO_LANDING_HEIGHT: float = 2.85
+const CASARAO_LANDING_DEPTH: float = -16.5
 
 var _hub: Node3D
 
@@ -192,6 +198,28 @@ func test_player_climbs_the_coreto_stairs() -> void:
 	assert_almost_eq(
 		player.global_position.y, CORETO_FLOOR_HEIGHT, 0.05, "player stands on the floor"
 	)
+
+
+func test_player_climbs_the_casarao_grand_stair() -> void:
+	var player: PlayerController = _hub.get_node("Player")
+	var camera_yaw: Node3D = player.get_node("CameraYaw")
+	var vestibule: Node3D = get_tree().get_first_node_in_group("shop_vestibule")
+	var street_yaw: float = camera_yaw.global_rotation.y
+	var reached: Vector3
+
+	player.global_position = vestibule.global_transform * CASARAO_STAIR_FOOT
+	player.velocity = Vector3.ZERO
+	camera_yaw.global_rotation.y = vestibule.global_rotation.y
+	player.is_input_enabled = true
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(200)
+	Input.action_release(&"move_forward")
+	player.is_input_enabled = false
+	camera_yaw.global_rotation.y = street_yaw
+	reached = vestibule.global_transform.affine_inverse() * player.global_position
+
+	assert_lt(reached.z, CASARAO_LANDING_DEPTH, "player reached the landing")
+	assert_almost_eq(reached.y, CASARAO_LANDING_HEIGHT, 0.05, "player stands on the landing")
 
 
 func _ground_height_at(ground_point: Vector2) -> float:

@@ -14,6 +14,7 @@ Usage:
 
 import importlib
 import itertools
+import json
 import math
 import sys
 from pathlib import Path
@@ -24,10 +25,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_town_houses as town  # noqa: E402
 import shop_layouts  # noqa: E402
-from build_hub_scene import SHOP_LOTS, town_lots  # noqa: E402
+from build_hub_scene import CASARAO_UPPER_FLOOR, SHOP_LOTS, shop_lots, town_lots  # noqa: E402
 from build_town_houses import STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
 
-PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane")
+PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor")
+PLAN_FOLDER = ""  # --plan=<pasta>: grava a planta (pegadas dos móveis) de cada salão mobiliado
 CEILING_SLAB = 0.4
 PIER = 0.6  # parede cheia entre vãos e nos cantos da fachada
 VITRINE_PITCH = 3.0  # uma vitrine a cada tantos metros de fachada livre
@@ -63,10 +65,14 @@ FILL_LANE = 1.9  # meia largura do corredor que fica livre da porta ao balcão
 FILL_BACK = 6.0  # fundo do salão que fica para o balcão e o lojista
 ISLAND_AISLE = 0.9  # folga em volta de cada ilha que scatter() põe no meio do salão
 
-CASARAO_STOREYS = (5.6, 4.4, 4.0)  # biblioteca, escola e seminário são os salões do térreo do casarão em frente à catedral
-CASARAO_HALL = dict(  # o casarão (build_casarao.py) veste a fachada, os andares de cima e o telhado; o salão só faz o térreo
-    casarao=True, sill=0.9, vitrine_top="round", vitrine_apex=4.0, vitrine_width=1.4, side_window=(1.4, 0.9, 3.1, "round"),
+CASARAO_STOREYS = (CASARAO_UPPER_FLOOR, 5.6)  # o casarão em frente à catedral: térreo e andar nobre, os dois de salões andáveis
+INNER_DOOR = (3.0, 2.4, 3.6, "round")  # (d do eixo, largura, altura, topo): portas internas em enfilade junto à fachada
+CASARAO_HALL = dict(  # o casarão (build_casarao.py) veste a fachada e põe o telhado; cada salão faz só o seu andar
+    casarao=True, axis_bay=3.0, sill=0.9, vitrine_top="round", vitrine_apex=4.0, vitrine_width=1.4, side_window=(1.4, 0.9, 3.1, "round"),
+    archetype="palacete", wall="cal", roof="terracota", accent="verde", roof_shape=("hip", dict(pitch=25.0)), awning=None, door=(0.0, 3.0, 4.4, "round"),
 )
+CASARAO_WING = dict(CASARAO_HALL, storeys=CASARAO_STOREYS[:1], street_door=False)  # salão do térreo: entra-se pelo vestíbulo
+CASARAO_UPPER = dict(CASARAO_WING, storeys=CASARAO_STOREYS[1:], sill=0.12, vitrine_apex=3.12, vitrine_width=1.3)  # andar nobre: janelas de sacada
 
 SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como ARCHETYPE_SPECS; awning = (cor, cor)
     "smith": dict(archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(5.2,), roof_shape=("gable_parallel", dict(pitch=30.0, eave_front=0.5, eave_back=0.4)), features=("dormers",), floor="stone", awning=("B5533F", "F2E6CF"), door=(-5.0, 2.6, 3.2, "segment"), open_bays=((7.4, 7.2),), chimney=dict(u=8.2, d=18.3, extra=1.5, pots=0, material="stone"), light="FFC890"),
@@ -77,9 +83,11 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
     "alchemy": dict(archetype="fachwerk", wall="salvia", roof="velha", accent="verde", storeys=(4.6, 2.9), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("2F6B4F", "D9E8B0"), door=(0.0, 2.2, 2.9, "round"), features=("half_timber",), jetty=0.3, chimney=dict(u=-6.0, d=15.0, extra=1.2, pots=2), light="C8F0B0"),
     "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
-    "library": dict(archetype="palacete", wall="cal", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=25.0)), floor="wood", awning=None, door=(0.0, 2.6, 4.0, "round"), light="FFDFA8", **CASARAO_HALL),
-    "school": dict(archetype="palacete", wall="cal", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=25.0)), floor="wood", awning=None, door=(0.0, 3.0, 4.4, "round"), light="FFE2B0", **CASARAO_HALL),
-    "seminary": dict(archetype="palacete", wall="cal", roof="terracota", accent="verde", storeys=CASARAO_STOREYS, roof_shape=("hip", dict(pitch=25.0)), floor="stone", awning=None, door=(0.0, 2.6, 4.0, "round"), light="FFDCB0", **CASARAO_HALL),
+    "library": dict(CASARAO_WING, floor="wood", light="FFDFA8", inner_doors={"left": INNER_DOOR}),
+    "school": dict(CASARAO_WING, floor="wood", light="FFE2B0", inner_doors={"right": INNER_DOOR}),
+    "reading": dict(CASARAO_UPPER, floor="wood", light="FFE2B8", inner_doors={"left": INNER_DOOR}),
+    "seminary": dict(CASARAO_UPPER, floor="wood", light="FFDCB0", inner_doors={"right": INNER_DOOR}),
+    "vestibule": dict(CASARAO_HALL, storeys=CASARAO_STOREYS, floor="stone", light="FFE4BC", door=(0.0, 3.4, 4.6, "round"), inner_doors={"left": INNER_DOOR, "right": INNER_DOOR}, door_leaves=False, shell="casarao_vestibule"),
 }
 
 
@@ -114,8 +122,10 @@ class Room:
         self.ceiling = self.storey - CEILING_SLAB
         self.left, self.right = -self.half + WALL, self.half - WALL
         self.front, self.back = WALL, self.depth - WALL
-        self.exposed = next(lot["exposed"] for lot in town_lots() if lot.get("shop") == shop_type)
+        self.exposed = next(lot["exposed"] for lot in shop_lots(town_lots()) if lot["shop"] == shop_type)
         self.door = spec["door"]
+        self.has_street_door = spec.get("street_door", True)
+        self.inner_doors = spec.get("inner_doors", {})  # lado -> INNER_DOOR: passagem para o salão vizinho do casarão
         self.plan = shop_layouts.PLANS.get(shop_type, {})
         self.keeper = self.plan.get("keeper", (spec["door"][0], self.back - 2.4))
         self.posts = self.plan.get("posts", self.default_posts())
@@ -186,7 +196,51 @@ def dress_open_bay(b: Builder, room: Room, frame: Matrix, opening: Opening) -> N
     b.box((opening.u - half - 0.2, -0.1, opening.apex - 0.05), (opening.u + half + 0.2, 0.0, opening.apex + 0.35), "wood", room.house.wood_tint, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
 
 
-OPENING_DRESSING = {"door": dress_door, "vitrine": dress_vitrine, "open": dress_open_bay}
+def dress_inner_door(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
+    """Doorway to the next hall of the casarão: threshold through the wall, a moulding on the hall side and two
+    leaves folded back against it (the vestibule keeps its side bare: one pair of leaves per doorway)."""
+    house = room.house
+    half = opening.width / 2.0
+    leaf = half - 0.02
+    leaf_height = opening.spring - 0.05
+    swing = math.radians(165.0)
+
+    b.box((opening.u - half, 0.0, 0.0), (opening.u + half, WALL, FLOOR_TOP + 0.005), "trim", house.trim_tint, frame=frame)
+    b.collider((opening.u - half, 0.0, 0.0), (opening.u + half, WALL, FLOOR_TOP), frame)
+    town.open_frame(b, opening, 0.2, WALL, WALL + 0.07, house.trim_tint, town.TRIM_SMOOTH_BAND, frame)
+
+    if not room.spec.get("door_leaves", True):
+        return
+
+    for side_sign in (-1, 1):
+        hinge_u = opening.u + side_sign * (half + 0.2)
+        tip = (hinge_u - side_sign * leaf * math.cos(swing), WALL + 0.1 + leaf * math.sin(swing))
+        b.beam((hinge_u, WALL + 0.1, FLOOR_TOP + leaf_height / 2.0), (tip[0], tip[1], FLOOR_TOP + leaf_height / 2.0), leaf_height, 0.07, "paint", house.accent, frame=frame)
+
+
+def dress_balcony_door(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
+    """Door of the upper floor to a balcony the casarão hangs outside: threshold and two glazed leaves open inward."""
+    house = room.house
+    half = opening.width / 2.0
+    leaf = half - 0.02
+    leaf_height = opening.spring - 0.05
+    swing = math.radians(105.0)
+
+    b.box((opening.u - half, 0.0, 0.0), (opening.u + half, WALL, FLOOR_TOP + 0.005), "trim", house.trim_tint, frame=frame)
+    b.collider((opening.u - half, 0.0, 0.0), (opening.u + half, WALL, FLOOR_TOP), frame)
+
+    for side_sign in (-1, 1):
+        hinge_u = opening.u + side_sign * half
+        tip = (hinge_u - side_sign * leaf * math.cos(swing), WALL + leaf * math.sin(swing))
+        b.beam((hinge_u, WALL + 0.03, FLOOR_TOP + leaf_height / 2.0), (tip[0], tip[1], FLOOR_TOP + leaf_height / 2.0), leaf_height, 0.06, "paint", house.accent, frame=frame)
+
+
+def dress_arch(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
+    """Open archway in an inner wall: a moulding on its outer face."""
+    town.open_frame(b, opening, 0.18, -0.06, 0.0, room.house.trim_tint, town.TRIM_SMOOTH_BAND, frame)
+
+
+OPENING_DRESSING = {"door": dress_door, "vitrine": dress_vitrine, "open": dress_open_bay, "inner": dress_inner_door, "balcony": dress_balcony_door, "arch": dress_arch}
 
 
 def pierced_wall(b: Builder, room: Room, frame: Matrix, length: float, openings: list) -> None:
@@ -215,18 +269,42 @@ def evenly(span_from: float, span_to: float, pitch: float) -> list:
 def front_openings(room: Room) -> list:
     """Door, open bays and as many shop windows as fit the free stretches of the facade (wall-local u = facade u + half)."""
     door_u, door_width, door_height, door_top = room.door
+    axis_bay = room.spec.get("axis_bay", door_width)  # casarão: o mesmo ritmo de vãos em todos os salões, com ou sem porta
     vitrine_top = room.spec.get("vitrine_apex", min(room.ceiling - 0.6, 3.4))
     bays = [(u, width, "open") for u, width in room.spec.get("open_bays", ())]
-    taken = sorted([(door_u - door_width / 2.0, door_u + door_width / 2.0)] + [(u - width / 2.0, u + width / 2.0) for u, width, _ in bays])
+    taken = sorted([(door_u - axis_bay / 2.0, door_u + axis_bay / 2.0)] + [(u - width / 2.0, u + width / 2.0) for u, width, _ in bays])
     free_from = [-room.half] + [right for _, right in taken]
     free_to = [left for left, _ in taken] + [room.half]
     spots = [spot for span_from, span_to in zip(free_from, free_to) for spot in evenly(span_from + PIER, span_to - PIER, VITRINE_PITCH)]
+    spots += [] if room.has_street_door else [(door_u, axis_bay)]  # sem porta de rua, o vão do eixo é mais uma janela
     sill = room.spec.get("sill", VITRINE_SILL)
     vitrines = [Opening(u + room.half, room.spec.get("vitrine_width", space - 0.9), sill, vitrine_top - sill, room.spec.get("vitrine_top", "segment"), kind="vitrine") for u, space in spots]
     door = Opening(door_u + room.half, door_width, 0.0, door_height, door_top, kind="door")
     open_bays = [Opening(u + room.half, width, 0.0, min(room.ceiling - 0.5, 3.8), "flat", kind="open") for u, width, _ in bays]
 
-    return [door] + open_bays + vitrines
+    return ([door] if room.has_street_door else []) + open_bays + vitrines
+
+
+def inner_door_openings(room: Room) -> dict:
+    """Doorways to the neighbour halls, side -> [Opening] in wall-local coords (the walls run as in wall_frames)."""
+    along = {"right": lambda d: d - WALL, "left": lambda d: room.depth - WALL - d}
+
+    return {side: [Opening(along[side](d), width, 0.0, height, top, kind="inner")] for side, (d, width, height, top) in room.inner_doors.items()}
+
+
+def room_openings(room: Room) -> dict:
+    """Every opening of the four walls of a hall, side -> [Opening] in wall-local coords."""
+    openings = {"front": front_openings(room), **wall_windows(room)}
+    inner = inner_door_openings(room)
+
+    return {side: found + inner.get(side, []) for side, found in openings.items()}
+
+
+def entry_point(room: Room) -> list:
+    """Godot model coords (x, z) of the first inner doorway, on the hall side of the wall."""
+    side, (d, _, _, _) = next(iter(room.inner_doors.items()))
+
+    return [round({"left": room.left, "right": room.right}[side], 3), round(-d, 3)]
 
 
 def side_windows(room: Room, length: float) -> list:
@@ -318,18 +396,29 @@ def dress_street_wall(b: Builder, room: Room, frame: Matrix, length: float, open
         flat_window(b, room, frame, Opening(opening.u, min(1.5, opening.width * 0.6), tier_bottom, tier_height, "round"))
 
 
-def build_walls(b: Builder, room: Room) -> list:
-    """Four walls of the ground storey; the sides that face a street get real windows. Returns the front openings."""
-    side_length = room.depth - 2.0 * WALL
-    frames = {
-        "front": Matrix.Translation((-room.half, 0.0, 0.0)),
-        "back": Matrix.Translation((room.half, room.depth, 0.0)) @ Matrix.Rotation(math.pi, 4, "Z"),
-        "right": Matrix.Translation((room.half, WALL, 0.0)) @ Matrix.Rotation(math.pi / 2.0, 4, "Z"),
-        "left": Matrix.Translation((-room.half, room.depth - WALL, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z"),
+def wall_frames(room: Room, lift: float = 0.0) -> dict:
+    """Frame of each wall of a hall (outer face on local d = 0, u from 0 along it seen from outside), lift up."""
+    return {
+        "front": Matrix.Translation((-room.half, 0.0, lift)),
+        "back": Matrix.Translation((room.half, room.depth, lift)) @ Matrix.Rotation(math.pi, 4, "Z"),
+        "right": Matrix.Translation((room.half, WALL, lift)) @ Matrix.Rotation(math.pi / 2.0, 4, "Z"),
+        "left": Matrix.Translation((-room.half, room.depth - WALL, lift)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z"),
     }
-    front = front_openings(room)
-    openings = {"front": front, **wall_windows(room)}
-    lengths = {"front": 2.0 * room.half, "back": 2.0 * room.half, "left": side_length, "right": side_length}
+
+
+def wall_lengths(room: Room) -> dict:
+    side_length = room.depth - 2.0 * WALL
+
+    return {"front": 2.0 * room.half, "back": 2.0 * room.half, "left": side_length, "right": side_length}
+
+
+def build_walls(b: Builder, room: Room, openings: dict = None, lift: float = 0.0) -> list:
+    """Four walls of one storey; the sides that face a street get real windows. Returns the front openings."""
+    side_length = room.depth - 2.0 * WALL
+    frames = wall_frames(room, lift)
+    openings = openings or room_openings(room)
+    front = openings["front"]
+    lengths = wall_lengths(room)
 
     for side, frame in frames.items():
         pierced_wall(b, room, frame, lengths[side], openings[side])
@@ -446,6 +535,10 @@ def build_roof(b: Builder, room: Room) -> None:
 
 def build_shell(shop_type: str) -> dict:
     room = Room(shop_type)
+
+    if "shell" in room.spec:  # casca própria (o vestíbulo do casarão tem dois andares e a escadaria)
+        return importlib.import_module(room.spec["shell"]).build_shell(room)
+
     b = Builder(f"shop_{shop_type}")
     house = room.house
     light_columns = max(2, round(2.0 * room.half / LIGHT_SPACING))
@@ -465,9 +558,19 @@ def build_shell(shop_type: str) -> dict:
     for u, row in itertools.product(light_us, LIGHT_ROWS):
         b.light((u, room.front + (room.back - room.front) * row, room.ceiling - 0.9), room.spec["light"], 1.3, 10.0)
 
-    b.marker("shopkeeper", (*room.keeper, 0.0))
+    b.marker("shopkeeper", (*room.keeper, 0.0 if room.has_street_door else FLOOR_TOP))
 
-    return b.finish(town.SHOP_DIR / f"shop_{shop_type}.gltf", {"lot_width": SHOP_LOTS[shop_type][0], "lot_depth": SHOP_LOTS[shop_type][1], "shop": shop_type, "doors": house.doors})
+    return b.finish(town.SHOP_DIR / f"shop_{shop_type}.gltf", shell_sidecar(room))
+
+
+def shell_sidecar(room: Room) -> dict:
+    """What the scene reads of a shell; a hall with no street door tells where its inner doorway is."""
+    sidecar = {"lot_width": SHOP_LOTS[room.shop_type][0], "lot_depth": SHOP_LOTS[room.shop_type][1], "shop": room.shop_type, "doors": room.house.doors}
+
+    if not room.has_street_door:
+        sidecar["entry"] = entry_point(room)
+
+    return sidecar
 
 
 # ---------- furniture ----------
@@ -475,12 +578,14 @@ def build_shell(shop_type: str) -> dict:
 class Furnisher:
     """Places props of the libraries in a room and keeps their footprints to report overlaps."""
 
-    def __init__(self, b: Builder, room: Room) -> None:
+    def __init__(self, b: Builder, room: Room, base: float = 0.0) -> None:
         door_u, door_width, _, _ = room.door
 
         self.b = b
         self.room = room
-        self.left, self.right, self.front, self.back, self.ceiling = room.left, room.right, room.front, room.back, room.ceiling
+        self.base = base  # altura do piso deste andar (o vestíbulo do casarão mobília dois)
+        self.floors = [self]
+        self.left, self.right, self.front, self.back, self.ceiling = room.left, room.right, room.front, room.back, base + room.ceiling
         self.door_u = door_u
         self.keeper = room.keeper
         self.placed = 0
@@ -490,9 +595,29 @@ class Furnisher:
         self.window_list = [(side, window) for side, windows in self.windows.items() for window in windows]
         self.window_blockers = []
         self.rugs = []
-        self.footprints = [("porta", (door_u - door_width / 2.0 - 0.2, door_u + door_width / 2.0 + 0.2, room.front, room.front + DOOR_CLEARANCE)), ("lojista", (self.keeper[0] - 0.35, self.keeper[0] + 0.35, self.keeper[1] - 0.35, self.keeper[1] + 0.35))]
+        self.footprints = [("lojista", (self.keeper[0] - 0.35, self.keeper[0] + 0.35, self.keeper[1] - 0.35, self.keeper[1] + 0.35))] if base == 0.0 else []
+        self.footprints += [("porta", (door_u - door_width / 2.0 - 0.2, door_u + door_width / 2.0 + 0.2, room.front, room.front + DOOR_CLEARANCE))] if room.has_street_door and base == 0.0 else []
+        self.footprints += [("porta", self.inner_door_lane(side, d, width)) for side, (d, width, _, _) in room.inner_doors.items()]
         self.footprints += [("pilar", (u - POST / 2.0, u + POST / 2.0, d - POST / 2.0, d + POST / 2.0)) for u, d in room.posts]
         self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in (partition_box(room, partition) for partition in room.partitions)]
+
+    def inner_door_lane(self, side: str, d: float, width: float) -> tuple:
+        """Floor kept free behind an inner doorway."""
+        reach = {"left": (self.left, self.left + DOOR_CLEARANCE), "right": (self.right - DOOR_CLEARANCE, self.right)}[side]
+
+        return (*reach, d - width / 2.0 - 0.2, d + width / 2.0 + 0.2)
+
+    def upstairs(self, base: float) -> "Furnisher":
+        """Furnisher of another storey of the same hall, reported and counted with this one."""
+        upper = Furnisher(self.b, self.room, base)
+
+        self.floors.append(upper)
+
+        return upper
+
+    def block(self, name: str, box: tuple) -> None:
+        """Floor (u from, u to, d from, d to) that is not free for furniture: a stair, a void."""
+        self.footprints.append((name, box))
 
     def put(self, name: str, u: float, d: float, degrees: float = 0.0, z: float = None, **options) -> None:
         """One prop with its local origin at (u, d); degrees turns its front (-Y) counter-clockwise seen from above.
@@ -504,7 +629,7 @@ class Furnisher:
             return
 
         width, depth, height = entry["size"]
-        height_origin = (self.ceiling if entry.get("hang") else FLOOR_TOP) if z is None else z
+        height_origin = (self.ceiling if entry.get("hang") else self.base + FLOOR_TOP) if z is None else z
         frame = Matrix.Translation((u, d, height_origin)) @ Matrix.Rotation(math.radians(degrees), 4, "Z")
         cos_turn, sin_turn = abs(math.cos(math.radians(degrees))), abs(math.sin(math.radians(degrees)))
         half_u, half_d = (width * cos_turn + depth * sin_turn) / 2.0, (width * sin_turn + depth * cos_turn) / 2.0
@@ -648,6 +773,16 @@ def fill_floor(furnisher: Furnisher, items: list) -> None:
         furnisher.scatter(items, u_range, d_range, columns, rows, aisle=FILL_AISLE)
 
 
+def write_plan(furnisher: Furnisher, path: Path) -> None:
+    """Footprints of a furnished hall, floor by floor, for a plan drawing (--plan=<folder>)."""
+    room = furnisher.room
+    floors = [{"base": floor.base, "footprints": [[name, *box] for name, box in floor.footprints], "rugs": [[name, *box] for name, box in floor.rugs]} for floor in furnisher.floors]
+    record = {"shop": room.shop_type, "bounds": [room.left, room.right, room.front, room.back], "inner_doors": room.inner_doors, "windows": furnisher.windows, "floors": floors}
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(record), encoding="utf-8")
+
+
 def build_interior(shop_type: str) -> dict:
     """Furniture model of one shop; nothing is written while its plan or its props do not exist yet."""
     room = Room(shop_type)
@@ -658,19 +793,27 @@ def build_interior(shop_type: str) -> dict:
 
     room.plan.get("furnish", shop_layouts.furnish_generic)(furnisher)
     fill_floor(furnisher, shop_layouts.FILL.get(shop_type, []))
-    furnisher.report()
+    placed = sum(floor.placed for floor in furnisher.floors)
 
-    if furnisher.placed == 0:
+    if PLAN_FOLDER:
+        write_plan(furnisher, Path(PLAN_FOLDER) / f"{shop_type}.json")
+
+    for floor in furnisher.floors:
+        floor.report()
+
+    if placed == 0:
         return {}
 
-    for frame, position, color, energy, light_range in furnisher.lights[:feature_light_limit]:
-        b.light(position, color, energy, light_range, frame)
+    for floor in furnisher.floors:
+        for frame, position, color, energy, light_range in floor.lights[:feature_light_limit]:
+            b.light(position, color, energy, light_range, frame)
 
-    return b.finish(output_path, {"shop": shop_type, "props": furnisher.placed})
+    return b.finish(output_path, {"shop": shop_type, "props": placed})
 
 
 if __name__ == "__main__":
     requested = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    PLAN_FOLDER = next((argument.removeprefix("--plan=") for argument in requested if argument.startswith("--plan=")), "")
     only_interiors = "--interiors" in requested
     shop_types = [name for name in requested if not name.startswith("--")] or sorted(SHOPS)
 
