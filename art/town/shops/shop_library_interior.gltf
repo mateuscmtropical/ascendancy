@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "2f6f1ea0ea989317a8a5640f505926b1"
+   "buffer_md5": "fed2b3973727abc540b5e6349d663110"
   }
  },
  "extensionsUsed": [
@@ -670,6 +670,20 @@
     },
     "metallicFactor": 0,
     "roughnessFactor": 0.8500000238418579
+   }
+  },
+  {
+   "alphaMode": "BLEND",
+   "doubleSided": true,
+   "name": "M_ContactShadow",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0,
+     0,
+     0,
+     0.12999999523162842
+    ],
+    "metallicFactor": 0
    }
   }
  ],
@@ -1852,6 +1866,16 @@
      },
      "indices": 239,
      "material": 11
+    },
+    {
+     "attributes": {
+      "POSITION": 240,
+      "NORMAL": 241,
+      "TEXCOORD_0": 242,
+      "COLOR_0": 243
+     },
+     "indices": 244,
+     "material": 12
     }
    ]
   }
@@ -4384,6 +4408,47 @@
    "componentType": 5123,
    "count": 756,
    "type": "SCALAR"
+  },
+  {
+   "bufferView": 240,
+   "componentType": 5126,
+   "count": 6336,
+   "max": [
+    14.694999694824219,
+    0.06300000101327896,
+    -0.16999998688697815
+   ],
+   "min": [
+    -14.710000038146973,
+    0.053999997675418854,
+    -19.260000228881836
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 241,
+   "componentType": 5126,
+   "count": 6336,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 242,
+   "componentType": 5126,
+   "count": 6336,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 243,
+   "componentType": 5123,
+   "count": 6336,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 244,
+   "componentType": 5123,
+   "count": 9504,
+   "type": "SCALAR"
   }
  ],
  "bufferViews": [
@@ -5826,6 +5891,36 @@
    "byteLength": 1512,
    "byteOffset": 7938052,
    "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 76032,
+   "byteOffset": 7939564,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 76032,
+   "byteOffset": 8015596,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 50688,
+   "byteOffset": 8091628,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 50688,
+   "byteOffset": 8142316,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 19008,
+   "byteOffset": 8193004,
+   "target": 34963
   }
  ],
  "samplers": [
@@ -5836,7 +5931,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 7939564,
+   "byteLength": 8212012,
    "uri": "shop_library_interior.bin"
   }
  ]

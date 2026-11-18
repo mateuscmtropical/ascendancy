@@ -19,6 +19,18 @@
    "enterable": true
   }
  ],
+ "ambient_volume": {
+  "min": [
+   -14.65,
+   0.0,
+   -19.2
+  ],
+  "max": [
+   14.65,
+   10.8,
+   -0.2
+  ]
+ },
  "lights": [
   {
    "position": [
@@ -28,7 +40,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -38,7 +51,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -48,7 +62,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -58,7 +73,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -68,7 +84,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -78,7 +95,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -88,7 +106,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -98,7 +117,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -108,7 +128,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -118,7 +139,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
@@ -128,7 +150,8 @@
    ],
    "color": "FFE4BC",
    "energy": 1.6,
-   "range": 12.0
+   "range": 12.0,
+   "group": "day_lights"
   }
  ],
  "markers": {

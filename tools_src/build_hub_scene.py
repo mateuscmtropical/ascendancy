@@ -992,7 +992,29 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
             "light_energy": f"{light['energy']}",
             "omni_range": f"{light['range']}",
             **light_fade("shop"),
-        })
+        }, groups=[light["group"]] if "group" in light else None)
+
+    if "ambient_volume" in sidecar:
+        add_ambient_probe(scene, shop_name, sidecar["ambient_volume"])
+
+
+def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict) -> None:
+    """Interior ambience of a casarão hall: a reflection probe that only supplies ambient light (its cube captures
+    nothing, so no sky reflection indoors); features/sky/day_night_cycle.gd lights it at night."""
+    low, high = volume["min"], volume["max"]
+    center = [(low[axis] + high[axis]) / 2.0 for axis in range(3)]
+    size = [abs(high[axis] - low[axis]) for axis in range(3)]
+
+    scene.add_node("Ambience", f"Shops/{shop_name}", "ReflectionProbe", properties={
+        "visible": "false",
+        "position": vector(*center),
+        "size": vector(*size),
+        "interior": "true",
+        "ambient_mode": "2",
+        "cull_mask": "0",
+        "update_mode": "0",
+        "blend_distance": "0.0",
+    }, groups=["interior_ambience"])
 
 
 def light_fade(place_kind: str) -> dict:

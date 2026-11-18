@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "24c3e1def8a24a0067fbd8044c2b7ef9"
+   "buffer_md5": "e8de8fd2ebc73e69f9a99bc28b545d9f"
   }
  },
  "extensionsUsed": [
@@ -436,6 +436,20 @@
     ],
     "metallicFactor": 0.4000000059604645,
     "roughnessFactor": 0.11999999731779099
+   }
+  },
+  {
+   "alphaMode": "BLEND",
+   "doubleSided": true,
+   "name": "M_ContactShadow",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0,
+     0,
+     0,
+     0.12999999523162842
+    ],
+    "metallicFactor": 0
    }
   }
  ],
@@ -1104,6 +1118,16 @@
      },
      "indices": 25,
      "material": 10
+    },
+    {
+     "attributes": {
+      "POSITION": 150,
+      "NORMAL": 151,
+      "TEXCOORD_0": 152,
+      "COLOR_0": 153
+     },
+     "indices": 154,
+     "material": 11
     }
    ]
   }
@@ -2647,6 +2671,47 @@
    "count": 24,
    "normalized": true,
    "type": "VEC4"
+  },
+  {
+   "bufferView": 150,
+   "componentType": 5126,
+   "count": 3312,
+   "max": [
+    14.694999694824219,
+    0.06300000101327896,
+    -0.5399999618530273
+   ],
+   "min": [
+    -14.694999694824219,
+    0.053999997675418854,
+    -19.23000144958496
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 151,
+   "componentType": 5126,
+   "count": 3312,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 152,
+   "componentType": 5126,
+   "count": 3312,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 153,
+   "componentType": 5123,
+   "count": 3312,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 154,
+   "componentType": 5123,
+   "count": 4968,
+   "type": "SCALAR"
   }
  ],
  "bufferViews": [
@@ -3549,6 +3614,36 @@
    "byteLength": 192,
    "byteOffset": 4281968,
    "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 39744,
+   "byteOffset": 4282160,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 39744,
+   "byteOffset": 4321904,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 26496,
+   "byteOffset": 4361648,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 26496,
+   "byteOffset": 4388144,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 9936,
+   "byteOffset": 4414640,
+   "target": 34963
   }
  ],
  "samplers": [
@@ -3559,7 +3654,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 4282160,
+   "byteLength": 4424576,
    "uri": "shop_reading_interior.bin"
   }
  ]

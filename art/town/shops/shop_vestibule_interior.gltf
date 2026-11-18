@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "2406243a4f2dd26d837ca5ebd6b21faa"
+   "buffer_md5": "9636bd8c2a7c6aeb9b3b579255132af8"
   }
  },
  "extensionsUsed": [
@@ -461,6 +461,20 @@
     ],
     "metallicFactor": 0,
     "roughnessFactor": 0.4000000059604645
+   }
+  },
+  {
+   "alphaMode": "BLEND",
+   "doubleSided": true,
+   "name": "M_ContactShadow",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0,
+     0,
+     0,
+     0.12999999523162842
+    ],
+    "metallicFactor": 0
    }
   }
  ],
@@ -1239,6 +1253,16 @@
      },
      "indices": 165,
      "material": 9
+    },
+    {
+     "attributes": {
+      "POSITION": 166,
+      "NORMAL": 167,
+      "TEXCOORD_0": 168,
+      "COLOR_0": 169
+     },
+     "indices": 170,
+     "material": 10
     }
    ]
   }
@@ -2985,6 +3009,47 @@
    "componentType": 5123,
    "count": 48,
    "type": "SCALAR"
+  },
+  {
+   "bufferView": 166,
+   "componentType": 5126,
+   "count": 4032,
+   "max": [
+    14.680000305175781,
+    5.663000106811523,
+    -0.2200000286102295
+   ],
+   "min": [
+    -14.680000305175781,
+    0.053999997675418854,
+    -19.23000144958496
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 167,
+   "componentType": 5126,
+   "count": 4032,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 168,
+   "componentType": 5126,
+   "count": 4032,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 169,
+   "componentType": 5123,
+   "count": 4032,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 170,
+   "componentType": 5123,
+   "count": 6048,
+   "type": "SCALAR"
   }
  ],
  "bufferViews": [
@@ -3983,6 +4048,36 @@
    "byteLength": 96,
    "byteOffset": 3876300,
    "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 48384,
+   "byteOffset": 3876396,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 48384,
+   "byteOffset": 3924780,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 32256,
+   "byteOffset": 3973164,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 32256,
+   "byteOffset": 4005420,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 12096,
+   "byteOffset": 4037676,
+   "target": 34963
   }
  ],
  "samplers": [
@@ -3993,7 +4088,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 3876396,
+   "byteLength": 4049772,
    "uri": "shop_vestibule_interior.bin"
   }
  ]

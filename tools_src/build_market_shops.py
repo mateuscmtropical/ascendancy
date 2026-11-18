@@ -64,12 +64,18 @@ FILL_AISLE = 0.55
 FILL_LANE = 1.9  # meia largura do corredor que fica livre da porta ao balcão
 FILL_BACK = 6.0  # fundo do salão que fica para o balcão e o lojista
 ISLAND_AISLE = 0.9  # folga em volta de cada ilha que scatter() põe no meio do salão
+FEATURE_LIGHT_LIMIT = 3  # luzes de móveis por andar nas lojas do comércio (a grade do forro faz o resto)
+CONTACT_SHADOW_LAYERS = (0.0, 0.08, 0.16)  # quanto cada camada da sombra de contato passa da pegada do móvel
+CONTACT_SHADOW_ALPHA = 0.13  # cada camada; no meio da pegada somam-se
+CONTACT_SHADOW_LIFT = 0.004  # acima do piso, para não brigar com ele
+AMBIENT_MARGIN = 0.1  # o volume de ambiência do casarão entra isto nas paredes, para o reboco ficar dentro dele
 
 CASARAO_STOREYS = (CASARAO_UPPER_FLOOR, 5.6)  # o casarão em frente à catedral: térreo e andar nobre, os dois de salões andáveis
 INNER_DOOR = (3.0, 2.4, 3.6, "round")  # (d do eixo, largura, altura, topo): portas internas em enfilade junto à fachada
 CASARAO_HALL = dict(  # o casarão (build_casarao.py) veste a fachada e põe o telhado; cada salão faz só o seu andar
     casarao=True, axis_bay=3.0, sill=0.9, vitrine_top="round", vitrine_apex=4.0, vitrine_width=1.4, side_window=(1.4, 0.9, 3.1, "round"),
     archetype="palacete", wall="cal", roof="terracota", accent="verde", roof_shape=("hip", dict(pitch=25.0)), awning=None, door=(0.0, 3.0, 4.4, "round"),
+    fixture_light=dict(share=0.7, energy=1.5, limit=24),  # à noite a luz sai dos lustres e arandelas (todos acesos, na cor da sala, mais fortes); a grade do forro é só a luz do dia
 )
 CASARAO_WING = dict(CASARAO_HALL, storeys=CASARAO_STOREYS[:1], street_door=False)  # salão do térreo: entra-se pelo vestíbulo
 CASARAO_UPPER = dict(CASARAO_WING, storeys=CASARAO_STOREYS[1:], sill=0.12, vitrine_apex=3.12, vitrine_width=1.3)  # andar nobre: janelas de sacada
@@ -83,11 +89,11 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
     "alchemy": dict(archetype="fachwerk", wall="salvia", roof="velha", accent="verde", storeys=(4.6, 2.9), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("2F6B4F", "D9E8B0"), door=(0.0, 2.2, 2.9, "round"), features=("half_timber",), jetty=0.3, chimney=dict(u=-6.0, d=15.0, extra=1.2, pots=2), light="C8F0B0"),
     "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
-    "library": dict(CASARAO_WING, floor="wood", light="FFDFA8", inner_doors={"left": INNER_DOOR}),
-    "school": dict(CASARAO_WING, floor="wood", light="FFE2B0", inner_doors={"right": INNER_DOOR}),
-    "reading": dict(CASARAO_UPPER, floor="wood", light="FFE2B8", inner_doors={"left": INNER_DOOR}),
-    "seminary": dict(CASARAO_UPPER, floor="wood", light="FFDCB0", inner_doors={"right": INNER_DOOR}),
-    "vestibule": dict(CASARAO_HALL, storeys=CASARAO_STOREYS, floor="stone", light="FFE4BC", door=(0.0, 3.4, 4.6, "round"), inner_doors={"left": INNER_DOOR, "right": INNER_DOOR}, door_leaves=False, shell="casarao_vestibule"),
+    "library": dict(CASARAO_WING, floor="wood", light="FFF3E6", day_light="FFDFA8", inner_doors={"left": INNER_DOOR}),
+    "school": dict(CASARAO_WING, floor="wood", light="FFF4E8", day_light="FFE2B0", inner_doors={"right": INNER_DOOR}),
+    "reading": dict(CASARAO_UPPER, floor="wood", light="FFF4E8", day_light="FFE2B8", inner_doors={"left": INNER_DOOR}),
+    "seminary": dict(CASARAO_UPPER, floor="wood", light="FFF1E2", day_light="FFDCB0", inner_doors={"right": INNER_DOOR}),
+    "vestibule": dict(CASARAO_HALL, storeys=CASARAO_STOREYS, floor="stone", light="FFF5EA", day_light="FFE4BC", door=(0.0, 3.4, 4.6, "round"), inner_doors={"left": INNER_DOOR, "right": INNER_DOOR}, door_leaves=False, shell="casarao_vestibule"),
 }
 
 
@@ -556,11 +562,20 @@ def build_shell(shop_type: str) -> dict:
         town.wall_piece(b, *partition_box(room, partition), house.wall_material, house.wall_tint)
 
     for u, row in itertools.product(light_us, LIGHT_ROWS):
-        b.light((u, room.front + (room.back - room.front) * row, room.ceiling - 0.9), room.spec["light"], 1.3, 10.0)
+        b.light((u, room.front + (room.back - room.front) * row, room.ceiling - 0.9), *day_lamp(room))
 
     b.marker("shopkeeper", (*room.keeper, 0.0 if room.has_street_door else FLOOR_TOP))
 
     return b.finish(town.SHOP_DIR / f"shop_{shop_type}.gltf", shell_sidecar(room))
+
+
+def day_lamp(room: Room) -> tuple:
+    """(color, energy, range, frame, group) of the ceiling grid lamps. In the casarão they are the light of the day
+    (daylight bouncing round the hall: warm, on only while the sun is up); at night its lamps are the chandeliers."""
+    if room.spec.get("casarao"):
+        return room.spec["day_light"], 1.3, 10.0, None, "day_lights"
+
+    return room.spec["light"], 1.3, 10.0
 
 
 def shell_sidecar(room: Room) -> dict:
@@ -570,7 +585,20 @@ def shell_sidecar(room: Room) -> dict:
     if not room.has_street_door:
         sidecar["entry"] = entry_point(room)
 
+    if room.spec.get("casarao"):
+        sidecar["ambient_volume"] = ambient_volume(room)
+
     return sidecar
+
+
+def ambient_volume(room: Room) -> dict:
+    """Box (model-local Godot coords) of the air inside a casarão hall, for the interior ambient probe: from the floor
+    to the underside of the topmost ceiling, walls to their inner face plus a hair."""
+    top = sum(room.spec["storeys"][:-1]) + room.spec["storeys"][-1] - CEILING_SLAB
+    corner_low = town.blender_to_godot((room.left - AMBIENT_MARGIN, room.back + AMBIENT_MARGIN, 0.0))
+    corner_high = town.blender_to_godot((room.right + AMBIENT_MARGIN, room.front - AMBIENT_MARGIN, top))
+
+    return {"min": corner_low, "max": corner_high}
 
 
 # ---------- furniture ----------
@@ -755,6 +783,13 @@ class Furnisher:
             print(f"AVISO {self.room.shop_type}: props ainda não modelados: {sorted(self.missing)}")
 
 
+def mix_hex(color: str, target: str, share: float) -> str:
+    """'RRGGBB' blended toward another by share (0 keeps color)."""
+    channels = [round(int(color[offset:offset + 2], 16) * (1.0 - share) + int(target[offset:offset + 2], 16) * share) for offset in (0, 2, 4)]
+
+    return "".join(f"{channel:02X}" for channel in channels)
+
+
 def boxes_overlap(first: tuple, second: tuple, margin: float = 0.0) -> bool:
     """True when two (u from, u to, d from, d to) boxes overlap; a negative margin grows them (a post's plinth)."""
     return first[0] < second[1] - margin and second[0] < first[1] - margin and first[2] < second[3] - margin and second[2] < first[3] - margin
@@ -783,13 +818,29 @@ def write_plan(furnisher: Furnisher, path: Path) -> None:
     path.write_text(json.dumps(record), encoding="utf-8")
 
 
+def add_contact_shadows(b: Builder, furnisher: Furnisher) -> None:
+    """Soft dark patch on the floor under every solid prop (stacked translucent rectangles), so furniture sits on the
+    floor instead of floating: the town's ambient occlusion is too weak to show indoors."""
+    b.materials["contact_shadow"] = town.plain_material("M_ContactShadow", (0.0, 0.0, 0.0), 1.0, alpha=CONTACT_SHADOW_ALPHA)
+
+    for floor in furnisher.floors:
+        for name, (u_from, u_to, d_from, d_to) in floor.footprints:
+            if name not in PROPS:
+                continue
+
+            for layer, margin in enumerate(CONTACT_SHADOW_LAYERS):
+                height = floor.base + FLOOR_TOP + CONTACT_SHADOW_LIFT * (layer + 1)
+
+                b.box((u_from - margin, d_from - margin, height), (u_to + margin, d_to + margin, height + 0.001), "contact_shadow")
+
+
 def build_interior(shop_type: str) -> dict:
     """Furniture model of one shop; nothing is written while its plan or its props do not exist yet."""
     room = Room(shop_type)
     b = Builder(f"shop_{shop_type}_interior")
     furnisher = Furnisher(b, room)
     output_path = town.SHOP_DIR / f"shop_{shop_type}_interior.gltf"
-    feature_light_limit = 3
+    fixture_light = room.spec.get("fixture_light", dict(share=0.0, energy=1.0, limit=FEATURE_LIGHT_LIMIT))
 
     room.plan.get("furnish", shop_layouts.furnish_generic)(furnisher)
     fill_floor(furnisher, shop_layouts.FILL.get(shop_type, []))
@@ -804,9 +855,14 @@ def build_interior(shop_type: str) -> dict:
     if placed == 0:
         return {}
 
+    if room.spec.get("casarao"):
+        add_contact_shadows(b, furnisher)
+
     for floor in furnisher.floors:
-        for frame, position, color, energy, light_range in floor.lights[:feature_light_limit]:
-            b.light(position, color, energy, light_range, frame)
+        for frame, position, color, energy, light_range in floor.lights[:fixture_light["limit"]]:
+            tinted = mix_hex(color, room.spec["light"], fixture_light["share"])
+
+            b.light(position, tinted, energy * fixture_light["energy"], light_range, frame)
 
     return b.finish(output_path, {"shop": shop_type, "props": placed})
 

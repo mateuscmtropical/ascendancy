@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "62e55fa50ff2f11b0a7f8d80df7eed7f"
+   "buffer_md5": "3983b98d5a95444a02f83c85ea563af1"
   }
  },
  "extensionsUsed": [
@@ -540,6 +540,20 @@
     ],
     "metallicFactor": 0,
     "roughnessFactor": 0.4000000059604645
+   }
+  },
+  {
+   "alphaMode": "BLEND",
+   "doubleSided": true,
+   "name": "M_ContactShadow",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0,
+     0,
+     0,
+     0.12999999523162842
+    ],
+    "metallicFactor": 0
    }
   }
  ],
@@ -1434,6 +1448,16 @@
      },
      "indices": 191,
      "material": 11
+    },
+    {
+     "attributes": {
+      "POSITION": 192,
+      "NORMAL": 193,
+      "TEXCOORD_0": 194,
+      "COLOR_0": 195
+     },
+     "indices": 196,
+     "material": 12
     }
    ]
   }
@@ -3438,6 +3462,47 @@
    "componentType": 5123,
    "count": 48,
    "type": "SCALAR"
+  },
+  {
+   "bufferView": 192,
+   "componentType": 5126,
+   "count": 4608,
+   "max": [
+    14.710000038146973,
+    0.06300000101327896,
+    -0.5399999618530273
+   ],
+   "min": [
+    -14.710000038146973,
+    0.053999997675418854,
+    -19.260000228881836
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 193,
+   "componentType": 5126,
+   "count": 4608,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 194,
+   "componentType": 5126,
+   "count": 4608,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 195,
+   "componentType": 5123,
+   "count": 4608,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 196,
+   "componentType": 5123,
+   "count": 6912,
+   "type": "SCALAR"
   }
  ],
  "bufferViews": [
@@ -4592,6 +4657,36 @@
    "byteLength": 96,
    "byteOffset": 3463296,
    "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 55296,
+   "byteOffset": 3463392,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 55296,
+   "byteOffset": 3518688,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 36864,
+   "byteOffset": 3573984,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 36864,
+   "byteOffset": 3610848,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 13824,
+   "byteOffset": 3647712,
+   "target": 34963
   }
  ],
  "samplers": [
@@ -4602,7 +4697,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 3463392,
+   "byteLength": 3661536,
    "uri": "shop_seminary_interior.bin"
   }
  ]

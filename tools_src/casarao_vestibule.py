@@ -43,7 +43,8 @@ GALLERY_COLUMN_US = (-4.65, -1.95, 1.95, 4.65)  # colunas do andar nobre: emoldu
 STAIR_WINDOWS = ((-2.9, 0.0, 2.9), 1.7, 4.3, 5.2)  # (eixos u, largura, peitoril, altura): janelão sobre o patamar
 BALCONY_BAYS = 3  # vãos do meio da fachada do andar nobre que são portas para a sacada
 LAYLIGHT = (3.3, 12.6, 17.7, 6, 4)  # (meia largura, d de, d até, colunas, fileiras) da claraboia de vidro colorido do vão
-LAYLIGHT_GLASS = ("glow_warm", "glow_amber", "glow_cyan")  # miolo, borda, cantos
+LAYLIGHT_GLASS = ("laylight_warm", "laylight_amber", "laylight_cyan")  # miolo, borda, cantos; vidro de claraboia (features/sky/window_glass.gd): claro de dia, quase apagado de noite
+LAYLIGHT_COLORS = {"laylight_warm": ("M_LaylightWarm", "FFD9A0"), "laylight_amber": ("M_LaylightAmber", "FFB347"), "laylight_cyan": ("M_LaylightCyan", "8FD8FF")}
 RUNNER_HALF = 0.9  # passadeira do portal ao patamar
 FLOOR_TILE = 1.2
 FLOOR_TINTS = (srgb("EBD6AC"), srgb("C99A6C"))  # xadrez do piso do térreo
@@ -463,20 +464,23 @@ def build_railings(b: Builder, room) -> None:
 # ---------- assembly ----------
 
 def build_lights(b: Builder, room) -> None:
-    """Lamps under the gallery and under the top ceiling (the chandelier of the well comes with the furniture)."""
-    color = room.spec["light"]
+    """Day lamps under the gallery and under the top ceiling (daylight bouncing round the hall, see shops.day_lamp); at
+    night the chandeliers of the furniture light the hall."""
     spots = [(-9.7, 5.5), (0.0, 5.5), (9.7, 5.5), (-9.7, 15.2), (9.7, 15.2)]
 
     for u, d in spots:
-        b.light((u, d, room.ceiling - 0.9), color, 1.3, 10.0)
-        b.light((u, d, UPPER + room.ceiling - 0.9), color, 1.3, 10.0)
+        b.light((u, d, room.ceiling - 0.9), *shops.day_lamp(room))
+        b.light((u, d, UPPER + room.ceiling - 0.9), *shops.day_lamp(room))
 
-    b.light((0.0, 15.0, UPPER + 2.4), color, 1.6, 12.0)
+    b.light((0.0, 15.0, UPPER + 2.4), room.spec["day_light"], 1.6, 12.0, None, "day_lights")
 
 
 def build_shell(room) -> dict:
     b = Builder(f"shop_{room.shop_type}")
     b.materials["azulejo"] = town.textured_material("M_TownAzulejo", AZULEJO_TEXTURE, roughness=0.35)
+
+    for key, (material_name, hex_color) in LAYLIGHT_COLORS.items():
+        b.materials[key] = town.plain_material(material_name, srgb(hex_color), 0.4)
 
     build_walls(b, room)
     build_well_walls(b, room)

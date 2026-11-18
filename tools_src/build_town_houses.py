@@ -363,9 +363,10 @@ class Builder:
         collider_bmesh.free()
         bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{name}{self.count}-colonly", mesh_data))
 
-    def light(self, position: tuple, color: str, energy: float, light_range: float = 7.0, frame: Matrix = None) -> None:
+    def light(self, position: tuple, color: str, energy: float, light_range: float = 7.0, frame: Matrix = None, group: str = "") -> None:
+        """group: Godot group of the light node (day_lights lamps are on by day only, see features/sky/day_night_cycle.gd)."""
         world = (frame or Matrix.Identity(4)) @ Vector(position)
-        self.lights.append({"position": blender_to_godot(world), "color": color, "energy": energy, "range": light_range})
+        self.lights.append({"position": blender_to_godot(world), "color": color, "energy": energy, "range": light_range, **({"group": group} if group else {})})
 
     def marker(self, name: str, position: tuple, frame: Matrix = None) -> None:
         self.markers[name] = blender_to_godot((frame or Matrix.Identity(4)) @ Vector(position))
