@@ -12,6 +12,8 @@ Five rooms split by the long wall at d = 8.2 m and three cross walls:
     hanging sausages and garlic strings.
 """
 
+import itertools
+
 WALL_HALF = 0.15  # half the thickness of an inner partition wall
 LONG_WALL_D = 8.2  # splits the hall into a front band (d 0.3..8.05) and a back band (d 8.35..19.1)
 PASSAGE_WALL_U = -11.21  # cross wall between Passage and Library (on a facade pier)
@@ -29,11 +31,13 @@ NEW_WALL_FINISHES = {
     "kitchen": dict(dado="FFFFFF", trim="3A5E8C", material="azulejo", uv=("world", 1.2)),
 }
 
-# Library row geometry (d = 3.40; reading_table is 2.00 x 1.00 m, study_chair is 0.50 x 0.50 m)
+# Library table rows (reading_table is 2.00 x 1.00 m, study_chair is 0.50 x 0.50 m): the front row spans the room, the
+# second row stops short of the book galleries; chairs 0.85 m either side, 1.25 m aisle between the rows
 LIBRARY_TABLE_US = (-3.60, 0.00, 3.60, 7.20, 10.80)  # pitch 3.60 m (1.60 m gap); -4.60..11.80 inside -11.06..14.55
-LIBRARY_TABLE_D = 3.40
+LIBRARY_ROW_DS = (2.10, 5.55)
+LIBRARY_SECOND_ROW_US = (-3.60, 0.00)
 LIBRARY_BOOKCASE_US = (-9.60, -7.57, -5.54, -3.51, -1.48, 0.55, 2.58)  # 7 x 2.00 m, pitch 2.03 m; -10.60..3.58
-LIBRARY_LAMPS = ((-7.80, True), (-3.60, True), (0.00, False), (3.60, True), (7.20, False), (10.80, True))
+LIBRARY_LAMPS = ((-7.80, 3.00, True), (-3.60, 3.80, True), (0.00, 3.80, True), (3.60, 2.10, True), (7.20, 2.10, False), (10.80, 2.10, True))  # (u, d, lit)
 
 # Refectory row geometry (long_table_set 3.60 x 0.90 m, long_bench 3.60 x 0.32 m)
 REFECTORY_TABLE_US = (-11.55, -6.75, -1.95)  # 3 columns, pitch 4.80 m (1.20 m gap); -13.35..-0.15 inside -14.55..2.70
@@ -59,12 +63,16 @@ def furnish_passage(f) -> None:
     f.on_face("u", partition_u, -1, "notice_board", 7.05)
     f.on_face("d", back_d, -1, "wall_crucifix", -11.78)
 
-    # Lighting: 2 lit hanging oil lamps + 3 unlit wall sconces (total 2 real lights)
+    # Clock above the basin row, the hand bell on the bench
+    f.on_wall("left", "wall_clock", 6.20, z=0.65)
+    f.put("brass_bell", -12.20, 0.55, z=0.56)
+
+    # Lighting: 2 hanging oil lamps and 1 lit sconce (3 real lights), two more sconces for rhythm
     f.put("hanging_oil_lamp", -12.95, 3.00)
     f.put("hanging_oil_lamp", -12.95, 6.00)
     f.on_wall("left", "wall_sconce", 1.10, lit=False)
     f.on_wall("left", "wall_sconce", 5.75, lit=False)
-    f.on_face("u", partition_u, -1, "wall_sconce", 6.05, lit=False)
+    f.on_face("u", partition_u, -1, "wall_sconce", 6.05)
 
 
 def furnish_library_room(f) -> None:
@@ -77,7 +85,7 @@ def furnish_library_room(f) -> None:
         f.on_face("d", inner_d, -1, "tall_bookcase", bookcase_u)
 
     f.put("rolling_ladder", -5.54, 7.28)
-    f.put("rolling_ladder", 0.55, 7.28)
+    f.put("rolling_ladder", 1.57, 7.28)
 
     f.on_face("d", inner_d, -1, "book_gallery", 5.66)
     f.on_face("d", inner_d, -1, "book_gallery", 9.82, open_end=1)
@@ -110,22 +118,24 @@ def furnish_library_room(f) -> None:
     f.put("globe_stand", -9.50, 5.50, 0.0)
     f.put("lectern", -5.65, 6.15, 0.0)
 
-    # Central row of 5 reading_tables (2.00 x 1.00 m) with 20 study_chairs (0.50 x 0.50 m); aisles >= 1.35 m
-    for table_u in LIBRARY_TABLE_US:
-        f.put("reading_table", table_u, LIBRARY_TABLE_D)
+    # Reading tables: five in the front row, two behind them, four chairs each
+    tables = [(table_u, LIBRARY_ROW_DS[0]) for table_u in LIBRARY_TABLE_US] + [(table_u, LIBRARY_ROW_DS[1]) for table_u in LIBRARY_SECOND_ROW_US]
 
-        for chair_u in (table_u - 0.55, table_u + 0.55):
-            f.put("study_chair", chair_u, LIBRARY_TABLE_D - 0.85, 180.0)  # d 2.30..2.80
-            f.put("study_chair", chair_u, LIBRARY_TABLE_D + 0.85, 0.0)    # d 4.00..4.50
+    for table_u, table_d in tables:
+        f.put("reading_table", table_u, table_d)
 
-    # Lighting: 4 lit hanging lamps + 3 lit sconces (7 real lights; extra unlit fixtures for rhythm)
-    for lamp_u, lit in LIBRARY_LAMPS:
-        f.put("hanging_oil_lamp", lamp_u, LIBRARY_TABLE_D, lit=lit)
+    for (table_u, table_d), chair_side in itertools.product(tables, (-0.55, 0.55)):
+        f.put("study_chair", table_u + chair_side, table_d - 0.85, 180.0)
+        f.put("study_chair", table_u + chair_side, table_d + 0.85, 0.0)
+
+    # Lighting: 5 lit hanging lamps + 3 lit sconces (8 real lights; extra unlit fixtures for rhythm)
+    for lamp_u, lamp_d, lit in LIBRARY_LAMPS:
+        f.put("hanging_oil_lamp", lamp_u, lamp_d, lit=lit)
 
     for pier_u, lit in ((-8.175, True), (5.1375, False), (8.175, True)):
         f.on_wall("front", "wall_sconce", pier_u, lit=lit)
 
-    f.on_face("u", partition_u, 1, "wall_sconce", 7.45, lit=True)
+    f.on_face("u", partition_u, 1, "wall_sconce", 7.45)
 
 
 def furnish_refectory(f) -> None:
@@ -135,16 +145,16 @@ def furnish_refectory(f) -> None:
 
     # Two parallel rows of 3 long_table_sets (3.60 x 0.90 m) with 12 long_benches (3.60 x 0.32 m)
     # Row 1 d 10.98..12.92, Row 2 d 14.88..16.82 -> central aisle 1.96 m, front aisle 2.63 m, back aisle 2.28 m
-    for row_d in REFECTORY_ROW_DS:
-        for col_index, table_u in enumerate(REFECTORY_TABLE_US):
-            f.put("long_table_set", table_u, row_d)
-            f.put("long_bench", table_u, row_d - REFECTORY_BENCH_OFFSET, 180.0)
-            f.put("long_bench", table_u, row_d + REFECTORY_BENCH_OFFSET, 0.0)
-            f.put("hanging_oil_lamp", table_u, row_d, lit=(row_d < 13.0 and col_index != 1) or (row_d > 14.0 and col_index == 1))
+    for row_d, (col_index, table_u) in itertools.product(REFECTORY_ROW_DS, enumerate(REFECTORY_TABLE_US)):
+        f.put("long_table_set", table_u, row_d)
+        f.put("long_bench", table_u, row_d - REFECTORY_BENCH_OFFSET, 180.0)
+        f.put("long_bench", table_u, row_d + REFECTORY_BENCH_OFFSET, 0.0)
+        f.put("hanging_oil_lamp", table_u, row_d, lit=(row_d < 13.0 and col_index != 1) or (row_d > 14.0 and col_index == 1))
 
     # Staff head table across the far end (long_table_set at -90 deg -> u 1.05..1.95, d 12.30..15.90; 1.20 m aisle)
     f.put("long_table_set", 1.50, 14.10, -90.0)
     f.put("hanging_oil_lamp", 1.50, 14.10)
+    f.put("brass_bell", 1.50, 15.62, z=0.81)
 
     for chair_d in (12.90, 13.70, 14.50, 15.30):  # 4 bentwood_chairs (pitch 0.80 m; u 2.01..2.49)
         f.put("bentwood_chair", 2.25, chair_d, -90.0)
@@ -152,6 +162,7 @@ def furnish_refectory(f) -> None:
     # Kitchen serving counter against far wall past head table (u 1.95..2.70, d 16.50..18.90) and reading pulpit
     f.on_face("u", right_u, -1, "serving_counter", 17.70)
     f.on_face("u", right_u, -1, "wall_crucifix", 14.10)
+    f.on_face("u", right_u, -1, "wall_clock", 17.70, z=0.5)
     f.on_wall("back", "reading_pulpit", 0.50)
 
     # Back wall (d = 19.10, high windows sill 3.30 m): 3 crockery_dressers (1.90 x 0.50 x 2.15 m)
@@ -197,6 +208,7 @@ def furnish_kitchen(f) -> None:
     f.put("crate_open", 4.90, 8.65, 180.0, variant="roots")
     f.put("wicker_basket", 8.10, 8.65, 180.0, variant="fruit")
     f.on_face("d", front_d, 1, "wall_crucifix", 4.90)
+    f.on_face("d", front_d, 1, "wall_clock", 6.50)
     f.on_face("d", front_d, 1, "jam_shelf", 8.10)
 
     # Left partition (u = 3.00) past folded door leaf (d 11.05..12.51): 2 pot_shelfs (pitch 2.40 m) + water_filter
@@ -205,19 +217,24 @@ def furnish_kitchen(f) -> None:
     f.on_face("u", left_u, 1, "water_filter", 17.65)   # d 17.40..17.90
 
     # Right partition (u = 10.00) past door lane (d 9.25..11.15): stone_sink + bread_rack
+    f.on_face("u", right_u, -1, "kitchen_stove", 17.55)  # d 16.95..18.15, past the bread rack and clear of the flour sacks
     f.on_face("u", right_u, -1, "stone_sink", 13.80)   # d 12.95..14.65
     f.on_face("u", right_u, -1, "bread_rack", 15.95)   # d 15.27..16.63
 
     # Central worktable (2.40 x 1.00 m) with overhead pan rack; aisles 1.88 m left, 1.60 m right, 3.22 m back
     f.put("kitchen_worktable", 6.50, 14.30)
+    f.put("kitchen_worktable", 6.50, 11.60)
     f.put("hanging_pan_rack", 6.50, 14.30)
-    f.put("hanging_pots", 6.50, 16.80)
+
+    for stool_u in (5.70, 6.50, 7.30):
+        f.put("stool_round", stool_u, 10.85)
+    f.put("hanging_pots", 6.50, 17.40)
     f.put("garlic_strings", 6.50, 8.85)
 
-    # Lighting: 2 lit hanging oil lamps + 3 lit wall sconces (total 5 real lights)
-    f.put("hanging_oil_lamp", 6.50, 11.40)
-    f.put("hanging_oil_lamp", 6.50, 15.60)
-    f.on_face("u", left_u, 1, "wall_sconce", 14.80)
+    # Lighting: 2 hanging oil lamps, the stove's fire and 2 lit wall sconces (5 real lights)
+    f.put("hanging_oil_lamp", 6.50, 12.60)
+    f.put("hanging_oil_lamp", 6.50, 16.00)
+    f.on_face("u", left_u, 1, "wall_sconce", 14.80, lit=False)
     f.on_face("u", right_u, -1, "wall_sconce", 13.80)
     f.on_wall("back", "wall_sconce", 8.95)
     f.on_face("d", front_d, 1, "wall_sconce", 6.50, lit=False)
@@ -248,13 +265,13 @@ def furnish_pantry(f) -> None:
     f.put("wicker_basket", 13.45, 13.60, -90.0, variant="mushrooms")
     f.put("step_ladder", 11.35, 16.20, 90.0)
 
-    # Overhead hanging goods and lighting (2 lit hanging oil lamps + 2 unlit sconces = 2 real lights)
+    # Overhead hanging goods and lighting (2 hanging oil lamps + 1 lit sconce = 3 real lights)
     f.put("ceiling_beam_hooks", 12.40, 12.40, 90.0, variant="sausages")
     f.put("garlic_strings", 12.40, 14.50, 90.0)
     f.put("ceiling_beam_hooks", 12.40, 17.40, 90.0, variant="sausages")
     f.put("hanging_oil_lamp", 12.40, 10.60)
     f.put("hanging_oil_lamp", 12.40, 15.60)
-    f.on_face("u", left_u, 1, "wall_sconce", 13.65, lit=False)
+    f.on_face("u", left_u, 1, "wall_sconce", 13.65)
     f.on_face("u", left_u, 1, "wall_sconce", 16.15, lit=False)
 
 
