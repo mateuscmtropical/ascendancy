@@ -351,6 +351,9 @@ def window_wall(f, side: str, pier_rows: list, sill_items: list, gap: float = 0.
         f.on_wall(side, name, (window_from + window_to) / 2.0, **options)
 
 
+SHELF_PAIR_OFFSET = 0.25  # half the depth of a floor_shelf: two of them stand back to back
+
+
 def shelf_island(f, u: float, d: float, variants: tuple) -> None:
     """Two floor shelves back to back across the aisle, one facing each side."""
     f.put("floor_shelf", u - SHELF_PAIR_OFFSET, d, -90.0, variant=variants[0])

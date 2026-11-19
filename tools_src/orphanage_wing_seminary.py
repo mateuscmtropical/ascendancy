@@ -53,7 +53,7 @@ def furnish_sacristy(f) -> None:
     f.on_face("d", f.front, 1, "prie_dieu", 13.9)
     f.on_face("d", FRONT_FACE, -1, "wall_crucifix", 11.7)
     f.put("censer_hanging", 13.0, 6.0)
-    f.put("hanging_oil_lamp", 13.0, 4.0, lit=False)
+    f.put("hanging_oil_lamp", 13.0, 4.0)
     f.on_face("d", FRONT_FACE, -1, "wall_sconce", 14.1, lit=False)
 
 

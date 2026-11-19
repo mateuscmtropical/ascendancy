@@ -2111,7 +2111,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
-position = Vector3(-5.130, 2.230, -0.470)
+position = Vector3(-11.530, 2.230, -5.600)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
 omni_range = 6.0
@@ -2120,7 +2120,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light7" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
-position = Vector3(5.130, 2.230, -0.470)
+position = Vector3(-5.130, 2.230, -0.470)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
 omni_range = 6.0
@@ -2129,7 +2129,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light8" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
-position = Vector3(-1.805, 2.230, -7.880)
+position = Vector3(5.130, 2.230, -0.470)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
 omni_range = 6.0
@@ -2138,6 +2138,15 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light9" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+position = Vector3(-1.805, 2.230, -7.880)
+light_color = Color(1.000, 0.961, 0.910, 1)
+light_energy = 0.96
+omni_range = 6.0
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light10" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-9.550, 1.070, -7.840)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.8
@@ -2146,7 +2155,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light10" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light11" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-8.400, 4.200, -4.200)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2155,7 +2164,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light11" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light12" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-2.800, 4.200, -4.200)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2164,7 +2173,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light12" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light13" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(2.800, 4.200, -4.200)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2173,7 +2182,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light13" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light14" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(8.400, 4.200, -4.200)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2182,7 +2191,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light14" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light15" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-9.400, 2.230, -8.520)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2191,7 +2200,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light15" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light16" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-6.500, 2.230, -18.930)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2200,7 +2209,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light16" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light17" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-12.940, 1.070, -18.890)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.8
@@ -2209,7 +2218,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light17" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light18" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-8.200, 4.200, -11.900)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2218,7 +2227,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light18" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light19" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-8.200, 4.200, -15.500)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2227,7 +2236,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light19" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light20" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-3.000, 4.200, -11.900)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2236,7 +2245,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light20" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light21" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(-3.000, 4.200, -15.500)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2245,7 +2254,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light21" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light22" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(6.300, 4.200, -11.500)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2254,7 +2263,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light22" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light23" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(6.300, 4.200, -16.000)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2263,7 +2272,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light23" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
+[node name="Light24" type="OmniLight3D" parent="Shops/Shop11Reading" groups=["night_lights"]]
 position = Vector3(12.600, 4.200, -13.600)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2352,6 +2361,15 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+position = Vector3(13.000, 4.200, -4.000)
+light_color = Color(1.000, 0.961, 0.910, 1)
+light_energy = 1.2000000000000002
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light7" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-13.150, 4.150, -5.200)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.5599999999999999
@@ -2360,7 +2378,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light7" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light8" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-5.200, 2.230, -7.880)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2369,7 +2387,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light8" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light9" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(4.400, 2.230, -7.880)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2378,7 +2396,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light9" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light10" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-6.000, 4.200, -4.800)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2387,7 +2405,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light10" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light11" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-1.500, 4.200, -4.800)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2396,7 +2414,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light11" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light12" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(3.000, 4.200, -4.800)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2405,7 +2423,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light12" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light13" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(2.650, 1.200, -11.600)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2414,7 +2432,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light13" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light14" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(8.650, 1.200, -11.600)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2423,7 +2441,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light14" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light15" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(4.500, 4.200, -13.600)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2432,7 +2450,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light15" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light16" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(8.500, 4.200, -13.600)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2441,7 +2459,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light16" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light17" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-7.250, 2.230, -8.520)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2450,7 +2468,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light17" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light18" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-7.250, 2.230, -18.930)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 0.96
@@ -2459,7 +2477,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light18" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light19" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-13.820, 0.650, -13.900)
 light_color = Color(1.000, 0.847, 0.741, 1)
 light_energy = 2.0
@@ -2468,7 +2486,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light19" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light20" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-10.000, 4.200, -13.700)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2477,7 +2495,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light20" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light21" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-6.000, 4.200, -13.700)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002
@@ -2486,7 +2504,7 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
-[node name="Light21" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
+[node name="Light22" type="OmniLight3D" parent="Shops/Shop12Seminary" groups=["night_lights"]]
 position = Vector3(-2.500, 4.200, -13.700)
 light_color = Color(1.000, 0.961, 0.910, 1)
 light_energy = 1.2000000000000002

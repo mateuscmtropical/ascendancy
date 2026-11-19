@@ -74,7 +74,7 @@ def furnish_anteroom(f) -> None:
     f.on_wall("left", "linen_press", 5.9)
     f.on_face("u", face, -1, "clothes_pegs", 6.8)
     f.on_face("u", face, -1, "boots_rack", 6.8)
-    f.on_face("u", face, -1, "wall_sconce", 5.6, lit=False)
+    f.on_face("u", face, -1, "wall_sconce", 5.6)
 
 
 def furnish_dormitory_a(f) -> None:
@@ -189,8 +189,8 @@ def furnish_linen_room(f) -> None:
     f.on_wall("back", "linen_press", 10.85)
     f.on_wall("back", "linen_press", 13.55)
     f.on_wall("right", "linen_press", 13.9)
-    f.on_wall("right", "pantry_shelf", 9.9)
-    f.on_face("u", west_face, 1, "pantry_shelf", 10.6)
+    f.on_wall("right", "wall_shelf", 9.9, variant="linen")
+    f.on_face("u", west_face, 1, "wall_shelf", 10.6, variant="linen")
     f.on_face("u", west_face, 1, "laundry_tubs", 17.2)
     f.put("ironing_table", 12.6, 13.6, 90.0)
     f.put("hanging_oil_lamp", 12.6, 13.6)
