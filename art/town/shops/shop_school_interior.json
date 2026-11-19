@@ -10,13 +10,24 @@
   -0.17
  ],
  "shop": "school",
- "props": 249,
+ "props": 260,
  "lights": [
   {
    "position": [
     13.0,
     4.2,
     -3.0
+   ],
+   "color": "FFF0E0",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    12.6,
+    4.2,
+    -6.5
    ],
    "color": "FFF0E0",
    "energy": 1.2000000000000002,
@@ -36,7 +47,29 @@
   },
   {
    "position": [
-    6.0,
+    14.35,
+    2.23,
+    -5.8
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    7.355,
+    2.23,
+    -7.88
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    6.005,
     4.2,
     -2.5
    ],
@@ -47,7 +80,7 @@
   },
   {
    "position": [
-    6.0,
+    6.005,
     4.2,
     -5.4
    ],
@@ -58,7 +91,7 @@
   },
   {
    "position": [
-    8.8,
+    8.805,
     4.2,
     -2.5
    ],
@@ -69,7 +102,7 @@
   },
   {
    "position": [
-    8.8,
+    8.805,
     4.2,
     -5.4
    ],
@@ -80,7 +113,29 @@
   },
   {
    "position": [
-    -3.8,
+    5.14,
+    2.23,
+    -0.5
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -2.62,
+    2.23,
+    -7.88
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -3.97,
     4.2,
     -2.5
    ],
@@ -91,7 +146,7 @@
   },
   {
    "position": [
-    -3.8,
+    -3.97,
     4.2,
     -5.4
    ],
@@ -102,7 +157,7 @@
   },
   {
    "position": [
-    -1.0,
+    -1.17,
     4.2,
     -2.5
    ],
@@ -113,13 +168,24 @@
   },
   {
    "position": [
-    -1.0,
+    -1.17,
     4.2,
     -5.4
    ],
    "color": "FFF0E0",
    "energy": 1.2000000000000002,
    "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -5.13,
+    2.23,
+    -0.5
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
    "group": "night_lights"
   },
   {
@@ -157,6 +223,28 @@
   },
   {
    "position": [
+    -8.49,
+    2.23,
+    -2.65
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -14.35,
+    2.23,
+    -4.45
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
     -0.15,
     1.2,
     -11.4
@@ -168,7 +256,7 @@
   },
   {
    "position": [
-    4.05,
+    8.25,
     1.2,
     -16.0
    ],
@@ -212,6 +300,28 @@
   },
   {
    "position": [
+    12.2,
+    2.23,
+    -18.9
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    8.125,
+    2.23,
+    -8.52
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
     -6.125,
     0.65,
     -9.05
@@ -225,7 +335,7 @@
    "position": [
     -6.975,
     1.2,
-    -16.25
+    -16.7
    ],
    "color": "FFF0E0",
    "energy": 0.96,
@@ -236,11 +346,33 @@
    "position": [
     -6.125,
     4.2,
-    -13.7
+    -10.6
    ],
    "color": "FFF0E0",
    "energy": 1.2000000000000002,
    "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -6.125,
+    4.2,
+    -16.7
+   ],
+   "color": "FFF0E0",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -3.17,
+    2.23,
+    -11.6
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
    "group": "night_lights"
   },
   {
@@ -274,6 +406,28 @@
    "color": "FFF0E0",
    "energy": 1.2000000000000002,
    "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -9.72,
+    2.23,
+    -12.2
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -13.6,
+    2.23,
+    -18.9
+   ],
+   "color": "FFF0E0",
+   "energy": 0.96,
+   "range": 6.0,
    "group": "night_lights"
   }
  ],

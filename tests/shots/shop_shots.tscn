@@ -636,8 +636,8 @@ fov = 75.0
 far = 400.0
 
 [node name="LibraryPassageDoor" type="Camera3D" parent="."]
-position = Vector3(-78.000, 1.600, -15.800)
-rotation = Vector3(-0.078, 0.896, 0.000)
+position = Vector3(-76.250, 1.600, -17.000)
+rotation = Vector3(-0.059, 1.556, 0.000)
 fov = 75.0
 far = 400.0
 
@@ -648,14 +648,14 @@ fov = 75.0
 far = 400.0
 
 [node name="LibraryLibFar" type="Camera3D" parent="."]
-position = Vector3(-81.500, 1.600, -44.000)
-rotation = Vector3(-0.004, -3.020, 0.000)
+position = Vector3(-79.700, 1.600, -43.300)
+rotation = Vector3(-0.004, -3.070, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="LibraryRefDoor" type="Camera3D" parent="."]
-position = Vector3(-84.000, 1.600, -17.050)
-rotation = Vector3(-0.019, 0.323, 0.000)
+position = Vector3(-84.900, 1.600, -16.700)
+rotation = Vector3(-0.019, 0.262, 0.000)
 fov = 75.0
 far = 400.0
 
@@ -672,20 +672,20 @@ fov = 75.0
 far = 400.0
 
 [node name="LibraryKitFar" type="Camera3D" parent="."]
-position = Vector3(-93.300, 1.600, -39.700)
-rotation = Vector3(-0.043, -2.159, 0.000)
+position = Vector3(-91.400, 1.600, -38.600)
+rotation = Vector3(-0.056, -2.178, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="LibraryPantryDoor" type="Camera3D" parent="."]
-position = Vector3(-85.200, 1.600, -40.600)
-rotation = Vector3(-0.055, 0.902, 0.000)
+position = Vector3(-84.600, 1.600, -41.500)
+rotation = Vector3(-0.054, 1.099, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="LibraryPantryFar" type="Camera3D" parent="."]
-position = Vector3(-93.500, 1.600, -44.000)
-rotation = Vector3(-0.034, -1.939, 0.000)
+position = Vector3(-92.600, 1.600, -42.900)
+rotation = Vector3(-0.039, -1.847, 0.000)
 fov = 75.0
 far = 400.0
 
@@ -750,8 +750,8 @@ fov = 75.0
 far = 400.0
 
 [node name="SchoolCloakDoor" type="Camera3D" parent="."]
-position = Vector3(-78.000, 1.600, 15.800)
-rotation = Vector3(-0.075, 2.285, 0.000)
+position = Vector3(-76.300, 1.600, 16.600)
+rotation = Vector3(-0.045, 1.645, 0.000)
 fov = 75.0
 far = 400.0
 
@@ -780,50 +780,50 @@ fov = 75.0
 far = 400.0
 
 [node name="SchoolScienceDoor" type="Camera3D" parent="."]
-position = Vector3(-82.200, 1.600, 37.800)
-rotation = Vector3(-0.028, -2.507, 0.000)
+position = Vector3(-82.000, 1.600, 39.400)
+rotation = Vector3(-0.035, -2.369, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolScienceFar" type="Camera3D" parent="."]
-position = Vector3(-76.000, 1.600, 44.000)
-rotation = Vector3(-0.038, 0.876, 0.000)
+position = Vector3(-81.700, 1.600, 44.000)
+rotation = Vector3(-0.044, -0.754, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolStudyDoor" type="Camera3D" parent="."]
-position = Vector3(-84.000, 1.600, 17.100)
-rotation = Vector3(-0.017, 2.712, 0.000)
+position = Vector3(-85.400, 1.600, 17.000)
+rotation = Vector3(-0.017, 2.825, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolStudyFar" type="Camera3D" parent="."]
-position = Vector3(-85.000, 1.600, 32.300)
-rotation = Vector3(-0.013, 0.336, 0.000)
+position = Vector3(-88.700, 1.600, 31.900)
+rotation = Vector3(-0.014, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolTeachDoor" type="Camera3D" parent="."]
-position = Vector3(-88.700, 1.600, 32.400)
-rotation = Vector3(-0.029, 2.806, 0.000)
+position = Vector3(-88.700, 1.600, 33.500)
+rotation = Vector3(-0.034, 2.746, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolTeachFar" type="Camera3D" parent="."]
-position = Vector3(-93.000, 1.600, 38.900)
-rotation = Vector3(-0.032, -0.921, 0.000)
+position = Vector3(-92.900, 1.600, 38.600)
+rotation = Vector3(-0.033, -0.940, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolHeadDoor" type="Camera3D" parent="."]
-position = Vector3(-88.700, 1.600, 38.900)
-rotation = Vector3(-0.033, 2.663, 0.000)
+position = Vector3(-88.700, 1.600, 40.300)
+rotation = Vector3(-0.041, 2.531, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolHeadFar" type="Camera3D" parent="."]
-position = Vector3(-93.500, 1.600, 44.200)
-rotation = Vector3(-0.032, -1.112, 0.000)
+position = Vector3(-93.000, 1.600, 43.500)
+rotation = Vector3(-0.034, -1.158, 0.000)
 fov = 75.0
 far = 400.0
 

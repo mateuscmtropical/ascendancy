@@ -23,6 +23,7 @@ Action RPG em terceira pessoa, fantasia estilizada (referências de clima: anime
 | Rodar Godot, testes, prints | `godot-run` |
 | Arte, cena, luz, shader, validação visual | `style-bible` |
 | Baixar/importar modelo, textura, animação, addon | `asset-intake` |
+| Planta de prédio, cômodo, móveis, decoração, cripta (referências reais antes) | `interior-design` |
 
 Depois de editar código: `gdformat` + `gdlint` (zero aviso) + testes headless.
 
