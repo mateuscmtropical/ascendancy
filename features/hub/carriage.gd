@@ -3,10 +3,17 @@ extends AnimatableBody3D
 ## Carroça puxada a cavalo rodando devagar em laço por uma rota fixa nas ruas rebaixadas.
 ## O corpo empurra o jogador e o NavigationObstacle3D filho faz os moradores desviarem.
 ## A posição vem só da distância percorrida (início + velocidade x tempo): duas máquinas com o
-## mesmo relógio veem a carroça no mesmo lugar. Um condutor vai sentado no banco da frente.
+## mesmo relógio veem a carroça no mesmo lugar (e as rodas no mesmo ângulo). O cavalo anda no
+## passo da carroça. Um condutor vai sentado no banco da frente.
 
 const CHARACTER_MODEL_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
-const WALK_ANIMATION: StringName = &"Walk"
+## O "Walk" do pacote do cavalo congela as pernas na segunda metade do ciclo: o passo lento anda
+## o ciclo todo.
+const WALK_ANIMATION: StringName = &"WalkSlow"
+const IDLE_ANIMATION: StringName = &"Idle"
+## Velocidade (m/s) em que o passo lento do cavalo, tocado em 1x, assenta os cascos sem patinar.
+const HORSE_STRIDE_SPEED: float = 0.72
+const WHEEL_PREFIX: String = "Wheel"
 const DRIVER_ANIMATION: StringName = &"ual1/Sitting_Idle"
 ## O cavalo e a carroça viram olhando um pouco à frente: a curva sai suave mesmo na quina da rota.
 const LOOK_AHEAD_DISTANCE: float = 2.5
@@ -28,6 +35,8 @@ const WAGON_REAR: float = 1.4
 @export var body_size: Vector3 = Vector3(2.0, 2.3, 7.6)
 
 var _travelled: float = 0.0
+var _wheels: Array[MeshInstance3D] = []
+var _wheel_radius: float = 1.0
 
 
 func _ready() -> void:
@@ -41,11 +50,12 @@ func _ready() -> void:
 
 	if wagon:
 		add_child(wagon)
+		_find_wheels(wagon)
 
 	if horse:
 		horse.position = Vector3(0.0, 0.0, horse_offset)
 		add_child(horse)
-		_walk_in_place(horse)
+		_animate_horse(horse)
 
 	set_physics_process(route.size() > 1)
 
@@ -58,6 +68,11 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_travelled += speed * delta
 	_follow_route()
+
+
+## Distância já percorrida na rota, em metros.
+func get_travelled() -> float:
+	return _travelled
 
 
 ## Comprimento total do laço (o último ponto volta ao primeiro).
@@ -94,6 +109,7 @@ func _follow_route() -> void:
 
 	global_position = here
 	rotation.y = atan2(heading.x, heading.z)
+	_roll_wheels()
 
 
 func _add_body_collision() -> void:
@@ -130,13 +146,41 @@ func _seat_driver() -> void:
 	add_child(driver)
 
 
-func _walk_in_place(horse: Node3D) -> void:
+## O cavalo anda no passo da carroça (a animação acompanha a velocidade) ou, sem rota, fica parado.
+func _animate_horse(horse: Node3D) -> void:
 	var animation_player: AnimationPlayer = (
 		horse.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	)
+	var is_moving: bool = route.size() > 1
+	var animation_name: StringName = WALK_ANIMATION if is_moving else IDLE_ANIMATION
 
-	if animation_player == null or not animation_player.has_animation(WALK_ANIMATION):
+	if animation_player == null or not animation_player.has_animation(animation_name):
 		return
 
-	animation_player.get_animation(WALK_ANIMATION).loop_mode = Animation.LOOP_LINEAR
-	animation_player.play(WALK_ANIMATION)
+	animation_player.get_animation(animation_name).loop_mode = Animation.LOOP_LINEAR
+	animation_player.speed_scale = speed / HORSE_STRIDE_SPEED if is_moving else 1.0
+	animation_player.play(animation_name)
+
+
+## As rodas do modelo (WheelL, WheelR) têm a origem no eixo: girar em X as faz rolar sem sair
+## do lugar.
+func _find_wheels(wagon: Node3D) -> void:
+	var wheel_nodes: Array[Node] = wagon.find_children(
+		WHEEL_PREFIX + "*", "MeshInstance3D", true, false
+	)
+
+	for wheel_node in wheel_nodes:
+		_wheels.append(wheel_node as MeshInstance3D)
+
+	if _wheels.is_empty():
+		return
+
+	_wheel_radius = _wheels[0].get_aabb().size.y / 2.0
+
+
+## A roda dá uma volta a cada 2 pi x raio de estrada percorrida, como a posição, só da distância.
+func _roll_wheels() -> void:
+	var angle: float = fposmod(_travelled / _wheel_radius, TAU)
+
+	for wheel in _wheels:
+		wheel.rotation.x = angle

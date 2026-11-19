@@ -17,6 +17,7 @@ Usage:
   blender -b --factory-startup -P tools_src/build_town_houses.py -- [model_name ...]
 """
 
+import contextlib
 import hashlib
 import itertools
 import json
@@ -269,6 +270,7 @@ class Builder:
         self.count = 0
         self.lights = []
         self.markers = {}
+        self.turning_parts = {}
 
     # -- low level --
 
@@ -370,6 +372,19 @@ class Builder:
     def marker(self, name: str, position: tuple, frame: Matrix = None) -> None:
         self.markers[name] = blender_to_godot((frame or Matrix.Identity(4)) @ Vector(position))
 
+    @contextlib.contextmanager
+    def turning_part(self, name: str, axle: tuple, frame: Matrix = None):
+        """Pieces made inside the block leave finish() as ONE mesh called `name` whose origin sits on `axle` (facade
+        coords), so the game can spin it around the axle (the wheels of a wagon)."""
+        before = set(bpy.data.objects)
+
+        yield
+
+        for index, piece in enumerate(sorted(set(bpy.data.objects) - before, key=lambda candidate: candidate.name)):
+            piece.name = f"{name}_{index}"
+
+        self.turning_parts[name] = (frame or Matrix.Identity(4)) @ Vector(axle)
+
     # -- kit grafts --
 
     def kit(self, piece: str, location: tuple, degrees: float = 0.0, scale: tuple = (1.0, 1.0, 1.0), tints: dict = None, frame: Matrix = None, props: bool = False):
@@ -409,14 +424,17 @@ class Builder:
 
         unify_materials(everything)
         apart = [scene_object for scene_object in everything if separate and scene_object.name.startswith(separate)]
-        visible = untinted_first([scene_object for scene_object in everything if scene_object not in apart])
+        turning = {name: [part for part in everything if part.name.startswith(f"{name}_")] for name in self.turning_parts}
+        loose = {part for parts in turning.values() for part in parts}
+        visible = untinted_first([scene_object for scene_object in everything if scene_object not in apart and scene_object not in loose])
 
         with bpy.context.temp_override(active_object=visible[0], selected_editable_objects=visible):
             bpy.ops.object.join()
 
         building = visible[0]
         building.name = self.name
-        corners = [vertex.co for part in [building, *apart, *colliders] for vertex in part.data.vertices]
+        turned = [self.join_turning_part(name, parts) for name, parts in turning.items()]
+        corners = [vertex.co for part in [building, *apart, *turned, *colliders] for vertex in part.data.vertices]
         minimum = [min(corner[axis] for corner in corners) for axis in range(3)]
         maximum = [max(corner[axis] for corner in corners) for axis in range(3)]
         godot_minimum = [minimum[0], minimum[2], -maximum[1]]
@@ -425,6 +443,12 @@ class Builder:
         for template_objects in self.library.values():
             for template, _matrix in template_objects:
                 bpy.data.objects.remove(template, do_unlink=True)
+
+        for wheel in turned:
+            axle = self.turning_parts[wheel.name]
+
+            wheel.data.transform(Matrix.Translation(-axle))
+            wheel.location = axle
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         bpy.ops.export_scene.gltf(
@@ -448,6 +472,17 @@ class Builder:
         output_path.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8", newline="\n")
 
         return sidecar
+
+    def join_turning_part(self, name: str, parts: list):
+        """The pieces of one turning part as a single object (the origin moves to the axle just before export)."""
+        ordered = untinted_first(parts)
+
+        with bpy.context.temp_override(active_object=ordered[0], selected_editable_objects=ordered):
+            bpy.ops.object.join()
+
+        ordered[0].name = name
+
+        return ordered[0]
 
 
 def stamp_buffer_hash(gltf_path: Path) -> None:
