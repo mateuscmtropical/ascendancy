@@ -7,7 +7,7 @@ import math
 
 from mathutils import Matrix
 
-from build_town_houses import STONE, WOOD, Builder, srgb
+from build_town_houses import STONE, WOOD, Builder, Opening, srgb
 from farm_colonial import (
     ACCENT_LIGHT,
     CAIADO,
@@ -29,6 +29,7 @@ from farm_colonial import (
     wall_frames,
     window,
 )
+from farm_sede_rooms import WALL, build_rooms, hollow_wall
 from shop_props_common import lathe
 
 BASE = 0.9  # stone plinth: the floor of the house and of the veranda
@@ -50,6 +51,10 @@ STAIR_HALF_WIDTH = 1.5
 ROOF_THICKNESS = 0.16
 IDENTITY = Matrix.Identity(4)
 WINDOW_AXES = (-3.0 * BAY, -2.0 * BAY, -BAY, BAY, 2.0 * BAY, 3.0 * BAY)
+END_WINDOW_AXES = (-2.35, 2.35)
+FRONT_DOOR = (1.5, 2.4)  # (width, leaf height)
+BACK_DOOR = (1.3, 2.3)
+CHIMNEY = (-5.9, 5.2)  # over the kitchen range (farm_sede_rooms.py)
 TRIM_STRIP_UV = ("band", 0.44, 0.66, 1.0)
 
 
@@ -69,24 +74,36 @@ def cornice(b: Builder, frame: Matrix, half: float) -> None:
     b.box((-half - 0.2, -0.26, WALL_TOP + 0.08), (half + 0.2, -0.1, WALL_TOP + 0.14), "trim", srgb(CREAM), frame=frame)
 
 
-def front_wall(b: Builder, frame: Matrix) -> None:
+def front_wall(b: Builder, frame: Matrix) -> list:
+    fan_height = FRONT_DOOR[0] * 0.32 + 0.1
+
     for u in WINDOW_AXES:
         window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE)
 
-    entrance_door(b, frame @ Matrix.Translation((0.0, 0.0, BASE)), 0.0, 1.5, 2.4)
+    entrance_door(b, frame @ Matrix.Translation((0.0, 0.0, BASE)), 0.0, *FRONT_DOOR, open_into=WALL)
+
+    return window_openings(WINDOW_AXES) + [Opening(0.0, FRONT_DOOR[0], BASE, FRONT_DOOR[1] + fan_height + 0.12, "segment")]
 
 
-def back_wall(b: Builder, frame: Matrix) -> None:
+def back_wall(b: Builder, frame: Matrix) -> list:
     for u in WINDOW_AXES:
         window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE)
 
-    entrance_door(b, frame @ Matrix.Translation((0.0, 0.0, BASE)), 0.0, 1.3, 2.3, double=False, fanlight=False)
+    entrance_door(b, frame @ Matrix.Translation((0.0, 0.0, BASE)), 0.0, *BACK_DOOR, double=False, fanlight=False, open_into=WALL)
     stone_stair(b, frame, 0.8, BASE, 0.0, 3, 0.36, name="BackStair")
 
+    return window_openings(WINDOW_AXES) + [Opening(0.0, BACK_DOOR[0], BASE, BACK_DOOR[1], "flat")]
 
-def end_wall(b: Builder, frame: Matrix) -> None:
-    for u in (-2.35, 2.35):
+
+def end_wall(b: Builder, frame: Matrix) -> list:
+    for u in END_WINDOW_AXES:
         window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE)
+
+    return window_openings(END_WINDOW_AXES)
+
+
+def window_openings(axes: tuple) -> list:
+    return [Opening(u, WINDOW_SIZE[0], WINDOW_BOTTOM, WINDOW_SIZE[1], "segment") for u in axes]
 
 
 WALL_DRAWERS = {"front": front_wall, "back": back_wall, "west": end_wall, "east": end_wall}
@@ -185,19 +202,21 @@ def casa_grande(b: Builder, half: float, depth: float) -> dict:
 
     b.box((-half - 0.1, 0.0, 0.0), (half + 0.1, depth + 0.1, BASE - 0.1), "stone", srgb(STONE["media"]))
     b.box((-half - 0.14, -0.14, BASE - 0.12), (half + 0.14, depth + 0.14, BASE), "trim", srgb(CREAM))
-    b.box((-half, 0.0, BASE), (half, depth, WALL_TOP), "plaster", srgb(CAIADO))
-    b.collider((-half - 0.1, 0.0, 0.0), (half + 0.1, depth + 0.1, WALL_TOP + 0.2))
 
     for wall, drawer in WALL_DRAWERS.items():
         corner_strips(b, frames[wall], wall_halves[wall], wall_extension[wall])
         cornice(b, frames[wall], wall_halves[wall])
-        drawer(b, frames[wall])
+        openings = drawer(b, frames[wall])
+        span = wall_halves[wall] - (0.0 if wall in ("front", "back") else WALL)
+        hollow_wall(b, frames[wall], -span, span, BASE, WALL_TOP, openings)
+
+    build_rooms(b, half, depth, BASE, WALL_TOP)
 
     ridge_z = hip_roof(b, roof_half, -OVERHANG, depth + OVERHANG, EAVE, HIP_PITCH)
     rafter_tails(b, (roof_half, -OVERHANG, depth + OVERHANG), (half, 0.0, depth), EAVE)
     veranda(b, half)
     veranda_furniture(b)
-    chimney(b, -4.4, depth * 0.66, WALL_TOP + 1.2, ridge_z + 0.9)
+    chimney(b, *CHIMNEY, WALL_TOP + 1.2, ridge_z + 0.9)
     b.marker("door", (0.0, -VERANDA_DEPTH - STAIR_STEPS * STAIR_TREAD - 0.4, 0.0))
 
-    return {"lot_width": half * 2.0, "lot_depth": depth, "doors": [{"x": 0.0, "width": 1.5, "enterable": False}]}
+    return {"lot_width": half * 2.0, "lot_depth": depth, "doors": [{"x": 0.0, "width": FRONT_DOOR[0], "enterable": True}]}

@@ -15,10 +15,101 @@
   {
    "x": 0.0,
    "width": 1.5,
-   "enterable": false
+   "enterable": true
   }
  ],
- "lights": [],
+ "lights": [
+  {
+   "position": [
+    -7.0,
+    3.68,
+    -2.4
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    -4.8,
+    3.68,
+    -2.4
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    0.0,
+    3.68,
+    -2.3
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    5.91,
+    2.07,
+    -2.75
+   ],
+   "color": "FFE8CC",
+   "energy": 1.1,
+   "range": 5.5
+  },
+  {
+   "position": [
+    5.9,
+    3.68,
+    -2.4
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    -5.8,
+    3.68,
+    -7.0
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    -0.9,
+    3.68,
+    -6.85
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    0.9,
+    3.68,
+    -6.85
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    5.9,
+    3.68,
+    -6.9
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  }
+ ],
  "markers": {
   "door": [
    0.0,

@@ -250,14 +250,14 @@ def shutter_pair(b: Builder, frame: Matrix, u: float, bottom: float, width: floa
         b.box((high - 0.05, -0.075, bottom), (high, -0.06, bottom + height), "paint", srgb(ACCENT), frame=frame)
 
 
-def entrance_door(b: Builder, frame: Matrix, u: float, width: float, leaf_height: float, double: bool = True, fanlight: bool = True) -> None:
-    """Panelled plank door in an accent surround with a fanlight over a transom bar, brass knobs, stone threshold."""
+def entrance_door(b: Builder, frame: Matrix, u: float, width: float, leaf_height: float, double: bool = True, fanlight: bool = True, open_into: float = 0.0) -> None:
+    """Panelled plank door in an accent surround with a fanlight over a transom bar, brass knobs, stone threshold.
+    open_into = thickness of a hollow wall: the leaves stand open against its inner face instead of closing the door."""
     fan_height = width * 0.32 + 0.1
     total = Opening(u, width, 0.0, leaf_height + fan_height + 0.12, "segment" if fanlight else "flat")
     leaf = Opening(u, width, 0.0, leaf_height, "flat")
     panels = ((0.1, 0.46), (0.54, 1.0)) if leaf_height > 2.0 else ((0.1, 1.0),)
 
-    b.prism(leaf.outline(0.0), -0.07, 0.0, "paint", srgb(ACCENT), frame=frame)
     ring_prism(b, total.outline(0.17), total.outline(0.0), -0.1, 0.0, "paint", srgb(ACCENT), frame)
     ring_prism(b, total.outline(0.27), total.outline(0.17), -0.07, 0.0, "trim", srgb(CREAM), frame, uv=("band", 0.72, 0.98, 1.0))
     b.box((u - width / 2.0, -0.12, leaf_height), (u + width / 2.0, -0.02, leaf_height + 0.12), "paint", srgb(ACCENT), frame=frame)
@@ -271,6 +271,13 @@ def entrance_door(b: Builder, frame: Matrix, u: float, width: float, leaf_height
             tip = (u + spoke * width * 0.22, fan.apex - 0.08)
             b.beam((u, -0.06, leaf_height + 0.14), (tip[0], -0.06, tip[1]), 0.03, 0.03, "paint", srgb(CAIADO), frame=frame, uv=None)
 
+    b.box((u - width / 2.0 - 0.3, -0.45, 0.0), (u + width / 2.0 + 0.3, -0.05, 0.05), "trim", srgb(CREAM), frame=frame)
+
+    if open_into:
+        open_leaves(b, frame, u, width, leaf_height, double, open_into)
+        return
+
+    b.prism(leaf.outline(0.0), -0.07, 0.0, "paint", srgb(ACCENT), frame=frame)
     leaves = [(u - width / 2.0 + 0.1, u - 0.04), (u + 0.04, u + width / 2.0 - 0.1)] if double else [(u - width / 2.0 + 0.1, u + width / 2.0 - 0.1)]
 
     for (left, right), (panel_low, panel_high) in itertools.product(leaves, panels):
@@ -282,7 +289,18 @@ def entrance_door(b: Builder, frame: Matrix, u: float, width: float, leaf_height
     for side in (-1, 1):
         b.sphere((u + side * 0.12, -0.14, 1.05), 0.04, "metal", srgb(GOLD), frame=frame, segments=6)
 
-    b.box((u - width / 2.0 - 0.3, -0.45, 0.0), (u + width / 2.0 + 0.3, -0.05, 0.05), "trim", srgb(CREAM), frame=frame)
+
+def open_leaves(b: Builder, frame: Matrix, u: float, width: float, leaf_height: float, double: bool, wall: float) -> None:
+    """Door leaves swung 100 degrees into the house, hinged at the inner face of a wall `wall` thick."""
+    swing = math.radians(100.0)
+    hinges = (-1, 1) if double else (-1,)
+    leaf = width / len(hinges) - 0.04
+
+    for side in hinges:
+        hinge_u = u + side * width / 2.0
+        tip = (hinge_u - side * leaf * math.cos(swing), wall + 0.03 + leaf * math.sin(swing))
+
+        b.beam((hinge_u, wall + 0.03, leaf_height / 2.0), (tip[0], tip[1], leaf_height / 2.0), leaf_height, 0.06, "paint", srgb(ACCENT), frame=frame, uv=None)
 
 
 # ---------- veranda (alpendre) ----------

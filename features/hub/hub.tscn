@@ -5745,6 +5745,105 @@ position = Vector3(85.500, 0.000, -34.600)
 position = Vector3(94.600, 0.000, -17.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
+[node name="Light0" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(-7.000, 3.680, -2.400)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light1" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(-4.800, 3.680, -2.400)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light2" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(0.000, 3.680, -2.300)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light3" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(5.910, 2.070, -2.750)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.1
+omni_range = 5.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light4" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(5.900, 3.680, -2.400)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light5" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(-5.800, 3.680, -7.000)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light6" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(-0.900, 3.680, -6.850)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light7" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(0.900, 3.680, -6.850)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light8" type="OmniLight3D" parent="Farm/Farmhouse"]
+position = Vector3(5.900, 3.680, -6.900)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light0" type="OmniLight3D" parent="Farm/Barn"]
+position = Vector3(-2.250, 2.660, -3.200)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light1" type="OmniLight3D" parent="Farm/Barn"]
+position = Vector3(2.250, 2.660, -3.200)
+light_color = Color(1.000, 0.910, 0.800, 1)
+light_energy = 1.5
+omni_range = 7.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
 [node name="FarmYard" parent="Farm" instance=ExtResource("118_ext")]
 position = Vector3(0.000, 0.000, 0.000)
 

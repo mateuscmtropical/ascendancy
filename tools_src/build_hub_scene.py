@@ -1586,12 +1586,26 @@ def model_exists(model: str) -> bool:
     return (PROJECT_DIR / model.removeprefix("res://")).exists()
 
 
+def add_model_lights(scene: SceneWriter, node_path: str, model: str) -> None:
+    """The lamps a model lists in its sidecar, as lights under its node (the casa-grande and the tulha are lived in)."""
+    for light_index, light in enumerate(model_sidecar(model).get("lights", [])):
+        scene.add_node(f"Light{light_index}", node_path, "OmniLight3D", properties={
+            "position": vector(*light["position"]),
+            "light_color": hex_color(light["color"]),
+            "light_energy": f"{light['energy']}",
+            "omni_range": f"{light['range']}",
+            **light_fade("shop"),
+        })
+
+
 def add_farm(scene: SceneWriter) -> None:
     """Farmhouse, barn, the yard and the fields (build_farm.py), the people who work there and, once
     convert_farm_animals.py has run, the cows and pigs wandering in their pens."""
     scene.add_node("Farm", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Farmhouse", "Farm", "res://art/town/farm/farmhouse.gltf", FARMHOUSE["position"], FARMHOUSE["rotation"])
     place(scene, "Barn", "Farm", "res://art/town/farm/barn.gltf", BARN["position"], BARN["rotation"])
+    add_model_lights(scene, "Farm/Farmhouse", "res://art/town/farm/farmhouse.gltf")
+    add_model_lights(scene, "Farm/Barn", "res://art/town/farm/barn.gltf")
 
     for model in FARM_MODELS:
         place(scene, model.title().replace("_", ""), "Farm", f"res://art/town/farm/{model}.gltf", (0.0, 0.0, 0.0))

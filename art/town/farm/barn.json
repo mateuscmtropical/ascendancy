@@ -15,10 +15,31 @@
   {
    "x": 0.0,
    "width": 3.0,
-   "enterable": false
+   "enterable": true
   }
  ],
- "lights": [],
+ "lights": [
+  {
+   "position": [
+    -2.25,
+    2.66,
+    -3.2
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  },
+  {
+   "position": [
+    2.25,
+    2.66,
+    -3.2
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5
+  }
+ ],
  "markers": {
   "door": [
    0.0,
