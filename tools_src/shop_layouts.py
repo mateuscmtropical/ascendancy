@@ -10,6 +10,7 @@ inner walls ("u" | "d", fixed coordinate, from, to). The back wall and the sides
 prop that covers one.
 """
 
+import orphanage_vestibule
 import orphanage_wing_library
 import orphanage_wing_reading
 import orphanage_wing_school
@@ -596,111 +597,9 @@ def furnish_general(f) -> None:
     f.put("barrel_group", 7.8, 16.6)
 
 
-VESTIBULE_WELL = (-4.8, 4.8, 11.2, 19.1)  # vão da escadaria (u de, u até, d de, d até)
-VESTIBULE_COLUMNS = (-9.7, 9.7)  # u das colunas do térreo fora do vão, em d = 11.2
-FACADE_PIERS = (5.14, 8.17, 11.21)  # |u| dos panos de parede entre as janelas da fachada de um salão
-
-
-def vestibule_walls(f, scenes: tuple) -> None:
-    """Both side walls of a storey of the vestibule past the doorways: console under a pier glass, a bench under a
-    painting and wall lanterns."""
-    for side, scene in zip(("left", "right"), scenes):
-        f.on_wall(side, "console_table", 6.6, seed=len(scene))
-        f.on_wall(side, "wall_mirror", 6.6)
-        f.on_wall(side, "wall_lantern", 5.2)
-        f.on_wall(side, "wall_lantern", 8.0)
-        f.on_wall(side, "bench_long", 9.9)
-        f.on_wall(side, "painting", 9.9, variant=scene)
-
-
-def furnish_vestibule(f) -> None:
-    """Vestibule of the casarão, two storeys round the grand stair. Ground floor: the porter's desk on the right of
-    the marble walk, urns and plants on the piers of the facade, consoles under pier glasses on the side walls, a
-    hearth lounge in the back right and a waiting room with the long-case clock in the back left. Upper floor
-    (the gallery): a salon between the stair and the balcony doors, a music room with the piano in the back right
-    and a tea corner in the back left. The gilt chandelier hangs in the stair well."""
-    gallery = f.upstairs(f.room.spec["storeys"][0])
-    well_left, well_right, well_front, well_back = VESTIBULE_WELL
-
-    f.block("escada", (well_left, well_right, well_front - 0.4, well_back))
-    gallery.block("vão", VESTIBULE_WELL)
-    gallery.block("chegada", (well_left, well_right, well_front - 1.6, well_front))
-
-    for column_u in VESTIBULE_COLUMNS:
-        f.block("coluna", (column_u - 0.35, column_u + 0.35, 10.85, 11.55))
-
-    gallery.put("grand_chandelier", 0.0, (well_front + well_back) / 2.0, drop=2.4)
-
-    # ground floor
-    f.put("teacher_desk", 6.4, 6.3)
-    f.put("rug_ornate", 6.4, 6.9, variant="blue")
-    f.grid("grand_chandelier", (-8.2, 8.2), (5.6, 5.6), 2, 1, drop=0.5)
-    vestibule_walls(f, ("seascape", "landscape"))
-
-    for pier_u in (-FACADE_PIERS[0], FACADE_PIERS[0], -FACADE_PIERS[2], FACADE_PIERS[2]):
-        f.put("pedestal_urn", pier_u, f.front + 0.36)
-
-    for pier_u in (-FACADE_PIERS[1], FACADE_PIERS[1]):
-        f.put("plant_pot", pier_u, f.front + 0.4, variant="bush")
-
-    for well_u in (well_left - 0.33, well_right + 0.33):
-        f.put("pedestal_urn", well_u, well_front + 0.5)
-
-    f.grid("pedestal_urn", (-2.4, 2.4), (4.4, 9.0), 2, 2)
-
-    f.on_wall("right", "fireplace", 15.4)
-    f.put("rug_ornate", 11.6, 15.4, 90.0, variant="red")
-    f.put("sofa", 10.2, 15.4, 90.0)
-    f.put("armchair", 12.2, 13.2, 160.0)
-    f.put("armchair", 12.2, 17.6, 20.0)
-    f.on_wall("back", "painting", 9.83, variant="portrait")
-    f.on_wall("back", "pedestal_urn", 6.0)
-    f.put("plant_pot", f.right - 0.6, 12.4, variant="fern")
-
-    f.on_wall("left", "long_case_clock", 15.4)
-    f.on_wall("left", "bench_long", 13.2)
-    f.on_wall("left", "bench_long", 17.6)
-    f.put("rug_ornate", -10.4, 15.4, 90.0, variant="green")
-    f.put("sofa", -6.2, 15.4, 90.0)
-    f.on_wall("back", "painting", -9.83, variant="lady")
-    f.on_wall("back", "console_table", -9.83, seed=7)
-    f.put("plant_pot", -5.6, 18.5, variant="fern")
-
-    # gallery
-    gallery.grid("grand_chandelier", (-8.2, 8.2), (5.6, 5.6), 2, 1, drop=0.5)
-    vestibule_walls(gallery, ("portrait", "lady"))
-    gallery.put("rug_ornate", 0.0, 6.2, variant="red")
-
-    for salon_u in (-3.4, 3.4):
-        gallery.put("pedestal_urn", salon_u, 8.4)
-
-    gallery.put("sofa", -4.6, 6.2, 90.0)
-    gallery.put("sofa", 4.6, 6.2, -90.0)
-
-    for pier_u in (-FACADE_PIERS[1], FACADE_PIERS[1], -FACADE_PIERS[2], FACADE_PIERS[2]):
-        gallery.put("pedestal_urn", pier_u, f.front + 0.36)
-
-    gallery.on_wall("back", "piano", 9.83)
-    gallery.grid("chair", (8.6, 11.0), (14.4, 15.6), 3, 2, 180.0)
-    gallery.put("rug_ornate", 9.8, 15.0, variant="plum")
-    gallery.on_wall("right", "painting", 15.2, variant="landscape")
-    gallery.on_wall("right", "sofa", 15.2)
-    gallery.on_wall("back", "long_case_clock", 13.6)
-    gallery.put("plant_pot", 5.5, 18.5, variant="fern")
-
-    gallery.put("rug_ornate", -9.8, 15.2, 90.0, variant="blue")
-    gallery.put("cafe_table_set", -9.8, 15.2)
-    gallery.on_wall("left", "sofa", 15.2)
-    gallery.on_wall("left", "painting", 15.2, variant="seascape")
-    gallery.on_wall("back", "console_table", -9.83, seed=3)
-    gallery.on_wall("back", "wall_mirror", -9.83)
-    gallery.on_wall("back", "pedestal_urn", -6.0)
-    gallery.put("plant_pot", -13.9, 12.2, variant="flower")
-
-
-WING_MODULES = (orphanage_wing_library, orphanage_wing_reading, orphanage_wing_school, orphanage_wing_seminary)  # orphanage wings: PLAN, NEW_WALL_FINISHES, furnish_<hall>
+WING_MODULES = (orphanage_vestibule, orphanage_wing_library, orphanage_wing_reading, orphanage_wing_school, orphanage_wing_seminary)  # orphanage wings: PLAN, NEW_WALL_FINISHES, furnish_<hall>
 PLANS = {
-    "vestibule": dict(keeper=(6.4, 7.4), posts=(), furnish=furnish_vestibule),
+    "vestibule": orphanage_vestibule.PLAN,
     "reading": orphanage_wing_reading.PLAN,
     "school": orphanage_wing_school.PLAN,
     "seminary": orphanage_wing_seminary.PLAN,

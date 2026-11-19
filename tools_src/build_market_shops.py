@@ -26,10 +26,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_town_houses as town  # noqa: E402
 import shop_layouts  # noqa: E402
+from orphanage_wing_common import CORRIDOR  # noqa: E402
 from build_hub_scene import CASARAO_UPPER_FLOOR, SHOP_LOTS, shop_lots, town_lots  # noqa: E402
 from build_town_houses import STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
 
-PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground")
+PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground", "shop_props_convent")
 PLAN_FOLDER = ""  # --plan=<pasta>: grava a planta (pegadas dos móveis) de cada salão mobiliado
 CEILING_SLAB = 0.4
 PIER = 0.6  # parede cheia entre vãos e nos cantos da fachada
@@ -80,6 +81,7 @@ DOOR_FRAME_DEPTH = 0.03
 DOOR_LEAF_THICKNESS = 0.05
 DOOR_LEAF_OFFSET = 0.07  # a folha aberta fica a esta distância da parede, por fora do rodapé e do friso
 PARTITION_DOOR_LANE = 1.0  # chão livre dos dois lados de uma porta de divisória
+HATCH_LEDGE = 0.12  # quanto a tábua do peitoril de um passa-pratos sai de cada face da parede
 PLANK_LENGTH_RANGE = (2.4, 5.2)  # comprimento das tábuas do piso, de junta a junta
 PLANK_SHADE_RANGE = (0.84, 1.08)
 CEILING_PLANK_WIDTH = 0.3
@@ -102,7 +104,7 @@ INNER_PANE_DEPTH = 0.2  # o vidro de dentro das janelas do casarão, atrás do v
 AMBIENT_MARGIN = 0.1  # o volume de ambiência do casarão entra isto nas paredes, para o reboco ficar dentro dele
 
 CASARAO_STOREYS = (CASARAO_UPPER_FLOOR, 5.6)  # o casarão em frente à catedral: térreo e andar nobre, os dois de salões andáveis
-INNER_DOOR = (3.0, 2.4, 3.6, "round")  # (d do eixo, largura, altura, topo): portas internas em enfilade junto à fachada
+INNER_DOOR = (sum(CORRIDOR) / 2.0, 1.8, 3.0, "round")  # (d do eixo, largura, altura, topo): portas internas no eixo do corredor
 CASARAO_HALL = dict(  # o casarão (build_casarao.py) veste a fachada e põe o telhado; cada salão faz só o seu andar
     casarao=True, axis_bay=3.0, sill=0.9, vitrine_top="round", vitrine_apex=4.0, vitrine_width=1.4, side_window=(1.4, 0.9, 3.1, "round"),
     archetype="palacete", wall="cal", roof="terracota", accent="verde", roof_shape=("hip", dict(pitch=25.0)), awning=None, door=(0.0, 3.0, 4.4, "round"),
@@ -703,13 +705,20 @@ def dress_partition_door(b: Builder, room: Room, partition: tuple, door: dict) -
     wood_uv = ("band", *WOOD_DARK_BAND, 1.5)
     frame_tint = srgb(WOOD["escura"])
 
+    sill = door.get("sill", 0.0)  # a hatch (passa-pratos, guichê, grade do locutório) is a doorway with a sill
+    sill_tint = srgb(WOOD["media"])
+
     town.wall_piece(b, *partition_piece(room, partition, door_from, door_to, door["height"]), room.house.wall_material, room.house.wall_tint)
+
+    if sill > 0.0:
+        town.wall_piece(b, *partition_piece(room, partition, door_from, door_to, 0.0, sill), room.house.wall_material, room.house.wall_tint)
+        b.box(*wall_slab(axis, fixed - WALL / 2.0 - HATCH_LEDGE, 1, (door_from, door_to), 0.0, WALL + 2.0 * HATCH_LEDGE, (sill - 0.05, sill)), "wood", sill_tint, uv=wood_uv)
 
     for normal in (-1, 1):
         face_at = fixed + normal * WALL / 2.0
 
         for jamb in ((door_from - DOOR_FRAME_WIDTH, door_from), (door_to, door_to + DOOR_FRAME_WIDTH)):
-            b.box(*wall_slab(axis, face_at, normal, jamb, 0.0, DOOR_FRAME_DEPTH, (0.0, door["height"] + DOOR_FRAME_WIDTH)), "wood", frame_tint, uv=wood_uv)
+            b.box(*wall_slab(axis, face_at, normal, jamb, 0.0, DOOR_FRAME_DEPTH, (sill, door["height"] + DOOR_FRAME_WIDTH)), "wood", frame_tint, uv=wood_uv)
 
         head = (door_from - DOOR_FRAME_WIDTH, door_to + DOOR_FRAME_WIDTH)
 
@@ -895,8 +904,8 @@ class Furnisher:
         self.footprints += [("porta", (door_u - door_width / 2.0 - 0.2, door_u + door_width / 2.0 + 0.2, room.front, room.front + DOOR_CLEARANCE))] if room.has_street_door and base == 0.0 else []
         self.footprints += [("porta", self.inner_door_lane(side, d, width)) for side, (d, width, _, _) in room.inner_doors.items()]
         self.footprints += [("pilar", (u - POST / 2.0, u + POST / 2.0, d - POST / 2.0, d + POST / 2.0)) for u, d in room.posts]
-        self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in self.partition_boxes()]
-        self.footprints += [("porta", lane) for lane in self.partition_door_lanes()]
+        self.footprints += [("parede", (box[0][0], box[1][0], box[0][1], box[1][1])) for box in self.partition_boxes()] if base == 0.0 else []  # as divisórias são do térreo
+        self.footprints += [("porta", lane) for lane in self.partition_door_lanes()] if base == 0.0 else []
 
     def partition_boxes(self) -> list:
         """Solid stretches of every partition (door gaps left out) as (low, high) corners."""
@@ -923,6 +932,10 @@ class Furnisher:
         reach = {"left": (self.left, self.left + DOOR_CLEARANCE), "right": (self.right - DOOR_CLEARANCE, self.right)}[side]
 
         return (*reach, d - width / 2.0 - 0.2, d + width / 2.0 + 0.2)
+
+    def prop_size(self, name: str) -> tuple:
+        """(width, depth, height) of a prop of the libraries (a 1 m cube while it is not modelled yet)."""
+        return PROPS.get(name, {"size": (1.0, 1.0, 1.0)})["size"]
 
     def upstairs(self, base: float) -> "Furnisher":
         """Furnisher of another storey of the same hall, reported and counted with this one."""
@@ -956,7 +969,7 @@ class Furnisher:
         self.placed += 1
 
         if not entry.get("hang") and not entry.get("beside_window"):
-            self.note_window_blocker(name, (u - half_u, u + half_u, d - half_d, d + half_d), height_origin + height)
+            self.note_window_blocker(name, (u - half_u, u + half_u, d - half_d, d + half_d), height_origin - self.base + height)  # altura sobre o piso deste andar
 
         if name.startswith("rug") and not entry.get("hang"):
             self.rugs.append((name, (u - half_u, u + half_u, d - half_d, d + half_d)))

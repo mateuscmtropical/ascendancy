@@ -1,233 +1,271 @@
-"""Rooms of the dormitory wing (upper floor, right wing of the orphanage: hall `reading`).
+"""Rooms of the children's wing (hall `reading`, upper floor over the service wing; the entry end u = -14.55 opens on
+the gallery of the vestibule, the exposed end wall u = 14.55 has the side windows).
 
-Two bands split by the long wall at d = 8.2. Front band (d = 0.3..8.05): the anteroom at the entry end (u = -14.55, by
-the gallery) and dormitory A. Back band (d = 8.35..19.1): dormitory B for the small children, the washroom and the
-linen room. The entry end of this wing is u = -14.55; the exposed end wall (u = 14.55) has the side windows.
+The corridor (orphanage_wing_common.py) runs from the gallery to the end window. Front band, behind the balcony
+windows of the facade:
+  - Boys' dormitory (u -14.55..1.66): 24 iron beds in three rows (one with the heads on the corridor wall, a
+    head-to-head double row in the middle), a locker by every head, a trunk at the foot of the outer rows, the
+    sister's curtained bed at the end of the double row; the strip by the windows stays free.
+  - Boys' washroom (u 1.96..8.03): two stone troughs, four latrine stalls, two tubs behind a screen.
+  - Nursery (u 8.33..14.55): 16 cots for the little ones in two lines, the sister's bed behind a screen, toys.
+Back band, under the high windows:
+  - Girls' dormitory (u -14.55..5.85): 32 beds in four rows (heads on the corridor wall, a head-to-head double row,
+    heads on the back wall), a locker by every head, the sister's alcove in the corner by the door, presses, pegs
+    and washstands at the far end.
+  - Girls' washroom (u 6.15..10.15): troughs, a basin row, three latrine stalls, a tub behind a screen.
+  - Linen room (u 10.45..14.55): presses and shelves of linen, the mending table.
 """
 
 import itertools
 
-import itertools
+from orphanage_wing_common import (
+    BACK_BAND,
+    CORRIDOR_CLEAR,
+    CORRIDOR_FINISH,
+    CORRIDOR_MIDDLE,
+    FRONT_BAND,
+    HALL_BACK,
+    HALL_FRONT,
+    HALL_LEFT,
+    HALL_RIGHT,
+    WALL_HALF,
+    bed_row,
+    corridor_walls,
+    cross_wall,
+    door,
+    spaced,
+)
 
-WALL_HALF = 0.15  # half the thickness of an inner wall (WALL = 0.3 in build_market_shops.py)
+BOYS_WALL = 1.81  # u of the wall between the boys' dormitory and their washroom (a facade pier)
+NURSERY_WALL = 8.175  # u of the wall between the boys' washroom and the nursery (a facade pier)
+GIRLS_WALL = 6.0  # u of the wall between the girls' dormitory and their washroom (a back pier)
+LINEN_WALL = 10.3  # u of the wall between the girls' washroom and the linen room (a back pier)
 
-HALL_LEFT = -14.55
-HALL_RIGHT = 14.55
-HALL_FRONT = 0.3
-HALL_BACK = 19.1
-LONG_WALL = 8.2  # d of the wall between the front and the back band
-ANTEROOM_WALL = -11.21  # u of the wall between the anteroom and dormitory A (a pier of the facade)
-BABIES_WALL = 2.85  # u of the wall between dormitory B and the washroom (clear of the back windows)
-WASH_WALL = 9.8  # u of the wall between the washroom and the linen room
+FRONT_FACE = FRONT_BAND[1]  # the corridor wall seen from the front rooms
+BACK_FACE = BACK_BAND[0]  # the corridor wall seen from the back rooms
+BOYS_EAST = BOYS_WALL - WALL_HALF
+BOYS_WASH_WEST = BOYS_WALL + WALL_HALF
+BOYS_WASH_EAST = NURSERY_WALL - WALL_HALF
+NURSERY_WEST = NURSERY_WALL + WALL_HALF
+GIRLS_EAST = GIRLS_WALL - WALL_HALF
+GIRLS_WASH_WEST = GIRLS_WALL + WALL_HALF
+GIRLS_WASH_EAST = LINEN_WALL - WALL_HALF
+LINEN_WEST = LINEN_WALL + WALL_HALF
 
-FRONT_FACE = LONG_WALL - WALL_HALF  # the long wall seen from the front band
-BACK_FACE = LONG_WALL + WALL_HALF  # the long wall seen from the back band
-PIERS = (-8.17, -5.13, -1.805, 1.805, 5.13, 8.17, 11.21)  # u of the piers of the facade between its windows
-BED_PITCH = 0.715  # a pair of beds stands this far either side of the night table between them
-PAIR_PITCH = 2.9  # centres of the pairs of beds of dormitory B
-BLANKET_A = "grey_blue"  # one blanket colour per ward; only the supervisor's and the older girl's beds differ
-BLANKET_B = "green"
-LIT_SCONCES = {(1, -5.13), (1, 5.13), (-1, -1.805)}  # (normal, u) of the sconces of dormitory A that really light
-LAMPS_A = (-8.4, -2.8, 2.8, 8.4)  # pendant lamps down the aisle of dormitory A
-
-DORM_DOOR = dict(at=4.2, width=1.5, height=2.1, leaf=("high", -1), lane=("high",))  # anteroom -> dormitory A
-BABIES_DOOR = dict(at=-12.95, width=1.5, height=2.1)  # anteroom -> dormitory B (no leaf: the anteroom is too narrow)
-WASH_DOOR_A = dict(at=7.6, width=1.5, height=2.1, leaf=("high", -1))  # dormitory A -> washroom
-WASH_DOOR_B = dict(at=13.7, width=1.5, height=2.1, leaf=("high", 1))  # dormitory B -> washroom
-LINEN_DOOR = dict(at=13.7, width=1.5, height=2.1, leaf=("high", 1))  # washroom -> linen room
+BOYS_DOOR = door(-13.9)
+NURSERY_DOOR = door(9.4)
+GIRLS_DOOR = door(-13.2)
+LINEN_DOOR = door(12.5)
+BOYS_WASH_DOOR = door(9.3)
+GIRLS_WASH_DOOR = door(16.3)
 
 NEW_WALL_FINISHES = {
-    "washroom": dict(dado="FFFFFF", trim="5A3A26", material="azulejo", uv=("world", 1.2)),  # blue and white tiles
-    "linen": dict(dado="8FA596", trim="5A3A26"),  # sage dado for the linen room
+    "corridor": CORRIDOR_FINISH,
+    "washroom": dict(dado="FFFFFF", trim="5A3A26", material="azulejo", uv=("world", 1.2)),
+    "linen": dict(dado="8FA596", trim="5A3A26"),
+    "nursery": dict(dado="9DB8C9", trim="5A3A26"),
 }
 
-
-def bed_pair(f, blanket: str, u: float, wall_d: float, normal: int, trunks: bool = True) -> None:
-    """Two iron beds with a night table between them and a trunk at each foot, heads to the wall face at d = wall_d
-    (normal -1: the hall lies at smaller d, +1: at larger d)."""
-    foot_d = wall_d + normal * 2.0
-    trunk_d = foot_d + normal * 0.255
-
-    f.on_face("d", wall_d, normal, "night_table", u)
-
-    for side in (-1, 1):
-        f.on_face("d", wall_d, normal, "iron_bed", u + side * BED_PITCH, variant=blanket)
-
-        if trunks:
-            f.put("bed_trunk", u + side * BED_PITCH, trunk_d, 0.0 if normal < 0 else 180.0)
+BED = "child_bed"  # 0.86 x 1.85 m
+BED_LENGTH = 1.85
+GIRLS_BLANKET = "dull_red"
+BOYS_BLANKET = "grey_blue"
+GIRLS_BED_US = spaced(-11.5, 1.75, 8)  # a locker beside every head, 0.9 m between neighbours
+GIRLS_HEADS = ((BACK_FACE, 1), (18.85, -1), (18.95, 1), (HALL_BACK, -1))  # (d of the heads, side the beds lie on)
+BOYS_OUTER_US = spaced(-12.6, 1.55, 8)
+BOYS_MIDDLE_US = spaced(-12.9, 1.55, 8)
+BOYS_HEADS_MIDDLE = ((5.1, 1), (5.0, -1))
+TRUNK_DEPTH = 0.45
+COT_DS = spaced(0.9, 0.95, 9)  # cots along the nursery's west wall
+COT_END_DS = (0.9, 1.9, 4.7, 5.65, 6.6, 9.1, 10.05)  # cots along the end wall, between its windows
 
 
-def alcove(f, u: float, wall_d: float, normal: int, bed_variant: str = "dull_red") -> None:
-    """A curtained alcove in a corner of a ward: a bed, a night table with a lamp and a washstand against the wall."""
-    f.put("supervisor_alcove", u, wall_d + normal * 1.3)
-    f.on_face("d", wall_d, normal, "iron_bed", u - 0.54, variant=bed_variant)
-    f.on_face("d", wall_d, normal, "night_table", u + 0.21)
-    f.on_face("d", wall_d, normal, "washstand", u + 0.81)
-    f.put("oil_lamp_table", u + 0.21, wall_d + normal * 0.21, z=0.73)
+def furnish_girls(f) -> None:
+    """Girls' dormitory (u -14.55..5.85, d 13.75..24.10): four rows of eight beds with a locker by every head, the
+    sister's curtained alcove in the corner by the door, washstands on the entry wall, presses, pegs and the
+    crucifix with a kneeler at the far end, lamps down the two aisles."""
+    for head_d, normal in GIRLS_HEADS:
+        bed_row(f, BED, GIRLS_BED_US, head_d, normal, variant=GIRLS_BLANKET)
+
+    f.put("supervisor_alcove", -13.25, HALL_BACK - 1.3)
+    f.put("iron_bed", -13.79, HALL_BACK - 1.0, 0.0, variant="ochre")
+    f.put("night_table", -13.04, HALL_BACK - 0.19)
+    f.put("oil_lamp_table", -13.04, HALL_BACK - 0.19, z=f.base + 0.73)
+
+    for stand_d in (16.3, 17.3, 18.3, 19.3):
+        f.on_wall("left", "washstand", stand_d)
+
+    for press_d in (14.6, 21.3):
+        f.on_face("u", GIRLS_EAST, -1, "linen_press", press_d)
+
+    f.on_face("u", GIRLS_EAST, -1, "clothes_pegs", 19.0)
+    f.on_face("u", GIRLS_EAST, -1, "wall_crucifix", 23.2)
+    f.on_face("u", GIRLS_EAST, -1, "prie_dieu", 23.2)
+
+    for lamp_u, lamp_d in itertools.product((-7.5, -1.0), (16.3, 21.5)):
+        f.put("hanging_oil_lamp", lamp_u, lamp_d, lit=lamp_d < 20.0 or lamp_u < -5.0)
 
 
-def furnish_anteroom(f) -> None:
-    """Anteroom (u = -14.55..-11.36, d = 0.3..8.05): a linen press, the children's clothes pegs with their bags and a
-    boot rack on the wall to dormitory A, a sconce."""
-    face = ANTEROOM_WALL - WALL_HALF
+def furnish_girls_washroom(f) -> None:
+    """Girls' washroom (u 6.15..10.15, d 13.75..24.10): two troughs on the linen room wall, a basin row under the back
+    window, three latrine stalls in the corner, a tub behind a folding screen, towel rack and bench."""
+    for trough_d in (15.6, 18.9):
+        f.on_face("u", GIRLS_WASH_EAST, -1, "washroom_trough", trough_d)
 
-    f.on_wall("left", "linen_press", 5.9)
-    f.on_face("u", face, -1, "clothes_pegs", 6.8)
-    f.on_face("u", face, -1, "boots_rack", 6.8)
-    f.on_face("u", face, -1, "wall_sconce", 5.6)
+    f.on_wall("back", "basin_row", 8.4)
 
+    for stall_d in (20.6, 21.6, 22.6):
+        f.on_face("u", GIRLS_WASH_WEST, 1, "latrine_stall", stall_d)
 
-def furnish_dormitory_a(f) -> None:
-    """Dormitory A (u = -11.06..14.55, d = 0.3..8.05): iron beds with their heads to the facade piers and to the long
-    wall, in pairs round a night table, a trunk at every foot, a 2.7 m aisle from the door to the end wall, the
-    supervisor's curtained bed by the door, a sconce over every bedside table, a crucifix and a kneeler on the end
-    wall, the door to the washroom in the long wall."""
-    facade_d = f.front
-
-    for pier_u in PIERS:
-        bed_pair(f, BLANKET_A, pier_u, facade_d, 1)
-        f.on_face("d", facade_d, 1, "wall_sconce", pier_u, lit=(1, pier_u) in LIT_SCONCES)
-
-    for pier_u in PIERS[1:5]:
-        bed_pair(f, BLANKET_A, pier_u, FRONT_FACE, -1)
-        f.on_face("d", FRONT_FACE, -1, "wall_sconce", pier_u, lit=(-1, pier_u) in LIT_SCONCES)
-
-    alcove(f, -9.76, FRONT_FACE, -1)
-
-    f.on_face("d", FRONT_FACE, -1, "clothes_pegs", -7.4)
-    f.hang_picture("d", FRONT_FACE, -1, -3.47, "portrait")
-    f.hang_picture("d", FRONT_FACE, -1, 9.1, "lady")
-
-    for press_u in (10.4, 12.2):
-        f.on_face("d", FRONT_FACE, -1, "linen_press", press_u)
-
-    f.on_face("d", FRONT_FACE, -1, "wall_crucifix", 0.0)
-
-    for lamp_u in LAMPS_A:
-        f.put("hanging_oil_lamp", lamp_u, DORM_DOOR["at"])
-
-    f.on_wall("right", "wall_crucifix", 5.35)
-    f.on_wall("right", "prie_dieu", 5.35)
-
-    for stand_d in (0.75, 1.7):
-        f.on_wall("right", "washstand", stand_d)
+    f.on_face("d", BACK_FACE, 1, "tin_bathtub", 8.6)
+    f.put("folding_screen", 8.6, 15.4)
+    f.on_face("u", GIRLS_WASH_WEST, 1, "towel_rack", 18.6)
+    f.put("hanging_oil_lamp", 8.15, 19.0)
 
 
-def furnish_dormitory_b(f) -> None:
-    """Dormitory B for the small children (u = -14.55..2.7, d = 8.35..19.1): three rows of iron beds, two with their heads
-    to the long walls in pairs round a night table with a trunk at every foot and one down the middle with the heads
-    to the end wall; the older girl's curtained bed in the corner; the toy corner against the washroom wall."""
-    pair_us = tuple(-9.4 + PAIR_PITCH * index for index in range(4))
+def furnish_linen(f) -> None:
+    """Linen room (u 10.45..14.55, d 13.75..24.10): presses along the washroom wall and on the back wall, a shelf of
+    folded linen on the end wall pier, the mending table with two chairs, baskets of mending."""
+    for press_d in (16.0, 17.8, 19.6, 21.4, 23.2):
+        f.on_face("u", LINEN_WEST, 1, "linen_press", press_d)
 
-    for pair_u in pair_us:
-        bed_pair(f, BLANKET_B, pair_u, BACK_FACE, 1)
-        bed_pair(f, BLANKET_B, pair_u, f.back, -1)
-        f.on_face("d", BACK_FACE, 1, "wall_sconce", pair_u, lit=pair_u in (-9.4, -3.6))
-        f.on_face("d", f.back, -1, "wall_sconce", pair_u, lit=pair_u == -6.5)
-
-    alcove(f, -13.15, f.back, -1, "ochre")
-
-    f.on_wall("left", "clothes_pegs", 10.9)
-    f.on_wall("left", "linen_press", 13.2)
-    f.hang_picture("u", f.left, 1, 15.2, "portrait")
-
-    for bed_u in (-11.0, -8.8, -6.6, -4.4, -2.2, 0.0):
-        f.put("iron_bed", bed_u, WASH_DOOR_B["at"], 90.0, variant=BLANKET_B)
-
-    for night_u in (-9.9, -5.5, -1.1):
-        f.put("night_table", night_u, WASH_DOOR_B["at"] - 0.7, 0.0)
-
-    for lamp_u, lamp_d in itertools.product((-8.2, -3.0), (11.9, 15.5)):
-        f.put("hanging_oil_lamp", lamp_u, lamp_d)
-
-    toy_wall = BABIES_WALL - WALL_HALF
-    f.on_face("u", toy_wall, -1, "dollhouse", 10.4)
-    f.on_face("u", toy_wall, -1, "toy_chest", 11.7)
-    f.on_face("u", toy_wall, -1, "toy_chest", 16.2)
-    f.on_face("u", toy_wall, -1, "wall_crucifix", 18.0)
-    f.put("rocking_horse", 1.2, 17.3, 90.0)
+    f.on_wall("back", "linen_press", 13.3)
+    f.on_wall("right", "wall_shelf", 18.74, variant="linen")
+    f.put("cutting_table", 12.9, 20.3, 90.0)
+    f.put("bentwood_chair", 12.0, 19.6, -90.0)
+    f.put("bentwood_chair", 13.8, 21.0, 90.0)
+    f.put("yarn_basket", 13.95, 22.5)
+    f.put("wicker_basket", 12.0, 15.5, variant="wool")
+    f.put("hanging_oil_lamp", 12.9, 20.3)
 
 
-def furnish_washroom(f) -> None:
-    """Washroom (u = 3.0..9.65, d = 8.35..19.1): two tin bathtubs behind folding screens and the copper boiler on the
-    washroom side of dormitory B's wall, basin rows on the back wall and on the linen room's wall, towel racks, a
-    bench and pegs under the long wall; stone floor, tiled dado."""
-    west_face = BABIES_WALL + WALL_HALF
-    east_face = WASH_WALL - WALL_HALF
+def furnish_boys(f) -> None:
+    """Boys' dormitory (u -14.55..1.66, d 0.30..10.65): a row of beds with their heads on the corridor wall and a
+    head-to-head double row in the middle, a locker by every head, a trunk at the foot of the outer rows, the
+    sister's alcove closing the end of the double row; the strip by the balcony windows stays free."""
+    bed_row(f, BED, BOYS_OUTER_US, FRONT_FACE, -1, variant=BOYS_BLANKET)
 
-    for tub_d in (10.4, 16.9):
-        f.on_face("u", west_face, 1, "tin_bathtub", tub_d)
-        f.put("folding_screen", west_face + 1.15, tub_d, 90.0)
+    for head_d, normal in BOYS_HEADS_MIDDLE:
+        bed_row(f, BED, BOYS_MIDDLE_US, head_d, normal, variant=BOYS_BLANKET)
 
-    f.put("copper_boiler", west_face + 0.55, f.back - 0.45)
+    outer_trunk_d = FRONT_FACE - BED_LENGTH - TRUNK_DEPTH / 2.0
+    window_trunk_d = BOYS_HEADS_MIDDLE[1][0] - BED_LENGTH - TRUNK_DEPTH / 2.0
 
-    f.on_wall("back", "basin_row", 5.4)
-    f.on_wall("back", "basin_row", 8.1)
-    f.on_face("u", east_face, -1, "basin_row", 11.0)
-    f.on_face("u", east_face, -1, "basin_row", 16.9)
+    for bed_u in BOYS_OUTER_US:
+        f.put("bed_trunk", bed_u, outer_trunk_d)
 
-    f.on_face("d", BACK_FACE, 1, "bench_long", 4.6)
-    f.on_face("d", BACK_FACE, 1, "clothes_pegs", 4.6)
+    for bed_u in BOYS_MIDDLE_US:
+        f.put("bed_trunk", bed_u, window_trunk_d)
 
-    f.put("long_bench", 6.3, 13.0, 90.0)
-    f.put("towel_rack", 4.6, 14.5, 90.0)
+    f.put("supervisor_alcove", 0.36, 5.05, 180.0)  # opens on the aisle behind the double row
+    f.put("iron_bed", -0.2, 4.85, 180.0, variant="ochre")
+    f.put("night_table", 0.9, 3.95, 180.0)
+    f.put("oil_lamp_table", 0.9, 3.95, z=f.base + 0.73)
 
-    f.put("hanging_oil_lamp", 6.3, 11.5)
-    f.put("hanging_oil_lamp", 6.3, 16.0)
-    f.on_face("u", west_face, 1, "wall_sconce", 13.7, lit=False)
-    f.on_face("u", east_face, -1, "wall_sconce", 13.0, lit=False)
+    f.on_face("u", BOYS_EAST, -1, "linen_press", 1.2)
+    f.on_face("u", BOYS_EAST, -1, "clothes_pegs", 7.6)
+    f.on_wall("left", "wall_crucifix", 5.05)
+    f.on_wall("left", "prie_dieu", 5.05)
+
+    for lamp_u, lamp_d in itertools.product((-9.5, -3.5), (2.9, 7.65)):
+        f.put("hanging_oil_lamp", lamp_u, lamp_d, lit=lamp_d > 5.0)
 
 
-def furnish_linen_room(f) -> None:
-    """Linen room (u = 9.95..14.55, d = 8.35..19.1): linen presses on three walls, shelves of folded linen, the ironing
-    table in the middle and the laundry tubs against the washroom wall."""
-    west_face = WASH_WALL + WALL_HALF
+def furnish_boys_washroom(f) -> None:
+    """Boys' washroom (u 1.96..8.03, d 0.30..10.65): a trough on the corridor wall and one on the nursery wall, four
+    latrine stalls along the nursery wall by the facade, two tubs behind a screen, bench and pegs."""
+    f.on_face("d", FRONT_FACE, -1, "washroom_trough", 4.6)
+    f.on_face("u", BOYS_WASH_EAST, -1, "washroom_trough", 7.9)
 
-    for press_u in (10.85, 12.55):
-        f.on_face("d", BACK_FACE, 1, "linen_press", press_u)
+    for stall_d in (1.0, 2.0, 3.0, 4.0):
+        f.on_face("u", BOYS_WASH_EAST, -1, "latrine_stall", stall_d)
 
-    f.on_wall("back", "linen_press", 10.85)
-    f.on_wall("back", "linen_press", 13.55)
-    f.on_wall("right", "linen_press", 13.9)
-    f.on_wall("right", "wall_shelf", 9.9, variant="linen")
-    f.on_face("u", west_face, 1, "wall_shelf", 10.6, variant="linen")
-    f.on_face("u", west_face, 1, "laundry_tubs", 17.2)
-    f.put("ironing_table", 12.6, 13.6, 90.0)
-    f.put("hanging_oil_lamp", 12.6, 13.6)
-    f.on_wall("right", "wall_sconce", 14.0, lit=False)
+    for tub_d in (4.6, 6.4):
+        f.put("tin_bathtub", 3.1, tub_d, 90.0)
+
+    f.put("folding_screen", 4.3, 5.5, 90.0)
+    f.on_face("u", BOYS_WASH_WEST, 1, "towel_rack", 2.0)
+    f.on_face("u", BOYS_WASH_WEST, 1, "bench_long", 7.6)
+    f.put("hanging_oil_lamp", 5.0, 5.5)
+
+
+def furnish_nursery(f) -> None:
+    """Nursery (u 8.33..14.55, d 0.30..10.65): 16 cots in two lines (heads to the washroom wall, heads to the end
+    wall between its windows), the sister's bed behind a screen by the door, a low table, toys, a rocking chair."""
+    for cot_d in COT_DS:
+        f.on_face("u", NURSERY_WEST, 1, "cot", cot_d, variant="green")
+
+    for cot_d in COT_END_DS:
+        f.on_wall("right", "cot", cot_d, variant="ochre")
+
+    f.put("iron_bed", 11.4, 9.3, 0.0, variant="grey_blue")
+    f.put("folding_screen", 11.4, 7.95)
+    f.put("toy_chest", 11.5, 1.0, 180.0)
+    f.put("rocking_horse", 11.5, 3.5, 90.0)
+    f.put("dollhouse", 11.5, 5.5, 90.0)
+    f.put("armchair", 12.2, 6.8, -60.0)
+    f.on_face("d", FRONT_FACE, -1, "wall_crucifix", 12.6)
+    f.put("hanging_oil_lamp", 11.4, 4.2)
+
+
+def furnish_corridor(f) -> None:
+    """Corridor (d 10.95..13.45): pegs and benches by the dormitory doors, pictures, a saint's niche, lamps."""
+    front, back = CORRIDOR_CLEAR
+
+    f.on_face("d", front, 1, "bench_long", -9.0)
+    f.on_face("d", front, 1, "clothes_pegs", -9.0)
+    f.on_face("d", back, -1, "bench_long", -8.0)
+    f.hang_picture("d", back, -1, -3.0, "portrait")
+    f.on_face("d", front, 1, "saint_niche", 4.5)
+    f.on_face("d", back, -1, "wall_clock", 4.0)
+
+    for lamp_u in (-9.0, 1.0, 10.5):
+        f.put("hanging_oil_lamp", lamp_u, CORRIDOR_MIDDLE)
 
 
 def furnish_reading(f) -> None:
-    """Upper floor of the right wing: the anteroom, dormitory A, dormitory B, the washroom and the linen room."""
-    furnish_anteroom(f)
-    furnish_dormitory_a(f)
-    furnish_dormitory_b(f)
-    furnish_washroom(f)
-    furnish_linen_room(f)
+    """Upper floor of the children's wing; the rooms that need their night lamps most come first."""
+    furnish_girls(f)
+    furnish_boys(f)
+    furnish_nursery(f)
+    furnish_corridor(f)
+    furnish_girls_washroom(f)
+    furnish_boys_washroom(f)
+    furnish_linen(f)
 
 
 PLAN = dict(
-    keeper=(0.0, 16.0),
+    keeper=(-10.0, 16.3),  # the girls' sister, in the aisle of their dormitory
     posts=(),
     girder_pitch=2.4,
     partitions=(
-        ("u", ANTEROOM_WALL, HALL_FRONT, FRONT_FACE, dict(doors=[DORM_DOOR], faces=("dormitory", "dormitory"))),
-        ("d", LONG_WALL, HALL_LEFT, BABIES_WALL, dict(doors=[BABIES_DOOR], faces=("dormitory", "dormitory"))),
-        ("d", LONG_WALL, BABIES_WALL, WASH_WALL, dict(doors=[WASH_DOOR_A], faces=("dormitory", "washroom"))),
-        ("d", LONG_WALL, WASH_WALL, HALL_RIGHT, dict(faces=("dormitory", "linen"))),
-        ("u", BABIES_WALL, BACK_FACE, HALL_BACK, dict(doors=[WASH_DOOR_B], faces=("dormitory", "washroom"))),
-        ("u", WASH_WALL, BACK_FACE, HALL_BACK, dict(doors=[LINEN_DOOR], faces=("washroom", "linen"))),
+        *corridor_walls(
+            [(HALL_LEFT, BOYS_WALL, "dormitory", [BOYS_DOOR]), (BOYS_WALL, NURSERY_WALL, "washroom", []), (NURSERY_WALL, HALL_RIGHT, "nursery", [NURSERY_DOOR])],
+            [(HALL_LEFT, GIRLS_WALL, "dormitory", [GIRLS_DOOR]), (GIRLS_WALL, LINEN_WALL, "washroom", []), (LINEN_WALL, HALL_RIGHT, "linen", [LINEN_DOOR])],
+            "corridor",
+        ),
+        cross_wall(BOYS_WALL, FRONT_BAND, "dormitory", "washroom", [BOYS_WASH_DOOR]),
+        cross_wall(NURSERY_WALL, FRONT_BAND, "washroom", "nursery"),
+        cross_wall(GIRLS_WALL, BACK_BAND, "dormitory", "washroom", [GIRLS_WASH_DOOR]),
+        cross_wall(LINEN_WALL, BACK_BAND, "washroom", "linen"),
     ),
     finishes=(
-        ("front", HALL_LEFT, HALL_RIGHT, "dormitory"),
+        ("front", HALL_LEFT, BOYS_EAST, "dormitory"),
+        ("front", BOYS_WASH_WEST, BOYS_WASH_EAST, "washroom"),
+        ("front", NURSERY_WEST, HALL_RIGHT, "nursery"),
         ("left", HALL_FRONT, FRONT_FACE, "dormitory"),
-        ("right", HALL_FRONT, FRONT_FACE, "dormitory"),
+        ("left", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
         ("left", BACK_FACE, HALL_BACK, "dormitory"),
+        ("right", HALL_FRONT, FRONT_FACE, "nursery"),
+        ("right", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
         ("right", BACK_FACE, HALL_BACK, "linen"),
-        ("back", HALL_LEFT, BABIES_WALL - WALL_HALF, "dormitory"),
-        ("back", BABIES_WALL + WALL_HALF, WASH_WALL - WALL_HALF, "washroom"),
-        ("back", WASH_WALL + WALL_HALF, HALL_RIGHT, "linen"),
+        ("back", HALL_LEFT, GIRLS_EAST, "dormitory"),
+        ("back", GIRLS_WASH_WEST, GIRLS_WASH_EAST, "washroom"),
+        ("back", LINEN_WEST, HALL_RIGHT, "linen"),
     ),
-    stone_floors=((BABIES_WALL + WALL_HALF, WASH_WALL - WALL_HALF, BACK_FACE, HALL_BACK),),
+    stone_floors=(
+        (BOYS_WASH_WEST, BOYS_WASH_EAST, HALL_FRONT, FRONT_FACE),
+        (GIRLS_WASH_WEST, GIRLS_WASH_EAST, BACK_FACE, HALL_BACK),
+    ),
     furnish=furnish_reading,
 )

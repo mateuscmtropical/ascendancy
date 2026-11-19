@@ -1,311 +1,325 @@
-"""Rooms of the library wing (hall `library`, ground floor, right wing of the orphanage).
+"""Rooms of the service wing (hall `library`, ground floor, beside the vestibule on its +u side; the entry end is
+u = -14.55, the exposed end wall u = 14.55 has the side windows).
 
-Five rooms split by the long wall at d = 8.2 m and three cross walls:
-  - Passage (front, u -14.55..-11.36): vestibule entrance, lavabo, coat pegs, notice board, bench, holy water font.
-  - Library (front, u -11.06..14.55): tall bookcases, two-tier book galleries with spiral stair, five reading tables
-    with chairs, librarian's desk, card catalogues, scroll racks, globe, lectern, book cart, rolling ladders, clock.
-  - Refectory (back, u -14.55..2.70): six long dining tables with benches (48 child seats), staff head table across the
-    far end, reading pulpit, crockery dressers, serving counter, water filter, benches, wall crucifix and paintings.
-  - Kitchen (back, u 3.00..10.00): masonry range, central worktable under hanging pan rack, dough table, stone sink,
-    pot shelves, bread rack, water filter, firewood stack, flour sacks, hanging pots and garlic strings.
-  - Pantry (back, u 10.30..14.55): pantry shelves on four walls, crates, flour and grain sacks, barrels, step ladder,
-    hanging sausages and garlic strings.
+The corridor (orphanage_wing_common.py) runs from the vestibule to the end window. Front band, on the facade:
+  - Library (u -14.55..-1.96): tall bookcases on the three solid walls, six reading tables for 24 readers, the
+    librarian's desk at the middle window, card catalogue, lectern, globe, ladder.
+  - Study hall (u -1.66..8.03): 24 double desks for 48 pupils in two blocks facing the supervisor's platform and the
+    board on the library wall (daylight from the pupils' left), shelves of school books, stove.
+  - Laundry (u 8.33..14.55): wash tubs and the copper on the study wall, mangle, ironing tables, airers overhead.
+Back band, on the yard:
+  - Refectory (u -14.55..2.70): six long tables with benches for the 72 children in two rows of three, the sisters'
+    table across the entry end, reading pulpit on a pier of the back wall, crockery dressers, the serving hatch from
+    the kitchen opening on the middle aisle.
+  - Kitchen (u 3.00..9.65): masonry range against the scullery wall, bread oven on a back pier, two worktables under
+    a pan rack, the serving counter at the hatch, pot shelf, chopping block, firewood, water filter.
+  - Scullery (u 9.95..14.55, d 13.75..18.70): two stone sinks, plate rack, copper for hot water, vegetables.
+  - Pantry (u 9.95..14.55, d 19.00..24.10): shelves on the walls, sacks, barrels, hams on the beam hooks.
 """
 
 import itertools
 
-WALL_HALF = 0.15  # half the thickness of an inner partition wall
-LONG_WALL_D = 8.2  # splits the hall into a front band (d 0.3..8.05) and a back band (d 8.35..19.1)
-PASSAGE_WALL_U = -11.21  # cross wall between Passage and Library (on a facade pier)
-REFECTORY_WALL_U = 2.85  # cross wall between Refectory and Kitchen (clear of back window at u 3.01..4.61)
-KITCHEN_WALL_U = 10.15  # cross wall between Kitchen and Pantry (on the solid pier at u 8.63..11.04)
+from orphanage_wing_common import (
+    BACK_BAND,
+    CORRIDOR_CLEAR,
+    CORRIDOR_FINISH,
+    CORRIDOR_MIDDLE,
+    FRONT_BAND,
+    HALL_BACK,
+    HALL_FRONT,
+    HALL_LEFT,
+    HALL_RIGHT,
+    WALL_HALF,
+    WIDE_DOOR,
+    corridor_walls,
+    cross_wall,
+    door,
+    hatch,
+    spaced,
+)
 
-PASSAGE_LIBRARY_DOOR = dict(at=3.0, width=1.5, height=2.1, leaf=("high", -1), lane=("low", "high"))
-PASSAGE_REFECTORY_DOOR = dict(at=-12.95, width=1.5, height=2.1, leaf=("high", 1), lane=("low", "high"))
-REFECTORY_KITCHEN_DOOR = dict(at=10.2, width=1.5, height=2.1, leaf=("high", 1), lane=("low", "high"))
-KITCHEN_PANTRY_DOOR = dict(at=10.2, width=1.5, height=2.1, leaf=("low", 1), lane=("low", "high"))
+LIBRARY_WALL = -1.81  # u of the wall between the library and the study hall (a facade pier)
+LAUNDRY_WALL = 8.175  # u of the wall between the study hall and the laundry (a facade pier)
+KITCHEN_WALL = 2.85  # u of the wall between the refectory and the kitchen (clear of the back window at 3.01)
+SCULLERY_WALL = 9.8  # u of the wall between the kitchen and the scullery and pantry (a back pier)
+PANTRY_WALL = 18.85  # d of the wall between the scullery and the pantry
+
+KITCHEN_FACE = KITCHEN_WALL + WALL_HALF  # the refectory wall seen from the kitchen
+REFECTORY_EAST = KITCHEN_WALL - WALL_HALF  # the kitchen wall seen from the refectory
+RANGE_FACE = SCULLERY_WALL - WALL_HALF  # the scullery wall seen from the kitchen
+SCULLERY_WEST = SCULLERY_WALL + WALL_HALF
+LIBRARY_EAST = LIBRARY_WALL - WALL_HALF
+STUDY_WEST = LIBRARY_WALL + WALL_HALF
+STUDY_EAST = LAUNDRY_WALL - WALL_HALF
+LAUNDRY_WEST = LAUNDRY_WALL + WALL_HALF
+FRONT_FACE = FRONT_BAND[1]  # the corridor wall seen from the front rooms
+BACK_FACE = BACK_BAND[0]  # the corridor wall seen from the back rooms
+
+HATCH_D = 19.0  # the serving hatch opens on the middle aisle of the refectory
+REFECTORY_DOOR = door(-1.0, WIDE_DOOR)  # the children come in at the lower end, by the hatch
+SISTERS_DOOR = door(-12.9)  # beside the sisters' table
+KITCHEN_DOOR = door(7.5)
+SERVICE_DOOR = door(15.0)  # kitchen -> refectory, by the corridor
+SCULLERY_DOOR = door(14.8)
+PANTRY_DOOR = door(22.3)
+LIBRARY_DOOR = door(-3.4)
+STUDY_DOOR = door(6.8)
+LAUNDRY_DOOR = door(11.0)
 
 NEW_WALL_FINISHES = {
+    "corridor": CORRIDOR_FINISH,
     "library": dict(dado="2F4A3A", trim="4A2F20"),
+    "study": dict(dado="6E7F5A", trim="4A2F20"),
+    "laundry": dict(dado="FFFFFF", trim="5A7A8C", material="azulejo", uv=("world", 1.2)),
     "refectory": dict(dado="3D4D5C", trim="5A3A26"),
     "kitchen": dict(dado="FFFFFF", trim="3A5E8C", material="azulejo", uv=("world", 1.2)),
+    "scullery": dict(dado="FFFFFF", trim="3A5E8C", material="azulejo", uv=("world", 1.2)),
+    "pantry": dict(dado="A88B5E", trim="5A3A26"),
 }
 
-# Library table rows (reading_table is 2.00 x 1.00 m, study_chair is 0.50 x 0.50 m): the front row spans the room, the
-# second row stops short of the book galleries; chairs 0.85 m either side, 1.25 m aisle between the rows
-LIBRARY_TABLE_US = (-3.60, 0.00, 3.60, 7.20, 10.80)  # pitch 3.60 m (1.60 m gap); -4.60..11.80 inside -11.06..14.55
-LIBRARY_ROW_DS = (2.10, 5.55)
-LIBRARY_SECOND_ROW_US = (-3.60, 0.00)
-LIBRARY_BOOKCASE_US = (-9.60, -7.57, -5.54, -3.51, -1.48, 0.55, 2.58)  # 7 x 2.00 m, pitch 2.03 m; -10.60..3.58
-LIBRARY_LAMPS = ((-7.80, 3.00, True), (-3.60, 3.80, True), (0.00, 3.80, True), (3.60, 2.10, True), (7.20, 2.10, False), (10.80, 2.10, True))  # (u, d, lit)
+# Refectory (long_table_set 3.6 x 0.9 m; a long_bench 0.32 m deep tucks against each side, its edge under the top)
+CHILD_TABLE_US = (-10.0, -5.15, -0.3)  # three tables a row, 1.25 m between them
+CHILD_ROW_DS = (16.9, 21.0)  # two rows: 2.4 m aisles to the corridor wall and in the middle, 2.3 m to the back wall
+BENCH_OFFSET = 0.62  # table centre -> bench centre
+SISTERS_TABLE_U = -13.55  # the sisters' table runs along d with their chairs against the entry wall
+SISTERS_TABLE_DS = (17.15, 20.75)
+CHAIR_OFFSET = 0.71  # table centre -> chair centre (the front of the seat at the edge of the top)
+SEAT_PITCH = 0.6
 
-# Refectory row geometry (long_table_set 3.60 x 0.90 m, long_bench 3.60 x 0.32 m)
-REFECTORY_TABLE_US = (-11.55, -6.75, -1.95)  # 3 columns, pitch 4.80 m (1.20 m gap); -13.35..-0.15 inside -14.55..2.70
-REFECTORY_ROW_DS = (11.95, 15.85)  # 2 rows, pitch 3.90 m; benches at row +- 0.81 (1.96 m central aisle)
-REFECTORY_BENCH_OFFSET = 0.81  # 0.45 half-table + 0.20 leg clearance + 0.16 half-bench
+# Library (reading_table 2 x 1 m turned along d, two chairs a side)
+READING_TABLE_US = (-11.555, -8.255, -4.955)
+READING_TABLE_DS = (4.2, 7.4)
+READING_CHAIR_OFFSET = 0.77  # table centre -> chair centre
 
-
-def furnish_passage(f) -> None:
-    """Entrance passage (u -14.55..-11.36, d 0.30..8.05): bench, holy water font, lavabo, coat pegs, notice board."""
-    partition_u = PASSAGE_WALL_U - WALL_HALF  # -11.36
-    back_d = LONG_WALL_D - WALL_HALF  # 8.05
-
-    # Front window u = -12.73 (sill 0.90 m): bench_long (1.80 x 0.40 x 0.50 m) centred below sill; u -13.63..-11.83
-    f.on_wall("front", "bench_long", -12.73)
-    # Right partition front pier: holy_water_font (0.45 x 0.45 m) clear of vestibule lane (d >= 1.60) and door lane
-    f.on_face("u", partition_u, -1, "holy_water_font", 1.25)
-
-    # Left blind wall past vestibule lane (d 1.60..4.40): basin_row (2.60 x 0.60 m) at d = 5.75 (d 4.45..7.05)
-    f.on_wall("left", "basin_row", 5.75)
-
-    # Right partition past library door lane (d 2.05..3.95): clothes_pegs at 4.95 (4.15..5.75) and notice_board at 7.05
-    f.on_face("u", partition_u, -1, "clothes_pegs", 4.95)
-    f.on_face("u", partition_u, -1, "notice_board", 7.05)
-    f.on_face("d", back_d, -1, "wall_crucifix", -11.78)
-
-    # Clock above the basin row, the hand bell on the bench
-    f.on_wall("left", "wall_clock", 6.20, z=0.65)
-    f.put("brass_bell", -12.20, 0.55, z=0.56)
-
-    # Lighting: 2 hanging oil lamps and 1 lit sconce (3 real lights), two more sconces for rhythm
-    f.put("hanging_oil_lamp", -12.95, 3.00)
-    f.put("hanging_oil_lamp", -12.95, 6.00)
-    f.on_wall("left", "wall_sconce", 1.10, lit=False)
-    f.on_wall("left", "wall_sconce", 5.75, lit=False)
-    f.on_face("u", partition_u, -1, "wall_sconce", 6.05)
-
-
-def furnish_library_room(f) -> None:
-    """Library (u -11.06..14.55, d 0.30..8.05): bookcases, two-tier galleries, spiral stair, reading tables and desk."""
-    partition_u = PASSAGE_WALL_U + WALL_HALF  # -11.06
-    inner_d = LONG_WALL_D - WALL_HALF  # 8.05
-
-    # Inner wall (d = 8.05): 7 tall_bookcases (u -10.60..3.58), 2 book_galleries (3.58..11.90) + gallery_stair (11.90..13.70)
-    for bookcase_u in LIBRARY_BOOKCASE_US:
-        f.on_face("d", inner_d, -1, "tall_bookcase", bookcase_u)
-
-    f.put("rolling_ladder", -5.54, 7.28)
-    f.put("rolling_ladder", 1.57, 7.28)
-
-    f.on_face("d", inner_d, -1, "book_gallery", 5.66)
-    f.on_face("d", inner_d, -1, "book_gallery", 9.82, open_end=1)
-    f.put("gallery_stair", 12.80, 7.10, 0.0, winding=1)  # u 11.90..13.70 (< 13.75, clears right window 2 at d 6.9..8.3)
-
-    # Exposed right wall (u = 14.55): tall_bookcase on each solid pier (windows at d 2.7..4.1 and 6.9..8.3)
-    f.on_wall("right", "tall_bookcase", 1.50)  # d 0.50..2.50
-    f.on_wall("right", "tall_bookcase", 5.50)  # d 4.50..6.50
-
-    # Front wall (d = 0.30): card_catalogs and scroll_racks on piers, bench_longs under windows (sill 0.90 m)
-    f.on_wall("front", "card_catalog", -8.175)   # Pier 1: u -8.90..-7.46
-    f.on_wall("front", "scroll_rack", -5.1375)   # Pier 2: u -5.76..-4.52
-    f.on_wall("front", "bench_long", 0.00)       # Axis window: u -0.90..0.90
-    f.on_wall("front", "bench_long", 3.62)       # Window 5: u 2.72..4.52
-    f.on_wall("front", "card_catalog", 8.175)    # Pier 6: u 7.46..8.90
-    f.on_wall("front", "scroll_rack", 11.2125)   # Pier 7: u 10.59..11.83
-
-    for pier_u, scene in ((-2.21, "portrait"), (2.21, "lady")):
-        f.hang_picture("d", f.front, 1, pier_u, scene)
-
-    # Left partition past door leaf (d 0.69..2.15) and door lane (d 2.05..3.95)
-    f.on_face("u", partition_u, 1, "wall_crucifix", 4.30)
-    f.on_face("u", partition_u, 1, "long_case_clock", 5.00)
-    f.on_face("u", partition_u, 1, "wall_map", 6.40, variant="world")
-
-    # Librarian's station facing the entrance (teacher_desk 2.06 x 0.94 m at -90 deg -> u -8.27..-7.33, d 1.97..4.03)
-    f.put("teacher_desk", -7.80, 3.00, -90.0)
-    f.put("study_chair", -6.95, 3.00, -90.0)
-    f.put("book_cart", -7.80, 5.20, 0.0)
-    f.put("globe_stand", -9.50, 5.50, 0.0)
-    f.put("lectern", -5.65, 6.15, 0.0)
-
-    # Reading tables: five in the front row, two behind them, four chairs each
-    tables = [(table_u, LIBRARY_ROW_DS[0]) for table_u in LIBRARY_TABLE_US] + [(table_u, LIBRARY_ROW_DS[1]) for table_u in LIBRARY_SECOND_ROW_US]
-
-    for table_u, table_d in tables:
-        f.put("reading_table", table_u, table_d)
-
-    for (table_u, table_d), chair_side in itertools.product(tables, (-0.55, 0.55)):
-        f.put("study_chair", table_u + chair_side, table_d - 0.85, 180.0)
-        f.put("study_chair", table_u + chair_side, table_d + 0.85, 0.0)
-
-    # Lighting: 5 lit hanging lamps + 3 lit sconces (8 real lights; extra unlit fixtures for rhythm)
-    for lamp_u, lamp_d, lit in LIBRARY_LAMPS:
-        f.put("hanging_oil_lamp", lamp_u, lamp_d, lit=lit)
-
-    for pier_u, lit in ((-8.175, True), (5.1375, False), (8.175, True)):
-        f.on_wall("front", "wall_sconce", pier_u, lit=lit)
-
-    f.on_face("u", partition_u, 1, "wall_sconce", 7.45)
+# Study hall (double_desk 1.15 x 0.9 m, the pupils face -u toward the board)
+DESK_ROW_US = (2.2, 3.45, 4.7, 5.95)
+DESK_COLUMN_DS = (1.775, 2.925, 4.075, 6.425, 7.575, 8.725)
 
 
 def furnish_refectory(f) -> None:
-    """Refectory (u -14.55..2.70, d 8.35..19.10): 6 long tables (48 seats), staff head table, pulpit, dressers."""
-    front_d = LONG_WALL_D + WALL_HALF  # 8.35
-    right_u = REFECTORY_WALL_U - WALL_HALF  # 2.70
-
-    # Two parallel rows of 3 long_table_sets (3.60 x 0.90 m) with 12 long_benches (3.60 x 0.32 m)
-    # Row 1 d 10.98..12.92, Row 2 d 14.88..16.82 -> central aisle 1.96 m, front aisle 2.63 m, back aisle 2.28 m
-    for row_d, (col_index, table_u) in itertools.product(REFECTORY_ROW_DS, enumerate(REFECTORY_TABLE_US)):
+    """Refectory (u -14.55..2.70, d 13.75..24.10): 72 children at six tables, the sisters' table of twelve across the
+    entry end under the crucifix, the reader's pulpit, two crockery dressers, a lamp over every table."""
+    for table_u, row_d in itertools.product(CHILD_TABLE_US, CHILD_ROW_DS):
         f.put("long_table_set", table_u, row_d)
-        f.put("long_bench", table_u, row_d - REFECTORY_BENCH_OFFSET, 180.0)
-        f.put("long_bench", table_u, row_d + REFECTORY_BENCH_OFFSET, 0.0)
-        f.put("hanging_oil_lamp", table_u, row_d, lit=(row_d < 13.0 and col_index != 1) or (row_d > 14.0 and col_index == 1))
+        f.put("long_bench", table_u, row_d - BENCH_OFFSET)
+        f.put("long_bench", table_u, row_d + BENCH_OFFSET, 180.0)
+        f.put("hanging_oil_lamp", table_u, row_d)
 
-    # Staff head table across the far end (long_table_set at -90 deg -> u 1.05..1.95, d 12.30..15.90; 1.20 m aisle)
-    f.put("long_table_set", 1.50, 14.10, -90.0)
-    f.put("hanging_oil_lamp", 1.50, 14.10)
-    f.put("brass_bell", 1.50, 15.62, z=0.81)
+    for table_d in SISTERS_TABLE_DS:
+        f.put("long_table_set", SISTERS_TABLE_U, table_d, 90.0)
 
-    for chair_d in (12.90, 13.70, 14.50, 15.30):  # 4 bentwood_chairs (pitch 0.80 m; u 2.01..2.49)
-        f.put("bentwood_chair", 2.25, chair_d, -90.0)
+        for seat_d in spaced(table_d - 1.5, SEAT_PITCH, 6):
+            f.put("bentwood_chair", SISTERS_TABLE_U - CHAIR_OFFSET, seat_d, 90.0)
 
-    # Kitchen serving counter against far wall past head table (u 1.95..2.70, d 16.50..18.90) and reading pulpit
-    f.on_face("u", right_u, -1, "serving_counter", 17.70)
-    f.on_face("u", right_u, -1, "wall_crucifix", 14.10)
-    f.on_face("u", right_u, -1, "wall_clock", 17.70, z=0.5)
-    f.on_wall("back", "reading_pulpit", 0.50)
+    f.put("hanging_oil_lamp", SISTERS_TABLE_U, sum(SISTERS_TABLE_DS) / 2.0)
+    f.on_wall("left", "wall_crucifix", sum(SISTERS_TABLE_DS) / 2.0)
+    f.hang_picture("u", HALL_LEFT, 1, 15.6, "portrait")
+    f.hang_picture("u", HALL_LEFT, 1, 22.3, "lady")
 
-    # Back wall (d = 19.10, high windows sill 3.30 m): 3 crockery_dressers (1.90 x 0.50 x 2.15 m)
-    for dresser_u in (-11.55, -6.75, -2.25):
-        f.on_wall("back", "crockery_dresser", dresser_u)
+    f.on_wall("back", "reading_pulpit", -5.8)
+    f.on_wall("back", "crockery_dresser", -9.83)
+    f.on_wall("back", "crockery_dresser", -13.6)
+    f.on_wall("back", "water_filter", 1.6)
+    f.on_wall("back", "wall_clock", 0.0)
 
-    # Front partition wall (d = 8.35) past folded door leaf (u -12.10..-10.64)
-    f.on_face("d", front_d, 1, "water_filter", -10.20)
-    f.on_face("d", front_d, 1, "bench_long", -8.55)
-    f.on_face("d", front_d, 1, "crockery_dresser", -5.55)
-    f.on_face("d", front_d, 1, "bench_long", -2.55)
-
-    # Pictures and wall sconces (total real lights in Refectory: 4 hanging + 4 sconces = 8)
-    f.hang_picture("u", f.left, 1, 13.90, "landscape")
-    f.hang_picture("d", front_d, 1, -8.55, "portrait")
-    f.hang_picture("d", front_d, 1, -2.55, "lady")
-    f.hang_picture("d", f.back, -1, -9.15, "seascape")
-    f.hang_picture("d", f.back, -1, -4.80, "portrait")
-
-    f.on_face("d", front_d, 1, "wall_sconce", -7.05, lit=True)
-    f.on_face("d", front_d, 1, "wall_sconce", -4.05, lit=False)
-    f.on_wall("back", "wall_sconce", -13.50, lit=False)
-    f.on_wall("back", "wall_sconce", -3.55, lit=True)
-    f.on_wall("left", "wall_sconce", 11.95, lit=True)
-    f.on_wall("left", "wall_sconce", 15.85, lit=False)
-    f.on_face("u", right_u, -1, "wall_sconce", 12.60, lit=False)
-    f.on_face("u", right_u, -1, "wall_sconce", 15.60, lit=True)
+    f.hang_picture("d", BACK_FACE, 1, -7.3, "landscape")
+    f.on_face("d", BACK_FACE, 1, "wall_sconce", -10.0, lit=False)
+    f.on_face("d", BACK_FACE, 1, "wall_sconce", -4.6, lit=False)
 
 
 def furnish_kitchen(f) -> None:
-    """Kitchen (u 3.00..10.00, d 8.35..19.10): masonry range, central worktable, sink, pot shelves, dough table."""
-    front_d = LONG_WALL_D + WALL_HALF  # 8.35
-    left_u = REFECTORY_WALL_U + WALL_HALF  # 3.00
-    right_u = KITCHEN_WALL_U - WALL_HALF  # 10.00
+    """Kitchen (u 3.00..9.65, d 13.75..24.10): range against the scullery wall with the firewood beside it, the
+    bread oven on the back pier with the flour sacks, two worktables under the pan rack, the serving counter at the
+    hatch, pot shelf and plate rack on the corridor wall, chopping block, water filter."""
+    f.on_face("u", RANGE_FACE, -1, "masonry_range", 17.6)
+    f.on_face("u", RANGE_FACE, -1, "firewood_stack", 20.0)
+    f.on_wall("back", "stone_oven", 5.8)
+    f.on_wall("back", "flour_sacks", 3.75)
 
-    # Back wall (d = 19.10, high windows sill 3.30 m): firewood_stack, masonry_range (2.80 x 1.05 x 2.70 m), flour_sacks
-    f.on_wall("back", "firewood_stack", 4.10)  # u 3.45..4.75
-    f.on_wall("back", "masonry_range", 6.50)   # u 5.10..7.90
-    f.on_wall("back", "flour_sacks", 8.95)     # u 8.35..9.55
+    for table_d in (16.6, 19.4):
+        f.put("kitchen_worktable", 6.0, table_d, 90.0)
 
-    # Front partition wall (d = 8.35): dough_table, crate_open, wicker_basket, jam_shelf, wall_crucifix
-    f.on_face("d", front_d, 1, "dough_table", 6.50)  # u 5.50..7.50, d 8.35..9.35 (2.50 m from both doors)
-    f.put("crate_open", 4.90, 8.65, 180.0, variant="roots")
-    f.put("wicker_basket", 8.10, 8.65, 180.0, variant="fruit")
-    f.on_face("d", front_d, 1, "wall_crucifix", 4.90)
-    f.on_face("d", front_d, 1, "wall_clock", 6.50)
-    f.on_face("d", front_d, 1, "jam_shelf", 8.10)
+    f.put("hanging_pan_rack", 6.0, 18.0, 90.0)
+    f.put("garlic_strings", 4.4, 22.0, 90.0)
+    f.put("hanging_pots", 8.0, 15.4)
+    f.on_face("u", KITCHEN_FACE, 1, "serving_counter", HATCH_D)
+    f.on_face("u", KITCHEN_FACE, 1, "water_filter", 21.6)
+    f.on_face("u", KITCHEN_FACE, 1, "wall_crucifix", 23.0)
+    f.on_face("d", BACK_FACE, 1, "pot_shelf", 4.75)
+    f.on_face("d", BACK_FACE, 1, "plate_rack", 9.0)
+    f.put("chopping_block", 8.1, 21.4)
 
-    # Left partition (u = 3.00) past folded door leaf (d 11.05..12.51): 2 pot_shelfs (pitch 2.40 m) + water_filter
-    f.on_face("u", left_u, 1, "pot_shelf", 13.60)      # d 12.70..14.50
-    f.on_face("u", left_u, 1, "pot_shelf", 16.00)      # d 15.10..16.90
-    f.on_face("u", left_u, 1, "water_filter", 17.65)   # d 17.40..17.90
+    f.put("hanging_oil_lamp", 6.0, 16.0)
+    f.put("hanging_oil_lamp", 6.0, 20.6)
 
-    # Right partition (u = 10.00) past door lane (d 9.25..11.15): stone_sink + bread_rack
-    f.on_face("u", right_u, -1, "kitchen_stove", 17.55)  # d 16.95..18.15, past the bread rack and clear of the flour sacks
-    f.on_face("u", right_u, -1, "stone_sink", 13.80)   # d 12.95..14.65
-    f.on_face("u", right_u, -1, "bread_rack", 15.95)   # d 15.27..16.63
 
-    # Central worktable (2.40 x 1.00 m) with overhead pan rack; aisles 1.88 m left, 1.60 m right, 3.22 m back
-    f.put("kitchen_worktable", 6.50, 14.30)
-    f.put("kitchen_worktable", 6.50, 11.60)
-    f.put("hanging_pan_rack", 6.50, 14.30)
-
-    for stool_u in (5.70, 6.50, 7.30):
-        f.put("stool_round", stool_u, 10.85)
-    f.put("hanging_pots", 6.50, 17.40)
-    f.put("garlic_strings", 6.50, 8.85)
-
-    # Lighting: 2 hanging oil lamps, the stove's fire and 2 lit wall sconces (5 real lights)
-    f.put("hanging_oil_lamp", 6.50, 12.60)
-    f.put("hanging_oil_lamp", 6.50, 16.00)
-    f.on_face("u", left_u, 1, "wall_sconce", 14.80, lit=False)
-    f.on_face("u", right_u, -1, "wall_sconce", 13.80)
-    f.on_wall("back", "wall_sconce", 8.95)
-    f.on_face("d", front_d, 1, "wall_sconce", 6.50, lit=False)
+def furnish_scullery(f) -> None:
+    """Scullery (u 9.95..14.55, d 13.75..18.70): stone sinks on the pantry wall and the corridor wall, plate rack by
+    the end window, the copper for hot water in the corner, baskets of vegetables waiting to be washed."""
+    f.on_face("d", PANTRY_WALL - WALL_HALF, -1, "stone_sink", 11.9)
+    f.on_face("d", BACK_FACE, 1, "stone_sink", 12.6)
+    f.on_wall("right", "plate_rack", 14.8)
+    f.put("copper_boiler", 14.1, 18.15)
+    f.put("wicker_basket", 10.6, 17.8, 90.0, variant="fruit")
+    f.put("crate_open", 13.9, 16.6, -90.0, variant="roots")
+    f.put("hanging_oil_lamp", 12.2, 16.2)
 
 
 def furnish_pantry(f) -> None:
-    """Pantry (u 10.30..14.55, d 8.35..19.10): pantry shelves on all four sides, sacks, barrels, crates, ladder."""
-    front_d = LONG_WALL_D + WALL_HALF  # 8.35
-    left_u = KITCHEN_WALL_U + WALL_HALF  # 10.30
+    """Pantry (u 9.95..14.55, d 19.00..24.10): shelves of jars and crocks on the back and scullery walls, a jam shelf
+    on the end wall, sacks under the end window, barrels, hams and sausages on the beam hooks."""
+    pantry_front = PANTRY_WALL + WALL_HALF
 
-    # Left partition past door lane (d 9.25..11.15): 3 pantry_shelfs (1.90 x 0.55 m), pitch 2.50 m (0.60 m gap)
-    for shelf_d in (12.40, 14.90, 17.40):  # d 11.45..13.35, 13.95..15.85, 16.45..18.35
-        f.on_face("u", left_u, 1, "pantry_shelf", shelf_d)
+    for shelf_u in (11.2, 13.3):
+        f.on_wall("back", "pantry_shelf", shelf_u)
+        f.on_face("d", pantry_front, 1, "pantry_shelf", shelf_u)
 
-    # Back wall (u 11.45..13.35) and front wall clear of door (u 12.15..14.05)
-    f.on_wall("back", "pantry_shelf", 12.40)
-    f.on_face("d", front_d, 1, "pantry_shelf", 13.10)
-
-    # Exposed right wall (u = 14.55; windows at d 11.10..12.50 and 15.30..16.70, sill 0.90 m)
-    f.on_wall("right", "pantry_shelf", 13.90)  # middle pier: d 12.95..14.85
-    f.put("crate_stack", 14.00, 10.10, -90.0)  # front pier: d 9.40..10.80
-    f.put("flour_sacks", 14.00, 11.80, -90.0)  # under window 3 (0.70 < 0.90 sill): d 11.20..12.40
-    f.put("sack_pile", 14.00, 16.00, -90.0)    # under window 4 (0.78 < 0.90 sill): d 15.40..16.60
-    f.put("barrel_group", 13.95, 17.85, -90.0) # back pier: d 17.20..18.50
-
-    # Floor crates/baskets and step ladder along shelves (central aisle 1.70..1.82 m)
-    f.put("crate_open", 11.25, 13.70, 90.0, variant="apples")
-    f.put("wicker_basket", 13.45, 13.60, -90.0, variant="mushrooms")
-    f.put("step_ladder", 11.35, 16.20, 90.0)
-
-    # Overhead hanging goods and lighting (2 hanging oil lamps + 1 lit sconce = 3 real lights)
-    f.put("ceiling_beam_hooks", 12.40, 12.40, 90.0, variant="sausages")
-    f.put("garlic_strings", 12.40, 14.50, 90.0)
-    f.put("ceiling_beam_hooks", 12.40, 17.40, 90.0, variant="sausages")
-    f.put("hanging_oil_lamp", 12.40, 10.60)
-    f.put("hanging_oil_lamp", 12.40, 15.60)
-    f.on_face("u", left_u, 1, "wall_sconce", 13.65)
-    f.on_face("u", left_u, 1, "wall_sconce", 16.15, lit=False)
+    f.on_wall("right", "jam_shelf", 22.6)
+    f.on_wall("right", "sack_pile", 20.9)
+    f.put("barrel_group", 12.3, 21.6)
+    f.put("ceiling_beam_hooks", 12.3, 21.6, 90.0, variant="sausages")
+    f.put("hanging_oil_lamp", 11.2, 21.6, lit=False)
 
 
 def furnish_library(f) -> None:
-    """Furnish all five rooms of the library wing (ground floor, right wing)."""
-    furnish_passage(f)
-    furnish_library_room(f)
+    """Library (u -14.55..-1.96, d 0.30..10.65): tall bookcases on the vestibule wall, the corridor wall and the
+    study wall, six reading tables along d with their chairs (daylight from the side), the librarian's desk at the
+    middle window, card catalogue by the door, lectern and globe at the other windows, rolling ladder."""
+    for case_d in spaced(1.35, 2.0, 5):
+        f.on_wall("left", "tall_bookcase", case_d)
+
+    for case_u in spaced(-13.15, 1.92, 4):
+        f.on_face("d", FRONT_FACE, -1, "tall_bookcase_slim", case_u)
+
+    for case_d in spaced(1.56, 1.92, 5):
+        f.on_face("u", LIBRARY_EAST, -1, "tall_bookcase_slim", case_d)
+
+    f.on_face("d", FRONT_FACE, -1, "card_catalog", -5.5)
+    f.put("rolling_ladder", -12.6, 9.7, 180.0)
+
+    for table_u, table_d in itertools.product(READING_TABLE_US, READING_TABLE_DS):
+        f.put("reading_table", table_u, table_d, 90.0)
+
+        for side, seat_d in itertools.product((-1, 1), (table_d - 0.5, table_d + 0.5)):
+            f.put("study_chair", table_u + side * READING_CHAIR_OFFSET, seat_d, -90.0 * side)
+
+    for lamp_u in READING_TABLE_US:
+        f.put("hanging_oil_lamp", lamp_u, sum(READING_TABLE_DS) / 2.0)
+
+    f.put("teacher_desk", -8.255, f.front + 0.95, 180.0)
+    f.put("lectern", -11.2, f.front + 0.6, 180.0)
+    f.put("globe_stand", -5.15, f.front + 0.75)
+    f.put("book_cart", -3.3, 9.0, 180.0)
+
+
+def furnish_study(f) -> None:
+    """Study hall (u -1.66..8.03, d 0.30..10.65): the supervisor's platform and the board on the library wall, 24
+    double desks in two blocks of three columns facing them, shelves of school books and the stove on the laundry
+    wall, maps and the clock."""
+    f.on_face("u", STUDY_WEST, 1, "teacher_platform", 5.25)
+    f.on_face("u", STUDY_WEST, 1, "blackboard_big", 5.25)
+    f.on_face("u", STUDY_WEST, 1, "wall_map", 2.4, variant="world")
+    f.on_face("u", STUDY_WEST, 1, "wall_map", 8.1, variant="country")
+
+    for row_u, column_d in itertools.product(DESK_ROW_US, DESK_COLUMN_DS):
+        f.put("double_desk", row_u, column_d, -90.0)
+
+    for lamp_u, lamp_d in itertools.product((2.8, 5.4), (3.0, 7.6)):
+        f.put("hanging_oil_lamp", lamp_u, lamp_d)
+
+    f.on_face("u", STUDY_EAST, -1, "wall_shelf", 1.6, variant="books")
+    f.on_face("u", STUDY_EAST, -1, "cast_iron_stove", 5.25)
+    f.on_face("u", STUDY_EAST, -1, "wall_shelf", 8.2, variant="books")
+    f.on_face("d", FRONT_FACE, -1, "wall_clock", 2.0)
+
+
+def furnish_laundry(f) -> None:
+    """Laundry (u 8.33..14.55, d 0.30..10.65): wash tubs and the copper along the study wall, the mangle and two
+    ironing tables in the middle, airers of drying sheets overhead, a linen shelf on the end wall pier, baskets."""
+    f.on_face("u", LAUNDRY_WEST, 1, "laundry_tubs", 2.4)
+    f.on_face("u", LAUNDRY_WEST, 1, "laundry_tubs", 4.5)
+    f.on_face("u", LAUNDRY_WEST, 1, "copper_boiler", 6.6)
+    f.put("laundry_mangle", 11.6, 3.4)
+    f.put("ironing_table", 11.6, 6.6)
+    f.put("ironing_table", 11.6, 8.4)
+
+    for airer_d in (3.0, 7.4):
+        f.put("laundry_airer", 11.6, airer_d, 90.0)
+
+    f.on_wall("right", "wall_shelf", 5.66, variant="linen")
+    f.on_face("d", FRONT_FACE, -1, "wicker_basket", 9.2, variant="wool")
+    f.on_face("d", FRONT_FACE, -1, "wicker_basket", 13.4, variant="wool")
+    f.put("hanging_oil_lamp", 10.2, 5.2)
+    f.put("hanging_oil_lamp", 13.0, 5.2)
+
+
+def furnish_corridor(f) -> None:
+    """Corridor (d 10.95..13.45): benches, pictures, the notice board and the sconces on its walls, lamps overhead."""
+    front, back = CORRIDOR_CLEAR
+
+    f.on_face("d", front, 1, "bench_long", -8.5)
+    f.hang_picture("d", front, 1, -8.5, "landscape")
+    f.on_face("d", front, 1, "notice_board", 1.2)
+    f.on_face("d", back, -1, "bench_long", 4.0)
+    f.hang_picture("d", back, -1, -7.0, "seascape")
+    f.on_face("d", back, -1, "wall_crucifix", 11.5)
+
+    for sconce_u in (-11.0, -5.0, 4.0, 9.0):
+        f.on_face("d", front, 1, "wall_sconce", sconce_u, lit=sconce_u in (-5.0, 9.0))
+
+    for lamp_u in (-9.0, 1.0, 10.5):
+        f.put("hanging_oil_lamp", lamp_u, CORRIDOR_MIDDLE)
+
+
+def furnish_library_wing(f) -> None:
+    """Ground floor of the service wing. The rooms that need their night lamps most come first (the hall keeps only
+    the first WING_FIXTURE_LIGHT['limit'] lights)."""
     furnish_refectory(f)
     furnish_kitchen(f)
+    furnish_library(f)
+    furnish_study(f)
+    furnish_scullery(f)
+    furnish_laundry(f)
+    furnish_corridor(f)
     furnish_pantry(f)
 
 
 PLAN = dict(
-    keeper=(-6.85, 3.90),
+    keeper=(7.6, 18.0),  # the cook, between the worktables and the range
     posts=(),
     girder_pitch=2.4,
-    stone_floors=((3.00, 10.00, 8.35, 19.10), (10.30, 14.55, 8.35, 19.10)),
     partitions=(
-        ("u", PASSAGE_WALL_U, 0.3, LONG_WALL_D - WALL_HALF, dict(doors=[PASSAGE_LIBRARY_DOOR], faces=("library", "library"))),
-        ("d", LONG_WALL_D, -14.55, REFECTORY_WALL_U, dict(doors=[PASSAGE_REFECTORY_DOOR], faces=("library", "refectory"))),
-        ("d", LONG_WALL_D, REFECTORY_WALL_U, KITCHEN_WALL_U, dict(faces=("library", "kitchen"))),
-        ("d", LONG_WALL_D, KITCHEN_WALL_U, 14.55, dict(faces=("library", "kitchen"))),
-        ("u", REFECTORY_WALL_U, LONG_WALL_D + WALL_HALF, 19.1, dict(doors=[REFECTORY_KITCHEN_DOOR], faces=("refectory", "kitchen"))),
-        ("u", KITCHEN_WALL_U, LONG_WALL_D + WALL_HALF, 19.1, dict(doors=[KITCHEN_PANTRY_DOOR], faces=("kitchen", "kitchen"))),
+        *corridor_walls(
+            [(HALL_LEFT, LIBRARY_WALL, "library", [LIBRARY_DOOR]), (LIBRARY_WALL, LAUNDRY_WALL, "study", [STUDY_DOOR]), (LAUNDRY_WALL, HALL_RIGHT, "laundry", [LAUNDRY_DOOR])],
+            [(HALL_LEFT, KITCHEN_WALL, "refectory", [SISTERS_DOOR, REFECTORY_DOOR]), (KITCHEN_WALL, SCULLERY_WALL, "kitchen", [KITCHEN_DOOR]), (SCULLERY_WALL, HALL_RIGHT, "scullery", [])],
+            "corridor",
+        ),
+        cross_wall(LIBRARY_WALL, FRONT_BAND, "library", "study"),
+        cross_wall(LAUNDRY_WALL, FRONT_BAND, "study", "laundry"),
+        cross_wall(KITCHEN_WALL, BACK_BAND, "refectory", "kitchen", [SERVICE_DOOR, hatch(HATCH_D, 1.6)]),
+        cross_wall(SCULLERY_WALL, (BACK_BAND[0], PANTRY_WALL - WALL_HALF), "kitchen", "scullery", [SCULLERY_DOOR]),
+        cross_wall(SCULLERY_WALL, (PANTRY_WALL - WALL_HALF, HALL_BACK), "kitchen", "pantry", [PANTRY_DOOR]),
+        ("d", PANTRY_WALL, SCULLERY_WEST, HALL_RIGHT, dict(faces=("scullery", "pantry"))),
     ),
     finishes=(
-        ("front", -14.55, 14.55, "library"),
-        ("left", 0.3, LONG_WALL_D - WALL_HALF, "library"),
-        ("right", 0.3, LONG_WALL_D - WALL_HALF, "library"),
-        ("left", LONG_WALL_D + WALL_HALF, 19.1, "refectory"),
-        ("back", -14.55, REFECTORY_WALL_U - WALL_HALF, "refectory"),
-        ("back", REFECTORY_WALL_U + WALL_HALF, KITCHEN_WALL_U - WALL_HALF, "kitchen"),
-        ("back", KITCHEN_WALL_U + WALL_HALF, 14.55, "kitchen"),
-        ("right", LONG_WALL_D + WALL_HALF, 19.1, "kitchen"),
+        ("front", HALL_LEFT, LIBRARY_EAST, "library"),
+        ("front", STUDY_WEST, STUDY_EAST, "study"),
+        ("front", LAUNDRY_WEST, HALL_RIGHT, "laundry"),
+        ("left", HALL_FRONT, FRONT_FACE, "library"),
+        ("left", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
+        ("left", BACK_FACE, HALL_BACK, "refectory"),
+        ("right", HALL_FRONT, FRONT_FACE, "laundry"),
+        ("right", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
+        ("right", BACK_FACE, PANTRY_WALL - WALL_HALF, "scullery"),
+        ("right", PANTRY_WALL + WALL_HALF, HALL_BACK, "pantry"),
+        ("back", HALL_LEFT, REFECTORY_EAST, "refectory"),
+        ("back", KITCHEN_FACE, RANGE_FACE, "kitchen"),
+        ("back", SCULLERY_WEST, HALL_RIGHT, "pantry"),
     ),
-    furnish=furnish_library,
+    stone_floors=(
+        (KITCHEN_FACE, RANGE_FACE, BACK_FACE, HALL_BACK),
+        (SCULLERY_WEST, HALL_RIGHT, BACK_FACE, HALL_BACK),
+        (LAUNDRY_WEST, HALL_RIGHT, HALL_FRONT, FRONT_FACE),
+    ),
+    furnish=furnish_library_wing,
 )

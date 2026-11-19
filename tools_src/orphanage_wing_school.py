@@ -1,357 +1,254 @@
-"""Rooms of the school wing (ground floor, left wing of the orphanage: hall `school`).
+"""Rooms of the school wing (hall `school`, ground floor, beside the vestibule on its -u side; the entry end is
+u = 14.55, the exposed end wall u = -14.55 has the side windows).
 
-Seven rooms arranged in two bands split by a long partition at d = 8.2:
-  - Front band (d = 0.3..8.05): Cloakroom passage at the vestibule end, Classroom 1, Classroom 2, Science cabinet.
-  - Back band (d = 8.35..19.1): Study hall at the vestibule end, Teachers' room, Headmaster's study.
-
-All cross walls in the front band stand on facade piers so no window is cut; every room is reachable on foot from
-the existing vestibule doorway on the right wall (u = 14.55, d = 3.0).
+The corridor (orphanage_wing_common.py) runs from the vestibule to the end window. Front band, on the facade, three
+classrooms of 16 double desks (32 pupils) each, the daylight always on the pupils' left:
+  - First class (u 5.29..14.55) and second class (u -4.99..4.99): the board and the teacher's platform on the wall
+    toward the end of the wing, the pupils facing -u with the facade windows on their left.
+  - Third class (u -14.55..-5.29): the board on the corridor wall, the pupils facing it with the end windows on
+    their left.
+Back band, under the high windows:
+  - Fencing hall (u -14.55..4.65): two 14 m pistes along the hall with their run-backs, racks of foils and masks
+    and a trophy of arms on the back wall, plastrons and pells, mirror, the spectators' benches on the corridor wall.
+  - Magic practice room (u 4.95..14.55): a casting range across the room, the warded line where the pupils stand,
+    three straw targets against the back wall, rune pillars in its corners, lecterns, the master's demonstration
+    table, staffs, scrolls and grimoires.
 """
 
 import itertools
 
-WALL_HALF = 0.15  # half the thickness of an inner partition (WALL = 0.3 in build_market_shops.py)
+from orphanage_wing_common import (
+    BACK_BAND,
+    CORRIDOR_CLEAR,
+    CORRIDOR_FINISH,
+    CORRIDOR_MIDDLE,
+    FRONT_BAND,
+    HALL_BACK,
+    HALL_FRONT,
+    HALL_LEFT,
+    HALL_RIGHT,
+    WALL_HALF,
+    WIDE_DOOR,
+    corridor_walls,
+    cross_wall,
+    door,
+    spaced,
+)
 
-HALL_LEFT = -14.55
-HALL_RIGHT = 14.55
-HALL_FRONT = 0.3
-HALL_BACK = 19.1
-LONG_WALL = 8.2
+FIRST_WALL = 5.1375  # u of the wall between the first and the second class (a facade pier)
+THIRD_WALL = -5.1375  # u of the wall between the second and the third class (a facade pier)
+SALLE_WALL = 4.8  # u of the wall between the fencing hall and the magic room (a back pier)
 
-CLOAKROOM_WALL = 11.21   # facade pier between cloakroom passage and classroom 1
-CLASS_WALL = 1.805       # facade pier between classroom 1 and classroom 2
-SCIENCE_WALL = -8.17     # facade pier between classroom 2 and science cabinet
-STUDY_WALL = -2.85       # back-band cross wall between study hall and teachers' room (clear of back windows)
-DIRECTOR_WALL = -9.40    # back-band cross wall between teachers' room and headmaster's study
+FRONT_FACE = FRONT_BAND[1]  # the corridor wall seen from the front rooms
+BACK_FACE = BACK_BAND[0]  # the corridor wall seen from the back rooms
+FIRST_WEST = FIRST_WALL + WALL_HALF
+SECOND_WEST = THIRD_WALL + WALL_HALF
+SECOND_EAST = FIRST_WALL - WALL_HALF
+THIRD_EAST = THIRD_WALL - WALL_HALF
+SALLE_EAST = SALLE_WALL - WALL_HALF
+MAGIC_WEST = SALLE_WALL + WALL_HALF
 
-INNER_FACE = LONG_WALL - WALL_HALF  # the long wall seen from the front band
-BACK_FACE = LONG_WALL + WALL_HALF   # the long wall seen from the back band
-
-CLASS_1_DOOR = dict(at=7.15, width=1.5, height=2.1, leaf=("low", -1))
-CLASS_2_DOOR = dict(at=7.15, width=1.5, height=2.1, leaf=("low", -1))
-SCIENCE_DOOR = dict(at=7.15, width=1.5, height=2.1, leaf=("low", -1))
-STUDY_DOOR = dict(at=12.90, width=1.5, height=2.1, leaf=("high", -1))
-TEACHERS_DOOR = dict(at=13.70, width=1.5, height=2.1, leaf=("low", 1))
-DIRECTOR_DOOR = dict(at=13.70, width=1.5, height=2.1, leaf=("low", 1))
-
-DESK_ROW_PITCH = 1.3
-DESK_ROW_FIRST = 3.545  # from the board wall to the first row of double desks: 1.1 m clear of the teacher's platform
-DESK_COLUMNS = (1.275, 2.475, 4.825, 6.025)  # two blocks of two columns with a 1.2 m aisle at d = 3.05..4.25
-DESK_ROWS = 4
-STUDY_TABLE_US = (0.70, 4.90, 9.10)  # three tables per row, pitch 4.2 m
-STUDY_TABLE_DS = (11.40, 16.00)
-STUDY_CHAIR_OFFSETS = (-1.00, -0.35, 0.35, 1.00)
-STUDY_LIT_TABLES = {(0.70, 11.40), (9.10, 16.00)}  # tables whose lamp really lights
+FIRST_DOOR = door(13.4)
+SECOND_DOOR = door(4.0)
+THIRD_DOOR = door(-13.6)
+SALLE_DOOR = door(-2.0, WIDE_DOOR)
+MAGIC_DOOR = door(6.2)
 
 NEW_WALL_FINISHES = {
-    "classroom": dict(dado="3D5060", trim="5A3A26"),  # dark blue-grey dado for classrooms, study hall, cloakroom
-    "science": dict(dado="5A7082", trim="5A3A26"),    # cooler blue-grey dado for the science cabinet
-    "teachers": dict(dado="6B442D", trim="4A2D1C"),   # dark wood panelling tone for teachers' room and study
+    "corridor": CORRIDOR_FINISH,
+    "classroom": dict(dado="3D5060", trim="5A3A26"),
+    "salle": dict(dado="6B4A2E", trim="3A2618"),  # dark oak panelling of the fencing hall
+    "arcane": dict(dado="2E3A5C", trim="2A2118"),
 }
 
+DESK = "double_desk"  # 1.15 x 0.9 m, two pupils on the bench behind the sloped lid
+DESK_PITCH = 1.2
+BLOCK_DS = (3.15, 4.3, 6.65, 7.8)  # two blocks of two columns, 1.2 m aisle between them
+FIRST_ROW_US = spaced(9.04, DESK_PITCH, 4)  # pupils face -u
+SECOND_ROW_US = spaced(-1.24, DESK_PITCH, 4)
+THIRD_ROW_DS = spaced(6.9, -DESK_PITCH, 4)  # pupils face +d
+THIRD_BLOCK_US = (-12.43, -11.28, -8.93, -7.78)
+BOARD_D = sum(BLOCK_DS) / len(BLOCK_DS)
 
-def furnish_cloakroom(f) -> None:
-    """Cloakroom passage (u = 11.36..14.55, d = 0.3..8.05): the vestibule doorway is at d = 3.0. Pegs, boot rack,
-    two benches with the hand bell, notice board, crucifix, school bell, clock over the door to the study hall."""
-    west_face = CLOAKROOM_WALL + WALL_HALF  # 11.36
-
-    f.on_wall("front", "bench_long", 12.73)  # under the front window (sill 0.9)
-
-    # West wall: only d = 0.3..1.6 and 4.4..6.2 are free (the doorway lane and the door to classroom 1)
-    f.on_face("u", west_face, 1, "notice_board", 1.40)
-    f.on_face("u", west_face, 1, "wall_crucifix", 3.00)
-    f.on_face("u", west_face, 1, "clothes_pegs", 5.20)
-    f.on_face("u", west_face, 1, "boots_rack", 5.20)
-
-    # East wall past the folded leaves of the vestibule door
-    f.on_wall("right", "clothes_pegs", 6.70)
-    f.on_wall("right", "bench_long", 6.70)
-    f.put("brass_bell", 14.33, 7.20, z=0.55)
-
-    f.on_face("d", INNER_FACE, -1, "wall_clock", STUDY_DOOR["at"], z=0.45)
-
-    f.put("school_bell", 12.95, 5.60)
-    f.put("hanging_oil_lamp", 13.00, 3.00)
-    f.put("hanging_oil_lamp", 12.60, 6.50)
-    f.on_face("u", west_face, 1, "wall_sconce", 2.20, lit=False)
-    f.on_face("u", west_face, 1, "wall_sconce", 6.10)
-    f.on_wall("right", "wall_sconce", 5.80)
+PISTE_U = -5.0  # centre of both pistes (14 m, with 1.5 m run-backs to -13.5 and 3.5)
+PISTE_DS = (16.6, 21.3)
+GANGWAY_D = sum(PISTE_DS) / 2.0  # the floor between the pistes
+TARGET_US = (7.0, 9.75, 12.5)
+WARD_D = 17.6
 
 
-def furnish_classroom(f, west_face: float, east_face: float, wall_maps: tuple, stove_d: float, side_wall: tuple, front_sconce_us: tuple) -> None:
-    """One classroom: 16 double desks in 4 rows facing the blackboard and the teacher's platform on the west wall, an
-    abacus, a map by the board; on the long wall maps, a clock, a crucifix and sconces; on the east wall a cupboard,
-    the stove and a cabinet or pegs; four hanging lamps over the desk blocks, a lit sconce on a facade pier and one on
-    the long wall.
-    wall_maps: (map beside the board, two maps of the long wall); side_wall: (name, d) of the east wall's cabinet."""
-    desk_us = [west_face + DESK_ROW_FIRST + DESK_ROW_PITCH * row for row in range(DESK_ROWS)]
-    board_map, long_maps = wall_maps[0], wall_maps[1:]
-    long_wall_items = (  # (prop, distance from the board wall, options)
-        ("wall_map", 1.45, dict(variant=long_maps[0])),
-        ("wall_sconce", 2.60, dict(lit=False)),
-        ("wall_clock", 3.55, {}),
-        ("wall_crucifix", 4.55, {}),
-        ("wall_sconce", 5.40, {}),
-        ("wall_map", 6.65, dict(variant=long_maps[1])),
-        ("wall_sconce", 8.00, dict(lit=False)),
-    )
+def classroom_walls(f, board_axis: str, board_face: float, board_normal: int, board_along: float, back_items: list) -> None:
+    """Board, platform, crucifix, maps and clock of a classroom; back_items are (axis, face, normal, name, along,
+    options) on the other walls."""
+    f.on_face(board_axis, board_face, board_normal, "teacher_platform", board_along)
+    f.on_face(board_axis, board_face, board_normal, "blackboard_big", board_along)
 
-    f.on_face("u", west_face, 1, "wall_map", 1.15, variant=board_map)
-    f.on_face("u", west_face, 1, "blackboard_big", 3.70)
-    f.put("teacher_platform", west_face + 1.10, 3.70, 90.0)
-    f.put("abacus_stand", west_face + 0.245, 5.70, 90.0)
+    for axis, face, normal, name, along, options in back_items:
+        f.on_face(axis, face, normal, name, along, **options)
 
-    for desk_u, desk_d in itertools.product(desk_us, DESK_COLUMNS):
-        f.put("double_desk", desk_u, desk_d, -90.0)
 
-    for name, offset, options in long_wall_items:
-        f.on_face("d", INNER_FACE, -1, name, west_face + offset, **options)
+def furnish_first(f) -> None:
+    """First class (u 5.29..14.55, d 0.30..10.65): board and platform on the second class's wall, four rows of four
+    double desks facing them, cupboard, abacus, maps, stove, the coat pegs by the door."""
+    classroom_walls(f, "u", FIRST_WEST, 1, BOARD_D, [
+        ("u", FIRST_WEST, 1, "wall_map", 1.6, dict(variant="alphabet")),
+        ("u", FIRST_WEST, 1, "wall_map", 9.4, dict(variant="world")),
+        ("d", FRONT_FACE, -1, "specimen_cupboard", 7.0, {}),
+        ("d", FRONT_FACE, -1, "clothes_pegs", 10.6, {}),
+        ("d", FRONT_FACE, -1, "wall_clock", 9.0, {}),
+    ])
 
-    f.on_face("u", east_face, -1, "specimen_cupboard", 1.40)
-    f.on_face("u", east_face, -1, "cast_iron_stove", stove_d)
-    f.on_face("u", east_face, -1, side_wall[0], side_wall[1])
+    for row_u, column_d in itertools.product(FIRST_ROW_US, BLOCK_DS):
+        f.put(DESK, row_u, column_d, -90.0)
 
-    for lamp_u, lamp_d in itertools.product((west_face + 4.05, west_face + 6.85), (2.50, 5.40)):
+    f.on_wall("right", "abacus_stand", 1.2)
+    f.on_wall("right", "cast_iron_stove", 5.5)
+    f.put("hanging_oil_lamp", 10.2, 3.7)
+    f.put("hanging_oil_lamp", 10.2, 7.2)
+
+
+def furnish_second(f) -> None:
+    """Second class (u -4.99..4.99, d 0.30..10.65): board and platform on the third class's wall, four rows of four
+    double desks, the bookcase of readers and the stove on the first class's wall, maps, clock, pegs."""
+    classroom_walls(f, "u", SECOND_WEST, 1, BOARD_D, [
+        ("u", SECOND_WEST, 1, "wall_map", 1.6, dict(variant="country")),
+        ("u", SECOND_WEST, 1, "wall_map", 9.4, dict(variant="botany")),
+        ("u", SECOND_EAST, -1, "wall_shelf", 2.0, dict(variant="books")),
+        ("u", SECOND_EAST, -1, "cast_iron_stove", 5.5, {}),
+        ("u", SECOND_EAST, -1, "specimen_cupboard", 8.2, {}),
+        ("d", FRONT_FACE, -1, "clothes_pegs", -1.0, {}),
+        ("d", FRONT_FACE, -1, "wall_clock", 1.5, {}),
+    ])
+
+    for row_u, column_d in itertools.product(SECOND_ROW_US, BLOCK_DS):
+        f.put(DESK, row_u, column_d, -90.0)
+
+    f.put("hanging_oil_lamp", 0.6, 3.7)
+    f.put("hanging_oil_lamp", 0.6, 7.2)
+
+
+def furnish_third(f) -> None:
+    """Third class of the older pupils (u -14.55..-5.29, d 0.30..10.65): board and platform on the corridor wall,
+    four rows of four double desks facing +d with the end windows on their left, globe, cupboard, stove, pegs."""
+    classroom_walls(f, "d", FRONT_FACE, -1, -9.92, [
+        ("d", FRONT_FACE, -1, "wall_map", -6.6, dict(variant="world")),
+        ("u", THIRD_EAST, -1, "specimen_cupboard", 3.0, {}),
+        ("u", THIRD_EAST, -1, "cast_iron_stove", 6.2, {}),
+        ("u", THIRD_EAST, -1, "clothes_pegs", 8.6, {}),
+    ])
+
+    for row_d, column_u in itertools.product(THIRD_ROW_DS, THIRD_BLOCK_US):
+        f.put(DESK, column_u, row_d, 180.0)
+
+    f.put("globe_stand", -13.9, 1.0)
+    f.put("hanging_oil_lamp", -10.1, 3.4)
+    f.put("hanging_oil_lamp", -10.1, 6.6)
+
+
+def furnish_salle(f) -> None:
+    """Fencing hall (u -14.55..4.65, d 13.75..24.10): two pistes along the hall, racks of foils and masks, a trophy of
+    arms and a mirror on the back wall, plastrons on the end wall between its windows, two pells in the gangway,
+    benches, boots and the bout board on the corridor wall, lamps over the pistes."""
+    for piste_d in PISTE_DS:
+        f.put("fencing_piste", PISTE_U, piste_d)
+
+    for rack_u in (-11.9, -1.2, 2.8):
+        f.on_wall("back", "fencing_rack", rack_u)
+
+    f.on_wall("back", "sword_wall", -6.0)
+    f.on_wall("back", "standing_mirror", -9.6)
+    f.on_wall("back", "armor_stand_a", 0.7)
+
+    for target_d in (18.4, 19.5):
+        f.on_wall("left", "plastron_target", target_d)
+
+    f.put("pell_post", 3.6, GANGWAY_D)
+    f.put("pell_post", -12.6, GANGWAY_D)
+
+    for bench_u in (-11.0, -6.5, 1.5):
+        f.on_face("d", BACK_FACE, 1, "bench_long", bench_u)
+
+    f.on_face("d", BACK_FACE, 1, "boots_rack", -8.6)
+    f.on_face("d", BACK_FACE, 1, "rank_board", -4.4)
+    f.on_face("d", BACK_FACE, 1, "clothes_pegs", 3.6)
+
+    for lamp_u, lamp_d in itertools.product((-9.0, -1.0), PISTE_DS):
         f.put("hanging_oil_lamp", lamp_u, lamp_d)
 
-    for sconce_u in front_sconce_us:
-        f.on_wall("front", "wall_sconce", sconce_u, lit=sconce_u == front_sconce_us[0])
+
+def furnish_magic(f) -> None:
+    """Magic practice room (u 4.95..14.55, d 13.75..24.10): the warded line across the room where the pupils stand,
+    three straw targets against the back wall, rune pillars in the back corners, four lecterns behind the line, the
+    master's demonstration table, staffs on the fencing hall's wall, grimoires and scrolls on the vestibule wall."""
+    f.put("ward_line", sum(TARGET_US) / 2.0, WARD_D)
+
+    for target_u in TARGET_US:
+        f.on_wall("back", "practice_dummy", target_u)
+
+    f.put("rune_pillar", MAGIC_WEST + 0.5, HALL_BACK - 0.5)
+    f.put("rune_pillar", HALL_RIGHT - 0.5, HALL_BACK - 0.5)
+
+    for lectern_u in (6.8, 8.8, 10.8, 12.8):
+        f.put("lectern", lectern_u, 16.2, 180.0)
+
+    f.on_face("d", BACK_FACE, 1, "enchant_table", 10.0)
+    f.on_face("u", MAGIC_WEST, 1, "staff_rack", 18.0)
+    f.on_face("u", MAGIC_WEST, 1, "scroll_rack", 21.0)
+    f.on_wall("right", "tall_bookcase", 16.5)
+    f.on_wall("right", "crystal_ball_pedestal", 19.5)
+    f.on_wall("right", "star_tapestry", 21.6)
+    f.put("hanging_oil_lamp", 9.75, 15.4)
 
 
-def furnish_classroom_1(f) -> None:
-    """Classroom 1 (u = 1.955..11.06): cupboard, stove and pegs on the rear wall by the door to the cloakroom."""
-    west_face = CLASS_WALL + WALL_HALF
-    east_face = CLOAKROOM_WALL - WALL_HALF
+def furnish_corridor(f) -> None:
+    """Corridor (d 10.95..13.45): benches, the notice board, the school bell, pictures and lamps."""
+    front, back = CORRIDOR_CLEAR
 
-    furnish_classroom(f, west_face, east_face, ("world", "country", "botany"), 3.50, ("clothes_pegs", 4.30), (5.14, 8.17))
+    f.on_face("d", front, 1, "notice_board", 8.0)
+    f.on_face("d", front, 1, "bench_long", -1.0)
+    f.on_face("d", back, -1, "bench_long", -9.0)
+    f.hang_picture("d", back, -1, -9.0, "portrait")
+    f.on_face("d", back, -1, "wall_crucifix", 10.5)
+    f.put("school_bell", 10.0, CORRIDOR_MIDDLE)
 
-
-def furnish_classroom_2(f) -> None:
-    """Classroom 2 (u = -8.02..1.655): cupboard, stove and filing cabinet on the rear wall by the door to classroom 1."""
-    west_face = SCIENCE_WALL + WALL_HALF
-    east_face = CLASS_WALL - WALL_HALF
-
-    furnish_classroom(f, west_face, east_face, ("alphabet", "world", "country"), 2.90, ("filing_cabinet", 4.00), (-5.13, -1.805))
-
-
-def furnish_science_cabinet(f) -> None:
-    """Science cabinet (u = -14.55..-8.32, d = 0.3..8.05): glazed specimen cupboards on solid piers and the inner wall,
-    skeleton, two lab benches with stools, globes, astrolabe, a chalk diagram and the planet mobile."""
-    east_face = SCIENCE_WALL - WALL_HALF  # -8.32
-
-    # Specimen cupboards clear of the front windows (-13.43..-12.03, -10.39..-8.99) and the left ones (2.70..4.10, 6.90..8.30)
-    f.on_wall("front", "specimen_cupboard", -11.21)
-    f.on_wall("left", "specimen_cupboard", 5.50)
-    f.on_face("d", INNER_FACE, -1, "specimen_cupboard", -12.95)
-    f.on_face("d", INNER_FACE, -1, "specimen_cupboard", -11.00)
-
-    f.on_face("u", east_face, -1, "wall_map", 1.60, variant="botany")
-    f.on_face("u", east_face, -1, "recipe_board", 3.60)
-    f.on_face("u", east_face, -1, "skeleton_stand", 4.45)
-    f.on_face("d", INNER_FACE, -1, "wall_crucifix", -9.90)
-    f.on_face("d", INNER_FACE, -1, "wall_clock", -8.85, z=0.0)
-
-    f.put("lab_bench", -11.20, 2.55, 0.0)
-    f.put("lab_bench", -11.20, 5.25, 180.0)
-
-    for stool_u in (-11.80, -10.60):
-        f.put("stool_round", stool_u, 1.75)
-
-    f.put("bentwood_chair", -11.20, 6.00, 0.0)
-
-    f.put("celestial_globe", -13.60, 1.65)
-    f.put("globe_stand", -9.15, 1.65)
-    f.put("astrolabe", -9.15, 3.30)
-    f.put("planet_mobile", -11.20, 3.90)
-
-    f.put("hanging_oil_lamp", -11.20, 2.30)
-    f.put("hanging_oil_lamp", -11.20, 5.50)
-    f.on_face("d", INNER_FACE, -1, "wall_sconce", -11.975)
-    f.on_face("u", east_face, -1, "wall_sconce", 2.65)
-    f.on_wall("left", "wall_sconce", 4.45)
-    f.on_wall("left", "wall_sconce", 1.60, lit=False)
-
-
-def furnish_study_hall(f) -> None:
-    """Study hall (u = -2.70..14.55, d = 8.35..19.1): two rows of three long study tables with 48 chairs between
-    bookcases on both long walls, the supervisor's platform at the east end under a crucifix, a stove, clocks, maps."""
-    west_face = STUDY_WALL + WALL_HALF  # -2.70
-
-    f.put("teacher_platform", 13.65, 13.70, -90.0)
-    f.on_wall("right", "wall_clock", 9.40)
-    f.on_wall("right", "wall_map", 11.20, variant="world")
-    f.on_wall("right", "wall_crucifix", 13.70)
-    f.on_wall("right", "wall_map", 16.20, variant="country")
-    f.hang_picture("u", f.right, -1, 17.95, "portrait")
-
-    # Inner long wall d = 8.35: bookcases and the card catalogue; u = 10.59..13.65 stays free for the door and its leaf
-    for case_u in (-0.80, 2.40, 6.80, 9.45):
-        f.on_face("d", BACK_FACE, 1, "tall_bookcase", case_u)
-
-    f.on_face("d", BACK_FACE, 1, "card_catalog", 4.60)
-
-    # Back wall d = 19.1 (high windows at u = 3.81, 7.83, 11.84, sill 3.3): tall cases on the piers, shorter ones under the windows
-    for case_u in (0.50, 5.80, 9.80):
-        f.on_wall("back", "tall_bookcase", case_u)
-
-    f.on_wall("back", "linen_press", 3.80)
-    f.on_wall("back", "specimen_cupboard", 7.80)
-    f.on_wall("back", "filing_cabinet", 12.20)
-    f.on_wall("back", "cast_iron_stove", 13.60)
-
-    f.on_face("u", west_face, 1, "long_case_clock", 11.40)
-    f.hang_picture("u", west_face, 1, 16.50, "seascape")
-
-    for (table_u, table_d), offset in itertools.product(itertools.product(STUDY_TABLE_US, STUDY_TABLE_DS), STUDY_CHAIR_OFFSETS):
-        near_chair_d, far_chair_d = table_d - 0.85, table_d + 0.85
-
-        f.put("bentwood_chair", table_u + offset, near_chair_d, 180.0)
-        f.put("bentwood_chair", table_u + offset, far_chair_d, 0.0)
-
-    for table_u, table_d in itertools.product(STUDY_TABLE_US, STUDY_TABLE_DS):
-        f.put("study_table", table_u, table_d, 0.0, lit=(table_u, table_d) in STUDY_LIT_TABLES)
-
-    for lamp_u in (0.70, 4.90, 9.10):
-        f.put("hanging_oil_lamp", lamp_u, 13.70)
-
-    for sconce_u, lit in ((-1.60, False), (2.25, False), (12.20, True), (14.05, False)):
-        f.on_wall("back", "wall_sconce", sconce_u, lit=lit)
-
-    for sconce_u, lit in ((0.80, False), (4.60, False), (8.125, True), (14.05, False)):
-        f.on_face("d", BACK_FACE, 1, "wall_sconce", sconce_u, lit=lit)
-
-    f.on_wall("right", "wall_sconce", 12.10, lit=False)
-    f.on_wall("right", "wall_sconce", 15.25, lit=False)
-    f.on_face("u", west_face, 1, "wall_sconce", 10.50, lit=False)
-    f.on_face("u", west_face, 1, "wall_sconce", 17.60, lit=False)
-
-
-def furnish_teachers_room(f) -> None:
-    """Teachers' room (u = -9.25..-3.00, d = 8.35..19.1): hearth with two armchairs and a side table on the front wall,
-    bookcases and a card catalogue on the west wall, the coat rack and bench on the east wall, a long meeting table
-    with eight chairs in the back half, cabinets under the high windows, a clock over the door. The doors face each
-    other at d = 13.7, so that stretch stays open."""
-    west_face = DIRECTOR_WALL + WALL_HALF  # -9.25
-    east_face = STUDY_WALL - WALL_HALF     # -3.00
-
-    f.on_face("d", BACK_FACE, 1, "fireplace_tall", -6.125, height=5.0)
-    f.on_face("d", BACK_FACE, 1, "long_case_clock", -8.45)
-    f.on_face("d", BACK_FACE, 1, "filing_cabinet", -3.60)
-    f.put("armchair", -7.55, 10.15, 30.0)
-    f.put("armchair", -4.70, 10.15, -30.0)
-    f.put("side_table", -6.125, 10.20)
-    f.put("oil_lamp_table", -6.125, 10.20, z=0.67, lit=False)
-
-    f.put("study_table", -6.125, 16.70, 0.0)
-
-    for chair_u in (-7.125, -6.125, -5.125):
-        f.put("bentwood_chair", chair_u, 15.85, 180.0)
-        f.put("bentwood_chair", chair_u, 17.55, 0.0)
-
-    f.put("bentwood_chair", -8.10, 16.70, 90.0)
-    f.put("bentwood_chair", -4.15, 16.70, -90.0)
-
-    f.on_wall("back", "filing_cabinet", -7.83)
-    f.on_wall("back", "tall_bookcase", -5.82)
-    f.on_wall("back", "specimen_cupboard", -3.90)
-
-    f.on_face("u", east_face, -1, "coat_rack_wall", 9.95)
-    f.on_face("u", east_face, -1, "bench_long", 9.95)
-    f.on_face("u", east_face, -1, "wall_clock", TEACHERS_DOOR["at"], z=0.45)
-    f.on_face("u", east_face, -1, "tall_bookcase_slim", 16.10)
-    f.on_face("u", east_face, -1, "filing_cabinet", 17.65)
-
-    f.on_face("u", west_face, 1, "card_catalog", 9.62)
-    f.on_face("u", west_face, 1, "tall_bookcase", 11.40)
-    f.on_face("u", west_face, 1, "tall_bookcase", 15.90)
-    f.on_face("u", west_face, 1, "notice_board", 18.05)
-    f.on_face("u", west_face, 1, "wall_crucifix", DIRECTOR_DOOR["at"], z=0.7)
-
-    for lamp_d in (10.60, 16.70):
-        f.put("hanging_oil_lamp", -6.125, lamp_d)
-
-    f.on_face("u", east_face, -1, "wall_sconce", 11.60)
-    f.on_face("u", east_face, -1, "wall_sconce", 14.90, lit=False)
-    f.on_face("u", west_face, 1, "wall_sconce", 12.10, lit=False)
-
-
-def furnish_headmaster_study(f) -> None:
-    """Headmaster's study (u = -14.55..-9.55, d = 8.35..19.1): pedestal desk and two visitor chairs at the back, two
-    tall bookcases and a clock on the front wall, a sofa, reading table and armchair in the front half, narrow
-    curtains at the two windows, a bookcase, crucifix and clock on the east wall."""
-    east_face = DIRECTOR_WALL - WALL_HALF  # -9.55
-
-    f.put("director_desk", -12.05, 16.40, 0.0)
-    f.put("study_chair", -12.55, 15.10, 180.0)
-    f.put("study_chair", -11.55, 15.10, 180.0)
-
-    # Back wall d = 19.1 (high window at u = -11.84, sill 3.3): low cabinets on both piers, a picture between
-    f.on_wall("back", "filing_cabinet", -13.60)
-    f.on_wall("back", "specimen_cupboard", -10.20)
-    f.hang_picture("d", f.back, -1, -12.15, "landscape")
-
-    f.on_face("d", BACK_FACE, 1, "tall_bookcase", -13.40)
-    f.on_face("d", BACK_FACE, 1, "tall_bookcase", -11.40)
-    f.on_face("d", BACK_FACE, 1, "long_case_clock", -10.00)
-
-    f.on_wall("left", "sofa", 9.80)
-    f.put("reading_table", -12.35, 10.90, 90.0)
-    f.put("armchair", -11.00, 10.90, -90.0)
-    f.put("globe_stand", -10.40, 9.30)
-    f.put("side_table", -10.60, 12.30)
-
-    # Exposed west wall: windows at d = 11.8 and 16.0 with a solid pier between
-    f.on_wall("left", "curtain_pair", 11.80, width=1.7, height=3.2, variant="wine")
-    f.on_wall("left", "long_case_clock", 13.90)
-    f.on_wall("left", "curtain_pair", 16.00, width=1.7, height=3.2, variant="wine")
-
-    f.hang_picture("u", east_face, -1, 10.90, "portrait")
-    f.on_face("u", east_face, -1, "wall_clock", DIRECTOR_DOOR["at"], z=0.45)
-    f.on_face("u", east_face, -1, "tall_bookcase_slim", 16.30)
-    f.on_face("u", east_face, -1, "wall_crucifix", 18.30)
-
-    f.put("hanging_oil_lamp", -12.05, 11.00)
-    f.put("hanging_oil_lamp", -12.05, 14.30)
-    f.on_wall("left", "wall_sconce", 13.10, lit=False)
-    f.on_face("u", east_face, -1, "wall_sconce", 12.20)
-    f.on_wall("back", "wall_sconce", -13.60)
+    for lamp_u in (-9.5, 0.5, 9.5):
+        f.put("hanging_oil_lamp", lamp_u, CORRIDOR_MIDDLE)
 
 
 def furnish_school(f) -> None:
-    """Ground floor of the left wing (`school`): cloakroom passage, two classrooms, science cabinet, study hall,
-    teachers' room and headmaster's study."""
-    furnish_cloakroom(f)
-    furnish_classroom_1(f)
-    furnish_classroom_2(f)
-    furnish_science_cabinet(f)
-    furnish_study_hall(f)
-    furnish_teachers_room(f)
-    furnish_headmaster_study(f)
+    """Ground floor of the school wing; the rooms that need their night lamps most come first."""
+    furnish_salle(f)
+    furnish_magic(f)
+    furnish_corridor(f)
+    furnish_first(f)
+    furnish_second(f)
+    furnish_third(f)
 
 
 PLAN = dict(
-    keeper=(12.20, 13.70),  # supervisor standing by the study hall dais, facing the entry
+    keeper=(-5.0, GANGWAY_D),  # the fencing master, between the pistes
     posts=(),
     girder_pitch=2.4,
     partitions=(
-        ("d", LONG_WALL, HALL_LEFT, SCIENCE_WALL, dict(faces=("science", "teachers"))),
-        ("d", LONG_WALL, SCIENCE_WALL, STUDY_WALL, dict(faces=("classroom", "teachers"))),
-        ("d", LONG_WALL, STUDY_WALL, HALL_RIGHT, dict(doors=[STUDY_DOOR], faces=("classroom", "classroom"))),
-        ("u", CLOAKROOM_WALL, HALL_FRONT, LONG_WALL - WALL_HALF, dict(doors=[CLASS_1_DOOR], faces=("classroom", "classroom"))),
-        ("u", CLASS_WALL, HALL_FRONT, LONG_WALL - WALL_HALF, dict(doors=[CLASS_2_DOOR], faces=("classroom", "classroom"))),
-        ("u", SCIENCE_WALL, HALL_FRONT, LONG_WALL - WALL_HALF, dict(doors=[SCIENCE_DOOR], faces=("science", "classroom"))),
-        ("u", STUDY_WALL, LONG_WALL + WALL_HALF, HALL_BACK, dict(doors=[TEACHERS_DOOR], faces=("teachers", "classroom"))),
-        ("u", DIRECTOR_WALL, LONG_WALL + WALL_HALF, HALL_BACK, dict(doors=[DIRECTOR_DOOR], faces=("teachers", "teachers"))),
+        *corridor_walls(
+            [(HALL_LEFT, THIRD_WALL, "classroom", [THIRD_DOOR]), (THIRD_WALL, FIRST_WALL, "classroom", [SECOND_DOOR]), (FIRST_WALL, HALL_RIGHT, "classroom", [FIRST_DOOR])],
+            [(HALL_LEFT, SALLE_WALL, "salle", [SALLE_DOOR]), (SALLE_WALL, HALL_RIGHT, "arcane", [MAGIC_DOOR])],
+            "corridor",
+        ),
+        cross_wall(THIRD_WALL, FRONT_BAND, "classroom", "classroom"),
+        cross_wall(FIRST_WALL, FRONT_BAND, "classroom", "classroom"),
+        cross_wall(SALLE_WALL, BACK_BAND, "salle", "arcane"),
     ),
     finishes=(
-        ("front", HALL_LEFT, SCIENCE_WALL - WALL_HALF, "science"),
-        ("front", SCIENCE_WALL + WALL_HALF, HALL_RIGHT, "classroom"),
-        ("left", HALL_FRONT, LONG_WALL - WALL_HALF, "science"),
-        ("left", LONG_WALL + WALL_HALF, HALL_BACK, "teachers"),
-        ("right", HALL_FRONT, LONG_WALL - WALL_HALF, "classroom"),
-        ("right", LONG_WALL + WALL_HALF, HALL_BACK, "classroom"),
-        ("back", HALL_LEFT, STUDY_WALL - WALL_HALF, "teachers"),
-        ("back", STUDY_WALL + WALL_HALF, HALL_RIGHT, "classroom"),
+        ("front", HALL_LEFT, HALL_RIGHT, "classroom"),
+        ("left", HALL_FRONT, FRONT_FACE, "classroom"),
+        ("left", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
+        ("left", BACK_FACE, HALL_BACK, "salle"),
+        ("right", HALL_FRONT, FRONT_FACE, "classroom"),
+        ("right", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
+        ("right", BACK_FACE, HALL_BACK, "arcane"),
+        ("back", HALL_LEFT, SALLE_EAST, "salle"),
+        ("back", MAGIC_WEST, HALL_RIGHT, "arcane"),
     ),
     furnish=furnish_school,
 )

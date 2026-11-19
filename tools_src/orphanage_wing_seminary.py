@@ -1,219 +1,293 @@
-"""Rooms of the chapel wing (upper floor, left wing of the orphanage: hall `seminary`).
+"""Rooms of the sisters' wing (hall `seminary`, upper floor over the school wing; the entry end u = 14.55 opens on the
+gallery of the vestibule, the exposed end wall u = -14.55 has the side windows).
 
-Two bands split by the long wall at d = 8.2. Front band (d = 0.3..8.05): the sacristy at the entry end (u = +14.55, by
-the gallery) and the chapel, with its altar on the exposed end wall (u = -14.55) between the two side windows. Back
-band (d = 8.35..19.1): the seminary room at the entry end and the infirmary at the far end.
+The corridor (orphanage_wing_common.py) runs from the gallery to the end window. Front band, behind the balcony
+windows of the facade:
+  - Cell dormitory (u -14.55..4.99): thirteen timber cells for the sisters and the novices, six on the facade (each
+    with its own window) and seven on the corridor wall, a 3 m aisle between them. In every cell a bed, a chest at
+    its foot, a washstand, a kneeler and a crucifix.
+  - Sisters' washroom (u 5.29..8.03): trough, two latrine stalls, a tub behind a screen.
+  - Community room (u 8.33..14.55): the long work table with its chairs, the mother's chair, bookcases, the
+    spinning wheel and the mending baskets.
+Back band, under the high windows:
+  - Infirmary (u -14.55..-6.55): seven beds with lockers on the corridor wall and the back wall, the medicine
+    cabinet between the end windows, the nurse's table, screens.
+  - Sacristy (u -6.25..-0.65, d 13.75..18.80) and the isolation room behind it (d 19.10..24.10, two beds).
+  - Chapel (u -0.35..14.55): nine rows of pews in two blocks with a middle aisle for the 72 children, the altar on the gallery
+    wall, the sisters' stalls either side of the sanctuary, the communion rail, harmonium, confessional.
 """
 
-WALL_HALF = 0.15  # half the thickness of an inner wall (WALL = 0.3 in build_market_shops.py)
+import itertools
+import math
 
-HALL_LEFT = -14.55
-HALL_RIGHT = 14.55
-HALL_FRONT = 0.3
-HALL_BACK = 19.1
-LONG_WALL = 8.2  # d of the wall between the front and the back band
-SACRISTY_WALL = 11.21  # u of the wall between the sacristy and the chapel (a pier of the facade)
-INFIRMARY_WALL = 0.0  # u of the wall between the seminary room and the infirmary (clear of the back windows)
+from orphanage_wing_common import (
+    BACK_BAND,
+    CORRIDOR_CLEAR,
+    CORRIDOR_FINISH,
+    CORRIDOR_MIDDLE,
+    FRONT_BAND,
+    HALL_BACK,
+    HALL_FRONT,
+    HALL_LEFT,
+    HALL_RIGHT,
+    WALL_HALF,
+    WIDE_DOOR,
+    bed_row,
+    corridor_walls,
+    cross_wall,
+    door,
+    spaced,
+)
 
-FRONT_FACE = LONG_WALL - WALL_HALF  # the long wall seen from the front band
-BACK_FACE = LONG_WALL + WALL_HALF  # the long wall seen from the back band
-CHAPEL_END = SACRISTY_WALL - WALL_HALF  # u of the chapel's face of the sacristy wall
-ALTAR_D = 5.2  # d of the altar: the middle of the pier between the side windows (4.1 and 6.9)
-NAVE_D = 4.8  # d of the centre aisle; the pews of both blocks have to fit between the facade and the long wall
-PEW_LENGTH = 2.56
-AISLE_HALF = 0.65
-FIRST_PEW_U = -6.6
-PEW_PITCH = 1.05
-PEW_ROWS = 12
-RAIL_U = -10.9  # communion rail
-CHAPEL_PIERS = (-8.17, -5.13, -1.805, 1.805, 5.13, 8.17)  # u of the piers of the facade the chapel uses
-BED_PITCH = 1.6  # cubicles of the seminary room
-BLANKET_SEMINARY = "grey_blue"
-BLANKET_INFIRMARY = "ochre"
+WASH_WALL = 5.1375  # u of the wall between the cell dormitory and the sisters' washroom (a facade pier)
+COMMUNITY_WALL = 8.175  # u of the wall between the washroom and the community room (a facade pier)
+INFIRMARY_WALL = -6.4  # u of the wall between the infirmary and the sacristy (a back pier)
+CHAPEL_WALL = -0.5  # u of the wall between the sacristy and the chapel (a back pier)
+SACRISTY_WALL = 18.95  # d of the wall between the sacristy and the isolation room
 
-CHAPEL_DOOR = dict(at=4.2, width=1.5, height=2.1, leaf=("low", -1), lane=("low",))  # sacristy -> chapel
-SACRISTY_DOOR = dict(at=12.95, width=1.5, height=2.1, leaf=("high", -1))  # sacristy -> seminary room
-INFIRMARY_DOOR = dict(at=13.7, width=1.5, height=2.1, leaf=("high", 1))  # seminary room -> infirmary
+FRONT_FACE = FRONT_BAND[1]  # the corridor wall seen from the front rooms
+BACK_FACE = BACK_BAND[0]  # the corridor wall seen from the back rooms
+CELLS_EAST = WASH_WALL - WALL_HALF
+WASH_WEST = WASH_WALL + WALL_HALF
+WASH_EAST = COMMUNITY_WALL - WALL_HALF
+COMMUNITY_WEST = COMMUNITY_WALL + WALL_HALF
+INFIRMARY_EAST = INFIRMARY_WALL - WALL_HALF
+SACRISTY_WEST = INFIRMARY_WALL + WALL_HALF
+SACRISTY_EAST = CHAPEL_WALL - WALL_HALF
+CHAPEL_WEST = CHAPEL_WALL + WALL_HALF
+
+CELLS_DOOR = door(-14.0)  # the corner by the end windows stays free as the entry of the dormitory
+WASH_DOOR = door(6.6)
+COMMUNITY_DOOR = door(9.4)
+INFIRMARY_DOOR = door(-14.0)
+SACRISTY_DOOR = door(-3.5)
+CHAPEL_DOOR = door(0.8, WIDE_DOOR)
+VESTRY_DOOR = door(16.3)  # sacristy -> chapel
+ISOLATION_DOOR = door(20.4)  # infirmary -> isolation room
 
 NEW_WALL_FINISHES = {
-    "chapel": dict(dado="5E6F82", trim="4A2D1C"),  # slate-blue dado for the chapel and sacristy
-    "seminary": dict(dado="6B442D", trim="4A2D1C"),  # dark wood tone for the seminary room
-    "infirmary": dict(dado="D6AE6C", trim="5A3A26"),  # light ochre for the sick ward
+    "corridor": CORRIDOR_FINISH,
+    "cells": dict(dado="B8A27A", trim="5A3A26"),
+    "community": dict(dado="7A5A6E", trim="4A2F20"),
+    "infirmary": dict(dado="D8D4C4", trim="6E7F8C"),
+    "chapel": dict(dado="6E2D38", trim="C89B45"),
+    "sacristy": dict(dado="5A3A26", trim="2A2118"),
 }
 
-
-def furnish_sacristy(f) -> None:
-    """Sacristy (u = 11.36..14.55, d = 0.3..8.05): a vestment press and a holy water font on the chapel wall, a table
-    by the gallery wall, a prie-dieu under the window, a censer on its chain, a crucifix."""
-    face = CHAPEL_END + 2 * WALL_HALF
-
-    f.on_face("u", face, 1, "holy_water_font", 5.45)
-    f.on_face("u", face, 1, "linen_press", 6.6)
-    f.on_wall("right", "nurse_table", 6.4)
-    f.on_face("d", f.front, 1, "prie_dieu", 13.9)
-    f.on_face("d", FRONT_FACE, -1, "wall_crucifix", 11.7)
-    f.put("censer_hanging", 13.0, 6.0)
-    f.put("hanging_oil_lamp", 13.0, 4.0)
-    f.on_face("d", FRONT_FACE, -1, "wall_sconce", 14.1, lit=False)
+FACADE_WINDOW_US = (-12.731, -9.694, -6.656, -3.619, 0.0, 3.619)  # one cell on each balcony window
+CELL_DEPTH = 3.6
+WIDE_CELL, NARROW_CELL = 3.0, 2.4
+CORRIDOR_CELL_US = spaced(-12.0, NARROW_CELL + 0.02, 7)
+FIRST_CELL_SHIFT = 0.35  # the cell on the first window stands off the end wall, clear of its window
+PEW_ROW_US = spaced(1.7, 0.95, 9)  # the sitters face +u, toward the altar
+PEW_BLOCK_DS = (17.0, 20.85)  # one pew either side of the 1.3 m middle aisle
+RAIL_U = 10.9  # the communion rail, 1.2 m in front of the first pews
+STALL_US = (10.06, 12.66)  # the sisters' stalls along both side walls, facing each other
+CHAPEL_AXIS = sum(BACK_BAND) / 2.0
+INFIRMARY_CORRIDOR_BEDS = spaced(-12.6, 1.85, 3)
+INFIRMARY_BACK_BEDS = spaced(-13.3, 1.85, 4)
 
 
-def furnish_chapel(f) -> None:
-    """Chapel (u = -14.55..11.06, d = 0.3..8.05): the altar and retable on the end wall between the two windows, a
-    communion rail with a gate on the aisle, two side altars on the wall piers, the pulpit, twenty-four pews in two
-    blocks either side of the centre aisle, the confessional and the harmonium by the door, the stations of the cross
-    on the long wall and the piers, the sanctuary lamp."""
-    f.on_wall("left", "retable_altar", ALTAR_D)
-    f.put("sanctuary_lamp", HALL_LEFT + 1.4, ALTAR_D)
+def local(origin: tuple, degrees: float, x: float, y: float) -> tuple:
+    """(u, d) of a point given in a prop's own frame (x across, y toward its back) placed at origin turned degrees."""
+    cos_turn, sin_turn = math.cos(math.radians(degrees)), math.sin(math.radians(degrees))
 
-    for rail_d in (1.3, 3.3, 6.5):
-        f.put("railing", RAIL_U, rail_d, 90.0)
-
-    for stand_d in (NAVE_D - 1.25, NAVE_D + 1.25):
-        f.put("candle_stand", RAIL_U + 0.5, stand_d)
-
-    for wall_axis, wall_face, normal in (("d", f.front, 1), ("d", FRONT_FACE, -1)):
-        f.on_face(wall_axis, wall_face, normal, "saint_niche", CHAPEL_PIERS[0])
-        f.on_face(wall_axis, wall_face, normal, "prie_dieu", CHAPEL_PIERS[0])
-
-        for stand_side in (-1, 1):
-            f.on_face(wall_axis, wall_face, normal, "candle_stand", CHAPEL_PIERS[0] + stand_side * 0.75)
-
-    f.on_face("d", FRONT_FACE, -1, "reading_pulpit", -10.0)
-    f.on_face("d", FRONT_FACE, -1, "wall_crucifix", -12.5)
-
-    block_ds = (NAVE_D - AISLE_HALF - PEW_LENGTH / 2.0, NAVE_D + AISLE_HALF + PEW_LENGTH / 2.0)
-
-    for row in range(PEW_ROWS):
-        for block_d in block_ds:
-            f.put("pew", FIRST_PEW_U + row * PEW_PITCH, block_d, -90.0)
-
-    f.on_face("d", FRONT_FACE, -1, "confessional", 7.6)
-    f.on_face("d", FRONT_FACE, -1, "harmonium", 9.6)
-    f.on_face("u", CHAPEL_END, -1, "prie_dieu", 6.6)
-    f.on_face("u", CHAPEL_END, -1, "holy_water_font", 5.6)
-
-    for station_u in (-6.0, -4.4, -2.8, -1.2, 0.4, 2.0, 3.6):
-        f.hang_picture("d", FRONT_FACE, -1, station_u, "station")
-
-    for pier_u in CHAPEL_PIERS[1:]:
-        f.hang_picture("d", f.front, 1, pier_u, "station")
-
-    for sconce_u, is_lit in ((-5.2, True), (-2.0, False), (1.2, False), (4.4, True)):
-        f.on_face("d", FRONT_FACE, -1, "wall_sconce", sconce_u, lit=is_lit)
-
-    for lamp_u in (-6.0, -1.5, 3.0):
-        f.put("hanging_oil_lamp", lamp_u, NAVE_D)
+    return (origin[0] + x * cos_turn - y * sin_turn, origin[1] + x * sin_turn + y * cos_turn)
 
 
-def furnish_seminary_room(f) -> None:
-    """Seminary room (u = 0.15..14.55, d = 8.35..19.1): a study side with a long table of three study tables, chairs
-    both sides, a lectern at its head and bookcases along the long wall, the cross wall and the end wall; a sleeping side
-    with eight curtained bed cubicles along the back wall."""
-    cross_face = INFIRMARY_WALL + WALL_HALF
-    table_d = 11.6
+def cell(f, u: float, wall_d: float, normal: int, width: float, blanket: str) -> None:
+    """One sister's cell with its back to the wall face at wall_d (normal +1: the cell lies toward larger d): the
+    bed along the side away from the curtained door, its chest at the foot, the washstand and the kneeler under the
+    crucifix on the other side."""
+    turn = 180.0 if normal > 0 else 0.0
+    origin = (u, wall_d + normal * CELL_DEPTH / 2.0)
+    half = width / 2.0
+    items = (
+        ("iron_bed", width / 2.0 - 0.52, 0.78, 0.0, dict(variant=blanket)),
+        ("bed_trunk", half - 0.52, -0.5, 0.0, {}),
+        ("washstand", -half + 0.48, 1.52, 0.0, {}),
+        ("prie_dieu", -half + 0.4, 0.55, 0.0, {}),
+        ("wall_crucifix", -half + 0.4, 1.74, 0.0, {}),
+    )
 
-    for case_u in (1.4, 3.45, 5.5, 7.55, 9.6):
-        f.on_face("d", BACK_FACE, 1, "tall_bookcase", case_u)
+    f.put("nun_cell" if width == WIDE_CELL else "nun_cell_narrow", *origin, turn)
 
-    f.on_face("u", cross_face, 1, "tall_bookcase", 10.0)
-    f.on_face("u", cross_face, 1, "wall_crucifix", 17.0)
+    for name, x, y, extra_turn, options in items:
+        f.put(name, *local(origin, turn, x, y), turn + extra_turn, **options)
 
-    for case_d in (10.9, 13.0, 15.1):
-        f.on_wall("right", "tall_bookcase", case_d)
 
-    for table_u in (3.5, 6.5, 9.5):
-        f.put("study_table", table_u, table_d, lit=table_u != 6.5)
+def furnish_cells(f) -> None:
+    """Cell dormitory (u -14.55..4.99, d 0.30..10.65): six cells on the facade windows, seven on the corridor wall,
+    lamps down the aisle, a holy water font by the door."""
+    for window_u in FACADE_WINDOW_US:
+        narrow = window_u > 2.0 or window_u < -12.0
+        cell(f, window_u + FIRST_CELL_SHIFT * (window_u < -12.0), f.front, 1, NARROW_CELL if narrow else WIDE_CELL, "grey_blue")
 
-        for chair_offset in (-0.9, 0.0, 0.9):
-            f.put("bentwood_chair", table_u + chair_offset, table_d - 0.85, 180.0)
-            f.put("bentwood_chair", table_u + chair_offset, table_d + 0.85, 0.0)
+    for cell_u in CORRIDOR_CELL_US:
+        cell(f, cell_u, FRONT_FACE, -1, NARROW_CELL, "grey_blue")
 
-    f.put("lectern", 1.3, table_d, 90.0)
-    f.put("hanging_oil_lamp", 4.5, table_d + 2.0)
-    f.put("hanging_oil_lamp", 8.5, table_d + 2.0)
+    for lamp_u in (-10.0, -4.0, 2.0):
+        f.put("hanging_oil_lamp", lamp_u, 5.5)
 
-    for cubicle in range(8):
-        bed_u = 1.4 + BED_PITCH * cubicle
+    f.on_wall("left", "holy_water_font", 9.0)
+    f.on_face("u", CELLS_EAST, -1, "wall_crucifix", 5.5)
 
-        f.on_face("d", f.back, -1, "iron_bed", bed_u, variant=BLANKET_SEMINARY)
-        f.put("bed_trunk", bed_u, f.back - 2.255)
 
-    for divider in range(9):
-        f.put("cell_curtain", 0.6 + BED_PITCH * divider, f.back - 1.2, 90.0)
+def furnish_washroom(f) -> None:
+    """Sisters' washroom (u 5.29..8.03, d 0.30..10.65): trough on the community room wall, two latrine stalls, a tub
+    behind a screen, towel rack."""
+    f.on_face("u", WASH_EAST, -1, "washroom_trough", 7.6)
 
-    f.on_wall("back", "wall_sconce", 2.2, lit=False)
-    f.on_wall("back", "wall_sconce", 5.8, lit=False)
-    f.on_wall("back", "wall_sconce", 9.8, lit=False)
-    f.on_wall("back", "wall_sconce", 13.4, lit=False)
+    for stall_d in (3.0, 4.0):
+        f.on_face("u", WASH_EAST, -1, "latrine_stall", stall_d)
+
+    f.on_face("u", WASH_WEST, 1, "tin_bathtub", 5.0)
+    f.put("folding_screen", 6.35, 5.0, 90.0)
+    f.on_face("u", WASH_WEST, 1, "towel_rack", 7.9)
+    f.put("hanging_oil_lamp", 6.65, 6.5)
+
+
+def furnish_community(f) -> None:
+    """Community room (u 8.33..14.55, d 0.30..10.65): the long work table with eight chairs, the mother's armchair
+    at its head, bookcases on the washroom wall, spinning wheel and baskets by the end wall, a crucifix."""
+    for table_d in (3.6, 6.9):
+        f.put("reading_table", 11.4, table_d, 90.0)
+
+        for side, seat_d in itertools.product((-1, 1), (table_d - 0.5, table_d + 0.5)):
+            f.put("bentwood_chair", 11.4 + side * 0.76, seat_d, -90.0 * side)
+
+    f.put("armchair", 11.4, 9.0, 180.0)
+
+    for case_d in (2.2, 4.3):
+        f.on_face("u", COMMUNITY_WEST, 1, "floor_shelf", case_d, variant="books")
+
+    f.on_wall("right", "spinning_wheel", 5.6)
+    f.on_wall("right", "wall_crucifix", 5.6)
+    f.put("yarn_basket", 13.9, 1.2)
+    f.put("wicker_basket", 13.9, 9.8, variant="wool")
+    f.hang_picture("d", FRONT_FACE, -1, 12.0, "portrait")
+
+    for lamp_d in (3.6, 6.9):
+        f.put("hanging_oil_lamp", 11.4, lamp_d)
 
 
 def furnish_infirmary(f) -> None:
-    """Infirmary (u = -14.55..-0.15, d = 8.35..19.1): six iron beds with their heads to the long walls, a night table
-    by each, folding screens between some, the medicine cabinet, the nurse's table and a washstand on the wall to the
-    seminary room, a linen press, the stove on the end wall between the windows with two armchairs before it."""
-    cross_face = INFIRMARY_WALL - WALL_HALF
+    """Infirmary (u -14.55..-6.55, d 13.75..24.10): three beds on the corridor wall and four on the back wall with a
+    locker by every head, the medicine cabinet between the end windows, the nurse's table in the middle, screens."""
+    bed_row(f, "iron_bed", INFIRMARY_CORRIDOR_BEDS, BACK_FACE, 1, variant="green")
+    bed_row(f, "iron_bed", INFIRMARY_BACK_BEDS, HALL_BACK, -1, variant="green")
 
-    for bed_u in (-12.0, -8.0, -4.0):
-        for wall_d, normal in ((BACK_FACE, 1), (f.back, -1)):
-            f.on_face("d", wall_d, normal, "iron_bed", bed_u, variant=BLANKET_INFIRMARY)
-            f.on_face("d", wall_d, normal, "night_table", bed_u + 0.75)
-            f.on_face("d", wall_d, normal, "wall_sconce", bed_u + 0.75, lit=bed_u == -8.0)
+    f.on_wall("left", "medicine_cabinet", 18.74)
+    f.on_wall("left", "washstand", 22.8)
+    f.put("nurse_table", -10.4, 18.9)
+    f.put("bentwood_chair", -10.4, 19.55, 180.0)
+    f.put("folding_screen", -12.4, 17.2)
+    f.on_face("u", INFIRMARY_EAST, -1, "wall_crucifix", 18.9)
 
-    f.put("folding_screen", -10.0, BACK_FACE + 1.4, 90.0)
-    f.put("folding_screen", -6.0, f.back - 1.4, 90.0)
+    for lamp_u in (-12.0, -8.4):
+        f.put("hanging_oil_lamp", lamp_u, 18.9)
 
-    f.on_face("u", cross_face, -1, "medicine_cabinet", 10.2)
-    f.on_face("u", cross_face, -1, "nurse_table", 17.2)
-    f.on_face("u", cross_face, -1, "washstand", 18.5)
-    f.on_face("d", BACK_FACE, 1, "linen_press", -1.8)
 
-    f.on_wall("left", "fireplace", 13.9)
-    f.put("armchair", HALL_LEFT + 1.8, 13.2, -90.0)
-    f.put("armchair", HALL_LEFT + 1.8, 14.6, -90.0)
-    f.on_wall("left", "curtain_pair", 11.8, width=1.8, height=3.4, variant="cream")
-    f.on_wall("left", "curtain_pair", 16.0, width=1.8, height=3.4, variant="cream")
+def furnish_sacristy(f) -> None:
+    """Sacristy (u -6.25..-0.65, d 13.75..18.80): vestment press and linen press, a vesting table, the lavabo, a
+    crucifix; isolation room (d 19.10..24.10): two beds behind a screen, a washstand and a chair."""
+    f.on_face("d", SACRISTY_WALL - WALL_HALF, -1, "wardrobe", -5.0)
+    f.on_face("d", SACRISTY_WALL - WALL_HALF, -1, "linen_press", -2.6)
+    f.put("side_table", -3.4, 16.0)
+    f.on_face("u", SACRISTY_WEST, 1, "washstand", 15.0)
+    f.on_face("u", SACRISTY_WEST, 1, "wall_crucifix", 16.6)
+    f.put("hanging_oil_lamp", -3.4, 16.2)
 
-    f.on_face("d", BACK_FACE, 1, "wall_crucifix", -10.0)
-    f.on_face("d", f.back, -1, "wall_crucifix", -10.0)
+    for bed_u in (-4.8, -2.1):
+        f.on_wall("back", "iron_bed", bed_u, variant="dull_red")
 
-    f.put("reading_table", -7.0, 13.7)
+    f.put("folding_screen", -3.45, 22.3, 90.0)
+    f.on_face("u", SACRISTY_EAST, -1, "washstand", 20.0)
+    f.put("bentwood_chair", -1.4, 20.6, -90.0)
+    f.put("hanging_oil_lamp", -3.4, 21.6, lit=False)
 
-    for chair_u in (-7.6, -6.4):
-        f.put("bentwood_chair", chair_u, 13.7 - 0.85, 180.0)
-        f.put("bentwood_chair", chair_u, 13.7 + 0.85, 0.0)
 
-    f.on_wall("left", "clothes_pegs", 9.5)
+def furnish_chapel(f) -> None:
+    """Chapel (u -0.35..14.55, d 13.75..24.10): nine rows of pews either side of the middle aisle, the altar against
+    the gallery wall with candlesticks and the sanctuary lamp, the sisters' stalls along the sanctuary, the
+    communion rail, harmonium, confessional, holy water font at the door, saints in niches."""
+    for row_u, block_d in itertools.product(PEW_ROW_US, PEW_BLOCK_DS):
+        f.put("pew", row_u, block_d, 90.0)
 
-    for lamp_u in (-10.0, -6.0, -2.5):
-        f.put("hanging_oil_lamp", lamp_u, 13.7)
+    f.on_wall("right", "chancel_altar", CHAPEL_AXIS)
+
+    for side in (-1, 1):
+        f.put("candle_stand", 13.6, CHAPEL_AXIS + side * 2.2)
+        f.put("railing", RAIL_U, CHAPEL_AXIS + side * 1.9, 90.0)
+
+    for stall_u in STALL_US:
+        f.on_face("d", BACK_FACE, 1, "pew", stall_u)
+        f.on_wall("back", "pew", stall_u)
+
+    f.put("sanctuary_lamp", 12.4, CHAPEL_AXIS + 1.2)
+    f.on_wall("back", "harmonium", 3.4)
+    f.on_wall("back", "confessional", 1.4)
+    f.on_wall("back", "saint_niche", 6.0)
+    f.on_face("d", BACK_FACE, 1, "holy_water_font", 2.2)
+
+    for lamp_u in (3.5, 7.0):
+        f.put("wheel_chandelier", lamp_u, CHAPEL_AXIS)
+
+
+def furnish_corridor(f) -> None:
+    """Corridor (d 10.95..13.45): benches, a saint's niche by the chapel door, pictures, lamps."""
+    front, back = CORRIDOR_CLEAR
+
+    f.on_face("d", front, 1, "bench_long", -6.0)
+    f.on_face("d", back, -1, "saint_niche", 3.0)
+    f.hang_picture("d", front, 1, -0.5, "landscape")
+    f.on_face("d", back, -1, "bench_long", 7.0)
+
+    for lamp_u in (-9.5, 0.5, 9.5):
+        f.put("hanging_oil_lamp", lamp_u, CORRIDOR_MIDDLE)
 
 
 def furnish_seminary(f) -> None:
-    """Upper floor of the left wing: the sacristy, the chapel, the seminary room and the infirmary."""
-    furnish_sacristy(f)
+    """Upper floor of the sisters' wing; the rooms that need their night lamps most come first."""
     furnish_chapel(f)
-    furnish_seminary_room(f)
+    furnish_cells(f)
     furnish_infirmary(f)
+    furnish_corridor(f)
+    furnish_community(f)
+    furnish_washroom(f)
+    furnish_sacristy(f)
 
 
 PLAN = dict(
-    keeper=(7.0, 14.4),  # the prefect between the study table and the cubicles
+    keeper=(6.0, CHAPEL_AXIS),  # the sacristan, in the middle aisle of the chapel
     posts=(),
     girder_pitch=2.4,
     partitions=(
-        ("u", SACRISTY_WALL, HALL_FRONT, FRONT_FACE, dict(doors=[CHAPEL_DOOR], faces=("chapel", "chapel"))),
-        ("d", LONG_WALL, HALL_LEFT, INFIRMARY_WALL, dict(faces=("chapel", "infirmary"))),
-        ("d", LONG_WALL, INFIRMARY_WALL, HALL_RIGHT, dict(doors=[SACRISTY_DOOR], faces=("chapel", "seminary"))),
-        ("u", INFIRMARY_WALL, BACK_FACE, HALL_BACK, dict(doors=[INFIRMARY_DOOR], faces=("infirmary", "seminary"))),
+        *corridor_walls(
+            [(HALL_LEFT, WASH_WALL, "cells", [CELLS_DOOR]), (WASH_WALL, COMMUNITY_WALL, "washroom", [WASH_DOOR]), (COMMUNITY_WALL, HALL_RIGHT, "community", [COMMUNITY_DOOR])],
+            [(HALL_LEFT, INFIRMARY_WALL, "infirmary", [INFIRMARY_DOOR]), (INFIRMARY_WALL, CHAPEL_WALL, "sacristy", [SACRISTY_DOOR]), (CHAPEL_WALL, HALL_RIGHT, "chapel", [CHAPEL_DOOR])],
+            "corridor",
+        ),
+        cross_wall(WASH_WALL, FRONT_BAND, "cells", "washroom"),
+        cross_wall(COMMUNITY_WALL, FRONT_BAND, "washroom", "community"),
+        cross_wall(INFIRMARY_WALL, BACK_BAND, "infirmary", "sacristy", [ISOLATION_DOOR]),
+        cross_wall(CHAPEL_WALL, BACK_BAND, "sacristy", "chapel", [VESTRY_DOOR]),
+        ("d", SACRISTY_WALL, SACRISTY_WEST, SACRISTY_EAST, dict(faces=("sacristy", "infirmary"))),
     ),
     finishes=(
-        ("front", HALL_LEFT, HALL_RIGHT, "chapel"),
-        ("left", HALL_FRONT, FRONT_FACE, "chapel"),
-        ("right", HALL_FRONT, FRONT_FACE, "chapel"),
+        ("front", HALL_LEFT, CELLS_EAST, "cells"),
+        ("front", WASH_WEST, WASH_EAST, "washroom"),
+        ("front", COMMUNITY_WEST, HALL_RIGHT, "community"),
+        ("left", HALL_FRONT, FRONT_FACE, "cells"),
+        ("left", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
         ("left", BACK_FACE, HALL_BACK, "infirmary"),
-        ("right", BACK_FACE, HALL_BACK, "seminary"),
-        ("back", HALL_LEFT, INFIRMARY_WALL - WALL_HALF, "infirmary"),
-        ("back", INFIRMARY_WALL + WALL_HALF, HALL_RIGHT, "seminary"),
+        ("right", HALL_FRONT, FRONT_FACE, "community"),
+        ("right", CORRIDOR_CLEAR[0], CORRIDOR_CLEAR[1], "corridor"),
+        ("right", BACK_FACE, HALL_BACK, "chapel"),
+        ("back", HALL_LEFT, INFIRMARY_EAST, "infirmary"),
+        ("back", SACRISTY_WEST, SACRISTY_EAST, "infirmary"),
+        ("back", CHAPEL_WEST, HALL_RIGHT, "chapel"),
     ),
+    stone_floors=((WASH_WEST, WASH_EAST, HALL_FRONT, FRONT_FACE),),
     furnish=furnish_seminary,
 )
