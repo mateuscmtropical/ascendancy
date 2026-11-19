@@ -635,105 +635,201 @@ rotation = Vector3(-1.567, 1.571, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="LibraryPassageDoor" type="Camera3D" parent="."]
-position = Vector3(-76.250, 1.600, -17.000)
-rotation = Vector3(-0.059, 1.556, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="LibraryLibDoor" type="Camera3D" parent="."]
-position = Vector3(-78.000, 1.600, -19.500)
-rotation = Vector3(-0.008, 0.041, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="LibraryLibFar" type="Camera3D" parent="."]
-position = Vector3(-79.700, 1.600, -43.300)
-rotation = Vector3(-0.004, -3.070, 0.000)
-fov = 75.0
-far = 400.0
-
 [node name="LibraryRefDoor" type="Camera3D" parent="."]
-position = Vector3(-84.900, 1.600, -16.700)
-rotation = Vector3(-0.019, 0.262, 0.000)
+position = Vector3(-89.600, 1.600, -29.600)
+rotation = Vector3(-0.030, 2.771, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="LibraryRefFar" type="Camera3D" parent="."]
-position = Vector3(-85.000, 1.600, -32.300)
-rotation = Vector3(-0.018, 2.768, 0.000)
+position = Vector3(-98.400, 1.600, -17.600)
+rotation = Vector3(-0.025, -0.489, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryRefHatch" type="Camera3D" parent="."]
+position = Vector3(-94.000, 1.600, -31.400)
+rotation = Vector3(-0.019, -3.142, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="LibraryKitDoor" type="Camera3D" parent="."]
-position = Vector3(-85.200, 1.600, -33.500)
-rotation = Vector3(-0.041, 0.718, 0.000)
+position = Vector3(-89.300, 1.600, -37.500)
+rotation = Vector3(-0.045, 1.974, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="LibraryKitFar" type="Camera3D" parent="."]
-position = Vector3(-91.400, 1.600, -38.600)
-rotation = Vector3(-0.056, -2.178, 0.000)
+position = Vector3(-96.600, 1.600, -33.400)
+rotation = Vector3(-0.033, -0.896, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="LibraryPantryDoor" type="Camera3D" parent="."]
-position = Vector3(-84.600, 1.600, -41.500)
-rotation = Vector3(-0.054, 1.099, 0.000)
+[node name="LibraryKitRange" type="Camera3D" parent="."]
+position = Vector3(-91.000, 1.600, -34.000)
+rotation = Vector3(-0.049, 0.417, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="LibraryPantryFar" type="Camera3D" parent="."]
-position = Vector3(-92.600, 1.600, -42.900)
-rotation = Vector3(-0.039, -1.847, 0.000)
+[node name="LibraryScullery" type="Camera3D" parent="."]
+position = Vector3(-89.500, 1.600, -40.500)
+rotation = Vector3(-0.119, 0.927, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryPantry" type="Camera3D" parent="."]
+position = Vector3(-97.300, 1.600, -40.300)
+rotation = Vector3(-0.102, -0.338, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryLibDoor" type="Camera3D" parent="."]
+position = Vector3(-84.900, 1.600, -26.600)
+rotation = Vector3(0.000, -2.478, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryLibFar" type="Camera3D" parent="."]
+position = Vector3(-76.200, 1.600, -16.500)
+rotation = Vector3(-0.007, 0.617, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryStudyDoor" type="Camera3D" parent="."]
+position = Vector3(-84.900, 1.600, -36.800)
+rotation = Vector3(-0.019, -2.417, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryStudyFront" type="Camera3D" parent="."]
+position = Vector3(-80.250, 2.000, -29.200)
+rotation = Vector3(-0.140, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryLaundry" type="Camera3D" parent="."]
+position = Vector3(-84.900, 1.600, -41.000)
+rotation = Vector3(-0.047, -1.452, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryLaundryFar" type="Camera3D" parent="."]
+position = Vector3(-75.900, 1.600, -43.800)
+rotation = Vector3(-0.042, 2.106, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="LibraryCorridor" type="Camera3D" parent="."]
+position = Vector3(-87.200, 1.600, -16.000)
+rotation = Vector3(0.007, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleEntrance" type="Camera3D" parent="."]
+position = Vector3(-76.200, 1.600, -0.000)
+rotation = Vector3(0.014, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleEntranceSide" type="Camera3D" parent="."]
+position = Vector3(-84.500, 1.600, -3.500)
+rotation = Vector3(-0.027, -2.324, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleParlourVisitors" type="Camera3D" parent="."]
+position = Vector3(-75.900, 1.600, 6.000)
+rotation = Vector3(-0.029, 2.501, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleParlourSisters" type="Camera3D" parent="."]
+position = Vector3(-85.300, 1.600, 13.000)
+rotation = Vector3(-0.028, -0.967, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleLodge" type="Camera3D" parent="."]
+position = Vector3(-85.300, 1.600, -6.600)
+rotation = Vector3(-0.036, -1.643, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleOffice" type="Camera3D" parent="."]
+position = Vector3(-85.300, 1.600, -11.400)
+rotation = Vector3(-0.034, -1.616, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleLavatory" type="Camera3D" parent="."]
+position = Vector3(-92.400, 1.600, -12.600)
+rotation = Vector3(-0.080, 2.070, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleTeachers" type="Camera3D" parent="."]
+position = Vector3(-92.400, 1.600, 12.600)
+rotation = Vector3(-0.083, 0.883, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="VestibuleStair" type="Camera3D" parent="."]
-position = Vector3(-81.500, 1.600, -0.000)
-rotation = Vector3(0.151, 1.571, 0.000)
+position = Vector3(-86.000, 1.600, -0.000)
+rotation = Vector3(0.144, 1.571, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="VestibuleCross" type="Camera3D" parent="."]
-position = Vector3(-78.000, 1.600, 11.000)
+position = Vector3(-88.500, 1.600, 11.000)
 rotation = Vector3(0.004, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="VestibuleLane" type="Camera3D" parent="."]
-position = Vector3(-84.000, 1.600, -8.500)
-rotation = Vector3(0.077, 2.253, 0.000)
-fov = 75.0
-far = 400.0
-
 [node name="VestibuleLanding" type="Camera3D" parent="."]
-position = Vector3(-93.200, 4.450, -0.000)
+position = Vector3(-98.200, 4.450, -0.000)
 rotation = Vector3(0.081, -1.571, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="VestibuleFlight" type="Camera3D" parent="."]
-position = Vector3(-90.000, 5.000, -3.300)
+position = Vector3(-95.000, 5.000, -3.300)
 rotation = Vector3(0.176, -1.571, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="VestibuleGallery" type="Camera3D" parent="."]
 position = Vector3(-77.400, 7.250, -0.000)
-rotation = Vector3(-0.048, 1.571, 0.000)
+rotation = Vector3(-0.035, 1.571, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="VestibuleGalleryCross" type="Camera3D" parent="."]
-position = Vector3(-78.000, 7.250, 11.000)
+position = Vector3(-87.200, 7.250, 11.000)
 rotation = Vector3(0.002, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="VestibuleGallerySide" type="Camera3D" parent="."]
-position = Vector3(-92.000, 7.250, -12.000)
-rotation = Vector3(-0.086, -2.554, 0.000)
+[node name="VestibuleGalleryReading" type="Camera3D" parent="."]
+position = Vector3(-85.500, 7.250, 13.800)
+rotation = Vector3(-0.131, -0.913, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleGalleryToys" type="Camera3D" parent="."]
+position = Vector3(-85.500, 7.250, -13.800)
+rotation = Vector3(-0.131, -2.229, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleGalleryMusic" type="Camera3D" parent="."]
+position = Vector3(-92.000, 7.250, -6.000)
+rotation = Vector3(-0.105, 1.052, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="VestibuleGalleryDrawing" type="Camera3D" parent="."]
+position = Vector3(-92.000, 7.250, 6.000)
+rotation = Vector3(-0.103, 2.226, 0.000)
 fov = 75.0
 far = 400.0
 
@@ -749,200 +845,230 @@ rotation = Vector3(-0.043, -1.571, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolCloakDoor" type="Camera3D" parent="."]
-position = Vector3(-76.300, 1.600, 16.600)
-rotation = Vector3(-0.045, 1.645, 0.000)
-fov = 75.0
-far = 400.0
-
 [node name="SchoolClass1Door" type="Camera3D" parent="."]
-position = Vector3(-82.200, 1.600, 19.500)
-rotation = Vector3(-0.011, -2.708, 0.000)
+position = Vector3(-84.900, 1.600, 16.600)
+rotation = Vector3(-0.011, -2.586, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolClass1Far" type="Camera3D" parent="."]
-position = Vector3(-76.000, 1.600, 27.000)
-rotation = Vector3(-0.043, 0.633, 0.000)
+[node name="SchoolClass1Front" type="Camera3D" parent="."]
+position = Vector3(-83.600, 1.900, 24.400)
+rotation = Vector3(-0.107, -0.648, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SchoolClass2Door" type="Camera3D" parent="."]
-position = Vector3(-82.200, 1.600, 28.800)
-rotation = Vector3(-0.011, -2.718, 0.000)
+position = Vector3(-84.900, 1.600, 26.000)
+rotation = Vector3(-0.010, -2.619, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolClass2Far" type="Camera3D" parent="."]
-position = Vector3(-76.000, 1.600, 37.300)
-rotation = Vector3(-0.041, 0.597, 0.000)
+[node name="SchoolClass2Front" type="Camera3D" parent="."]
+position = Vector3(-83.600, 1.900, 34.600)
+rotation = Vector3(-0.101, -0.605, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolScienceDoor" type="Camera3D" parent="."]
-position = Vector3(-82.000, 1.600, 39.400)
-rotation = Vector3(-0.035, -2.369, 0.000)
+[node name="SchoolClass3Door" type="Camera3D" parent="."]
+position = Vector3(-84.900, 1.600, 43.600)
+rotation = Vector3(-0.069, -0.983, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolScienceFar" type="Camera3D" parent="."]
-position = Vector3(-81.700, 1.600, 44.000)
-rotation = Vector3(-0.044, -0.754, 0.000)
+[node name="SchoolClass3Back" type="Camera3D" parent="."]
+position = Vector3(-75.900, 1.600, 36.000)
+rotation = Vector3(0.000, 1.985, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolStudyDoor" type="Camera3D" parent="."]
-position = Vector3(-85.400, 1.600, 17.000)
-rotation = Vector3(-0.017, 2.825, 0.000)
+[node name="SchoolSalleDoor" type="Camera3D" parent="."]
+position = Vector3(-89.400, 1.600, 32.000)
+rotation = Vector3(-0.032, 2.761, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolStudyFar" type="Camera3D" parent="."]
-position = Vector3(-88.700, 1.600, 31.900)
-rotation = Vector3(-0.014, -0.000, 0.000)
+[node name="SchoolSalleFar" type="Camera3D" parent="."]
+position = Vector3(-89.600, 1.600, 43.800)
+rotation = Vector3(-0.021, 0.345, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolTeachDoor" type="Camera3D" parent="."]
-position = Vector3(-88.700, 1.600, 33.500)
-rotation = Vector3(-0.034, 2.746, 0.000)
+[node name="SchoolSalleBack" type="Camera3D" parent="."]
+position = Vector3(-98.500, 1.600, 26.200)
+rotation = Vector3(-0.022, -2.722, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolTeachFar" type="Camera3D" parent="."]
-position = Vector3(-92.900, 1.600, 38.600)
-rotation = Vector3(-0.033, -0.940, 0.000)
+[node name="SchoolMagicDoor" type="Camera3D" parent="."]
+position = Vector3(-89.400, 1.600, 23.800)
+rotation = Vector3(-0.058, 1.085, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolHeadDoor" type="Camera3D" parent="."]
-position = Vector3(-88.700, 1.600, 40.300)
-rotation = Vector3(-0.041, 2.531, 0.000)
+[node name="SchoolMagicFar" type="Camera3D" parent="."]
+position = Vector3(-98.600, 1.600, 16.200)
+rotation = Vector3(-0.026, -2.307, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SchoolHeadFar" type="Camera3D" parent="."]
-position = Vector3(-93.000, 1.600, 43.500)
-rotation = Vector3(-0.034, -1.158, 0.000)
+[node name="SchoolCorridor" type="Camera3D" parent="."]
+position = Vector3(-87.200, 1.600, 16.000)
+rotation = Vector3(0.007, -3.142, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingDormDoor" type="Camera3D" parent="."]
-position = Vector3(-79.200, 7.200, -17.400)
-rotation = Vector3(-0.009, 0.008, 0.000)
+[node name="ReadingGirlsDoor" type="Camera3D" parent="."]
+position = Vector3(-89.300, 7.200, -16.800)
+rotation = Vector3(-0.032, 0.253, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingDormFar" type="Camera3D" parent="."]
-position = Vector3(-79.200, 7.200, -44.200)
-rotation = Vector3(-0.006, -3.134, 0.000)
+[node name="ReadingGirlsFar" type="Camera3D" parent="."]
+position = Vector3(-98.600, 7.200, -35.300)
+rotation = Vector3(-0.032, -2.728, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingDormTop" type="Camera3D" parent="."]
-position = Vector3(-75.900, 10.450, -43.600)
-rotation = Vector3(-0.259, 2.860, 0.000)
+[node name="ReadingGirlsAisle" type="Camera3D" parent="."]
+position = Vector3(-91.300, 7.200, -17.500)
+rotation = Vector3(-0.034, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingDormBeds" type="Camera3D" parent="."]
-position = Vector3(-79.200, 7.200, -21.000)
-rotation = Vector3(-0.057, -0.245, 0.000)
+[node name="ReadingGirlsWash" type="Camera3D" parent="."]
+position = Vector3(-91.300, 7.200, -36.600)
+rotation = Vector3(-0.056, 1.227, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingAnteroom" type="Camera3D" parent="."]
-position = Vector3(-78.000, 7.200, -15.800)
-rotation = Vector3(-0.049, 0.663, 0.000)
+[node name="ReadingLinen" type="Camera3D" parent="."]
+position = Vector3(-89.300, 7.200, -42.500)
+rotation = Vector3(-0.046, 1.628, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingBabiesDoor" type="Camera3D" parent="."]
-position = Vector3(-84.000, 7.200, -17.050)
-rotation = Vector3(-0.019, 0.353, 0.000)
+[node name="ReadingBoysDoor" type="Camera3D" parent="."]
+position = Vector3(-84.900, 7.200, -16.100)
+rotation = Vector3(-0.037, -0.434, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingBabiesFar" type="Camera3D" parent="."]
-position = Vector3(-85.500, 7.200, -32.300)
-rotation = Vector3(-0.027, 2.837, 0.000)
+[node name="ReadingBoysFar" type="Camera3D" parent="."]
+position = Vector3(-84.800, 7.200, -31.200)
+rotation = Vector3(-0.037, -2.639, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingWashDoor" type="Camera3D" parent="."]
-position = Vector3(-84.000, 7.200, -37.600)
-rotation = Vector3(-0.049, 1.732, 0.000)
+[node name="ReadingBoysWindows" type="Camera3D" parent="."]
+position = Vector3(-76.200, 7.200, -16.200)
+rotation = Vector3(-0.039, 0.314, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingWashFar" type="Camera3D" parent="."]
-position = Vector3(-93.600, 7.200, -36.300)
-rotation = Vector3(-0.055, -1.571, 0.000)
+[node name="ReadingBoysWash" type="Camera3D" parent="."]
+position = Vector3(-84.600, 7.200, -32.400)
+rotation = Vector3(-0.045, -1.027, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingLinenDoor" type="Camera3D" parent="."]
-position = Vector3(-88.700, 7.200, -40.400)
-rotation = Vector3(-0.083, -0.000, 0.000)
+[node name="ReadingNursery" type="Camera3D" parent="."]
+position = Vector3(-84.900, 7.200, -39.400)
+rotation = Vector3(-0.092, -1.143, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="ReadingLinenFar" type="Camera3D" parent="."]
-position = Vector3(-83.900, 7.200, -43.300)
-rotation = Vector3(-0.033, 1.886, 0.000)
+[node name="ReadingNurseryFar" type="Camera3D" parent="."]
+position = Vector3(-75.900, 7.200, -41.500)
+rotation = Vector3(-0.091, 1.743, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SeminarySacristyDoor" type="Camera3D" parent="."]
-position = Vector3(-78.000, 7.200, 15.800)
-rotation = Vector3(-0.050, 2.304, 0.000)
+[node name="ReadingCorridor" type="Camera3D" parent="."]
+position = Vector3(-87.200, 7.200, -16.000)
+rotation = Vector3(0.007, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SeminarySacristyFar" type="Camera3D" parent="."]
-position = Vector3(-76.000, 7.200, 18.200)
-rotation = Vector3(-0.051, 1.190, 0.000)
+[node name="SeminaryCellsDoor" type="Camera3D" parent="."]
+position = Vector3(-80.500, 7.200, 44.100)
+rotation = Vector3(-0.022, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryCellsAisle" type="Camera3D" parent="."]
+position = Vector3(-80.500, 7.200, 25.700)
+rotation = Vector3(-0.022, -3.142, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryCellWindow" type="Camera3D" parent="."]
+position = Vector3(-78.000, 7.200, 39.200)
+rotation = Vector3(-0.145, -1.752, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryCellCorridor" type="Camera3D" parent="."]
+position = Vector3(-82.600, 7.200, 34.900)
+rotation = Vector3(-0.197, 1.518, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryWash" type="Camera3D" parent="."]
+position = Vector3(-84.900, 7.200, 23.400)
+rotation = Vector3(-0.045, -1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryCommunity" type="Camera3D" parent="."]
+position = Vector3(-84.900, 7.200, 20.600)
+rotation = Vector3(-0.045, -1.271, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SeminaryChapelDoor" type="Camera3D" parent="."]
-position = Vector3(-79.800, 7.200, 19.500)
-rotation = Vector3(0.008, 3.133, 0.000)
+position = Vector3(-89.400, 7.200, 29.200)
+rotation = Vector3(0.029, 0.329, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryChapelNave" type="Camera3D" parent="."]
+position = Vector3(-93.900, 7.200, 29.400)
+rotation = Vector3(0.015, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SeminaryChapelAltar" type="Camera3D" parent="."]
-position = Vector3(-79.800, 7.200, 39.000)
-rotation = Vector3(-0.005, -0.015, 0.000)
+position = Vector3(-90.000, 7.200, 17.000)
+rotation = Vector3(-0.033, 2.715, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="SeminaryChapelSanctuary" type="Camera3D" parent="."]
-position = Vector3(-79.800, 7.200, 37.400)
-rotation = Vector3(-0.014, 3.085, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="SeminarySemDoor" type="Camera3D" parent="."]
-position = Vector3(-84.000, 7.200, 17.050)
-rotation = Vector3(-0.032, 2.640, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="SeminarySemFar" type="Camera3D" parent="."]
-position = Vector3(-85.000, 7.200, 29.000)
-rotation = Vector3(-0.022, 0.528, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="SeminaryInfDoor" type="Camera3D" parent="."]
-position = Vector3(-88.700, 7.200, 30.600)
-rotation = Vector3(-0.030, -3.089, 0.000)
+[node name="SeminaryInfirmary" type="Camera3D" parent="."]
+position = Vector3(-89.400, 7.200, 44.000)
+rotation = Vector3(-0.062, 0.756, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SeminaryInfFar" type="Camera3D" parent="."]
-position = Vector3(-84.500, 7.200, 43.800)
-rotation = Vector3(-0.042, 0.596, 0.000)
+position = Vector3(-94.000, 7.200, 37.000)
+rotation = Vector3(-0.079, -2.737, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminarySacristy" type="Camera3D" parent="."]
+position = Vector3(-89.400, 7.200, 33.500)
+rotation = Vector3(-0.045, 1.684, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryIsolation" type="Camera3D" parent="."]
+position = Vector3(-95.400, 7.200, 36.000)
+rotation = Vector3(-0.117, 0.675, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="SeminaryCorridor" type="Camera3D" parent="."]
+position = Vector3(-87.200, 7.200, 16.000)
+rotation = Vector3(0.007, -3.142, 0.000)
 fov = 75.0
 far = 400.0
