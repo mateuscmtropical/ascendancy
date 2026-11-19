@@ -22,6 +22,8 @@ enum ForcedEvent { NONE, METEOR_SHOWER, SOLAR_ECLIPSE, LUNAR_ECLIPSE }
 
 const NIGHT_LIGHTS_GROUP: StringName = &"night_lights"
 const INTERIOR_AMBIENCE_GROUP: StringName = &"interior_ambience"
+## Metadado da sonda de um salão que quer o seu próprio nível de ambiente à noite.
+const NIGHT_AMBIENT_META: StringName = &"night_ambient_energy"
 ## Lâmpadas que só valem de dia: a luz do dia que se espalha pelos salões do casarão.
 const DAY_LIGHTS_GROUP: StringName = &"day_lights"
 const BASE_ENERGY_META: StringName = &"day_night_base_energy"
@@ -329,12 +331,14 @@ func _light_interiors(lamp_amount: float) -> void:
 		return
 
 	for probe in _interior_probes:
+		var night_energy: float = probe.get_meta(NIGHT_AMBIENT_META, INTERIOR_NIGHT_AMBIENT_ENERGY)
+
 		probe.visible = is_lit
 		probe.ambient_color = environment.ambient_light_color.lerp(
 			INTERIOR_NIGHT_AMBIENT, lamp_amount
 		)
 		probe.ambient_color_energy = lerpf(
-			environment.ambient_light_energy, INTERIOR_NIGHT_AMBIENT_ENERGY, lamp_amount
+			environment.ambient_light_energy, night_energy, lamp_amount
 		)
 
 

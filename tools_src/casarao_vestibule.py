@@ -49,6 +49,8 @@ RUNNER_HALF = 0.9  # passadeira do portal ao patamar
 FLOOR_TILE = 1.2
 FLOOR_TINTS = (srgb("EBD6AC"), srgb("C99A6C"))  # xadrez do piso do térreo
 DADO_TOP = 1.5
+CORNICE_HEIGHT = 0.2  # the same cornice the wing halls run under their ceilings (build_market_shops.py)
+CORNICE_TINT = srgb("EFE6D2")
 DADO_REVEAL = 0.32  # o lambri para antes da moldura de cada vão
 PANEL_PITCH = 2.6  # largura aproximada de um painel de parede
 PANEL_TOP = 4.35
@@ -265,6 +267,13 @@ def build_wall_finishes(b: Builder, room, storey: int) -> None:
 
     for u, opening in sills:
         dress_wall(b, ("u", room.front, 1), (u - opening.width / 2.0 - DADO_REVEAL, u + opening.width / 2.0 + DADO_REVEAL), lift, finish, dado_top=opening.bottom - 0.2, panel_top=0.0)
+
+    ceiling = lift + room.ceiling
+    cornice_runs = [(("d", room.left, 1), (room.front, room.back)), (("d", room.right, -1), (room.front, room.back)), (("u", room.front, 1), (room.left, room.right)), (("u", room.back, -1), (room.left, room.right))]
+
+    for run, span in cornice_runs:
+        slab(b, run, span, (ceiling - CORNICE_HEIGHT, ceiling - CORNICE_HEIGHT * 0.6), 0.05, "plaster", CORNICE_TINT)
+        slab(b, run, span, (ceiling - CORNICE_HEIGHT * 0.6, ceiling), 0.1, "plaster", CORNICE_TINT)
 
 
 def build_gallery(b: Builder, room) -> None:

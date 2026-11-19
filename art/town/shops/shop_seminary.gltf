@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "9eabfd5e8e28fb98aead53161eb1cd32"
+   "buffer_md5": "339224151cdbb0f93f28c6e752fda847"
   }
  },
  "scene": 0,
@@ -100,7 +100,13 @@
     86,
     87,
     88,
-    89
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95
    ]
   }
  ],
@@ -155,315 +161,339 @@
   },
   {
    "mesh": 12,
-   "name": "Collider27-colonly"
+   "name": "Collider28-colonly"
   },
   {
    "mesh": 13,
-   "name": "Collider34-colonly"
+   "name": "Collider35-colonly"
   },
   {
    "mesh": 14,
-   "name": "Collider37-colonly"
+   "name": "Collider38-colonly"
   },
   {
    "mesh": 15,
-   "name": "Collider39-colonly"
+   "name": "Collider41-colonly"
   },
   {
    "mesh": 16,
-   "name": "Collider46-colonly"
+   "name": "Collider48-colonly"
   },
   {
    "mesh": 17,
-   "name": "Collider49-colonly"
-  },
-  {
-   "mesh": 18,
    "name": "Collider51-colonly"
   },
   {
-   "mesh": 19,
-   "name": "Collider58-colonly"
+   "mesh": 18,
+   "name": "Collider54-colonly"
   },
   {
-   "mesh": 20,
+   "mesh": 19,
    "name": "Collider61-colonly"
   },
   {
+   "mesh": 20,
+   "name": "Collider64-colonly"
+  },
+  {
    "mesh": 21,
-   "name": "Collider63-colonly"
+   "name": "Collider67-colonly"
   },
   {
    "mesh": 22,
-   "name": "Collider70-colonly"
+   "name": "Collider74-colonly"
   },
   {
    "mesh": 23,
-   "name": "Collider73-colonly"
+   "name": "Collider77-colonly"
   },
   {
    "mesh": 24,
-   "name": "Collider75-colonly"
+   "name": "Collider80-colonly"
   },
   {
    "mesh": 25,
-   "name": "Collider82-colonly"
-  },
-  {
-   "mesh": 26,
-   "name": "Collider85-colonly"
-  },
-  {
-   "mesh": 27,
    "name": "Collider87-colonly"
   },
   {
+   "mesh": 26,
+   "name": "Collider90-colonly"
+  },
+  {
+   "mesh": 27,
+   "name": "Collider93-colonly"
+  },
+  {
    "mesh": 28,
-   "name": "Collider94-colonly"
+   "name": "Collider100-colonly"
   },
   {
    "mesh": 29,
-   "name": "Collider97-colonly"
+   "name": "Collider103-colonly"
   },
   {
    "mesh": 30,
-   "name": "Collider99-colonly"
-  },
-  {
-   "mesh": 31,
    "name": "Collider106-colonly"
   },
   {
+   "mesh": 31,
+   "name": "Collider113-colonly"
+  },
+  {
    "mesh": 32,
-   "name": "Collider109-colonly"
+   "name": "Collider116-colonly"
   },
   {
    "mesh": 33,
-   "name": "Collider111-colonly"
+   "name": "Collider119-colonly"
   },
   {
    "mesh": 34,
-   "name": "Collider118-colonly"
+   "name": "Collider126-colonly"
   },
   {
    "mesh": 35,
-   "name": "Collider121-colonly"
+   "name": "Collider129-colonly"
   },
   {
    "mesh": 36,
-   "name": "Collider123-colonly"
-  },
-  {
-   "mesh": 37,
-   "name": "Collider130-colonly"
-  },
-  {
-   "mesh": 38,
    "name": "Collider132-colonly"
   },
   {
+   "mesh": 37,
+   "name": "Collider139-colonly"
+  },
+  {
+   "mesh": 38,
+   "name": "Collider141-colonly"
+  },
+  {
    "mesh": 39,
-   "name": "Collider134-colonly"
+   "name": "Collider143-colonly"
   },
   {
    "mesh": 40,
-   "name": "Collider136-colonly"
+   "name": "Collider145-colonly"
   },
   {
    "mesh": 41,
-   "name": "Collider138-colonly"
-  },
-  {
-   "mesh": 42,
-   "name": "Collider140-colonly"
-  },
-  {
-   "mesh": 43,
-   "name": "Collider142-colonly"
-  },
-  {
-   "mesh": 44,
-   "name": "Collider144-colonly"
-  },
-  {
-   "mesh": 45,
    "name": "Collider147-colonly"
   },
   {
-   "mesh": 46,
+   "mesh": 42,
    "name": "Collider149-colonly"
   },
   {
+   "mesh": 43,
+   "name": "Collider151-colonly"
+  },
+  {
+   "mesh": 44,
+   "name": "Collider153-colonly"
+  },
+  {
+   "mesh": 45,
+   "name": "Collider156-colonly"
+  },
+  {
+   "mesh": 46,
+   "name": "Collider159-colonly"
+  },
+  {
    "mesh": 47,
-   "name": "Collider157-colonly"
+   "name": "Collider167-colonly"
   },
   {
    "mesh": 48,
-   "name": "Collider160-colonly"
-  },
-  {
-   "mesh": 49,
-   "name": "Collider162-colonly"
-  },
-  {
-   "mesh": 50,
    "name": "Collider170-colonly"
   },
   {
-   "mesh": 51,
+   "mesh": 49,
    "name": "Collider173-colonly"
   },
   {
+   "mesh": 50,
+   "name": "Collider181-colonly"
+  },
+  {
+   "mesh": 51,
+   "name": "Collider184-colonly"
+  },
+  {
    "mesh": 52,
-   "name": "Collider175-colonly"
+   "name": "Collider187-colonly"
   },
   {
    "mesh": 53,
-   "name": "Collider183-colonly"
+   "name": "Collider195-colonly"
   },
   {
    "mesh": 54,
-   "name": "Collider186-colonly"
+   "name": "Collider198-colonly"
   },
   {
    "mesh": 55,
-   "name": "Collider188-colonly"
-  },
-  {
-   "mesh": 56,
-   "name": "Collider196-colonly"
-  },
-  {
-   "mesh": 57,
-   "name": "Collider199-colonly"
-  },
-  {
-   "mesh": 58,
    "name": "Collider201-colonly"
   },
   {
-   "mesh": 59,
+   "mesh": 56,
    "name": "Collider209-colonly"
   },
   {
-   "mesh": 60,
+   "mesh": 57,
    "name": "Collider212-colonly"
   },
   {
-   "mesh": 61,
-   "name": "Collider214-colonly"
+   "mesh": 58,
+   "name": "Collider215-colonly"
   },
   {
-   "mesh": 62,
-   "name": "Collider222-colonly"
+   "mesh": 59,
+   "name": "Collider223-colonly"
   },
   {
-   "mesh": 63,
-   "name": "Collider224-colonly"
-  },
-  {
-   "mesh": 64,
+   "mesh": 60,
    "name": "Collider226-colonly"
   },
   {
-   "mesh": 65,
+   "mesh": 61,
    "name": "Collider229-colonly"
   },
   {
-   "mesh": 66,
-   "name": "Collider236-colonly"
+   "mesh": 62,
+   "name": "Collider237-colonly"
   },
   {
-   "mesh": 67,
-   "name": "Collider238-colonly"
+   "mesh": 63,
+   "name": "Collider239-colonly"
   },
   {
-   "mesh": 68,
-   "name": "Collider240-colonly"
+   "mesh": 64,
+   "name": "Collider241-colonly"
   },
   {
-   "mesh": 69,
-   "name": "Collider242-colonly"
-  },
-  {
-   "mesh": 70,
+   "mesh": 65,
    "name": "Collider244-colonly"
   },
   {
-   "mesh": 71,
-   "name": "Collider246-colonly"
-  },
-  {
-   "mesh": 72,
-   "name": "Collider249-colonly"
-  },
-  {
-   "mesh": 73,
+   "mesh": 66,
    "name": "Collider251-colonly"
   },
   {
-   "mesh": 74,
+   "mesh": 67,
+   "name": "Collider253-colonly"
+  },
+  {
+   "mesh": 68,
+   "name": "Collider255-colonly"
+  },
+  {
+   "mesh": 69,
+   "name": "Collider257-colonly"
+  },
+  {
+   "mesh": 70,
    "name": "Collider259-colonly"
   },
   {
-   "mesh": 75,
-   "name": "Collider262-colonly"
+   "mesh": 71,
+   "name": "Collider261-colonly"
   },
   {
-   "mesh": 76,
+   "mesh": 72,
    "name": "Collider264-colonly"
   },
   {
-   "mesh": 77,
-   "name": "Collider272-colonly"
+   "mesh": 73,
+   "name": "Collider267-colonly"
   },
   {
-   "mesh": 78,
+   "mesh": 74,
    "name": "Collider275-colonly"
   },
   {
+   "mesh": 75,
+   "name": "Collider278-colonly"
+  },
+  {
+   "mesh": 76,
+   "name": "Collider281-colonly"
+  },
+  {
+   "mesh": 77,
+   "name": "Collider289-colonly"
+  },
+  {
+   "mesh": 78,
+   "name": "Collider292-colonly"
+  },
+  {
    "mesh": 79,
-   "name": "Collider277-colonly"
+   "name": "Collider295-colonly"
   },
   {
    "mesh": 80,
-   "name": "Collider285-colonly"
+   "name": "Collider303-colonly"
   },
   {
    "mesh": 81,
-   "name": "Collider288-colonly"
+   "name": "Collider306-colonly"
   },
   {
    "mesh": 82,
-   "name": "Collider290-colonly"
+   "name": "Collider309-colonly"
   },
   {
    "mesh": 83,
-   "name": "Collider559-colonly"
+   "name": "Collider578-colonly"
   },
   {
    "mesh": 84,
-   "name": "Collider574-colonly"
+   "name": "Collider700-colonly"
   },
   {
    "mesh": 85,
-   "name": "Collider579-colonly"
+   "name": "Collider702-colonly"
   },
   {
    "mesh": 86,
-   "name": "Collider584-colonly"
+   "name": "Collider704-colonly"
   },
   {
    "mesh": 87,
-   "name": "Collider589-colonly"
+   "name": "Collider733-colonly"
   },
   {
    "mesh": 88,
-   "name": "shop_seminary"
+   "name": "Collider747-colonly"
   },
   {
    "mesh": 89,
-   "name": "WoodFloor557-colonly"
+   "name": "Collider749-colonly"
+  },
+  {
+   "mesh": 90,
+   "name": "Collider751-colonly"
+  },
+  {
+   "mesh": 91,
+   "name": "Collider780-colonly"
+  },
+  {
+   "mesh": 92,
+   "name": "Collider782-colonly"
+  },
+  {
+   "mesh": 93,
+   "name": "Collider784-colonly"
+  },
+  {
+   "mesh": 94,
+   "name": "shop_seminary"
+  },
+  {
+   "mesh": 95,
+   "name": "WoodFloor576-colonly"
   }
  ],
  "materials": [
@@ -494,6 +524,21 @@
     },
     "metallicFactor": 0,
     "roughnessFactor": 0.949999988079071
+   }
+  },
+  {
+   "alphaMode": "BLEND",
+   "doubleSided": true,
+   "name": "M_TownInnerGlass",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.006584957242012024,
+     0.018912984058260918,
+     0.054592277854681015,
+     0.30000001192092896
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.10000000149011612
    }
   },
   {
@@ -530,20 +575,6 @@
     },
     "metallicFactor": 0,
     "roughnessFactor": 0.800000011920929
-   }
-  },
-  {
-   "doubleSided": true,
-   "name": "M_TownStone",
-   "normalTexture": {
-    "index": 6
-   },
-   "pbrMetallicRoughness": {
-    "baseColorTexture": {
-     "index": 7
-    },
-    "metallicFactor": 0,
-    "roughnessFactor": 0.8999999761581421
    }
   }
  ],
@@ -693,7 +724,7 @@
    ]
   },
   {
-   "name": "Collider27-colonly",
+   "name": "Collider28-colonly",
    "primitives": [
     {
      "attributes": {
@@ -705,7 +736,7 @@
    ]
   },
   {
-   "name": "Collider34-colonly",
+   "name": "Collider35-colonly",
    "primitives": [
     {
      "attributes": {
@@ -717,7 +748,7 @@
    ]
   },
   {
-   "name": "Collider37-colonly",
+   "name": "Collider38-colonly",
    "primitives": [
     {
      "attributes": {
@@ -729,7 +760,7 @@
    ]
   },
   {
-   "name": "Collider39-colonly",
+   "name": "Collider41-colonly",
    "primitives": [
     {
      "attributes": {
@@ -741,7 +772,7 @@
    ]
   },
   {
-   "name": "Collider46-colonly",
+   "name": "Collider48-colonly",
    "primitives": [
     {
      "attributes": {
@@ -753,7 +784,7 @@
    ]
   },
   {
-   "name": "Collider49-colonly",
+   "name": "Collider51-colonly",
    "primitives": [
     {
      "attributes": {
@@ -765,7 +796,7 @@
    ]
   },
   {
-   "name": "Collider51-colonly",
+   "name": "Collider54-colonly",
    "primitives": [
     {
      "attributes": {
@@ -777,7 +808,7 @@
    ]
   },
   {
-   "name": "Collider58-colonly",
+   "name": "Collider61-colonly",
    "primitives": [
     {
      "attributes": {
@@ -789,7 +820,7 @@
    ]
   },
   {
-   "name": "Collider61-colonly",
+   "name": "Collider64-colonly",
    "primitives": [
     {
      "attributes": {
@@ -801,7 +832,7 @@
    ]
   },
   {
-   "name": "Collider63-colonly",
+   "name": "Collider67-colonly",
    "primitives": [
     {
      "attributes": {
@@ -813,7 +844,7 @@
    ]
   },
   {
-   "name": "Collider70-colonly",
+   "name": "Collider74-colonly",
    "primitives": [
     {
      "attributes": {
@@ -825,7 +856,7 @@
    ]
   },
   {
-   "name": "Collider73-colonly",
+   "name": "Collider77-colonly",
    "primitives": [
     {
      "attributes": {
@@ -837,7 +868,7 @@
    ]
   },
   {
-   "name": "Collider75-colonly",
+   "name": "Collider80-colonly",
    "primitives": [
     {
      "attributes": {
@@ -849,7 +880,7 @@
    ]
   },
   {
-   "name": "Collider82-colonly",
+   "name": "Collider87-colonly",
    "primitives": [
     {
      "attributes": {
@@ -861,7 +892,7 @@
    ]
   },
   {
-   "name": "Collider85-colonly",
+   "name": "Collider90-colonly",
    "primitives": [
     {
      "attributes": {
@@ -873,7 +904,7 @@
    ]
   },
   {
-   "name": "Collider87-colonly",
+   "name": "Collider93-colonly",
    "primitives": [
     {
      "attributes": {
@@ -885,7 +916,7 @@
    ]
   },
   {
-   "name": "Collider94-colonly",
+   "name": "Collider100-colonly",
    "primitives": [
     {
      "attributes": {
@@ -897,7 +928,7 @@
    ]
   },
   {
-   "name": "Collider97-colonly",
+   "name": "Collider103-colonly",
    "primitives": [
     {
      "attributes": {
@@ -909,7 +940,7 @@
    ]
   },
   {
-   "name": "Collider99-colonly",
+   "name": "Collider106-colonly",
    "primitives": [
     {
      "attributes": {
@@ -921,7 +952,7 @@
    ]
   },
   {
-   "name": "Collider106-colonly",
+   "name": "Collider113-colonly",
    "primitives": [
     {
      "attributes": {
@@ -933,7 +964,7 @@
    ]
   },
   {
-   "name": "Collider109-colonly",
+   "name": "Collider116-colonly",
    "primitives": [
     {
      "attributes": {
@@ -945,7 +976,7 @@
    ]
   },
   {
-   "name": "Collider111-colonly",
+   "name": "Collider119-colonly",
    "primitives": [
     {
      "attributes": {
@@ -957,7 +988,7 @@
    ]
   },
   {
-   "name": "Collider118-colonly",
+   "name": "Collider126-colonly",
    "primitives": [
     {
      "attributes": {
@@ -969,7 +1000,7 @@
    ]
   },
   {
-   "name": "Collider121-colonly",
+   "name": "Collider129-colonly",
    "primitives": [
     {
      "attributes": {
@@ -981,7 +1012,7 @@
    ]
   },
   {
-   "name": "Collider123-colonly",
+   "name": "Collider132-colonly",
    "primitives": [
     {
      "attributes": {
@@ -993,7 +1024,7 @@
    ]
   },
   {
-   "name": "Collider130-colonly",
+   "name": "Collider139-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1005,7 +1036,7 @@
    ]
   },
   {
-   "name": "Collider132-colonly",
+   "name": "Collider141-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1017,7 +1048,7 @@
    ]
   },
   {
-   "name": "Collider134-colonly",
+   "name": "Collider143-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1029,7 +1060,7 @@
    ]
   },
   {
-   "name": "Collider136-colonly",
+   "name": "Collider145-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1041,7 +1072,7 @@
    ]
   },
   {
-   "name": "Collider138-colonly",
+   "name": "Collider147-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1053,7 +1084,7 @@
    ]
   },
   {
-   "name": "Collider140-colonly",
+   "name": "Collider149-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1065,7 +1096,7 @@
    ]
   },
   {
-   "name": "Collider142-colonly",
+   "name": "Collider151-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1077,7 +1108,7 @@
    ]
   },
   {
-   "name": "Collider144-colonly",
+   "name": "Collider153-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1089,7 +1120,7 @@
    ]
   },
   {
-   "name": "Collider147-colonly",
+   "name": "Collider156-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1101,7 +1132,7 @@
    ]
   },
   {
-   "name": "Collider149-colonly",
+   "name": "Collider159-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1113,7 +1144,7 @@
    ]
   },
   {
-   "name": "Collider157-colonly",
+   "name": "Collider167-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1125,7 +1156,7 @@
    ]
   },
   {
-   "name": "Collider160-colonly",
+   "name": "Collider170-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1137,7 +1168,7 @@
    ]
   },
   {
-   "name": "Collider162-colonly",
+   "name": "Collider173-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1149,7 +1180,7 @@
    ]
   },
   {
-   "name": "Collider170-colonly",
+   "name": "Collider181-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1161,7 +1192,7 @@
    ]
   },
   {
-   "name": "Collider173-colonly",
+   "name": "Collider184-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1173,7 +1204,7 @@
    ]
   },
   {
-   "name": "Collider175-colonly",
+   "name": "Collider187-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1185,7 +1216,7 @@
    ]
   },
   {
-   "name": "Collider183-colonly",
+   "name": "Collider195-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1197,7 +1228,7 @@
    ]
   },
   {
-   "name": "Collider186-colonly",
+   "name": "Collider198-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1209,7 +1240,7 @@
    ]
   },
   {
-   "name": "Collider188-colonly",
+   "name": "Collider201-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1221,7 +1252,7 @@
    ]
   },
   {
-   "name": "Collider196-colonly",
+   "name": "Collider209-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1233,7 +1264,7 @@
    ]
   },
   {
-   "name": "Collider199-colonly",
+   "name": "Collider212-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1245,7 +1276,7 @@
    ]
   },
   {
-   "name": "Collider201-colonly",
+   "name": "Collider215-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1257,7 +1288,7 @@
    ]
   },
   {
-   "name": "Collider209-colonly",
+   "name": "Collider223-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1269,7 +1300,7 @@
    ]
   },
   {
-   "name": "Collider212-colonly",
+   "name": "Collider226-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1281,7 +1312,7 @@
    ]
   },
   {
-   "name": "Collider214-colonly",
+   "name": "Collider229-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1293,7 +1324,7 @@
    ]
   },
   {
-   "name": "Collider222-colonly",
+   "name": "Collider237-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1305,7 +1336,7 @@
    ]
   },
   {
-   "name": "Collider224-colonly",
+   "name": "Collider239-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1317,7 +1348,7 @@
    ]
   },
   {
-   "name": "Collider226-colonly",
+   "name": "Collider241-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1329,7 +1360,7 @@
    ]
   },
   {
-   "name": "Collider229-colonly",
+   "name": "Collider244-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1341,7 +1372,7 @@
    ]
   },
   {
-   "name": "Collider236-colonly",
+   "name": "Collider251-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1353,7 +1384,7 @@
    ]
   },
   {
-   "name": "Collider238-colonly",
+   "name": "Collider253-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1365,7 +1396,7 @@
    ]
   },
   {
-   "name": "Collider240-colonly",
+   "name": "Collider255-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1377,7 +1408,7 @@
    ]
   },
   {
-   "name": "Collider242-colonly",
+   "name": "Collider257-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1389,7 +1420,7 @@
    ]
   },
   {
-   "name": "Collider244-colonly",
+   "name": "Collider259-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1401,7 +1432,7 @@
    ]
   },
   {
-   "name": "Collider246-colonly",
+   "name": "Collider261-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1413,7 +1444,7 @@
    ]
   },
   {
-   "name": "Collider249-colonly",
+   "name": "Collider264-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1425,7 +1456,7 @@
    ]
   },
   {
-   "name": "Collider251-colonly",
+   "name": "Collider267-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1437,7 +1468,7 @@
    ]
   },
   {
-   "name": "Collider259-colonly",
+   "name": "Collider275-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1449,7 +1480,7 @@
    ]
   },
   {
-   "name": "Collider262-colonly",
+   "name": "Collider278-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1461,7 +1492,7 @@
    ]
   },
   {
-   "name": "Collider264-colonly",
+   "name": "Collider281-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1473,7 +1504,7 @@
    ]
   },
   {
-   "name": "Collider272-colonly",
+   "name": "Collider289-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1485,7 +1516,7 @@
    ]
   },
   {
-   "name": "Collider275-colonly",
+   "name": "Collider292-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1497,7 +1528,7 @@
    ]
   },
   {
-   "name": "Collider277-colonly",
+   "name": "Collider295-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1509,7 +1540,7 @@
    ]
   },
   {
-   "name": "Collider285-colonly",
+   "name": "Collider303-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1521,7 +1552,7 @@
    ]
   },
   {
-   "name": "Collider288-colonly",
+   "name": "Collider306-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1533,7 +1564,7 @@
    ]
   },
   {
-   "name": "Collider290-colonly",
+   "name": "Collider309-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1545,7 +1576,7 @@
    ]
   },
   {
-   "name": "Collider559-colonly",
+   "name": "Collider578-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1557,7 +1588,7 @@
    ]
   },
   {
-   "name": "Collider574-colonly",
+   "name": "Collider700-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1569,7 +1600,7 @@
    ]
   },
   {
-   "name": "Collider579-colonly",
+   "name": "Collider702-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1581,7 +1612,7 @@
    ]
   },
   {
-   "name": "Collider584-colonly",
+   "name": "Collider704-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1593,7 +1624,7 @@
    ]
   },
   {
-   "name": "Collider589-colonly",
+   "name": "Collider733-colonly",
    "primitives": [
     {
      "attributes": {
@@ -1605,77 +1636,149 @@
    ]
   },
   {
-   "name": "P26",
+   "name": "Collider747-colonly",
    "primitives": [
     {
      "attributes": {
       "POSITION": 178,
-      "NORMAL": 179,
-      "TEXCOORD_0": 180,
-      "COLOR_0": 181
+      "NORMAL": 179
      },
-     "indices": 182,
+     "indices": 2
+    }
+   ]
+  },
+  {
+   "name": "Collider749-colonly",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 180,
+      "NORMAL": 181
+     },
+     "indices": 2
+    }
+   ]
+  },
+  {
+   "name": "Collider751-colonly",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 182,
+      "NORMAL": 183
+     },
+     "indices": 2
+    }
+   ]
+  },
+  {
+   "name": "Collider780-colonly",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 184,
+      "NORMAL": 185
+     },
+     "indices": 2
+    }
+   ]
+  },
+  {
+   "name": "Collider782-colonly",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 186,
+      "NORMAL": 187
+     },
+     "indices": 2
+    }
+   ]
+  },
+  {
+   "name": "Collider784-colonly",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 188,
+      "NORMAL": 189
+     },
+     "indices": 2
+    }
+   ]
+  },
+  {
+   "name": "P26",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 190,
+      "NORMAL": 191,
+      "TEXCOORD_0": 192,
+      "COLOR_0": 193
+     },
+     "indices": 194,
      "material": 0
     },
     {
      "attributes": {
-      "POSITION": 183,
-      "NORMAL": 184,
-      "TEXCOORD_0": 185,
-      "COLOR_0": 186
+      "POSITION": 195,
+      "NORMAL": 196,
+      "TEXCOORD_0": 197,
+      "COLOR_0": 198
      },
-     "indices": 187,
+     "indices": 199,
      "material": 1
     },
     {
      "attributes": {
-      "POSITION": 188,
-      "NORMAL": 189,
-      "TEXCOORD_0": 190,
-      "COLOR_0": 191
+      "POSITION": 200,
+      "NORMAL": 201,
+      "TEXCOORD_0": 202,
+      "COLOR_0": 203
      },
-     "indices": 192,
+     "indices": 204,
      "material": 2
     },
     {
      "attributes": {
-      "POSITION": 193,
-      "NORMAL": 194,
-      "TEXCOORD_0": 195,
-      "COLOR_0": 196
+      "POSITION": 205,
+      "NORMAL": 206,
+      "TEXCOORD_0": 207,
+      "COLOR_0": 208
      },
-     "indices": 197,
+     "indices": 209,
      "material": 3
     },
     {
      "attributes": {
-      "POSITION": 198,
-      "NORMAL": 199,
-      "TEXCOORD_0": 200,
-      "COLOR_0": 201
+      "POSITION": 210,
+      "NORMAL": 211,
+      "TEXCOORD_0": 212,
+      "COLOR_0": 213
      },
-     "indices": 202,
+     "indices": 214,
      "material": 4
     },
     {
      "attributes": {
-      "POSITION": 203,
-      "NORMAL": 204,
-      "TEXCOORD_0": 205,
-      "COLOR_0": 206
+      "POSITION": 215,
+      "NORMAL": 216,
+      "TEXCOORD_0": 217,
+      "COLOR_0": 218
      },
-     "indices": 207,
+     "indices": 219,
      "material": 5
     }
    ]
   },
   {
-   "name": "WoodFloor557-colonly",
+   "name": "WoodFloor576-colonly",
    "primitives": [
     {
      "attributes": {
-      "POSITION": 208,
-      "NORMAL": 209
+      "POSITION": 220,
+      "NORMAL": 221
      },
      "indices": 2
     }
@@ -1706,14 +1809,6 @@
   {
    "sampler": 0,
    "source": 5
-  },
-  {
-   "sampler": 0,
-   "source": 6
-  },
-  {
-   "sampler": 0,
-   "source": 7
   }
  ],
  "images": [
@@ -1746,16 +1841,6 @@
    "mimeType": "image/png",
    "name": "T_WoodTrim_BaseColor.png",
    "uri": "../textures/T_WoodTrim_BaseColor.png"
-  },
-  {
-   "mimeType": "image/png",
-   "name": "T_UnevenBrick_Normal.png",
-   "uri": "../textures/T_UnevenBrick_Normal.png"
-  },
-  {
-   "mimeType": "image/png",
-   "name": "T_TownStone_BaseColor.png",
-   "uri": "../textures/T_TownStone_BaseColor.png"
   }
  ],
  "accessors": [
@@ -3624,14 +3709,14 @@
    "componentType": 5126,
    "count": 24,
    "max": [
-    -4.240000247955322,
-    4.78000020980835,
-    -6.309999942779541
+    11.359999656677246,
+    5.199999809265137,
+    -0.2999999523162842
    ],
    "min": [
-    -4.559999942779541,
+    11.0600004196167,
     0,
-    -6.62999963760376
+    -3.450000047683716
    ],
    "type": "VEC3"
   },
@@ -3646,14 +3731,14 @@
    "componentType": 5126,
    "count": 24,
    "max": [
-    4.559999942779541,
-    4.78000020980835,
-    -6.309999942779541
+    11.359999656677246,
+    5.199999809265137,
+    -4.949999809265137
    ],
    "min": [
-    4.240000247955322,
+    11.0600004196167,
     0,
-    -6.62999963760376
+    -8.050000190734863
    ],
    "type": "VEC3"
   },
@@ -3668,14 +3753,14 @@
    "componentType": 5126,
    "count": 24,
    "max": [
-    -4.240000247955322,
-    4.78000020980835,
-    -12.770000457763672
+    11.359999656677246,
+    5.199999809265137,
+    -3.4499998092651367
    ],
    "min": [
-    -4.559999942779541,
-    0,
-    -13.09000015258789
+    11.0600004196167,
+    2.1000001430511475,
+    -4.949999809265137
    ],
    "type": "VEC3"
   },
@@ -3690,14 +3775,14 @@
    "componentType": 5126,
    "count": 24,
    "max": [
-    4.559999942779541,
-    4.78000020980835,
-    -12.770000457763672
+    0,
+    5.199999809265137,
+    -8.050000190734863
    ],
    "min": [
-    4.240000247955322,
+    -14.550000190734863,
     0,
-    -13.09000015258789
+    -8.34999942779541
    ],
    "type": "VEC3"
   },
@@ -3709,6 +3794,138 @@
   },
   {
    "bufferView": 178,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    12.199999809265137,
+    5.199999809265137,
+    -8.050000190734863
+   ],
+   "min": [
+    0,
+    0,
+    -8.34999942779541
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 179,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 180,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    14.550000190734863,
+    5.199999809265137,
+    -8.050000190734863
+   ],
+   "min": [
+    13.699999809265137,
+    0,
+    -8.34999942779541
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 181,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 182,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    13.699999809265137,
+    5.199999809265137,
+    -8.050000190734863
+   ],
+   "min": [
+    12.199999809265137,
+    2.1000001430511475,
+    -8.34999942779541
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 183,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 184,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    0.15000000596046448,
+    5.199999809265137,
+    -8.34999942779541
+   ],
+   "min": [
+    -0.15000000596046448,
+    0,
+    -12.949999809265137
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 185,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 186,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    0.15000000596046448,
+    5.199999809265137,
+    -14.449999809265137
+   ],
+   "min": [
+    -0.15000000596046448,
+    0,
+    -19.100000381469727
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 187,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 188,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    0.15000000596046448,
+    5.199999809265137,
+    -12.949999809265137
+   ],
+   "min": [
+    -0.15000000596046448,
+    2.1000001430511475,
+    -14.449999809265137
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 189,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 190,
    "componentType": 5126,
    "count": 1482,
    "max": [
@@ -3724,34 +3941,34 @@
    "type": "VEC3"
   },
   {
-   "bufferView": 179,
+   "bufferView": 191,
    "componentType": 5126,
    "count": 1482,
    "type": "VEC3"
   },
   {
-   "bufferView": 180,
+   "bufferView": 192,
    "componentType": 5126,
    "count": 1482,
    "type": "VEC2"
   },
   {
-   "bufferView": 181,
+   "bufferView": 193,
    "componentType": 5123,
    "count": 1482,
    "normalized": true,
    "type": "VEC4"
   },
   {
-   "bufferView": 182,
+   "bufferView": 194,
    "componentType": 5123,
    "count": 2736,
    "type": "SCALAR"
   },
   {
-   "bufferView": 183,
+   "bufferView": 195,
    "componentType": 5126,
-   "count": 3072,
+   "count": 4848,
    "max": [
     14.850001335144043,
     5.600000381469727,
@@ -3765,32 +3982,73 @@
    "type": "VEC3"
   },
   {
-   "bufferView": 184,
+   "bufferView": 196,
    "componentType": 5126,
-   "count": 3072,
+   "count": 4848,
    "type": "VEC3"
   },
   {
-   "bufferView": 185,
+   "bufferView": 197,
    "componentType": 5126,
-   "count": 3072,
+   "count": 4848,
    "type": "VEC2"
   },
   {
-   "bufferView": 186,
+   "bufferView": 198,
    "componentType": 5123,
-   "count": 3072,
+   "count": 4848,
    "normalized": true,
    "type": "VEC4"
   },
   {
-   "bufferView": 187,
+   "bufferView": 199,
    "componentType": 5123,
-   "count": 5148,
+   "count": 7812,
    "type": "SCALAR"
   },
   {
-   "bufferView": 188,
+   "bufferView": 200,
+   "componentType": 5126,
+   "count": 247,
+   "max": [
+    13.381250381469727,
+    4.699999809265137,
+    -0.20000000298023224
+   ],
+   "min": [
+    -14.650001525878906,
+    0.11999999731779099,
+    -19.200002670288086
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 201,
+   "componentType": 5126,
+   "count": 247,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 202,
+   "componentType": 5126,
+   "count": 247,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 203,
+   "componentType": 5123,
+   "count": 247,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 204,
+   "componentType": 5123,
+   "count": 627,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 205,
    "componentType": 5126,
    "count": 4080,
    "max": [
@@ -3806,32 +4064,32 @@
    "type": "VEC3"
   },
   {
-   "bufferView": 189,
+   "bufferView": 206,
    "componentType": 5126,
    "count": 4080,
    "type": "VEC3"
   },
   {
-   "bufferView": 190,
+   "bufferView": 207,
    "componentType": 5126,
    "count": 4080,
    "type": "VEC2"
   },
   {
-   "bufferView": 191,
+   "bufferView": 208,
    "componentType": 5123,
    "count": 4080,
    "normalized": true,
    "type": "VEC4"
   },
   {
-   "bufferView": 192,
+   "bufferView": 209,
    "componentType": 5123,
    "count": 7200,
    "type": "SCALAR"
   },
   {
-   "bufferView": 193,
+   "bufferView": 210,
    "componentType": 5126,
    "count": 744,
    "max": [
@@ -3847,34 +4105,34 @@
    "type": "VEC3"
   },
   {
-   "bufferView": 194,
+   "bufferView": 211,
    "componentType": 5126,
    "count": 744,
    "type": "VEC3"
   },
   {
-   "bufferView": 195,
+   "bufferView": 212,
    "componentType": 5126,
    "count": 744,
    "type": "VEC2"
   },
   {
-   "bufferView": 196,
+   "bufferView": 213,
    "componentType": 5123,
    "count": 744,
    "normalized": true,
    "type": "VEC4"
   },
   {
-   "bufferView": 197,
+   "bufferView": 214,
    "componentType": 5123,
    "count": 1116,
    "type": "SCALAR"
   },
   {
-   "bufferView": 198,
+   "bufferView": 215,
    "componentType": 5126,
-   "count": 6864,
+   "count": 12096,
    "max": [
     14.550000190734863,
     5.599999904632568,
@@ -3888,73 +4146,32 @@
    "type": "VEC3"
   },
   {
-   "bufferView": 199,
+   "bufferView": 216,
    "componentType": 5126,
-   "count": 6864,
+   "count": 12096,
    "type": "VEC3"
   },
   {
-   "bufferView": 200,
+   "bufferView": 217,
    "componentType": 5126,
-   "count": 6864,
+   "count": 12096,
    "type": "VEC2"
   },
   {
-   "bufferView": 201,
+   "bufferView": 218,
    "componentType": 5123,
-   "count": 6864,
+   "count": 12096,
    "normalized": true,
    "type": "VEC4"
   },
   {
-   "bufferView": 202,
+   "bufferView": 219,
    "componentType": 5123,
-   "count": 10296,
+   "count": 18144,
    "type": "SCALAR"
   },
   {
-   "bufferView": 203,
-   "componentType": 5126,
-   "count": 96,
-   "max": [
-    4.619999885559082,
-    0.3499999940395355,
-    -6.25
-   ],
-   "min": [
-    -4.619999885559082,
-    0,
-    -13.15000057220459
-   ],
-   "type": "VEC3"
-  },
-  {
-   "bufferView": 204,
-   "componentType": 5126,
-   "count": 96,
-   "type": "VEC3"
-  },
-  {
-   "bufferView": 205,
-   "componentType": 5126,
-   "count": 96,
-   "type": "VEC2"
-  },
-  {
-   "bufferView": 206,
-   "componentType": 5123,
-   "count": 96,
-   "normalized": true,
-   "type": "VEC4"
-  },
-  {
-   "bufferView": 207,
-   "componentType": 5123,
-   "count": 144,
-   "type": "SCALAR"
-  },
-  {
-   "bufferView": 208,
+   "bufferView": 220,
    "componentType": 5126,
    "count": 24,
    "max": [
@@ -3970,7 +4187,7 @@
    "type": "VEC3"
   },
   {
-   "bufferView": 209,
+   "bufferView": 221,
    "componentType": 5126,
    "count": 24,
    "type": "VEC3"
@@ -5047,194 +5264,266 @@
   },
   {
    "buffer": 0,
-   "byteLength": 17784,
+   "byteLength": 288,
    "byteOffset": 50832,
    "target": 34962
   },
   {
    "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 51120,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 51408,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 51696,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 51984,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 52272,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 52560,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 52848,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 53136,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 53424,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 53712,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 54000,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
    "byteLength": 17784,
-   "byteOffset": 68616,
+   "byteOffset": 54288,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 17784,
+   "byteOffset": 72072,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 11856,
-   "byteOffset": 86400,
+   "byteOffset": 89856,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 11856,
-   "byteOffset": 98256,
+   "byteOffset": 101712,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 5472,
-   "byteOffset": 110112,
+   "byteOffset": 113568,
    "target": 34963
   },
   {
    "buffer": 0,
-   "byteLength": 36864,
-   "byteOffset": 115584,
+   "byteLength": 58176,
+   "byteOffset": 119040,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 36864,
-   "byteOffset": 152448,
+   "byteLength": 58176,
+   "byteOffset": 177216,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 24576,
-   "byteOffset": 189312,
+   "byteLength": 38784,
+   "byteOffset": 235392,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 24576,
-   "byteOffset": 213888,
+   "byteLength": 38784,
+   "byteOffset": 274176,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 10296,
-   "byteOffset": 238464,
+   "byteLength": 15624,
+   "byteOffset": 312960,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2964,
+   "byteOffset": 328584,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2964,
+   "byteOffset": 331548,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 1976,
+   "byteOffset": 334512,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 1976,
+   "byteOffset": 336488,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 1254,
+   "byteOffset": 338464,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 48960,
-   "byteOffset": 248760,
+   "byteOffset": 339720,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 48960,
-   "byteOffset": 297720,
+   "byteOffset": 388680,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 32640,
-   "byteOffset": 346680,
+   "byteOffset": 437640,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 32640,
-   "byteOffset": 379320,
+   "byteOffset": 470280,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 14400,
-   "byteOffset": 411960,
+   "byteOffset": 502920,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 8928,
-   "byteOffset": 426360,
+   "byteOffset": 517320,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 8928,
-   "byteOffset": 435288,
+   "byteOffset": 526248,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 5952,
-   "byteOffset": 444216,
+   "byteOffset": 535176,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 5952,
-   "byteOffset": 450168,
+   "byteOffset": 541128,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 2232,
-   "byteOffset": 456120,
+   "byteOffset": 547080,
    "target": 34963
   },
   {
    "buffer": 0,
-   "byteLength": 82368,
-   "byteOffset": 458352,
+   "byteLength": 145152,
+   "byteOffset": 549312,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 82368,
-   "byteOffset": 540720,
+   "byteLength": 145152,
+   "byteOffset": 694464,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 54912,
-   "byteOffset": 623088,
+   "byteLength": 96768,
+   "byteOffset": 839616,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 54912,
-   "byteOffset": 678000,
+   "byteLength": 96768,
+   "byteOffset": 936384,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 20592,
-   "byteOffset": 732912,
-   "target": 34963
-  },
-  {
-   "buffer": 0,
-   "byteLength": 1152,
-   "byteOffset": 753504,
-   "target": 34962
-  },
-  {
-   "buffer": 0,
-   "byteLength": 1152,
-   "byteOffset": 754656,
-   "target": 34962
-  },
-  {
-   "buffer": 0,
-   "byteLength": 768,
-   "byteOffset": 755808,
-   "target": 34962
-  },
-  {
-   "buffer": 0,
-   "byteLength": 768,
-   "byteOffset": 756576,
-   "target": 34962
-  },
-  {
-   "buffer": 0,
-   "byteLength": 288,
-   "byteOffset": 757344,
+   "byteLength": 36288,
+   "byteOffset": 1033152,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 288,
-   "byteOffset": 757632,
+   "byteOffset": 1069440,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 288,
-   "byteOffset": 757920,
+   "byteOffset": 1069728,
    "target": 34962
   }
  ],
@@ -5246,7 +5535,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 758208,
+   "byteLength": 1070016,
    "uri": "shop_seminary.bin"
   }
  ]

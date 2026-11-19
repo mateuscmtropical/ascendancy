@@ -168,6 +168,7 @@ def build_materials() -> dict:
         "glass": plain_material("M_TownGlass", srgb("3A4E66"), 0.12, 0.4),
         "vitrine": plain_material("M_TownVitrine", srgb("BFD8E8"), 0.05, 0.0, alpha=0.25),
         "shopfront": plain_material("M_TownShopfront", srgb("BFD8E8"), 0.05, 0.0, alpha=0.25),  # vitrine da loja: acende à noite (features/sky/window_glass.gd)
+        "inner_glass": plain_material("M_TownInnerGlass", srgb("1A2A44"), 0.1, alpha=0.3),  # vidro de dentro das janelas do casarão: escuro à noite (features/sky/window_glass.gd)
         "paint": plain_material("M_TownPaint", WHITE, 0.75),
         "metal": plain_material("M_TownMetal", WHITE, 0.45, 0.7),
         "water": plain_material("M_Water", srgb("3C7FA0"), 0.1),
@@ -272,9 +273,12 @@ class Builder:
 
     # -- low level --
 
-    def _link(self, mesh_bmesh, material_key: str, tint: tuple, uv: tuple, transform: Matrix):
+    def _link(self, mesh_bmesh, material_key: str, tint: tuple, uv: tuple, transform: Matrix, recalc_normals: bool = True):
         bmesh.ops.transform(mesh_bmesh, matrix=transform, verts=mesh_bmesh.verts)
-        bmesh.ops.recalc_face_normals(mesh_bmesh, faces=mesh_bmesh.faces)
+
+        if recalc_normals:
+            bmesh.ops.recalc_face_normals(mesh_bmesh, faces=mesh_bmesh.faces)
+
         self.count += 1
         mesh_data = bpy.data.meshes.new(f"P{self.count}")
         mesh_bmesh.to_mesh(mesh_data)
@@ -317,6 +321,15 @@ class Builder:
         bmesh.ops.translate(prism_bmesh, vec=(0.0, depth_to - depth_from, 0.0), verts=moved)
 
         return self._link(prism_bmesh, material_key, tint, uv, frame or Matrix.Identity(4))
+
+    def pane(self, profile: list, depth: float, material_key: str, tint: tuple = WHITE, frame: Matrix = None, facing: int = 1):
+        """One single-sided polygon in the facade plane (u, z) at d = depth, its face toward +d (facing 1: into the
+        building, seen from inside only by a back-culling material) or -d (facing -1)."""
+        pane_bmesh = bmesh.new()
+        points = profile if facing < 0 else list(reversed(profile))
+        pane_bmesh.faces.new([pane_bmesh.verts.new((u, depth, z)) for u, z in points])
+
+        return self._link(pane_bmesh, material_key, tint, None, frame or Matrix.Identity(4), recalc_normals=False)
 
     def side_prism(self, profile: list, u_from: float, u_to: float, material_key: str, tint: tuple = WHITE, frame: Matrix = None, uv: tuple = None):
         """Polygon in the (d, z) plane extruded along u: cornices, slabs and roof sections."""

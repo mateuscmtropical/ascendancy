@@ -995,17 +995,21 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
         }, groups=[light["group"]] if "group" in light else None)
 
     if "ambient_volume" in sidecar:
-        add_ambient_probe(scene, shop_name, sidecar["ambient_volume"])
+        add_ambient_probe(scene, shop_name, sidecar["ambient_volume"], sidecar.get("night_ambient"))
 
 
-def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict) -> None:
+def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict, night_energy: float = None) -> None:
     """Interior ambience of a casarão hall: a reflection probe that only supplies ambient light (its cube captures
-    nothing, so no sky reflection indoors); features/sky/day_night_cycle.gd lights it at night."""
+    nothing, so no sky reflection indoors); features/sky/day_night_cycle.gd lights it at night, at night_energy when the
+    hall sets its own (metadata night_ambient_energy)."""
     low, high = volume["min"], volume["max"]
     center = [(low[axis] + high[axis]) / 2.0 for axis in range(3)]
     size = [abs(high[axis] - low[axis]) for axis in range(3)]
 
+    own_level = {} if night_energy is None else {"metadata/night_ambient_energy": f"{night_energy}"}
+
     scene.add_node("Ambience", f"Shops/{shop_name}", "ReflectionProbe", properties={
+        **own_level,
         "visible": "false",
         "position": vector(*center),
         "size": vector(*size),
@@ -2096,6 +2100,48 @@ HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (o vestí
         "DormTop": ((13.6, 4.85, -0.9), (-4.0, 0.0, -6.0)),
         "DormBeds": ((-9.0, 1.6, -4.2), (3.0, 0.9, -1.2)),
         "Anteroom": ((-14.2, 1.6, -3.0), (-11.0, 1.4, -5.5)),
+        "BabiesDoor": ((-12.95, 1.6, -9.0), (2.0, 1.3, -14.5)),
+        "BabiesFar": ((2.3, 1.6, -10.5), (-12.0, 1.2, -15.0)),
+        "WashDoor": ((7.6, 1.6, -9.0), (6.3, 1.2, -17.0)),
+        "WashFar": ((3.4, 1.7, -18.2), (8.5, 1.0, -10.2)),
+        "LinenDoor": ((10.4, 1.6, -13.7), (14.0, 1.3, -13.7)),
+        "LinenFar": ((14.0, 1.6, -9.5), (10.5, 1.3, -17.5)),
+    },
+    "library": {  # passage, library, refectory, kitchen and pantry: from each door and from the far end
+        "PassageDoor": ((-14.2, 1.6, -3.0), (-11.8, 1.3, -6.0)),
+        "LibDoor": ((-10.5, 1.6, -3.0), (14.0, 1.4, -4.0)),
+        "LibFar": ((14.0, 1.6, -6.5), (-10.5, 1.5, -3.5)),
+        "RefDoor": ((-12.95, 1.6, -9.0), (2.0, 1.3, -14.0)),
+        "RefFar": ((2.3, 1.6, -10.0), (-13.0, 1.3, -16.0)),
+        "KitDoor": ((3.5, 1.6, -10.2), (9.0, 1.3, -15.0)),
+        "KitFar": ((9.7, 1.6, -18.3), (4.5, 1.2, -10.5)),
+        "PantryDoor": ((10.6, 1.6, -10.2), (14.0, 1.3, -14.5)),
+        "PantryFar": ((14.0, 1.6, -18.5), (10.8, 1.3, -10.2)),
+    },
+    "school": {  # cloakroom, two classrooms, science cabinet, study hall, teachers' room and headmaster's study
+        "CloakDoor": ((14.2, 1.6, -3.0), (11.6, 1.3, -6.0)),
+        "Class1Door": ((10.5, 1.6, -7.2), (2.5, 1.5, -3.5)),
+        "Class1Far": ((3.0, 1.6, -1.0), (10.5, 1.2, -6.5)),
+        "Class2Door": ((1.2, 1.6, -7.2), (-7.0, 1.5, -3.5)),
+        "Class2Far": ((-7.3, 1.6, -1.0), (0.8, 1.2, -6.5)),
+        "ScienceDoor": ((-7.8, 1.6, -7.2), (-13.5, 1.4, -3.0)),
+        "ScienceFar": ((-14.0, 1.6, -1.0), (-9.0, 1.3, -7.0)),
+        "StudyDoor": ((12.9, 1.6, -9.0), (2.0, 1.4, -14.0)),
+        "StudyFar": ((-2.3, 1.6, -10.0), (12.0, 1.4, -15.0)),
+        "TeachDoor": ((-2.4, 1.6, -13.7), (-9.0, 1.4, -16.0)),
+        "TeachFar": ((-8.9, 1.6, -18.0), (-3.2, 1.3, -10.5)),
+        "HeadDoor": ((-8.9, 1.6, -13.7), (-14.3, 1.4, -16.5)),
+        "HeadFar": ((-14.2, 1.6, -18.5), (-10.0, 1.3, -10.0)),
+    },
+    "seminary": {  # sacristy, chapel, seminary room and infirmary: from each door and from the far end
+        "SacristyDoor": ((14.2, 1.6, -3.0), (11.5, 1.4, -6.0)),
+        "SacristyFar": ((11.8, 1.6, -1.0), (14.0, 1.3, -6.5)),
+        "ChapelDoor": ((10.5, 1.6, -4.8), (-14.0, 1.8, -5.0)),
+        "ChapelAltar": ((-9.0, 1.6, -4.8), (11.0, 1.5, -4.5)),
+        "SemDoor": ((12.95, 1.6, -9.0), (2.0, 1.2, -15.0)),
+        "SemFar": ((1.0, 1.6, -10.0), (13.0, 1.3, -17.0)),
+        "InfDoor": ((-0.6, 1.6, -13.7), (-14.0, 1.2, -13.0)),
+        "InfFar": ((-13.8, 1.6, -9.5), (-2.0, 1.0, -17.5)),
     },
 }
 

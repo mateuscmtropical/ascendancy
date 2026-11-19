@@ -1716,8 +1716,39 @@ def curtain_pair(b: Builder, frame: Matrix, width: float = 2.0, height: float = 
         ring(b, (side * (half_w * 0.82), 0.0, tie_z), 0.13, 0.012, "paint", trim_hex, _at(frame, (0.0, 0.0, 0.0)) @ Matrix.Diagonal((1.0, 0.4, 1.0, 1.0)), sides=12, tube_sides=4)
 
 
+def retable_altar(b: Builder, frame: Matrix, **options) -> None:
+    """Narrow chapel altar, 2.0 m wide, against the wall: stone table with a linen cloth, tabernacle, cross and two
+    candlesticks, backed by an arched retable of painted panels with a gilt rim and a rose window."""
+    back = 0.45
+    outline = [(-1.0, 0.0), (1.0, 0.0), (1.0, 2.4), (0.5, 2.9), (0.0, 3.05), (-0.5, 2.9), (-1.0, 2.4)]
+
+    _box(b, frame, (-0.95, -0.4, 0.0), (0.95, 0.25, 0.08), "stone", STONE_WARM)
+    _box(b, frame, (-0.85, -0.34, 0.08), (0.85, 0.2, 0.93), "stone", STONE_LIGHT)
+    _box(b, frame, (-0.9, -0.38, 0.93), (0.9, 0.24, 1.0), "stone", MARBLE_CREAM)
+    _box(b, frame, (-0.78, -0.42, 0.62), (0.78, -0.38, 1.0), "paint", LINEN_CREAM)
+    _box(b, frame, (-0.78, -0.425, 0.62), (0.78, -0.415, 0.68), "metal", BRASS_AGED)
+
+    _box(b, frame, (-0.3, 0.0, 1.0), (0.3, 0.22, 1.4), "wood", WALNUT_DARK, uv=WOOD_DARK_UV)
+    b.prism([(-0.3, 1.4), (0.3, 1.4), (0.0, 1.62)], 0.0, 0.22, "metal", srgb(BRASS_BRIGHT), frame=frame)
+    _box(b, frame, (-0.025, 0.05, 1.62), (0.025, 0.09, 2.05), "metal", BRASS_BRIGHT)
+    _box(b, frame, (-0.14, 0.05, 1.84), (0.14, 0.09, 1.9), "metal", BRASS_BRIGHT)
+
+    for candle_x in (-0.62, 0.62):
+        _candlestick(b, frame, candle_x, -0.08, 1.0, stand_h=0.3, candle_h=0.26)
+
+    _box(b, frame, (-1.02, back - 0.45, 0.0), (1.02, back, 1.0), "stone", STONE_LIGHT)
+    b.prism(outline, back - 0.17, back, "paint", srgb("E9D9F2"), frame=frame)
+    b.prism([(-0.8, 1.2), (0.8, 1.2), (0.8, 2.3), (0.4, 2.65), (0.0, 2.78), (-0.4, 2.65), (-0.8, 2.3)], back - 0.2, back - 0.17, "paint", srgb(CHAPEL_WINE), frame=frame)
+    _cyl(b, frame, (0.0, back - 0.205, 2.0), 0.28, 0.02, 12, "paint", BRASS_AGED, axis="Y")
+
+    for start, end in zip(outline, outline[1:] + outline[:1]):
+        if start[1] > 0.0 or end[1] > 0.0:
+            _beam(b, frame, (start[0], back - 0.18, start[1]), (end[0], back - 0.18, end[1]), 0.06, 0.03, "metal", BRASS_AGED)
+
+
 PROPS = {
     # Dormitory
+    "retable_altar": {"build": retable_altar, "size": (2.0, 0.9, 3.1), "solid": True, "clearance": 0.9},
     "iron_bed": {"build": iron_bed, "size": (0.95, 2.0, 1.15), "solid": True, "variants": list(BLANKET_COLOURS)},
     "bed_trunk": {"build": bed_trunk, "size": (0.8, 0.45, 0.45), "solid": True},
     "night_table": {"build": night_table, "size": (0.42, 0.38, 0.95), "solid": True},
