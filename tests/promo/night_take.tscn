@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="1_hub"]
+[ext_resource type="Script" path="res://tests/promo/night_take_director.gd" id="2_director"]
+
+[node name="NightTake" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("1_hub")]
+
+[node name="TakeCamera" type="Camera3D" parent="."]
+fov = 62.0
+
+[node name="NightTakeDirector" type="Node" parent="." node_paths=PackedStringArray("hub", "camera")]
+script = ExtResource("2_director")
+hub = NodePath("../Hub")
+camera = NodePath("../TakeCamera")
