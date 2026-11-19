@@ -86,6 +86,22 @@ func test_weights_reach_the_meshes() -> void:
 	assert_almost_eq(head.get_blend_shape_value(smile_index), 1.0, 0.01)
 
 
+func test_far_face_rests_neutral_and_stops() -> void:
+	var head: MeshInstance3D = _face.get_parent().get_node("Body/Armature/Skeleton3D/Head_Skin")
+	var smile_index: int = head.find_blend_shape_by_name(&"smile")
+
+	_face.show_expression(FaceAnimator.Mood.HAPPY)
+	_advance(2.0 * FaceAnimator.EXPRESSION_BLEND_SECONDS)
+	_face.set_detailed(false)
+
+	assert_false(_face.is_processing(), "far face stops animating")
+	assert_eq(head.get_blend_shape_value(smile_index), 0.0, "far face back to neutral")
+
+	_face.set_detailed(true)
+
+	assert_true(_face.is_processing(), "near face animates again")
+
+
 func _spawn_face(body_scene: PackedScene) -> FaceAnimator:
 	var model: CharacterModel = MODEL_SCENE.instantiate()
 

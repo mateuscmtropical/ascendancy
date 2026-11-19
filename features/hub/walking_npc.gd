@@ -44,6 +44,7 @@ func _ready() -> void:
 	_model.hair_color = hair_color
 	_model.start_animation = WALK_ANIMATION if is_walking else idle_animation
 	_model.start_offset_seconds = animation_offset_seconds
+	_model.uses_distance_detail = true
 	add_child(_model)
 	_stop_animating_off_screen()
 
