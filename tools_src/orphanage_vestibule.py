@@ -52,12 +52,7 @@ PORTER_HATCH = hatch(4.5, 1.2)
 GRILLE = dict(at=GRILLE_U, width=3.0, height=2.6, sill=0.9, lane=())
 
 NEW_WALL_FINISHES = {
-    "corridor": CORRIDOR_FINISH,
-    "parlour": dict(dado="7A5A3E", trim="4A2F20"),
-    "lodge": dict(dado="8C7A5A", trim="4A2F20"),
-    "office": dict(dado="4A3A2E", trim="2A2118"),
-    "lavatory": dict(dado="FFFFFF", trim="3A5E8C", material="azulejo", uv=("world", 1.2)),
-    "teachers": dict(dado="6B442D", trim="4A2D1C"),
+    "corridor": CORRIDOR_FINISH,  # every room of the vestibule keeps the azulejo dado of its outer walls
 }
 
 
@@ -72,7 +67,12 @@ def furnish_entrance(f) -> None:
     f.on_face("u", -HALL_EAST, 1, "saint_niche", 9.0)
     f.on_face("u", HALL_EAST, -1, "bench_long", 7.4)
     f.on_face("u", HALL_EAST, -1, "wall_lantern", 2.4)
+    f.hang_picture("u", -HALL_EAST, 1, 6.6, "portrait")
+    f.hang_picture("u", HALL_EAST, -1, 7.4, "lady")
     f.put("grand_chandelier", 0.0, 5.5, drop=0.5)
+
+    for plant_u in (-4.4, 4.4):
+        f.put("plant_pot", plant_u, FRONT_FACE - 0.4)
 
     f.on_face("d", CROSSING_FRONT, 1, "long_case_clock", -7.5)
     f.on_face("d", CROSSING_FRONT, 1, "bench_long", 9.0)
@@ -94,8 +94,11 @@ def furnish_parlour(f) -> None:
     for chair_u in (-11.0, -10.3, -9.4, -8.7):
         f.put("bentwood_chair", chair_u, GRILLE_FRONT - 0.9, 180.0)
 
+    f.put("rug_ornate", GRILLE_U, 3.2, variant="red")
     f.on_wall("left", "bench_long", 2.6)
+    f.hang_picture("u", HALL_LEFT, 1, 2.6, "portrait")
     f.put("side_table", -6.2, 1.2)
+    f.put("plant_pot", -14.0, 0.8)
     f.hang_picture("u", PARLOUR_EAST, -1, 1.2, "landscape")
     f.on_face("u", PARLOUR_EAST, -1, "wall_sconce", 4.0, lit=False)
 
@@ -103,6 +106,9 @@ def furnish_parlour(f) -> None:
         f.put("bentwood_chair", chair_u, GRILLE_BACK + 0.9)
 
     f.put("side_table", -7.2, 8.4)
+    f.put("rug_ornate", GRILLE_U, 6.8, variant="green")
+    f.on_face("u", PARLOUR_EAST, -1, "floor_shelf", 7.0, variant="books")
+    f.on_wall("left", "saint_niche", 6.4)
     f.on_face("d", FRONT_FACE, -1, "wall_crucifix", GRILLE_U)
     f.on_wall("left", "prie_dieu", 8.0)
     f.put("hanging_oil_lamp", GRILLE_U, 2.6)
@@ -173,7 +179,7 @@ def furnish_teachers(f) -> None:
 
 
 def furnish_gallery(gallery) -> None:
-    """The children's recreation hall on the gallery: reading corner by the sisters' wing, two games tables in the
+    """The children's recreation hall on the gallery: reading corner by the sisters' wing, eight games tables in the
     middle, the toy corner by the children's wing, the drawing corner and the music corner in the back."""
     gallery.block("vão", WELL)
     gallery.block("chegada", (WELL[0], WELL[1], WELL[2] - 1.6, WELL[2]))
@@ -192,6 +198,9 @@ def furnish_gallery(gallery) -> None:
 
     for table_u in (-6.6, -2.4, 2.4, 6.6):
         gallery.put("round_table_set", table_u, 7.4)
+
+    for table_u in (-7.0, -3.0, 3.0, 7.0):  # draughts and cards by the stair, a 2.75 m lane kept from the balcony to the stair
+        gallery.put("cafe_table_set", table_u, 11.4)
 
     gallery.put("rug_ornate", 10.0, 5.6, 90.0, variant="blue")
     gallery.put("rocking_horse", 9.0, 4.4, 30.0)
@@ -241,15 +250,15 @@ PLAN = dict(
     keeper=(6.5, 5.6),  # the porteress, behind her desk at the hatch
     posts=(),
     partitions=(
-        ("u", -HALL_WALL, HALL_FRONT, FRONT_FACE, dict(doors=[PARLOUR_DOOR], faces=("parlour", "corridor"))),
-        ("u", HALL_WALL, HALL_FRONT, FRONT_FACE, dict(doors=[PORTER_HATCH], faces=("corridor", "lodge"))),
-        ("u", OFFICE_WALL, HALL_FRONT, FRONT_FACE, dict(faces=("lodge", "office"))),
-        ("d", GRILLE_WALL, HALL_LEFT, PARLOUR_EAST, dict(doors=[GRILLE], faces=("parlour", "parlour"))),
-        ("d", FRONT_ROOMS, HALL_LEFT, -HALL_WALL, dict(doors=[ENCLOSURE_DOOR], faces=("parlour", "corridor"))),
-        ("d", FRONT_ROOMS, HALL_WALL, OFFICE_WALL, dict(doors=[LODGE_DOOR], faces=("lodge", "corridor"))),
-        ("d", FRONT_ROOMS, OFFICE_WALL, HALL_RIGHT, dict(doors=[OFFICE_DOOR], faces=("office", "corridor"))),
-        ("d", BACK_ROOMS, WELL_SIDE, HALL_RIGHT, dict(doors=[LAVATORY_DOOR], faces=("corridor", "lavatory"))),
-        ("d", BACK_ROOMS, HALL_LEFT, -WELL_SIDE, dict(doors=[TEACHERS_DOOR], faces=("corridor", "teachers"))),
+        ("u", -HALL_WALL, HALL_FRONT, FRONT_FACE, dict(doors=[PARLOUR_DOOR], faces=("corridor", "corridor"))),
+        ("u", HALL_WALL, HALL_FRONT, FRONT_FACE, dict(doors=[PORTER_HATCH], faces=("corridor", "corridor"))),
+        ("u", OFFICE_WALL, HALL_FRONT, FRONT_FACE, dict(faces=("corridor", "corridor"))),
+        ("d", GRILLE_WALL, HALL_LEFT, PARLOUR_EAST, dict(doors=[GRILLE], faces=("corridor", "corridor"))),
+        ("d", FRONT_ROOMS, HALL_LEFT, -HALL_WALL, dict(doors=[ENCLOSURE_DOOR], faces=("corridor", "corridor"))),
+        ("d", FRONT_ROOMS, HALL_WALL, OFFICE_WALL, dict(doors=[LODGE_DOOR], faces=("corridor", "corridor"))),
+        ("d", FRONT_ROOMS, OFFICE_WALL, HALL_RIGHT, dict(doors=[OFFICE_DOOR], faces=("corridor", "corridor"))),
+        ("d", BACK_ROOMS, WELL_SIDE, HALL_RIGHT, dict(doors=[LAVATORY_DOOR], faces=("corridor", "corridor"))),
+        ("d", BACK_ROOMS, HALL_LEFT, -WELL_SIDE, dict(doors=[TEACHERS_DOOR], faces=("corridor", "corridor"))),
     ),
     furnish=furnish_vestibule,
 )

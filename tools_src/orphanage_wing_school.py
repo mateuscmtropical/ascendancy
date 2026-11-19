@@ -195,7 +195,9 @@ def furnish_magic(f) -> None:
     f.on_face("u", MAGIC_WEST, 1, "staff_rack", 18.0)
     f.on_face("u", MAGIC_WEST, 1, "scroll_rack", 21.0)
     f.on_wall("right", "tall_bookcase", 16.5)
+    f.on_wall("right", "celestial_globe", 18.4)
     f.on_wall("right", "crystal_ball_pedestal", 19.5)
+    f.on_face("d", BACK_FACE, 1, "bench_long", 13.0)  # the next pupils wait their turn at the line
     f.on_wall("right", "star_tapestry", 21.6)
     f.put("hanging_oil_lamp", 9.75, 15.4)
 

@@ -161,6 +161,7 @@ def furnish_scullery(f) -> None:
     f.on_wall("right", "plate_rack", 14.8)
     f.put("copper_boiler", 14.1, 18.15)
     f.put("wicker_basket", 10.6, 17.8, 90.0, variant="fruit")
+    f.put("wicker_basket", 10.6, 17.1, 90.0, variant="fruit")
     f.put("crate_open", 13.9, 16.6, -90.0, variant="roots")
     f.put("hanging_oil_lamp", 12.2, 16.2)
 

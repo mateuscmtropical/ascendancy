@@ -47,6 +47,8 @@ SACRISTY_WALL = 18.95  # d of the wall between the sacristy and the isolation ro
 
 FRONT_FACE = FRONT_BAND[1]  # the corridor wall seen from the front rooms
 BACK_FACE = BACK_BAND[0]  # the corridor wall seen from the back rooms
+CORRIDOR_STATION_US = (2.6, 4.2, 5.8, 7.4, 9.0, 10.6, 12.2)  # stations of the cross over the pews and stalls
+BACK_STATION_US = (2.6, 4.4, 7.4, 8.8, 10.2, 11.6, 13.0)  # clear of the saint's niche at u 6.0
 CELLS_EAST = WASH_WALL - WALL_HALF
 WASH_WEST = WASH_WALL + WALL_HALF
 WASH_EAST = COMMUNITY_WALL - WALL_HALF
@@ -210,7 +212,7 @@ def furnish_sacristy(f) -> None:
 def furnish_chapel(f) -> None:
     """Chapel (u -0.35..14.55, d 13.75..24.10): nine rows of pews either side of the middle aisle, the altar against
     the gallery wall with candlesticks and the sanctuary lamp, the sisters' stalls along the sanctuary, the
-    communion rail, harmonium, confessional, holy water font at the door, saints in niches."""
+    communion rail, harmonium, confessional, holy water font at the door, saints in niches, the stations of the cross."""
     for row_u, block_d in itertools.product(PEW_ROW_US, PEW_BLOCK_DS):
         f.put("pew", row_u, block_d, 90.0)
 
@@ -232,6 +234,12 @@ def furnish_chapel(f) -> None:
 
     for lamp_u in (3.5, 7.0):
         f.put("wheel_chandelier", lamp_u, CHAPEL_AXIS)
+
+    for station_u in CORRIDOR_STATION_US:  # the fourteen stations of the cross, seven on each side wall
+        f.hang_picture("d", BACK_FACE, 1, station_u, "station")
+
+    for station_u in BACK_STATION_US:
+        f.hang_picture("d", HALL_BACK, -1, station_u, "station")
 
 
 def furnish_corridor(f) -> None:

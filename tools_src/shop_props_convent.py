@@ -57,6 +57,8 @@ STRAW = "C9A85C"
 SCORCH = "3A2E26"
 FOIL_STEEL = "B8BEC4"
 MASK_MESH = "40444A"
+CELL_WHITEWASH = "E8E1D3"
+TROUGH_ZINC = "BFC4C0"  # zinc lining of the washroom troughs (the uneven stone texture read as glass at that size)
 CHILD_BED_SCALE = (0.9, 0.925, 0.95)
 
 
@@ -118,17 +120,23 @@ def latrine_stall(b: Builder, frame: Matrix, **options) -> None:
 
 
 def cell_walls(b: Builder, frame: Matrix, width: float) -> None:
-    """Nun's cell cubicle: timber partitions 2.4 m high left and right (back open to the room wall, top open), a
+    """Nun's cell cubicle: whitewashed board partitions 2.4 m high left and right (back open to the room wall, top open), a
     framed front with a linen curtain on a rail, half drawn. The furniture comes from the layout."""
     depth, height = 3.6, 2.4
     front, back = -depth / 2.0, depth / 2.0
     door_from, door_to = -width / 2.0 + 0.1, -width / 2.0 + 1.0
 
-    for side in (-1.0, 1.0):
-        wood_box(b, frame, (side * width / 2.0 - 0.04 * (side > 0), front, 0.0), (side * width / 2.0 + 0.04 * (side < 0), back, height), WALNUT_MID)
+    panels = [((side * width / 2.0 - 0.04 * (side > 0), front), (side * width / 2.0 + 0.04 * (side < 0), back)) for side in (-1.0, 1.0)]
+    panels.append(((door_to, front), (width / 2.0 - 0.04, front + 0.05)))
 
-    wood_box(b, frame, (door_to, front, 0.0), (width / 2.0 - 0.04, front + 0.05, height), WALNUT_MID)
+    for (low_x, low_y), (high_x, high_y) in panels:  # whitewashed boards on a dark skirting, as the cubicle dormitories
+        _box(b, frame, (low_x, low_y, 0.0), (high_x, high_y, 0.18), "wood", WALNUT_DARK)
+        _box(b, frame, (low_x, low_y, 0.18), (high_x, high_y, height - 0.1), "paint", CELL_WHITEWASH)
+
     _box(b, frame, (-width / 2.0, front, height - 0.1), (width / 2.0, front + 0.1, height), "wood", WALNUT_DARK)
+
+    for side in (-1.0, 1.0):
+        _box(b, frame, (side * width / 2.0 - 0.05, front + 0.1, height - 0.1), (side * width / 2.0 + 0.05, back, height), "wood", WALNUT_DARK)
     _cyl(b, frame, (door_from, front + 0.12, 2.1), 0.012, door_to - door_from, 5, "metal", BRASS_AGED, axis="X")
 
     for fold in range(4):
@@ -344,19 +352,19 @@ def laundry_airer(b: Builder, frame: Matrix, **options) -> None:
 
 
 def washroom_trough(b: Builder, frame: Matrix, **options) -> None:
-    """Long stone trough on piers with four brass taps on a back pipe, a soap ledge, a strip of mirror above."""
+    """Long zinc-lined trough on piers with four brass taps on a back pipe, a soap ledge, a strip of mirror above."""
     width, depth = 3.0, 0.6
     back = depth / 2.0
 
     for pier_x in (-1.35, 0.0, 1.35):
-        _box(b, frame, (pier_x - 0.1, -0.15, 0.0), (pier_x + 0.1, back - 0.02, 0.62), "stone", STONE_LIGHT)
+        _box(b, frame, (pier_x - 0.1, -0.15, 0.0), (pier_x + 0.1, back - 0.02, 0.62), "paint", TROUGH_ZINC)
 
-    _box(b, frame, (-width / 2.0, -back + 0.02, 0.62), (width / 2.0, back - 0.02, 0.66), "stone", STONE_LIGHT)
-    _box(b, frame, (-width / 2.0, -back + 0.02, 0.66), (width / 2.0, -back + 0.08, 0.84), "stone", STONE_LIGHT)
-    _box(b, frame, (-width / 2.0, back - 0.08, 0.66), (width / 2.0, back - 0.02, 0.88), "stone", STONE_LIGHT)
+    _box(b, frame, (-width / 2.0, -back + 0.02, 0.62), (width / 2.0, back - 0.02, 0.66), "paint", TROUGH_ZINC)
+    _box(b, frame, (-width / 2.0, -back + 0.02, 0.66), (width / 2.0, -back + 0.08, 0.84), "paint", TROUGH_ZINC)
+    _box(b, frame, (-width / 2.0, back - 0.08, 0.66), (width / 2.0, back - 0.02, 0.88), "paint", TROUGH_ZINC)
 
     for end in (-1.0, 1.0):
-        _box(b, frame, *sorted_box((end * width / 2.0, -back + 0.02, 0.66), (end * (width / 2.0 - 0.06), back - 0.02, 0.84)), "stone", STONE_LIGHT)
+        _box(b, frame, *sorted_box((end * width / 2.0, -back + 0.02, 0.66), (end * (width / 2.0 - 0.06), back - 0.02, 0.84)), "paint", TROUGH_ZINC)
 
     _box(b, frame, (-width / 2.0 + 0.06, -back + 0.08, 0.66), (width / 2.0 - 0.06, back - 0.08, 0.7), "water", "6C8EA0")
     _cyl(b, frame, (-width / 2.0, back - 0.04, 0.98), 0.02, width, 6, "metal", BRASS_AGED, axis="X")
