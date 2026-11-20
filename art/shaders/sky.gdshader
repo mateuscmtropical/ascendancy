@@ -283,8 +283,8 @@ vec3 night_sky(vec3 direction, float night_amount) {
 	// células, brilho): poeira fina, estrelas médias com halo, brilhantes com raios e raros faróis.
 	vec3 dust_stars = star_layer(direction, face, face_angles, 174.0, 0.06, 0.9, 0.15, 0.0, 0.7);
 	vec3 medium_stars = star_layer(direction, face, face_angles, 68.0, 0.009, 0.55, 0.11, 0.0, 1.8);
-	vec3 bright_stars = star_layer(direction, face, face_angles, 28.0, 0.004, 0.3, 0.07, 0.3, 4.0);
-	vec3 beacon_stars = star_layer(direction, face, face_angles, 8.0, 0.0, 0.2, 0.03, 0.33, 8.0);
+	vec3 bright_stars = star_layer(direction, face, face_angles, 16.0, 0.012, 0.92, 0.04, 0.17, 4.0);
+	vec3 beacon_stars = star_layer(direction, face, face_angles, 4.0, 0.0, 0.8, 0.015, 0.165, 8.0);
 	float horizon_fade = smoothstep(0.0, 0.18, direction.y);
 
 	return (dust_stars + medium_stars + bright_stars + beacon_stars + swirl_orb(direction))

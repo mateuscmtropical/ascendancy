@@ -25,10 +25,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var pan_progress: float
+	var eased_progress: float
 
 	_elapsed_seconds += delta
 	pan_progress = clampf((_elapsed_seconds - SETTLE_SECONDS) / PAN_SECONDS, 0.0, 1.0)
-	_camera.rotation = START_ROTATION.lerp(END_ROTATION, smoothstep(0.0, 1.0, pan_progress))
+	eased_progress = smoothstep(0.0, 1.0, pan_progress)
+	_camera.rotation = START_ROTATION.lerp(END_ROTATION, eased_progress)
 
 	if _elapsed_seconds >= SETTLE_SECONDS * 2.0 + PAN_SECONDS:
 		get_tree().quit()
