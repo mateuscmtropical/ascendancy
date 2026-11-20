@@ -111,6 +111,21 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.0, -2.2, 3.0)
 rotation = Vector3(-0.48869, 2.35619, 0)
 fov = 72.0
 
+[node name="ChapelAltar" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, -2.55, 12.0)
+rotation = Vector3(-0.10000, -1.57080, 0)
+fov = 72.0
+
+[node name="ChapelAltarClose" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, -2.45, 12.0)
+rotation = Vector3(-0.10000, -1.57080, 0)
+fov = 38.0
+
+[node name="ChapelAltarSide" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, -2.4, 10.2)
+rotation = Vector3(-0.20000, -2.03400, 0)
+fov = 60.0
+
 [node name="Mover" parent="Hub/Buildings/CathedralCrypt/CryptMonument" index="0"]
 position = Vector3(-1.55, 0, 0)
 
