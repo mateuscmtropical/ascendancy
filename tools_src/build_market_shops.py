@@ -128,7 +128,7 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     "school": dict(CASARAO_WING, floor="wood", light="FFF4E8", day_light="FFE2B0", inner_doors={"right": INNER_DOOR}, fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),
     "reading": dict(CASARAO_UPPER, floor="wood", light="FFFAF4", day_light="FFE2B8", inner_doors={"left": INNER_DOOR}, fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),
     "seminary": dict(CASARAO_UPPER, floor="wood", light="FFFAF4", day_light="FFDCB0", inner_doors={"right": INNER_DOOR}, fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),
-    "vestibule": dict(CASARAO_HALL, storeys=CASARAO_STOREYS, floor="stone", light="FFF5EA", day_light="FFE4BC", door=(0.0, 3.4, 4.6, "round"), inner_doors={"left": INNER_DOOR, "right": INNER_DOOR}, door_leaves=False, shell="casarao_vestibule"),
+    "vestibule": dict(CASARAO_HALL, storeys=CASARAO_STOREYS, floor="stone", light="FFF5EA", day_light="FFE4BC", door=(0.0, 3.4, 4.6, "round"), inner_doors={"left": INNER_DOOR, "right": INNER_DOOR}, door_leaves=False, shell="casarao_vestibule", fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),  # lamps lit only at night, as in the wings
 }
 
 
