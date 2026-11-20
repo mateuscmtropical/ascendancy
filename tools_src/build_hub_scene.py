@@ -1212,7 +1212,7 @@ def cathedral_glass_spots() -> list:
 
 
 def add_cathedral_lights(scene: SceneWriter) -> None:
-    """Warm lamps along the nave, a spot on the crucifix, gold backlight in the retable, coloured light from the apse
+    """Warm lamps along the nave (night only: by day the windows and the sky light it), a spot on the crucifix, gold backlight in the retable, coloured light from the apse
     windows and a small lamp at each side altar (the stained glass glows on its own)."""
     nave_lights = [CATHEDRAL_FACADE_X + offset for offset in (8.0, 15.0, 22.0, 29.0)]
     altar_light = (CATHEDRAL_FACADE_X + 39.7, CHANCEL_FLOOR + 9.0, 0.0)
@@ -1223,7 +1223,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
     scene.add_node("CathedralLights", ".", "Node3D")
 
     for index, light_x in enumerate(nave_lights):
-        scene.add_node(f"NaveLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(light_x, CATHEDRAL_FLOOR + 9.0, 0.0), "light_energy": "1.6", "omni_range": "13.0"})
+        scene.add_node(f"NaveLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(light_x, CATHEDRAL_FLOOR + 9.0, 0.0), "light_energy": "1.6", "omni_range": "13.0"}, groups=["night_lights"])
 
     scene.add_node("AltarLight", "CathedralLights", "SpotLight3D", properties={
         "position": vector(*altar_light),
@@ -1239,7 +1239,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
         scene.add_node(f"RetableBacklight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_color": "Color(1, 0.8, 0.45, 1)", "light_energy": "0.6", "omni_range": "4.0"})
 
     for index, position in enumerate(side_altar_lights):
-        scene.add_node(f"SideAltarLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_energy": "0.8", "omni_range": "4.0"})
+        scene.add_node(f"SideAltarLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_energy": "0.8", "omni_range": "4.0"}, groups=["night_lights"])
 
     sun_script = scene.external_id("Script", "res://features/sky/sun_through_glass.gd")
 

@@ -57,7 +57,8 @@ CATWALK_HALF = 0.5
 QUEEN_POST_X = 1.6
 PURLIN_X = (1.6, 4.0, 6.2)
 CROSS_WALK_Y = (NARTHEX_DEPTH, NARTHEX_DEPTH + 0.9)
-LANTERN = {"color": "FFC780", "energy": 1.1, "range": 7.5}  # sRGB, como no sidecar da cripta
+SHAFT_LANTERN = {"color": "FFC780", "energy": 1.3, "range": 4.5}  # sRGB, como no sidecar da cripta; alcance curto: não vaza para a nave
+ATTIC_LANTERN = {"color": "FFC780", "energy": 1.4, "range": 6.5}
 
 
 class TowerFrame:
@@ -304,14 +305,14 @@ def build_clock_movement(frame: TowerFrame, materials: dict) -> None:
     frame.span("ClockMovement-colonly", (-0.66, -0.43, floor), (0.66, 0.43, cage_top), None)
 
 
-def build_lantern(name: str, position: Vector, materials: dict, chain: float) -> dict:
+def build_lantern(name: str, position: Vector, materials: dict, chain: float, light: dict) -> dict:
     """Iron lantern hanging on a chain (glass glows; the real light is listed in the sidecar)."""
     beam(f"{name}Chain", position + Vector((0, 0, 0.25)), position + Vector((0, 0, 0.25 + chain)), 0.02, 0.02, materials["iron"])
     make_span(f"{name}Cap", tuple(position + Vector((-0.12, -0.12, 0.18))), tuple(position + Vector((0.12, 0.12, 0.25))), materials["iron"])
     make_span(f"{name}Glass", tuple(position + Vector((-0.09, -0.09, -0.12))), tuple(position + Vector((0.09, 0.09, 0.18))), materials["lantern_glow"])
     make_span(f"{name}Base", tuple(position + Vector((-0.11, -0.11, -0.16))), tuple(position + Vector((0.11, 0.11, -0.12))), materials["iron"])
 
-    return {"position": godot(position), **LANTERN}
+    return {"position": godot(position), **light}
 
 
 def build_tower_inside(side_sign: int, materials: dict) -> tuple:
@@ -327,7 +328,7 @@ def build_tower_inside(side_sign: int, materials: dict) -> tuple:
     build_shaft(frame, materials)
     build_bell(frame, materials)
     build_clock_movement(frame, materials)
-    lights = [build_lantern(f"TowerLantern{index}{frame.tag}", frame.point(*spot), materials, 1.2) for index, spot in enumerate(lantern_spots)]
+    lights = [build_lantern(f"TowerLantern{index}{frame.tag}", frame.point(*spot), materials, 1.2, SHAFT_LANTERN) for index, spot in enumerate(lantern_spots)]
 
     for index, (_, lantern_v, height) in enumerate(lantern_spots[:-1]):
         frame.span(f"LanternBearer{index}", (-WELL, lantern_v - 0.05, height + 1.45), (WELL, lantern_v + 0.05, height + 1.57), materials["timber_dark"])
@@ -384,7 +385,7 @@ def build_attic(materials: dict) -> list:
     build_catwalk(materials, truss_ys)
 
     for lantern_index, lantern_y in enumerate(truss_ys[2::4]):
-        lights.append(build_lantern(f"AtticLantern{lantern_index}", Vector((0.0, lantern_y, queen_top - 1.25)), materials, 0.85))
+        lights.append(build_lantern(f"AtticLantern{lantern_index}", Vector((0.0, lantern_y, queen_top - 1.25)), materials, 0.85, ATTIC_LANTERN))
 
     build_attic_clutter(materials)
 
