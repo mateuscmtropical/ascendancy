@@ -137,8 +137,8 @@ const LEGS: Array[Dictionary] = [
 ## (segundo do vídeo, hora do dia): o céu escurece enquanto ela está na cripta.
 const TIME_KEYS: Array[Vector2] = [
 	Vector2(0.0, 0.44),
-	Vector2(22.0, 0.49),
-	Vector2(32.0, 0.53),
-	Vector2(56.0, 0.68),
+	Vector2(26.0, 0.49),
+	Vector2(36.0, 0.53),
+	Vector2(60.0, 0.68),
 	Vector2(200.0, 0.7),
 ]

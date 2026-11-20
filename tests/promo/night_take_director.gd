@@ -166,16 +166,13 @@ func _update_actor(leg: Dictionary) -> void:
 
 	if path.size() < 2:
 		if leg.has("face"):
-			_heading = _heading.slerp(_flat(leg["face"] - actor.global_position).normalized(), 0.08)
+			_turn_towards(_flat(leg["face"] - actor.global_position), 0.08)
 			actor.global_rotation.y = atan2(_heading.x, _heading.z)
 
 		return
 
 	point = PathWalk.point_along(path, _leg_progress() * PathWalk.path_length(path))
-	_heading = _heading.slerp(
-		PathWalk.heading_along(path, _leg_progress() * PathWalk.path_length(path)).normalized(),
-		0.15
-	)
+	_turn_towards(PathWalk.heading_along(path, _leg_progress() * PathWalk.path_length(path)), 0.15)
 	_ground_height = _probe_ground(point)
 	actor.global_position = Vector3(point.x, _ground_height, point.z)
 	actor.global_rotation.y = atan2(_heading.x, _heading.z)
@@ -292,6 +289,15 @@ func _add_presence() -> void:
 	_obstacle.radius = ACTOR_AVOIDANCE_RADIUS
 	_obstacle.avoidance_enabled = true
 	actor.add_child(_obstacle)
+
+
+## Gira o rumo pelo ângulo no plano: slerp de vetores quase opostos dá eixo torto na curva.
+func _turn_towards(direction: Vector3, weight: float) -> void:
+	var yaw: float = lerp_angle(
+		atan2(_heading.x, _heading.z), atan2(direction.x, direction.z), weight
+	)
+
+	_heading = Vector3(sin(yaw), 0.0, cos(yaw))
 
 
 func _flat(vector: Vector3) -> Vector3:
