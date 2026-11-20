@@ -28,3 +28,28 @@ func test_volumes_are_sliders_from_zero_to_one_hundred() -> void:
 	for setting in VOLUME_BUS_BY_SETTING:
 		assert_true(GameSettings.is_slider(setting))
 		assert_eq(GameSettings.option_range(setting), Vector2i(0, 100))
+
+
+func test_graphics_saved_with_old_defaults_fall_back_to_the_new_ones() -> void:
+	var config: ConfigFile = ConfigFile.new()
+	var kept: Array[GameSettings.Setting]
+
+	config.set_value(GameSettings.SETTINGS_SECTION, "MSAA", 2)
+	kept = GameSettings._saved_settings_in(config)
+
+	assert_false(GameSettings.Setting.MSAA in kept)
+	assert_false(GameSettings.Setting.INDIRECT_LIGHT in kept)
+	assert_true(GameSettings.Setting.MASTER_VOLUME in kept)
+	assert_true(GameSettings.Setting.RESOLUTION in kept)
+
+
+func test_graphics_saved_with_current_defaults_are_kept() -> void:
+	var config: ConfigFile = ConfigFile.new()
+
+	config.set_value(
+		GameSettings.SETTINGS_SECTION,
+		GameSettings.GRAPHICS_VERSION_KEY,
+		GameSettings.GRAPHICS_DEFAULTS_VERSION
+	)
+
+	assert_true(GameSettings.Setting.MSAA in GameSettings._saved_settings_in(config))

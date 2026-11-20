@@ -52,6 +52,8 @@ var resting_expression: Mood = Mood.NEUTRAL
 var _shape_meshes: Array[MeshInstance3D] = []
 var _shape_indices: PackedInt32Array = PackedInt32Array()
 var _shape_names: Array[StringName] = []
+## Último peso mandado a cada blend shape: repetir o mesmo valor ainda suja a malha no servidor.
+var _sent_weights: PackedFloat32Array = PackedFloat32Array()
 var _weights: Dictionary[StringName, float] = {}
 var _expression: Mood = Mood.NEUTRAL
 var _expression_seconds_left: float = 0.0
@@ -79,6 +81,7 @@ func bind(skeleton: Skeleton3D) -> void:
 	_shape_meshes.clear()
 	_shape_indices.clear()
 	_shape_names.clear()
+	_sent_weights.clear()
 	_weights.clear()
 
 	for child in skeleton.get_children():
@@ -106,6 +109,25 @@ func blink_now() -> void:
 	_blink_seconds = 0.0
 
 
+## Longe da câmera o rosto não passa de uns pixels: volta ao neutro de olhos abertos e para de
+## animar até chegar perto de novo.
+func set_detailed(is_detailed: bool) -> void:
+	if _shape_meshes.is_empty() or is_detailed == is_processing():
+		return
+
+	set_process(is_detailed)
+
+	if is_detailed:
+		return
+
+	for shape_name in _weights:
+		_weights[shape_name] = 0.0
+
+	_gaze = Vector2.ZERO
+	_gaze_target = Vector2.ZERO
+	_apply_weights()
+
+
 ## Um passo do rosto; o _process chama a cada quadro e os testes chamam com o tempo que quiserem.
 func advance(delta: float) -> void:
 	_advance_expression(delta)
@@ -121,6 +143,7 @@ func _bind_mesh(mesh_instance: MeshInstance3D) -> void:
 		_shape_meshes.append(mesh_instance)
 		_shape_indices.append(shape_index)
 		_shape_names.append(shape_name)
+		_sent_weights.append(mesh_instance.get_blend_shape_value(shape_index))
 		_weights[shape_name] = 0.0
 
 
@@ -199,6 +222,10 @@ func _advance_gaze(delta: float) -> void:
 
 func _apply_weights() -> void:
 	for shape in _shape_meshes.size():
-		_shape_meshes[shape].set_blend_shape_value(
-			_shape_indices[shape], _weights[_shape_names[shape]]
-		)
+		var weight: float = _weights[_shape_names[shape]]
+
+		if weight == _sent_weights[shape]:
+			continue
+
+		_sent_weights[shape] = weight
+		_shape_meshes[shape].set_blend_shape_value(_shape_indices[shape], weight)

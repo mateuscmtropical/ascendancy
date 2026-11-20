@@ -143,6 +143,7 @@ func _seat_driver() -> void:
 	driver.hair_color = driver_hair_color
 	driver.start_animation = DRIVER_ANIMATION
 	driver.position = driver_seat
+	driver.uses_distance_detail = true
 	add_child(driver)
 
 

@@ -27,6 +27,8 @@ const GRAZE_SECONDS: Vector2 = Vector2(4.0, 11.0)
 const MIN_WANDER_DISTANCE: float = 2.0
 const WANDER_ATTEMPTS: int = 8
 const MIN_ANIMATION_SPEED: float = 0.4
+## Fora da câmera a animação para (o bicho segue passeando); a folga cobre a sombra.
+const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5.0, 3.5, 5.0))
 
 @export var model_scene: PackedScene
 @export var pen: Rect2 = Rect2(0.0, 0.0, 4.0, 4.0)
@@ -65,6 +67,7 @@ func _ready() -> void:
 		return
 
 	add_child(model)
+	_stop_animating_off_screen(model)
 	_animation_player = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_pick_walk_animation()
 	_loop_animations()
@@ -256,3 +259,10 @@ func _play(animation_name: StringName, speed_scale: float = 1.0) -> void:
 
 	_animation_player.speed_scale = speed_scale
 	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS)
+
+
+func _stop_animating_off_screen(model: Node3D) -> void:
+	var animation_culling: VisibleOnScreenEnabler3D = VisibleOnScreenEnabler3D.new()
+
+	animation_culling.aabb = ANIMATION_CULLING_BOUNDS
+	model.add_child(animation_culling)

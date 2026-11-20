@@ -90,6 +90,25 @@ func test_standing_npc_does_not_move() -> void:
 	assert_eq(npc.global_position, Vector3(3, 0, 4))
 
 
+func test_animation_steps_grow_with_distance() -> void:
+	assert_eq(CharacterModel.animation_step_for(5.0), 0.0, "near: every frame")
+	assert_almost_eq(CharacterModel.animation_step_for(25.0), 1.0 / 30.0, 0.0001)
+	assert_almost_eq(CharacterModel.animation_step_for(60.0), 1.0 / 15.0, 0.0001)
+	assert_eq(CharacterModel.animation_step_for(200.0), INF, "hidden: no animation")
+
+
+func test_townsfolk_body_is_cut_from_afar() -> void:
+	var npc: WalkingNpc = _spawn_walker(PackedVector3Array([Vector3.ZERO, Vector3(2, 0, 0)]), 1.0)
+	var meshes: Array[Node] = npc.find_children("*", "GeometryInstance3D", true, false)
+
+	await wait_physics_frames(2)
+
+	assert_gt(meshes.size(), 0)
+
+	for mesh in meshes:
+		assert_eq((mesh as GeometryInstance3D).visibility_range_end, CharacterModel.HIDE_DISTANCE)
+
+
 func _spawn_walker(route: PackedVector3Array, speed: float) -> WalkingNpc:
 	var npc: WalkingNpc = NPC_SCENE.instantiate()
 
