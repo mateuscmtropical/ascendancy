@@ -60,7 +60,21 @@ const FALL_GRAVITY: float = 30.0
 const DOUBLE_TAP_SECONDS: float = 0.3
 const MOUSE_SENSITIVITY: float = 0.0025
 const PITCH_MIN: float = -1.1
-const PITCH_MAX: float = 0.45
+## Quase na vertical: dá para deitar o olhar no céu e ver as estrelas.
+const PITCH_MAX: float = 1.4
+## Olhando para cima o braço da câmera encurta e o pivô sobe até a cabeça, senão a câmera
+## desceria para baixo do chão atrás do personagem.
+const CAMERA_ARM_LENGTH: float = 4.2
+## Altura mínima da câmera acima dos pés quando olha para cima (o braço encurta para caber); perto
+## da vertical ela sobe até a cabeça, o corpo some (HIDE_MODEL_DISTANCE) e o céu fica livre.
+const LOOK_UP_CAMERA_HEIGHT: float = 0.5
+const STARGAZE_CAMERA_HEIGHT: float = 1.45
+const STARGAZE_PITCH: Vector2 = Vector2(0.9, 1.35)
+const CAMERA_PIVOT_HEIGHT: float = 1.55
+const LOOK_UP_PIVOT_HEIGHT: float = 1.75
+## Câmera mais perto que isso do pivô (parede atrás, olhar para cima) esconde o corpo, que só
+## taparia a tela por dentro.
+const HIDE_MODEL_DISTANCE: float = 0.7
 ## Degrau que o personagem sobe andando, sem pular: meio-fio, soleira, borda do terreiro.
 const STEP_HEIGHT: float = 0.2
 ## Abaixo disto a normal do obstáculo é parede (degrau); acima, rampa que o move_and_slide já sobe.
@@ -82,14 +96,18 @@ var _camera_collision_mask: int
 @onready var _fighter: UnarmedFighter = $UnarmedFighter
 @onready var _camera_yaw: Node3D = $CameraYaw
 @onready var _camera_pitch: Node3D = $CameraYaw/CameraPitch
-@onready var _camera: Camera3D = $CameraYaw/CameraPitch/SpringArm3D/Camera3D
-@onready var _spring_arm: SpringArm3D = $CameraYaw/CameraPitch/SpringArm3D
+@onready var _camera: Camera3D = $CameraYaw/CameraPitch/ShoulderArm/SpringArm3D/Camera3D
+@onready var _shoulder_arm: SpringArm3D = $CameraYaw/CameraPitch/ShoulderArm
+@onready var _spring_arm: SpringArm3D = $CameraYaw/CameraPitch/ShoulderArm/SpringArm3D
 @onready var _avoidance_obstacle: NavigationObstacle3D = $AvoidanceObstacle
 
 
 func _ready() -> void:
 	_ground_collision_mask = collision_mask
 	_camera_collision_mask = _spring_arm.collision_mask
+	_shoulder_arm.add_excluded_object(get_rid())
+	_spring_arm.add_excluded_object(get_rid())
+	_follow_camera_pitch()
 	_fighter.move_started.connect(_on_move_started)
 	_fighter.strike_reached.connect(_on_strike_reached)
 
@@ -112,6 +130,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion and is_mouse_captured:
 		_rotate_camera(event.relative)
+
+
+func _process(_delta: float) -> void:
+	_hide_model_when_camera_is_close()
 
 
 func _physics_process(delta: float) -> void:
@@ -140,6 +162,7 @@ func set_flying(should_fly: bool) -> void:
 	_fighter.cancel()
 	collision_mask = 0 if should_fly else _ground_collision_mask
 	_spring_arm.collision_mask = 0 if should_fly else _camera_collision_mask
+	_shoulder_arm.collision_mask = _spring_arm.collision_mask
 	velocity = Vector3.ZERO
 
 
@@ -355,3 +378,35 @@ func _rotate_camera(mouse_delta: Vector2) -> void:
 	_camera_pitch.rotation.x = clampf(
 		_camera_pitch.rotation.x - mouse_delta.y * MOUSE_SENSITIVITY, PITCH_MIN, PITCH_MAX
 	)
+	_follow_camera_pitch()
+
+
+## Altura do pivô da câmera acima dos pés: sobe até a cabeça conforme o olhar vai para cima.
+static func camera_pivot_height_for(pitch: float) -> float:
+	return lerpf(CAMERA_PIVOT_HEIGHT, LOOK_UP_PIVOT_HEIGHT, smoothstep(0.0, PITCH_MAX, pitch))
+
+
+## Comprimento do braço para a câmera nunca descer abaixo de LOOK_UP_CAMERA_HEIGHT (pitch > 0
+## põe a câmera abaixo do pivô).
+static func camera_arm_length_for(pitch: float) -> float:
+	var stargaze: float = smoothstep(STARGAZE_PITCH.x, STARGAZE_PITCH.y, pitch)
+	var lowest_camera: float = lerpf(LOOK_UP_CAMERA_HEIGHT, STARGAZE_CAMERA_HEIGHT, stargaze)
+	var drop_room: float = camera_pivot_height_for(pitch) - lowest_camera
+
+	if pitch <= 0.0:
+		return CAMERA_ARM_LENGTH
+
+	return minf(CAMERA_ARM_LENGTH, drop_room / sin(pitch))
+
+
+func _follow_camera_pitch() -> void:
+	var pitch: float = _camera_pitch.rotation.x
+
+	_spring_arm.spring_length = camera_arm_length_for(pitch)
+	_camera_yaw.position.y = camera_pivot_height_for(pitch)
+
+
+func _hide_model_when_camera_is_close() -> void:
+	var camera_distance: float = _camera.global_position.distance_to(_camera_yaw.global_position)
+
+	_model.visible = camera_distance > HIDE_MODEL_DISTANCE
