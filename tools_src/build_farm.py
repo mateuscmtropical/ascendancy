@@ -37,6 +37,7 @@ Usage:
                                                               water_wheel monjolo_beam]
 """
 
+import contextlib
 import itertools
 import json
 import math
@@ -735,7 +736,7 @@ def wheel(b: Builder, frame: Matrix, center: tuple, radius: float, width: float,
     lathe(b, [(radius * 0.84, -half), (radius * 0.975, -half), (radius * 0.975, half), (radius * 0.84, half)], 18, "wood", WOOD["media"], around_x, closed=True, uv=("band", *WOOD_LIGHT_BAND, 1.0))
     lathe(b, [(radius * 0.975, -half - 0.004), (radius, -half - 0.004), (radius, half + 0.004), (radius * 0.975, half + 0.004)], 18, "metal", "4A4448", around_x, closed=True)
     b.cylinder((center[0] - width, center[1], center[2]), radius * 0.15 + 0.02, width * 2.0, 8, "wood", srgb(WOOD["escura"]), frame=frame, axis="X")
-    b.cylinder((center[0] - width - 0.02, center[1], center[2]), 0.03, width * 2.0 + 0.04, 6, "metal", srgb("4A4448"), frame=frame, axis="X")
+    b.cylinder((center[0] - width - 0.02, center[1], center[2]), 0.03, width * 2.0 + 0.04, 6, "iron", WHITE, frame=frame, axis="X")
 
     for spoke in range(spokes):
         angle = 2.0 * math.pi * spoke / spokes
@@ -757,6 +758,7 @@ CART_HALF_LENGTH = 1.2
 CART_FLOOR = 0.8
 CART_SIDE_HEIGHT = 0.5
 CART_WHEEL_RADIUS = 0.64
+CART_WHEEL_NAMES = {-1: "WheelL", 1: "WheelR"}  # peças que giram nas carroças atreladas (features/hub/carriage.gd)
 SEAT_HEIGHT = 1.46
 SEAT_Y = -1.3  # centro do assento, além da parede da frente (as canelas do condutor descem livres): Blender -Y é a frente (+Z no Godot)
 FOOTBOARD_REACH = 0.62  # da parede da frente até a ponta do estribo, onde os pés do condutor apoiam
@@ -778,8 +780,9 @@ def harness_ring() -> tuple:
     return tuple(max(rings, key=lambda ring: ring[0]))
 
 
-def cart_body(b: Builder, frame: Matrix) -> None:
-    """Bed of five floor planks on two sills, slatted sides on stakes, headboard and tailboard."""
+def cart_body(b: Builder, frame: Matrix, rolling: bool = False) -> None:
+    """Bed of five floor planks on two sills, slatted sides on stakes, headboard and tailboard. A rolling cart has
+    its wheels as meshes of their own (WheelL, WheelR) with the origin on the axle, for the game to spin."""
     wood, dark = srgb(WOOD["mel"]), srgb(WOOD["media"])
     plank = 2.0 * CART_HALF_WIDTH / 5.0
     top = CART_FLOOR + 0.05
@@ -791,7 +794,11 @@ def cart_body(b: Builder, frame: Matrix) -> None:
     for side in (-1, 1):
         b.box((side * 0.5 - 0.05, -CART_HALF_LENGTH, CART_FLOOR - 0.1), (side * 0.5 + 0.05, CART_HALF_LENGTH, CART_FLOOR), "wood", dark, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
         b.box((side * 0.5 - 0.05, 0.02, CART_WHEEL_RADIUS - 0.02), (side * 0.5 + 0.05, 0.18, CART_FLOOR - 0.1), "wood", dark, frame=frame)
-        wheel(b, frame, (side * (CART_HALF_WIDTH + 0.16), 0.1, CART_WHEEL_RADIUS), CART_WHEEL_RADIUS, 0.08, spokes=10)
+        wheel_center = (side * (CART_HALF_WIDTH + 0.16), 0.1, CART_WHEEL_RADIUS)
+        turning = b.turning_part(CART_WHEEL_NAMES[side], wheel_center, frame) if rolling else contextlib.nullcontext()
+
+        with turning:
+            wheel(b, frame, wheel_center, CART_WHEEL_RADIUS, 0.08, spokes=10)
 
     for side, stake_y in itertools.product((-1, 1), (-1.14, -0.38, 0.38, 1.14)):
         b.box((side * CART_HALF_WIDTH - 0.035, stake_y - 0.035, CART_FLOOR - 0.06), (side * CART_HALF_WIDTH + 0.035, stake_y + 0.035, top + CART_SIDE_HEIGHT + 0.06), "wood", dark, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.5))
@@ -892,8 +899,9 @@ CART_LOADS = {"hay": load_hay, "sacks": load_sacks, "produce": load_produce}
 
 
 def farm_cart(b: Builder, frame: Matrix, load: str = "hay", seed: int = 1, hitched: bool = False) -> None:
-    """Two-wheeled farm cart: slatted bed, spoked wheels, driver's bench, shafts and a load."""
-    cart_body(b, frame)
+    """Two-wheeled farm cart: slatted bed, spoked wheels, driver's bench, shafts and a load. A hitched cart is
+    the one that rolls down the street, so its wheels come out as turning parts."""
+    cart_body(b, frame, rolling=hitched)
     cart_bench(b, frame)
     cart_shafts(b, frame, hitched)
     CART_LOADS[load](b, frame, seed)

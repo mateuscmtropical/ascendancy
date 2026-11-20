@@ -5,7 +5,7 @@ The pack (python tools_src/fetch_assets.py animals -> tools/vendor/animals) ship
 animals facing whichever way the author modelled them. For each animal this script:
   1. imports the first file whose name matches (glTF/GLB preferred, then FBX), anywhere under the pack folder;
   2. repaints the materials (richer colours, dark hooves, rosy pig snout) and smooths the shading;
-  3. glues eyes (white ball, black pupil, shine) to the Head bone; the carriage horse also gets a padded collar, a
+  3. glues eyes (iris, pupil, shine) to the Head bone, sunk into the skin found by rays on the head mesh; the carriage horse also gets a padded collar, a
      draught saddle, a girth and the shaft rings (argolas) glued to the Neck and Torso bones;
   4. paints vertex colours: soft belly shade on everybody and the mud of the pig (legs, belly, snout);
   5. scales the top-level object so the rest pose stands ANIMALS[animal] metres tall and turns it so the head (Head
@@ -29,17 +29,22 @@ import bmesh
 import bpy
 from mathutils import Matrix, Vector
 from mathutils import noise as mathutils_noise
+from mathutils.bvhtree import BVHTree
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 PACK_DIR = PROJECT_DIR / "tools" / "vendor" / "animals"
 OUTPUT_DIR = PROJECT_DIR / "art" / "town" / "farm" / "animals"
 ANIMALS = {"cow": 1.4, "pig": 0.7, "horse": 1.75}  # altura do modelo em repouso, metros
 HARNESS_NAME = "horse_harness"  # variante do cavalo para a carroça
-ACTIONS = {  # último trecho do nome original ("Armature|Armature|Walk", minúsculo) -> nome no jogo, por bicho
-    "cow": {"idle": "Idle", "walk": "Walk", "walkslow": "WalkSlow"},
+# último trecho do nome original ("Armature|Armature|Walk", minúsculo) -> nome no jogo, por bicho.
+# O "Walk" da vaca e do cavalo no pacote fica de fora: as pernas só andam na primeira metade do ciclo e congelam
+# na segunda (a cabeça e o rabo seguem), então o bicho desliza. O passo completo é o WalkSlow.
+ACTIONS = {
+    "cow": {"idle": "Idle", "walkslow": "WalkSlow"},
     "pig": {"idle": "Idle"},
-    "horse": {"idle": "Idle", "walk": "Walk", "walkslow": "WalkSlow", "run": "Run"},
+    "horse": {"idle": "Idle", "walkslow": "WalkSlow", "run": "Run"},
 }
+PIG_WALK_DONOR_FOR = "pig"
 PIG_WALK_DONOR = ("cow", "walkslow")  # o porco do pacote só tem Idle: pega o andar da vaca (mesmo esqueleto)
 PIG_WALK_SECONDS = 1.2  # ciclo do andar do porco: ~0,55 m/s, perto da velocidade com que o jogo move o bicho
 ROOT_BONE = "root"
@@ -59,9 +64,9 @@ SNOUT_SHARE = 0.17  # fração do comprimento da cabeça, a partir da ponta, que
 EYE_COLORS = {"EyeIris": "3B2416", "EyePupil": "0B0A0D", "EyeShine": "F4F0E8"}  # olho de bicho: castanho escuro, sem branco à vista
 
 # Olho: (y, z) do centro no espaço do esqueleto (cabeça para -Y), raio. O x vem da superfície da cabeça.
-EYE_SPOTS = {"cow": (-4.38, 4.45, 0.135), "pig": (-4.42, 2.78, 0.115), "horse": (-4.3, 5.78, 0.13)}
-EYE_SURFACE_REACH = 0.4  # vértices da cabeça até esta distância (y, z) do olho dão a largura da face
-EYE_SINK = 0.74  # fração da largura da face onde fica o centro do olho (<1 afunda o olho na cabeça)
+EYE_SPOTS = {"cow": (-4.38, 4.45, 0.135), "pig": (-4.42, 2.78, 0.115), "horse": (-4.15, 5.95, 0.13)}
+EYE_RAY_START = 6.0  # de onde sai o raio que acha a pele do lado da cabeça (fora de qualquer malha)
+EYE_BULGE = 0.3  # fração do raio que o olho salta para fora da pele
 EYE_SHAPE = (0.42, 1.0, 0.72)  # raios do olho / raio: achatado para fora (não salta da cabeça), amendoado ao longo da cara
 PUPIL_SHAPE = (0.16, 0.5, 0.26)  # pupila horizontal, como a de vaca, porco e cavalo
 
@@ -397,11 +402,11 @@ def tube_ring(center: Vector, axis_u: Vector, axis_v: Vector, radius_u: float, r
     return builder
 
 
-def ball(center: Vector, radii: tuple, segments: tuple = (12, 8)) -> bmesh.types.BMesh:
+def ball(center: Vector, radii: tuple, segments: tuple = (12, 8), rotation: Matrix = Matrix.Identity(4)) -> bmesh.types.BMesh:
     builder = bmesh.new()
     scale = Matrix.Diagonal(Vector((*radii, 1.0)))
 
-    bmesh.ops.create_uvsphere(builder, u_segments=segments[0], v_segments=segments[1], radius=1.0, matrix=Matrix.Translation(center) @ scale)
+    bmesh.ops.create_uvsphere(builder, u_segments=segments[0], v_segments=segments[1], radius=1.0, matrix=Matrix.Translation(center) @ rotation @ scale)
 
     return builder
 
@@ -441,26 +446,51 @@ def join_parts(body: bpy.types.Object, parts: list) -> None:
     bpy.ops.object.join()
 
 
+def head_skin(surface: BVHTree, side: float, y: float, z: float) -> tuple:
+    """Point and outward normal of the head surface on `side` where the line of sight through (y, z) meets it. The
+    heads are a few dozen flat panels, so the vertices near the eye (cheek, ear) say nothing about where the skin
+    is: a ray finds it."""
+    origin = Vector((side * EYE_RAY_START, y, z))
+    direction = Vector((-side, 0.0, 0.0))
+    point, normal, _index, _distance = surface.ray_cast(origin, direction)
+
+    if point is None:
+        raise ValueError(f"nenhuma superfície da cabeça em y={y}, z={z}: ajuste EYE_SPOTS")
+
+    return point, normal if normal.dot(direction) < 0.0 else -normal
+
+
+def eye_frame(normal: Vector) -> Matrix:
+    """Rotation that turns the eye's X (its flat axis) along the skin normal, keeping its Z as close to up as the
+    slope allows: the eye lies on the panel instead of standing off one edge of it."""
+    up = Vector((0.0, 0.0, 1.0))
+    vertical = (up - normal * up.dot(normal)).normalized()
+    along = vertical.cross(normal)
+
+    return Matrix((normal, along, vertical)).transposed().to_4x4()
+
+
 def eye_parts(animal: str, body: bpy.types.Object, armature: bpy.types.Object) -> list:
     """Flattened almond eye (dark iris, horizontal pupil, small shine) set into each side of the head, skinned to
     the Head bone. Round white balls read as cartoon googly eyes stuck on the head."""
     spot_y, spot_z, radius = EYE_SPOTS[animal]
-    face = [vertex.co for vertex in head_vertices(body) if abs(vertex.co.y - spot_y) < EYE_SURFACE_REACH and abs(vertex.co.z - spot_z) < EYE_SURFACE_REACH]
-    half_width = max(abs(point.x) for point in face)
+    mesh = body.data
+    surface = BVHTree.FromPolygons([tuple(vertex.co) for vertex in mesh.vertices], [tuple(polygon.vertices) for polygon in mesh.polygons])
     materials = {name: new_material(name, code, roughness=0.25) for name, code in EYE_COLORS.items()}
     parts = []
 
     for side in (-1.0, 1.0):
-        center = Vector((side * half_width * EYE_SINK, spot_y, spot_z))
-        gaze = Vector((side * 0.8, -0.55, 0.0)).normalized()
-        outward = Vector((side, 0.0, 0.0))
-        pupil_center = center + outward * radius * (EYE_SHAPE[0] - PUPIL_SHAPE[0] * 0.6) + gaze * radius * 0.08
-        shine_center = center + outward * radius * EYE_SHAPE[0] * 0.92 + Vector((0.0, -0.25, 0.35)) * radius
+        skin, normal = head_skin(surface, side, spot_y, spot_z)
+        frame = eye_frame(normal)
+        center = skin - normal * radius * (EYE_SHAPE[0] - EYE_BULGE)
+        gaze = (normal * 0.8 + Vector((0.0, -0.55, 0.0))).normalized()
+        pupil_center = center + normal * radius * (EYE_SHAPE[0] - PUPIL_SHAPE[0] * 0.6) + gaze * radius * 0.08
+        shine_center = center + normal * radius * EYE_SHAPE[0] * 0.92 + Vector((0.0, -0.25, 0.35)) * radius
         label = "L" if side < 0 else "R"
 
         for suffix, builder, material_name in (
-            ("ball", ball(center, tuple(radius * share for share in EYE_SHAPE)), "EyeIris"),
-            ("pupil", ball(pupil_center, tuple(radius * share for share in PUPIL_SHAPE)), "EyePupil"),
+            ("ball", ball(center, tuple(radius * share for share in EYE_SHAPE), rotation=frame), "EyeIris"),
+            ("pupil", ball(pupil_center, tuple(radius * share for share in PUPIL_SHAPE), rotation=frame), "EyePupil"),
             ("shine", ball(shine_center, (radius * 0.1,) * 3, (8, 6)), "EyeShine"),
         ):
             parts.append(make_part(f"Eye{label}_{suffix}", builder, "Head", materials[material_name], armature))
@@ -612,7 +642,7 @@ def convert(animal: str, pack_dir: Path, harness: bool = False) -> dict:
     output_path = OUTPUT_DIR / f"{output_name}.gltf"
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    donated_walk = graft_walk(animal) if "walk" not in ACTIONS[animal] else None
+    donated_walk = graft_walk(animal) if animal == PIG_WALK_DONOR_FOR else None
     import_source(source)
     make_materials_opaque()
 
@@ -666,5 +696,5 @@ if __name__ == "__main__":
             result = convert(animal_name, source_dir, with_harness)
             print(f"BUILT {HARNESS_NAME if with_harness else animal_name}: {result}")
 
-            if "Idle" not in result["animations"] or "Walk" not in result["animations"]:
-                print(f"AVISO {animal_name}: faltou Idle ou Walk; animações do pacote: {result['animations']}")
+            if "Idle" not in result["animations"] or not {"Walk", "WalkSlow"} & set(result["animations"]):
+                print(f"AVISO {animal_name}: faltou Idle ou passo; animações do pacote: {result['animations']}")
