@@ -698,6 +698,10 @@ TOWN_WALL_THICKNESS = 1.2
 FARM_FIELDS = (CITY_MAX[0] + TOWN_WALL_THICKNESS, 150.0, -46.0, 46.0)  # campo aberto além do muro leste
 FARM_GATE_Z = (-3.0, 3.0)  # vão no muro leste por onde a estradinha da fazenda sai para o campo
 FARM_LANE_HALF_WIDTH = 2.0
+SACI_LANE = (82.0, 97.0)  # x onde o Saci dá a volta na estradinha do terreiro (a navmesh acaba no muro)
+SACI_HOP_SPEED = 1.9  # um pulo de 0,5 s leva ~0,95 m
+SACI_PAUSE_SECONDS = 3.0
+SACI_BODY_SCALE = 0.78  # menino de ~1,4 m
 FARMHOUSE = {"position": (85.5, 0.0, -34.6), "rotation": 0.0, "width": 16.8, "depth": 9.4}  # casa-grande ao norte do terreiro, varanda para o sul (+z)
 BARN = {"position": (94.6, 0.0, -17.0), "rotation": SIDE_ROTATION["W"], "width": 18.0, "depth": 6.4}  # tulha ao longo do muro leste, portas para o terreiro (-x)
 FARM_PENS = {  # cercado -> (min x, max x, min z, max z) por dentro da cerca
@@ -2045,6 +2049,16 @@ def sitter(bench: tuple) -> tuple:
     return (x + 0.15 * math.sin(rotation_y), z + 0.15 * math.cos(rotation_y)), rotation_y
 
 
+def add_saci(scene: SceneWriter) -> None:
+    """The Saci (tools_src/build_saci.py) hopping on one leg up and down the farm lane, inside the east gate."""
+    west, east = SACI_LANE
+    route = [(west, 1.0), (east, 1.0), (east, -1.0), (west, -1.0)]
+    properties = patrol(route, SACI_HOP_SPEED, SACI_PAUSE_SECONDS, "combat/Saci_Idle")
+
+    properties.update({"walk_animation": '&"combat/Saci_Hop"', "body_scale": f"{SACI_BODY_SCALE}"})
+    npc(scene, "Saci", "saci", "black", properties)
+
+
 def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     center_x, center_z = WEST_SQUARE
     half_x, half_z = SQUARE_HALF
@@ -2083,6 +2097,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "Guard", "adventurer_female", "dark", stand((CATHEDRAL_FACADE_X - 4.2, -6.5), -math.pi / 2.0, "ual2/Idle_FoldArms", 0.0))
     add_shopkeepers(scene, town_lots())
     add_window_shoppers(scene, town_lots())
+    add_saci(scene)
     npc(scene, "Priest", "villager_male", "grey", stand((CATHEDRAL_FACADE_X + 40.4, 0.0), -math.pi / 2.0, "ual1/Idle", 0.0, height=CHANCEL_FLOOR + 0.3))
 
 

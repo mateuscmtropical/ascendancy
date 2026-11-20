@@ -16,6 +16,9 @@ const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5
 @export var hair_color: Color = Color("4a3426")
 @export var activity: Activity = Activity.PATROL
 @export var idle_animation: StringName = &"ual1/Idle"
+@export var walk_animation: StringName = WALK_ANIMATION
+## Escala do corpo (o Saci é um menino).
+@export var body_scale: float = 1.0
 @export var route: PackedVector3Array = PackedVector3Array()
 @export var walk_speed: float = 1.3
 @export var pause_seconds: float = 3.0
@@ -42,9 +45,10 @@ func _ready() -> void:
 	_model = CHARACTER_MODEL_SCENE.instantiate()
 	_model.body_scene = body_scene
 	_model.hair_color = hair_color
-	_model.start_animation = WALK_ANIMATION if is_walking else idle_animation
+	_model.start_animation = walk_animation if is_walking else idle_animation
 	_model.start_offset_seconds = animation_offset_seconds
 	_model.uses_distance_detail = true
+	_model.scale = Vector3.ONE * body_scale
 	add_child(_model)
 	_stop_animating_off_screen()
 
@@ -135,4 +139,4 @@ func _wait_at_target(delta: float) -> void:
 
 	_patrol_state = PatrolState.WALKING
 	_navigation_agent.target_position = route[_target_index]
-	_model.play_animation(WALK_ANIMATION)
+	_model.play_animation(walk_animation)

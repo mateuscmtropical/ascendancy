@@ -309,8 +309,29 @@ RIDE_BASE = {
     "hand_l": V(0.087, -0.13, -0.278), "elbow_l": V(0.5, 0.3, -1.0),
     "hand_r": V(0.031, -0.297, -0.183), "elbow_r": V(-0.5, 0.3, -1.0),
 }
+# The Saci (tools_src/build_saci.py) has no right leg: he stands on the left foot under his middle, the stump
+# of the right thigh a little forward, arms loose and out for balance.
+SACI_BASE = {
+    "pelvis": V(0.09, -0.04, 0.07), "hips": V(0.0, 0.0, 0.0), "chest": V(0.0, -10.0, 0.0), "head": V(0.0, -32.0, 0.0),
+    "foot_l": V(-0.12, 0.08, 0.0), "knee_l": V(0.2, -1.0, 0.0), "sole_l": V(0.0, 0.0, 0.0),
+    "foot_r": V(0.04, -0.22, 0.12), "knee_r": V(-0.3, -1.0, 0.2), "sole_r": V(0.0, 30.0, 0.0),
+    "hand_l": V(0.20, 0.25, -0.58), "elbow_l": V(0.5, 0.8, -0.2),
+    "hand_r": V(-0.12, 0.08, -0.48), "elbow_r": V(-0.5, 0.8, -0.2),
+}
 # Looping clips from a base pose: name -> (seconds, base, key poses as offsets from the base).
 LOOP_CLIPS = {
+    # the Saci standing on his one leg: a small bob and the arms swinging for balance
+    "Saci_Idle_Loop": (1.8, SACI_BASE, [
+        (0.45, {"pelvis": V(0.012, 0.0, -0.015), "hand_l": V(0.03, 0.0, 0.04), "hand_r": V(-0.02, 0.0, 0.02), "chest": V(-3.0, 0.0, 2.0)}),
+        (0.9, {"pelvis": V(0.0, 0.0, 0.0)}),
+        (1.35, {"pelvis": V(-0.01, 0.0, -0.015), "hand_l": V(0.01, 0.0, 0.02), "hand_r": V(-0.04, 0.0, 0.04), "chest": V(3.0, 0.0, -2.0)}),
+    ]),
+    # one hop on the left foot: crouch, spring (the whole body leaves the ground, toes pointed), land soft
+    "Saci_Hop_Loop": (0.5, SACI_BASE, [
+        (0.09, {"pelvis": V(0.0, -0.02, -0.09), "chest": V(0.0, 8.0, 0.0), "hand_l": V(0.04, 0.08, -0.04), "hand_r": V(-0.04, 0.08, -0.04)}),
+        (0.25, {"pelvis": V(0.0, -0.02, 0.16), "foot_l": V(0.0, 0.03, 0.17), "sole_l": V(0.0, -35.0, 0.0), "chest": V(0.0, -2.0, 0.0), "hand_l": V(0.10, -0.06, 0.18), "hand_r": V(-0.10, -0.06, 0.18), "foot_r": V(0.0, 0.0, 0.10)}),
+        (0.40, {"pelvis": V(0.0, -0.01, -0.07), "chest": V(0.0, 6.0, 0.0), "hand_l": V(0.03, 0.04, -0.02), "hand_r": V(-0.03, 0.04, -0.02)}),
+    ]),
     # sitting still on the Mula: slow breathing
     "Ride_Idle_Loop": (2.4, RIDE_BASE, [
         (1.2, {"pelvis": V(0.0, 0.0, -0.008), "chest": V(0.0, 2.0, 0.0), "hand_l": V(0.0, 0.0, -0.01), "hand_r": V(0.0, 0.0, -0.01)}),
