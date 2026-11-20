@@ -198,32 +198,36 @@ def V(x: float, y: float, z: float) -> Vector:
     return Vector((x, y, z))
 
 
-def clip_keys(rig: Rig, seconds: float, poses: list) -> dict:
+def clip_keys(rig: Rig, seconds: float, poses: list, base: dict | None = None) -> dict:
     """Per channel, the (time, value) keys of a clip. A pose names only the channels it sets, as offsets from
     the guard (positions in metres: x to the character's left, y backwards, z up; turns in degrees). Two kinds
     of channel are absolute instead: limb poles (the direction the elbow or knee points) and soles (toe heading
     to the left of straight ahead, toes-down pitch, roll with the instep to the left). Every channel starts and
-    ends in the guard."""
+    ends in the guard. A looping clip (riding) gives a base pose instead: it starts and ends there, and its key
+    poses are offsets from the base."""
     guard = rig.guard_channels()
     poles = set(POLE_OF_LIMB.values())
     soles = {"sole_l", "sole_r"}
-    keys = {channel: [(0.0, value)] for channel, value in guard.items()}
+    absolutes = poles | soles
+    base = base or {}
+    rest = {channel: (base[channel].normalized() if channel in poles else base[channel]) if channel in absolutes and channel in base else value + base.get(channel, Vector((0.0, 0.0, 0.0))) for channel, value in guard.items()}
+    keys = {channel: [(0.0, value)] for channel, value in rest.items()}
 
     for time, pose in poses:
         for channel, value in pose.items():
             absolute = value.normalized() if channel in poles else value
-            keys[channel].append((time, absolute if channel in poles | soles else guard[channel] + value))
+            keys[channel].append((time, absolute if channel in absolutes else rest[channel] + value))
 
-    for channel, value in guard.items():
+    for channel, value in rest.items():
         keys[channel].append((seconds, value))
 
     return keys
 
 
-def bake_clip(rig: Rig, name: str, seconds: float, poses: list) -> None:
+def bake_clip(rig: Rig, name: str, seconds: float, poses: list, base: dict | None = None) -> None:
     armature = rig.armature
     action = bpy.data.actions.new(name)
-    keys = clip_keys(rig, seconds, poses)
+    keys = clip_keys(rig, seconds, poses, base)
 
     armature.animation_data_create()
     armature.animation_data.action = action
@@ -292,6 +296,29 @@ CLIPS = {
         (0.18, {"pelvis": V(-0.02, -0.03, -0.01), "hips": V(-34.0, 0.0, 0.0), "chest": V(-30.0, 4.0, 0.0), "foot_l": V(0.0, 0.0, 0.03), "sole_l": V(-44.0, 18.0, 0.0), "hand_l": V(-0.13, -0.19, 0.0), "elbow_l": V(1.0, 0.1, 0.45), "fist_l": V(-50.0, 0.0, 0.0), "hand_r": V(0.04, 0.05, 0.04)}),
         (0.24, {"pelvis": V(-0.02, -0.03, -0.01), "hips": V(-42.0, 0.0, 0.0), "chest": V(-38.0, 4.0, 0.0), "sole_l": V(-50.0, 20.0, 0.0), "foot_l": V(0.0, 0.0, 0.03), "hand_l": V(-0.27, -0.13, 0.0), "elbow_l": V(1.0, 0.0, 0.45), "fist_l": V(-50.0, 0.0, 0.0)}),
         (0.42, {"pelvis": V(0.0, 0.0, -0.015), "hips": V(-8.0, 0.0, 0.0), "chest": V(-8.0, 0.0, 0.0), "sole_l": V(-12.0, 4.0, 0.0), "foot_l": V(0.0, 0.0, 0.005), "hand_l": V(-0.08, -0.02, 0.0), "fist_l": V(-10.0, 0.0, 0.0)}),
+    ]),
+}
+
+
+# Riding the Mula (features/mobs/mula_mount.gd): seated on its back, legs straddling the barrel with the knees
+# forward and out, hands ahead on the broken chains of the neck. Offsets from the guard; poles and soles absolute.
+RIDE_BASE = {
+    "pelvis": V(-0.018, 0.0, 0.0), "chest": V(0.0, 8.0, 0.0),
+    "foot_l": V(0.186, -0.2, 0.13), "knee_l": V(0.5, -1.0, 0.0), "sole_l": V(0.0, 10.0, 0.0),
+    "foot_r": V(-0.241, -0.62, 0.13), "knee_r": V(-0.5, -1.0, 0.0), "sole_r": V(0.0, 10.0, 0.0),
+    "hand_l": V(0.087, -0.13, -0.278), "elbow_l": V(0.5, 0.3, -1.0),
+    "hand_r": V(0.031, -0.297, -0.183), "elbow_r": V(-0.5, 0.3, -1.0),
+}
+# Looping clips from a base pose: name -> (seconds, base, key poses as offsets from the base).
+LOOP_CLIPS = {
+    # sitting still on the Mula: slow breathing
+    "Ride_Idle_Loop": (2.4, RIDE_BASE, [
+        (1.2, {"pelvis": V(0.0, 0.0, -0.008), "chest": V(0.0, 2.0, 0.0), "hand_l": V(0.0, 0.0, -0.01), "hand_r": V(0.0, 0.0, -0.01)}),
+    ]),
+    # galloping (and flying): the seat rises and falls once per stride, the trunk leans in, the hands ride along
+    "Ride_Gallop_Loop": (0.6, RIDE_BASE, [
+        (0.15, {"pelvis": V(0.0, -0.02, 0.05), "chest": V(0.0, 12.0, 0.0), "hand_l": V(0.0, -0.05, 0.03), "hand_r": V(0.0, -0.05, 0.03)}),
+        (0.45, {"pelvis": V(0.0, 0.01, -0.03), "chest": V(0.0, 6.0, 0.0), "hand_l": V(0.0, 0.02, -0.03), "hand_r": V(0.0, 0.02, -0.03)}),
     ]),
 }
 
@@ -371,6 +398,9 @@ if __name__ == "__main__":
 
     for clip_name, (clip_seconds, clip_poses) in CLIPS.items():
         bake_clip(combat_rig, clip_name, clip_seconds, clip_poses)
+
+    for clip_name, (clip_seconds, clip_base, clip_poses) in LOOP_CLIPS.items():
+        bake_clip(combat_rig, clip_name, clip_seconds, clip_poses, clip_base)
 
     export_clips(combat_rig.armature)
     print(f"BUILT {OUTPUT_PATH}")

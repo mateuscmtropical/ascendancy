@@ -93,13 +93,12 @@ func test_camera_never_drops_under_the_floor_when_looking_up() -> void:
 	var pitch_steps: int = 28
 
 	for step in pitch_steps + 1:
-		var pitch: float = lerpf(0.0, PlayerController.PITCH_MAX, float(step) / pitch_steps)
+		var pitch: float = lerpf(0.0, PlayerCamera.PITCH_MAX, float(step) / pitch_steps)
 		var camera_height: float = (
-			PlayerController.camera_pivot_height_for(pitch)
-			- PlayerController.camera_arm_length_for(pitch) * sin(pitch)
+			PlayerCamera.pivot_height_for(pitch) - PlayerCamera.arm_length_for(pitch) * sin(pitch)
 		)
 
-		assert_gte(camera_height, PlayerController.LOOK_UP_CAMERA_HEIGHT - 0.001)
+		assert_gte(camera_height, PlayerCamera.LOOK_UP_CAMERA_HEIGHT - 0.001)
 
 
 func test_camera_stays_inside_when_a_wall_is_beside_the_player() -> void:

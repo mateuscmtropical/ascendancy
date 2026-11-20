@@ -1,5 +1,6 @@
 [gd_scene load_steps=8 format=3]
 
+[ext_resource type="Script" path="res://features/player/player_camera.gd" id="cam_script"]
 [ext_resource type="Script" path="res://features/player/player_controller.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://features/player/character_model.tscn" id="2_model"]
 [ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="3_body"]
@@ -8,6 +9,9 @@
 
 [sub_resource type="SphereShape3D" id="camera_probe"]
 radius = 0.22
+
+[sub_resource type="SphereShape3D" id="mount_body"]
+radius = 0.85
 
 [sub_resource type="CapsuleShape3D" id="capsule"]
 radius = 0.32
@@ -22,11 +26,17 @@ script = ExtResource("1_script")
 position = Vector3(0, 0.9, 0)
 shape = SubResource("capsule")
 
+[node name="MountCollision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("mount_body")
+disabled = true
+
 [node name="CharacterModel" parent="." instance=ExtResource("2_model")]
 body_scene = ExtResource("3_body")
 
 [node name="CameraYaw" type="Node3D" parent="."]
 position = Vector3(0, 1.55, 0)
+script = ExtResource("cam_script")
 
 [node name="CameraPitch" type="Node3D" parent="CameraYaw"]
 rotation = Vector3(-0.22, 0, 0)
