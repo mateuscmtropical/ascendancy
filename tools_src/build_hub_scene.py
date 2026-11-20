@@ -1249,8 +1249,7 @@ OLD_TREES_WEST_SQUARE = [  # metade norte, espelhada em z: faixa da avenida e o 
 BLOOM_TREES_WEST_EDGE = [(-58.5, -38.0), (-58.5, -30.0), (-58.5, -10.0)]
 GROVE_FORCED = [(13.5, -19.5), (13.5, -24.5), (20.0, -21.0), (16.0, -40.0)]  # as gigantes que emolduram a fachada
 FOUNTAIN_BENCH_ANGLES = (33.0, 85.0, 140.0)  # graus, espelhados em z: fora das bocas dos caminhos e dos postes
-ROUNDABOUT_LAMP_ANGLES = (57.0, 66.0, 114.0, 123.0, -57.0, -66.0, -114.0, -123.0)  # dois em cada canto de calçada recortado
-PLAZA_LAMP_COUNT = {NODE_RADIUS: 2, RONDEL_RADIUS: 4}  # largos oeste têm quatro bocas de caminho, sobra menos espaço
+ROUNDABOUT_LAMP_ANGLES = (61.5, 118.5, -61.5, -118.5)  # um no meio de cada canto de calçada recortado
 ESPLANADE_STATIONS = (-60.0, -53.0, -46.0, -22.0, -15.0, -8.0)
 
 
@@ -1298,22 +1297,16 @@ def secondary_plazas() -> list:
     return [(node, NODE_RADIUS) for node in WEST_NODES] + [(rondel, RONDEL_RADIUS) for rondel in EAST_RONDELS]
 
 
-def plaza_lamp_directions() -> list:
-    """(center, radius, degrees) of the lamps standing in each secondary plaza."""
-    return [(center, radius, angle) for center, radius in secondary_plazas() for angle in free_angles(center, PLAZA_LAMP_COUNT[radius], [])]
-
-
 def add_lamps(scene: SceneWriter) -> list:
     center_x, center_z = WEST_SQUARE
     perimeter_offsets = [-36.0, -18.0, 0.0, 18.0, 36.0]
     fountain_ring = ring_points(WEST_SQUARE, 9.0, 8, 22.5)
     esplanade = mirrored_in_z([(x, -ESPLANADE_WIDTH / 2.0 + 0.4) for x in ESPLANADE_STATIONS])
-    plazas = [point_at(center, radius - 0.8, angle) for center, radius, angle in plaza_lamp_directions()]
     west_square_edges = [(center_x + side * (SQUARE_HALF[0] - 0.6), center_z + offset) for side in (-1, 1) for offset in perimeter_offsets]
     west_square_ends = [(center_x + offset, center_z + side * (SQUARE_HALF[1] - 0.6)) for side in (-1, 1) for offset in (-18.0, 0.0, 18.0)]
     forecourt = [(6.0, -15.0), (6.0, 15.0), (CATHEDRAL_FACADE_X - 4.5, -9.0), (CATHEDRAL_FACADE_X - 4.5, 9.0)]
     east_square_ring = [(x, side * 14.0) for side in (-1, 1) for x in (26.0, 38.0, 50.0, 62.0)]
-    square_candidates = fountain_ring + esplanade + plazas + west_square_edges + west_square_ends + forecourt + east_square_ring
+    square_candidates = fountain_ring + esplanade + west_square_edges + west_square_ends + forecourt + east_square_ring
     median = [(x, sum(MEDIAN_Z) / 2.0) for x in range(-96, 97, 16) if abs(x) > MEDIAN_NOSE_X + 2.0]
     roundabout = [point_at(ROUNDABOUT, ROUNDABOUT_OUTER_RADIUS + 0.8, angle) for angle in ROUNDABOUT_LAMP_ANGLES]
     positions = [spot for spot in square_candidates if is_paved(spot)] + median + roundabout
@@ -1323,7 +1316,11 @@ def add_lamps(scene: SceneWriter) -> list:
     for index, (x, z) in enumerate(positions):
         place(scene, f"Lamp{index:02d}", "Lamps", "res://features/hub/props/lamp_post.tscn", grounded(x, z))
 
-    return positions
+    # Largos e rondéis redondos: um candelabro alto no centro ilumina o círculo inteiro com uma luz só.
+    for index, (center, _) in enumerate(secondary_plazas()):
+        place(scene, f"PlazaCandelabra{index}", "Lamps", "res://features/hub/props/lamp_candelabra.tscn", grounded(*center))
+
+    return positions + [center for center, _ in secondary_plazas()]
 
 
 def strip_side_rows(path: tuple, generator: random.Random) -> list:
@@ -1562,15 +1559,11 @@ def add_trees(scene: SceneWriter) -> None:
 
 
 def plaza_benches() -> list:
-    """Two benches inside each secondary plaza, between paths and lamps, facing the middle."""
-    lamp_angles = {}
+    """Two benches inside each secondary plaza, between the paths, facing the candelabra in the middle."""
     benches = []
 
-    for center, _, angle in plaza_lamp_directions():
-        lamp_angles.setdefault(center, []).append(angle)
-
     for center, radius in secondary_plazas():
-        benches += [(point_at(center, radius - 1.2, angle), facing_yaw(point_at(center, radius - 1.2, angle), center)) for angle in free_angles(center, 2, lamp_angles[center])]
+        benches += [(point_at(center, radius - 1.2, angle), facing_yaw(point_at(center, radius - 1.2, angle), center)) for angle in free_angles(center, 2, [])]
 
     return benches
 
@@ -1984,8 +1977,8 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     east_bench_seat, east_bench_facing = sitter(benches["esplanade"][3])
     cathedral_bench_seat, cathedral_bench_facing = sitter(benches["cathedral"][0])
     median_z = sum(MEDIAN_Z) / 2.0
-    talker_a = (EAST_RONDELS[1][0] - 0.9, EAST_RONDELS[1][1] - 0.4)  # conversa no rondel sudeste
-    talker_b = (EAST_RONDELS[1][0] + 0.5, EAST_RONDELS[1][1] + 0.5)
+    talker_a = (EAST_RONDELS[1][0] - 1.0, EAST_RONDELS[1][1] + 1.8)  # conversa no rondel sudeste, ao lado do candelabro
+    talker_b = (EAST_RONDELS[1][0] + 0.3, EAST_RONDELS[1][1] + 2.3)
 
     scene.add_node("Navigation", ".", "NavigationRegion3D", properties={"navigation_mesh": f'ExtResource("{scene.external_id("NavigationMesh", "res://features/hub/hub_navmesh.tres")}")'})
     scene.add_node("Townsfolk", ".", "Node3D")

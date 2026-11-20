@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="1_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="2_ext"]
+
+[node name="CatedralShots" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("2_ext")]
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("1_ext")
+seconds_before_capture = 3.0
+
+[node name="RondelEye" type="Camera3D" parent="."]
+position = Vector3(-17.500, 1.600, -21.500)
+rotation = Vector3(-0.0117, 2.2731, 0)
+fov = 70
+
+[node name="NodeEye" type="Camera3D" parent="."]
+position = Vector3(-52.000, 1.600, -34.000)
+rotation = Vector3(-0.0092, -2.1588, 0)
+fov = 70
+
+[node name="RoundaboutEye" type="Camera3D" parent="."]
+position = Vector3(-14.000, 1.600, -48.000)
+rotation = Vector3(-0.0060, -0.9995, 0)
+fov = 70
+
+[node name="PlazaTop" type="Camera3D" parent="."]
+position = Vector3(-30.000, 45.000, -14.000)
+rotation = Vector3(-1.5686, -3.1416, 0)
+fov = 70
