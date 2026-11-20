@@ -799,7 +799,9 @@ def wicker_basket(b: Builder, frame: Matrix, variant: str = "bread", seed: int =
     lathe(b, [(0.254, 0.26), (0.254, 0.32), (0.22, 0.32), (0.22, 0.26)], 10, "paint", "B07A3C", frame, closed=True)
     lathe(b, [(0.236, 0.07), (0.236, 0.11), (0.226, 0.11), (0.226, 0.07)], 10, "paint", "B07A3C", frame, closed=True)
     ring(b, (0.0, 0.0, 0.28), 0.16, 0.012, "paint", "B07A3C", frame, sides=10, tube_sides=4, axis="Y")
-    BASKET_CONTENTS[variant](b, frame, random.Random(seed))
+    fill = options.get("fill") or BASKET_CONTENTS[variant]  # fill: contents drawn by another prop library
+
+    fill(b, frame, random.Random(seed))
 
 
 def plant_fern(b: Builder, frame: Matrix, generator: random.Random) -> None:

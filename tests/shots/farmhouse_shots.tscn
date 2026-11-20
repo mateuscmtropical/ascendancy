@@ -1,0 +1,97 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="1_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="2_ext"]
+
+[node name="FarmhouseShots" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("2_ext")]
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("1_ext")
+seconds_before_capture = 3.0
+
+[node name="Front" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85.5, 2.2, -24.0)
+rotation = Vector3(-0.05, 0.0, 0)
+fov = 75.0
+
+[node name="SalaDoor" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85.5, 2.5, -35.3)
+rotation = Vector3(-0.12, 0.0, 0)
+fov = 75.0
+
+[node name="SalaCorner" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 87.6, 2.5, -35.5)
+rotation = Vector3(-0.15, 0.8, 0)
+fov = 75.0
+
+[node name="Jantar" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85.5, 2.5, -43.6)
+rotation = Vector3(-0.15, 3.14159, 0)
+fov = 75.0
+
+[node name="Cozinha" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80.9, 2.5, -43.3)
+rotation = Vector3(-0.2, 2.36, 0)
+fov = 75.0
+
+[node name="Casal" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.4, 2.5, -43.5)
+rotation = Vector3(-0.2, -2.36, 0)
+fov = 75.0
+
+[node name="Escritorio" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.6, 2.5, -35.4)
+rotation = Vector3(-0.2, -0.785, 0)
+fov = 75.0
+
+[node name="Quartos" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 81.6, 2.5, -35.4)
+rotation = Vector3(-0.2, 0.785, 0)
+fov = 75.0
+
+[node name="TulhaDoor" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.4, 2.3, -17.0)
+rotation = Vector3(-0.15, -1.5708, 0)
+fov = 75.0
+
+[node name="TulhaBins" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.2, 2.4, -24.5)
+rotation = Vector3(-0.22, -2.82, 0)
+fov = 75.0
+
+[node name="TulhaEast" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.2, 2.4, -9.5)
+rotation = Vector3(-0.22, -0.32, 0)
+fov = 75.0
+
+[node name="MeninosPorta" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 79.0, 2.5, -38.2)
+rotation = Vector3(-0.25, 2.77, 0)
+fov = 75.0
+
+[node name="MeninosFundo" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 78.6, 2.5, -36.3)
+rotation = Vector3(-0.12, 0.137, 0)
+fov = 75.0
+
+[node name="MeninasPorta" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 81.6, 2.5, -37.9)
+rotation = Vector3(-0.25, 2.53, 0)
+fov = 75.0
+
+[node name="MeninasFundo" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80.75, 2.5, -35.8)
+rotation = Vector3(-0.12, 0.0, 0)
+fov = 75.0
+
+[node name="TulhaMound" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.0, 2.2, -19.0)
+rotation = Vector3(-0.3, -0.75, 0)
+fov = 70.0
+
+[node name="TulhaMoundNear" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96.0, 2.0, -24.2)
+rotation = Vector3(-0.3, -2.56, 0)
+fov = 60.0

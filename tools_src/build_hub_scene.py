@@ -999,7 +999,7 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
         add_ambient_probe(scene, shop_name, sidecar["ambient_volume"], sidecar.get("night_ambient"))
 
 
-def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict, night_energy: float = None) -> None:
+def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict, night_energy: float = None, parent: str = None) -> None:
     """Interior ambience of a casarão hall: a reflection probe that only supplies ambient light (its cube captures
     nothing, so no sky reflection indoors); features/sky/day_night_cycle.gd lights it at night, at night_energy when the
     hall sets its own (metadata night_ambient_energy)."""
@@ -1009,7 +1009,7 @@ def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict, night_en
 
     own_level = {} if night_energy is None else {"metadata/night_ambient_energy": f"{night_energy}"}
 
-    scene.add_node("Ambience", f"Shops/{shop_name}", "ReflectionProbe", properties={
+    scene.add_node("Ambience", parent or f"Shops/{shop_name}", "ReflectionProbe", properties={
         **own_level,
         "visible": "false",
         "position": vector(*center),
@@ -1613,12 +1613,31 @@ def model_exists(model: str) -> bool:
     return (PROJECT_DIR / model.removeprefix("res://")).exists()
 
 
+def add_model_lights(scene: SceneWriter, node_path: str, model: str) -> None:
+    """The lamps a model lists in its sidecar, as lights under its node (the casa-grande and the tulha are lived in)."""
+    sidecar = model_sidecar(model)
+
+    for light_index, light in enumerate(sidecar.get("lights", [])):
+        scene.add_node(f"Light{light_index}", node_path, "OmniLight3D", properties={
+            "position": vector(*light["position"]),
+            "light_color": hex_color(light["color"]),
+            "light_energy": f"{light['energy']}",
+            "omni_range": f"{light['range']}",
+            **light_fade("shop"),
+        }, groups=[light["group"]] if "group" in light else None)
+
+    if "ambient_volume" in sidecar:
+        add_ambient_probe(scene, node_path, sidecar["ambient_volume"], sidecar.get("night_ambient"), parent=node_path)
+
+
 def add_farm(scene: SceneWriter) -> None:
     """Farmhouse, barn, the yard and the fields (build_farm.py), the people who work there and, once
     convert_farm_animals.py has run, the cows and pigs wandering in their pens."""
     scene.add_node("Farm", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Farmhouse", "Farm", "res://art/town/farm/farmhouse.gltf", FARMHOUSE["position"], FARMHOUSE["rotation"])
     place(scene, "Barn", "Farm", "res://art/town/farm/barn.gltf", BARN["position"], BARN["rotation"])
+    add_model_lights(scene, "Farm/Farmhouse", "res://art/town/farm/farmhouse.gltf")
+    add_model_lights(scene, "Farm/Barn", "res://art/town/farm/barn.gltf")
 
     for model in FARM_MODELS:
         place(scene, model.title().replace("_", ""), "Farm", f"res://art/town/farm/{model}.gltf", (0.0, 0.0, 0.0))
