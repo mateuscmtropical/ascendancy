@@ -27,6 +27,7 @@ Usage (after build_cathedral.py):
 import itertools
 import json
 import math
+import random
 import sys
 from pathlib import Path
 
@@ -100,6 +101,13 @@ EFFIGY_TINT = "CDBFA6"
 STAMPED_PROPS = ("ossuary_wall",)  # centenas de ossos por módulo: montados uma vez por variante e copiados
 STAMP_SEEDS = 3
 OSSUARY_CORNER = 0.45  # a fileira de ossos da parede que cruza ocupa o canto  # módulos lisos diferentes que se revezam ao longo das paredes
+LEDGER_X = (-3.3, -1.1, 1.1, 3.3)  # lápides no piso do corredor da cripta dos santos
+LEDGER_Y = (25.2, 27.4, 29.6, 31.8, 34.0)
+LEDGER_SIZE = (0.85, 1.9)
+LEDGER_TINTS = ("CFC6B4", "B8AE9C", "8C8478", "E2DBCB", "A99E8A")
+ROCK_LOCULI_SPOTS = (("west", 3.0, -3.4), ("west", 8.15, -3.4), ("east", 3.0, -1.0), ("east", 5.05, -1.0), ("east", 7.1, -1.0))  # galeria de entrada antes do ossário
+DAMP_PIECE = 0.8  # trechos da faixa de umidade, cada um de uma altura
+DAMP_TINTS = ("8A7E6C", "847866", "7E7262")
 MONUMENT_ANCHOR = (12.4, sum(CRYPT_OPENING_Y) / 2.0, BASE)  # meio da face do pedestal encostada na parede
 MONUMENT_SIZE = (SHAFT_X[1] - SHAFT_X[0], CRYPT_OPENING_Y[1] - CRYPT_OPENING_Y[0], 0.95)
 
@@ -433,8 +441,72 @@ def build_piers_and_ribs(b: Builder) -> None:
     for pier_x in PIER_X:
         stone_box(b, (pier_x - RIB[0] / 2.0, crypt_y[0], CEILING - RIB[1]), (pier_x + RIB[0] / 2.0, crypt_y[1], CEILING), CRYPT_STONE, collide=False)
 
+    bays_x = [(crypt_x[0], PIER_X[0]), PIER_X, (PIER_X[1], crypt_x[1])]
+    bays_y = list(zip((crypt_y[0], *PIER_Y), (*PIER_Y, crypt_y[1])))
+
+    for (x_from, x_to), (y_from, y_to), corner in itertools.product(bays_x, bays_y, (0, 1)):
+        diagonal = ((x_from, (y_from, y_to)[corner], CEILING - 0.11), (x_to, (y_to, y_from)[corner], CEILING - 0.11))
+        b.beam(*diagonal, 0.22, 0.2, "stone", srgb(CRYPT_STONE), uv=None)
+
+    for (x_from, x_to), (y_from, y_to) in itertools.product(bays_x, bays_y):
+        stone_box(b, ((x_from + x_to) / 2.0 - 0.16, (y_from + y_to) / 2.0 - 0.16, CEILING - 0.3), ((x_from + x_to) / 2.0 + 0.16, (y_from + y_to) / 2.0 + 0.16, CEILING), MARBLE, collide=False)
+
     for rib_x in (-6.3, -3.0, 3.0, 6.3):
         stone_box(b, (rib_x - 0.15, OUTER[2], CEILING - 0.2), (rib_x + 0.15, CROSS_WALL_Y - 0.25, CEILING), CRYPT_STONE, collide=False)
+
+
+def build_ledger_stones(b: Builder) -> None:
+    """Grave slabs let into the floor of the aisle, a few millimetres proud: each its own stone, worn lines of
+    lettering, a cross, now and then a brass plate."""
+    for index, (slab_x, slab_y) in enumerate(itertools.product(LEDGER_X, LEDGER_Y)):
+        ledger_stone(b, slab_x, slab_y, random.Random(index))
+
+
+def ledger_stone(b: Builder, x: float, y: float, generator: random.Random) -> None:
+    half_x, half_y = LEDGER_SIZE[0] / 2.0, LEDGER_SIZE[1] / 2.0
+    top = FLOOR + 0.012
+    lines = generator.randint(3, 6)
+
+    b.box((x - half_x, y - half_y, FLOOR), (x + half_x, y + half_y, top), "stone", srgb(generator.choice(LEDGER_TINTS)))
+    b.box((x - 0.025, y + half_y - 0.55, top), (x + 0.025, y + half_y - 0.15, top + 0.002), "paint", srgb("4A4038"))
+    b.box((x - 0.12, y + half_y - 0.3, top), (x + 0.12, y + half_y - 0.25, top + 0.002), "paint", srgb("4A4038"))
+
+    for line in range(lines):
+        line_width = generator.uniform(0.3, 0.62)
+        b.box((x - line_width / 2.0, y + half_y - 0.72 - line * 0.11, top), (x + line_width / 2.0, y + half_y - 0.69 - line * 0.11, top + 0.002), "paint", srgb("4A4038"))
+
+    if generator.random() < 0.3:
+        b.box((x - 0.18, y - half_y + 0.15, top), (x + 0.18, y - half_y + 0.4, top + 0.004), "metal", srgb(GILT))
+
+
+def build_wall_damp(b: Builder) -> None:
+    """Rising damp along the foot of the walls of the crypt of the saints: a darker, ragged band."""
+    west, east, north, south = OUTER[0], SHAFT_INNER_WALL[0], OUTER[3], CROSS_WALL_Y + 0.25
+    runs = [
+        ("x", west, 1.0, (south, north), []),
+        ("x", east, -1.0, (south, north), [SHAFT_DOOR[:2]]),
+        ("y", north, -1.0, (west, east), []),
+        ("y", south, 1.0, (west, east), sorted(ROOM_DOORS.values())),
+    ]
+
+    for index, (axis, wall, inward, span, openings) in enumerate(runs):
+        damp_run(b, axis, wall, inward, side_runs(span, openings), random.Random(index))
+
+
+def split_stretch(stretch: tuple) -> list:
+    start, end = stretch
+
+    return [(start + step * DAMP_PIECE, min(end, start + (step + 1) * DAMP_PIECE)) for step in range(math.ceil((end - start) / DAMP_PIECE))]
+
+
+def damp_run(b: Builder, axis: str, wall: float, inward: float, stretches: list, generator: random.Random) -> None:
+    pieces = itertools.chain.from_iterable(map(split_stretch, stretches))
+    face = (min(wall, wall + inward * 0.012), max(wall, wall + inward * 0.012))
+
+    for piece_from, piece_to in pieces:
+        height = FLOOR + generator.uniform(0.22, 0.55)
+        corners = {"x": ((face[0], piece_from, FLOOR), (face[1], piece_to, height)), "y": ((piece_from, face[0], FLOOR), (piece_to, face[1], height))}
+        b.box(*corners[axis], "stone", srgb(generator.choice(DAMP_TINTS)))
 
 
 # ---------- catacombs ----------
@@ -528,6 +600,9 @@ def furnish_catacombs(place: Placer) -> None:
         place.put("catacumba", "wall_lantern", x, y, degrees, z=lantern_z)
 
     place.put("catacumba", "bone_barrel", sum(b_x) / 2.0, -18.0)
+
+    for index, (side, along, wall) in enumerate(ROCK_LOCULI_SPOTS):
+        place.against("catacumba", side, "rock_loculi", along, wall, seed=300 + index)
     place.against("catacumba", "east", "sarcophagus", -6.0, 15.0)
     place.put("catacumba", "candle_stand", 13.6, -7.6)
     place.put("catacumba", "candle_stand", 13.6, -4.4)
@@ -700,6 +775,8 @@ def build_crypt() -> dict:
     build_inner_walls(b)
     build_stair(b)
     build_piers_and_ribs(b)
+    build_ledger_stones(b)
+    build_wall_damp(b)
     build_catacomb_shell(b)
     furnish_saints(place)
     furnish_archive(place)

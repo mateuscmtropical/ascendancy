@@ -39,6 +39,11 @@ URN_LENGTH = 2.3
 URN_WIDTH = 1.0
 URN_BED = 0.86  # top of the cushion bed inside the urn, where the saint lies
 LOCULI_LENGTH = 2.0
+ROCK_LOCULI_ROWS = 3
+ROCK_LOCULI_BOTTOM = 0.25
+ROCK_LOCULI_PITCH = 0.66  # de um nicho ao de cima
+ROCK_LOCULI_NICHE = 0.45
+ROCK_LOCULI_TOP = 2.06
 
 
 def skull(b: Builder, frame: Matrix, center: tuple, radius: float = 0.1, tint: str = SKULL_SHADES[0]) -> None:
@@ -329,6 +334,55 @@ def loculi_wall(b: Builder, frame: Matrix, **options) -> None:
     box(b, frame, (-LOCULI_LENGTH / 2.0 - 0.04, -0.1, rows * cell_height + 0.3), (LOCULI_LENGTH / 2.0 + 0.04, 0.3, rows * cell_height + 0.42), "stone", MARBLE)
 
 
+def rock_loculi(b: Builder, frame: Matrix, **options) -> None:
+    """2 m of burial niches cut into the gallery rock, three rows of two: most sealed with a tile or a marble slab
+    (painted name lines and a chi-rho cross), the others broken open on the bones inside."""
+    generator = rng(options)
+    half = LOCULI_LENGTH / 2.0
+    niche_x = [(-half + 0.08, -0.09), (0.09, half - 0.08)]
+
+    box(b, frame, (-half, 0.05, 0.0), (half, 0.17, ROCK_LOCULI_TOP), "paint", "3A3230")
+    box(b, frame, (-half, -0.17, 0.0), (half, 0.05, ROCK_LOCULI_BOTTOM), "stone", LIMESTONE)
+
+    for row in range(ROCK_LOCULI_ROWS):
+        band_bottom = ROCK_LOCULI_BOTTOM + row * ROCK_LOCULI_PITCH + ROCK_LOCULI_NICHE
+        band_top = ROCK_LOCULI_TOP if row == ROCK_LOCULI_ROWS - 1 else band_bottom + ROCK_LOCULI_PITCH - ROCK_LOCULI_NICHE
+        box(b, frame, (-half, -0.17 + generator.uniform(0.0, 0.03), band_bottom), (half, 0.05, band_top), "stone", LIMESTONE)
+
+    for pier_from, pier_to in ((-half, -half + 0.08), (-0.09, 0.09), (half - 0.08, half)):
+        box(b, frame, (pier_from, -0.17 + generator.uniform(0.0, 0.03), ROCK_LOCULI_BOTTOM), (pier_to, 0.05, ROCK_LOCULI_TOP), "stone", LIMESTONE)
+
+    for row, (x_from, x_to) in itertools.product(range(ROCK_LOCULI_ROWS), niche_x):
+        bottom = ROCK_LOCULI_BOTTOM + row * ROCK_LOCULI_PITCH
+        niche_fillers[generator.random() < 0.75](b, frame, (x_from, x_to, bottom), generator)
+
+
+def sealed_niche(b: Builder, frame: Matrix, niche: tuple, generator: random.Random) -> None:
+    x_from, x_to, bottom = niche
+    middle = (x_from + x_to) / 2.0
+
+    box(b, frame, (x_from + 0.02, -0.13, bottom + 0.02), (x_to - 0.02, -0.1, bottom + ROCK_LOCULI_NICHE - 0.02), "stone", generator.choice(("B07A55", MARBLE, "D9D1C0", "C49A72")))
+
+    for line in range(generator.randint(1, 3)):
+        line_width = generator.uniform(0.2, 0.5)
+        box(b, frame, (middle - line_width / 2.0, -0.135, bottom + 0.3 - line * 0.07), (middle + line_width / 2.0, -0.13, bottom + 0.315 - line * 0.07), "paint", "8E2A1E")
+
+    box(b, frame, (x_to - 0.16, -0.135, bottom + 0.08), (x_to - 0.145, -0.13, bottom + 0.2), "paint", "8E2A1E")
+    box(b, frame, (x_to - 0.19, -0.135, bottom + 0.15), (x_to - 0.115, -0.13, bottom + 0.165), "paint", "8E2A1E")
+
+
+def open_niche(b: Builder, frame: Matrix, niche: tuple, generator: random.Random) -> None:
+    x_from, x_to, bottom = niche
+
+    box(b, frame, (x_from + 0.02, -0.13, bottom + 0.02), (x_from + generator.uniform(0.12, 0.25), -0.1, bottom + generator.uniform(0.15, 0.35)), "stone", "B07A55")
+    rod(b, frame, (x_from + 0.15, -0.02, bottom + 0.05), (x_to - 0.12, 0.0, bottom + 0.07), 0.035, "paint", generator.choice(BONE_SHADES))
+    rod(b, frame, (x_from + 0.25, -0.05, bottom + 0.05), (x_to - 0.2, 0.02, bottom + 0.06), 0.03, "paint", generator.choice(BONE_SHADES))
+    skull(b, frame, (x_to - 0.18, -0.03, bottom + 0.11), 0.075, generator.choice(SKULL_SHADES))
+
+
+niche_fillers = {True: sealed_niche, False: open_niche}
+
+
 def iron_gate(b: Builder, frame: Matrix, **options) -> None:
     """One leaf of a wrought-iron grille gate (0.8 x 2.3), standing open against the jamb; spear tips on top."""
     width = 0.8
@@ -477,6 +531,7 @@ PROPS = {
     "baroque_urn": {"build": baroque_urn, "size": (URN_LENGTH + 0.2, URN_WIDTH + 0.3, 2.0), "solid": True},
     "sarcophagus": {"build": sarcophagus, "size": (2.46, 1.16, 1.1), "solid": True},
     "loculi_wall": {"build": loculi_wall, "size": (LOCULI_LENGTH, 0.4, 3.2), "solid": True},
+    "rock_loculi": {"build": rock_loculi, "size": (LOCULI_LENGTH, 0.34, ROCK_LOCULI_TOP), "solid": True},
     "iron_gate": {"build": iron_gate, "size": (0.8, 0.06, 2.4), "solid": False},
     "confessio_altar": {"build": confessio_altar, "size": (3.4, 1.8, 2.4), "solid": True},
     "relic_shelf": {"build": relic_shelf, "size": (2.06, 0.5, 2.4), "solid": True},
