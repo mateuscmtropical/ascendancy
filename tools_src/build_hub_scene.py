@@ -557,6 +557,7 @@ def add_buildings(scene: SceneWriter) -> None:
     scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), -math.pi / 2.0)
     add_cathedral_crypt(scene)
+    add_cathedral_towers(scene)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     add_town_lots(scene, lots)
@@ -602,6 +603,43 @@ def add_cathedral_crypt(scene: SceneWriter) -> None:
         "blend_distance": "0.0",
     })
     scene.add_node("CryptMonument", "Buildings/CathedralCrypt", instance=scene.external_id("PackedScene", "res://features/hub/crypt_monument.tscn"), properties={"position": vector(*CRYPT_MONUMENT)})
+
+
+def add_cathedral_towers(scene: SceneWriter) -> None:
+    """Stairs, bells and clocks inside the two towers and the attic over the nave (same transform as the cathedral):
+    hidden from afar like a shop interior, with the lanterns of its sidecar (no shadows, faded with distance)."""
+    model = "res://art/town/cathedral_towers.gltf"
+    sidecar = model_sidecar(model)
+    interior_script = scene.external_id("Script", "res://features/hub/shop_interior.gd")
+
+    if not sidecar:
+        return
+
+    scene.add_node("CathedralTowers", "Buildings", "Node3D", properties={"position": vector(CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), "rotation": vector(0.0, -math.pi / 2.0, 0.0)})
+    scene.add_node("Interior", "Buildings/CathedralTowers", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
+    place(scene, "Stairs", "Buildings/CathedralTowers/Interior", model, (0.0, 0.0, 0.0))
+
+    for box_index, box in enumerate(sidecar["ambience"]):
+        scene.add_node(f"Ambience{box_index}", "Buildings/CathedralTowers", "ReflectionProbe", properties={
+            "position": vector(*box["center"]),
+            "size": vector(*box["size"]),
+            "interior": "true",
+            "ambient_mode": "2",
+            "ambient_color": CRYPT_AMBIENT,
+            "ambient_color_energy": f"{box['energy']}",
+            "cull_mask": "0",
+            "update_mode": "0",
+            "blend_distance": "0.0",
+        })
+
+    for light_index, light in enumerate(sidecar["lights"]):
+        scene.add_node(f"Light{light_index}", "Buildings/CathedralTowers", "OmniLight3D", properties={
+            "position": vector(*light["position"]),
+            "light_color": hex_color(light["color"]),
+            "light_energy": f"{light['energy']}",
+            "omni_range": f"{light['range']}",
+            **light_fade("shop"),
+        })
 
 
 def add_casarao(scene: SceneWriter, lots: list) -> None:

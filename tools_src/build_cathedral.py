@@ -88,6 +88,23 @@ CRYPT_SHAFT = ((10.95, 12.4), (26.2, 36.0))  # poço da escada da cripta (x, y):
 CRYPT_OPENING_Y = (32.6, 36.0)  # vão no piso da nave, tampado pelo pedestal do santo que desliza (secret_passage.gd)
 CRYPT_SLAB = 0.25  # espessura do piso da nave que fica por cima do resto do poço
 TOWER_UPPER_SCALE = 1.3  # sineira, relógio e coroamento crescem com a catedral (cruz a ~46 m)
+TOWER_MIDDLE_X = (CENTER_HALF + TOWER_OUTER) / 2.0  # eixo de cada torre (lado +X; a outra é o espelho)
+TOWER_CENTER_Y = NARTHEX_DEPTH / 2.0
+TOWER_SHAFT_HALF = 1.55  # poço oco das torres, do chão ao relógio: paredes grossas embaixo, mesmas faces por dentro em cima
+BELFRY_HALF = 1.7 * TOWER_UPPER_SCALE
+BELFRY_BOTTOM = BASE + TOWER_BASE_TOP + 0.35
+BELFRY_HEIGHT = 8.65 * TOWER_UPPER_SCALE
+CLOCK_HALF = 1.5 * TOWER_UPPER_SCALE
+CLOCK_FLOOR = BELFRY_BOTTOM + BELFRY_HEIGHT  # sala do relógio: build_cathedral_towers.py
+CLOCK_HEIGHT = 3.4 * TOWER_UPPER_SCALE
+TOWER_DOOR = (1.0, 2.3)  # porta da escada da torre, na parede dos fundos, abrindo para a nave (largura, altura)
+NAVE_RIDGE = NAVE_WALL_TOP + 4.0  # cumeeira da nave; fica atrás dos degraus do frontão (NAVE_WALL_TOP + 4,4)
+NAVE_EAVE = (NAVE_HALF + 0.9, NAVE_WALL_TOP - 0.1)
+ROOF_SHELL = 0.25  # espessura do telhado oco da nave: o sótão fica por baixo
+ATTIC_FLOOR = BASE + NAVE_CEILING + 0.4  # topo da laje do forro da nave
+ATTIC_WALK = ATTIC_FLOOR + 0.2  # tablado do sótão sobre as linhas das tesouras
+ATTIC_DOOR_X = (TOWER_MIDDLE_X - TOWER_SHAFT_HALF, TOWER_MIDDLE_X - TOWER_SHAFT_HALF + 0.9)  # porta da torre para o sótão, junto ao canto de dentro
+ATTIC_DOOR_HEIGHT = 2.0
 
 GLASS_COLORS = numpy.array([
     [0.12, 0.25, 0.75], [0.10, 0.20, 0.60], [0.95, 0.62, 0.15], [0.98, 0.78, 0.30],
@@ -756,14 +773,16 @@ def facing_transform(position: tuple, facing: str) -> Matrix:
     return Matrix.Translation(position) @ Matrix.Rotation(rotations[facing], 4, "Z")
 
 
-def carve(targets, cutters: list) -> None:
-    """Subtract the cutters from one object or a list of objects (a wall and its skins), then delete the cutters."""
+def carve(targets, cutters: list, lining: bool = False) -> None:
+    """Subtract the cutters from one object or a list of objects (a wall and its skins), then delete the cutters.
+    With lining, the cut faces take the cutter's material (the stone inside the hollow towers)."""
     for target in targets if isinstance(targets, list) else [targets]:
         for cutter in cutters:
             modifier = target.modifiers.new(cutter.name, "BOOLEAN")
             modifier.operation = "DIFFERENCE"
             modifier.solver = "EXACT"
             modifier.object = cutter
+            modifier.material_mode = "TRANSFER" if lining else "INDEX"
 
         bpy.context.view_layer.objects.active = target
 
@@ -1069,22 +1088,37 @@ def build_portal_doors(materials: dict) -> None:
             make_span(f"DoorPanel{side_sign:+d}{panel_index}", (leaf_x - side_sign * 0.1 - 0.03, FACADE_DEPTH + 0.3, panel_bottom), (leaf_x - side_sign * 0.1 + 0.03, FACADE_DEPTH + leaf_width - 0.3, panel_bottom + 0.9), materials["wood"])
 
 
+def tower_shaft_cut(name: str, side_sign: int, bottom: float, top: float, material=None) -> bpy.types.Object:
+    middle_x = side_sign * TOWER_MIDDLE_X
+
+    return make_span(name, (middle_x - TOWER_SHAFT_HALF, TOWER_CENTER_Y - TOWER_SHAFT_HALF, bottom), (middle_x + TOWER_SHAFT_HALF, TOWER_CENTER_Y + TOWER_SHAFT_HALF, top), material)
+
+
 def build_tower(side_sign: int, materials: dict) -> None:
+    """Tower base with walls 1 m thick around the stair shaft, the stair door into the nave and the door to the attic."""
     tag = "L" if side_sign < 0 else "R"
     inner_x = CENTER_HALF
     outer_x = TOWER_OUTER
-    middle_x = side_sign * (inner_x + outer_x) / 2.0
-    center_y = NARTHEX_DEPTH / 2.0
+    middle_x = side_sign * TOWER_MIDDLE_X
+    center_y = TOWER_CENTER_Y
     side_facing = "+X" if side_sign > 0 else "-X"
+    front_wall = center_y - TOWER_SHAFT_HALF
+    side_wall = outer_x - TOWER_MIDDLE_X - TOWER_SHAFT_HALF
+    back_wall = NARTHEX_DEPTH - center_y - TOWER_SHAFT_HALF
+    attic_door_x = sorted(side_sign * x for x in ATTIC_DOOR_X)
     tower_base = make_span(f"TowerBase{tag}", (min(side_sign * inner_x, side_sign * outer_x), 0.0, BASE), (max(side_sign * inner_x, side_sign * outer_x), NARTHEX_DEPTH, BASE + TOWER_BASE_TOP), materials["wall"])
     cutters = []
 
+    carve(tower_base, [tower_shaft_cut(f"TowerShaft{tag}", side_sign, BASE, BASE + TOWER_BASE_TOP + 1.0, materials["stone"])], lining=True)
+
     for slit_offset in (-0.65, 0.0, 0.65):
-        wall_opening(f"TowerSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, TOWER_BASE_TOP - 4.0), (middle_x + slit_offset, 0, BASE + 1.5), "-Y", 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
+        wall_opening(f"TowerSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, TOWER_BASE_TOP - 4.0), (middle_x + slit_offset, 0, BASE + 1.5), "-Y", front_wall, materials["slit_glass"], cutters, pane_depth=0.3)
 
     for slit_offset in (-0.5, 0.5):
-        wall_opening(f"TowerSideSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, 3.6), (side_sign * outer_x, center_y + slit_offset, BASE + AISLE_TOP + 1.4), side_facing, 0.5, materials["slit_glass"], cutters, pane_depth=1.0)
+        wall_opening(f"TowerSideSlit{tag}{slit_offset:+.1f}", rectangle_profile(0.36, 3.6), (side_sign * outer_x, center_y + slit_offset, BASE + AISLE_TOP + 1.4), side_facing, side_wall, materials["slit_glass"], cutters, pane_depth=0.3)
 
+    wall_opening(f"TowerDoor{tag}", round_arch_profile(TOWER_DOOR[0], TOWER_DOOR[1] - TOWER_DOOR[0] / 2.0), (middle_x, NARTHEX_DEPTH, BASE), "+Y", back_wall, None, cutters)
+    cutters.append(make_span(f"AtticDoor{tag}", (attic_door_x[0], NARTHEX_DEPTH - back_wall - 0.2, ATTIC_WALK), (attic_door_x[1], NARTHEX_DEPTH + 0.6, ATTIC_WALK + ATTIC_DOOR_HEIGHT), None))
     carve(tower_base, cutters)
 
     make_span(f"TowerPierInner{tag}", (middle_x - 2.6, -0.3, BASE), (middle_x - 1.6, 0.0, BASE + TOWER_BASE_TOP - 1.2), materials["trim"])
@@ -1093,17 +1127,41 @@ def build_tower(side_sign: int, materials: dict) -> None:
     for fin_offset in (-0.325, 0.325):
         make_span(f"TowerFin{tag}{fin_offset:+.1f}", (middle_x + fin_offset - 0.11, -0.22, BASE + 1.2), (middle_x + fin_offset + 0.11, 0.0, BASE + TOWER_BASE_TOP + 0.6), materials["trim"])
 
-    make_span(f"TowerBaseCornice{tag}", (middle_x - 2.95, -0.4, BASE + TOWER_BASE_TOP), (middle_x + 2.95, NARTHEX_DEPTH + 0.2, BASE + TOWER_BASE_TOP + 0.35), materials["trim"])
-    build_tower_upper(tag, Vector((middle_x, center_y, BASE + TOWER_BASE_TOP + 0.35)), materials)
+    for jamb_side in (-1, 1):
+        jamb_x = middle_x + jamb_side * (TOWER_DOOR[0] / 2.0 + 0.12)
+        make_span(f"TowerDoorJamb{tag}{jamb_side:+d}", (jamb_x - 0.12, NARTHEX_DEPTH, BASE), (jamb_x + 0.12, NARTHEX_DEPTH + 0.08, BASE + TOWER_DOOR[1] - TOWER_DOOR[0] / 2.0), materials["trim"])
+
+    make_voussoirs(f"TowerDoorArch{tag}", Vector((middle_x, NARTHEX_DEPTH, BASE + TOWER_DOOR[1] - TOWER_DOOR[0] / 2.0)), TOWER_DOOR[0] / 2.0, 0.0, math.pi, 7, 0.24, NARTHEX_DEPTH, 0.08, materials["trim"])
+
+    cornice = make_span(f"TowerBaseCornice{tag}", (middle_x - 2.95, -0.4, BASE + TOWER_BASE_TOP), (middle_x + 2.95, NARTHEX_DEPTH + 0.2, BASE + TOWER_BASE_TOP + 0.35), materials["trim"])
+    carve(cornice, [tower_shaft_cut(f"CorniceShaft{tag}", side_sign, BASE + TOWER_BASE_TOP - 0.5, BELFRY_BOTTOM + 0.5)])
+    build_tower_upper(tag, side_sign, Vector((middle_x, center_y, BELFRY_BOTTOM)), materials)
 
 
-def build_tower_upper(tag: str, base_center: Vector, materials: dict) -> None:
-    """Belfry stage with overshooting corner fins, clock stage, stepped crown and cross (all scaled by TOWER_UPPER_SCALE)."""
+def build_belfry_louvers(name: str, opening_center: Vector, facing: str, width: float, bottom: float, height: float, depth: float, material) -> None:
+    """Abat-sons: wooden slats sloping down and out across a belfry opening, so the bells are heard and the rain stays out."""
+    slat_pitch = 0.32
+    slat_count = int(height / slat_pitch)
+    slat_tilt = math.radians(40.0)
+    rotation = Matrix.Rotation({"-Y": 0.0, "+Y": math.pi, "+X": math.pi / 2.0, "-X": -math.pi / 2.0}[facing], 4, "Z")
+
+    for slat_index in range(slat_count):
+        slat_z = bottom + (slat_index + 0.6) * slat_pitch
+        slat = make_box(f"{name}{slat_index}", (0, 0, 0), (width, depth / math.cos(slat_tilt) * 0.7, 0.04), material)
+        slat.matrix_world = Matrix.Translation((opening_center.x, opening_center.y, slat_z)) @ rotation @ Matrix.Rotation(slat_tilt, 4, "X")
+
+
+def build_tower_upper(tag: str, side_sign: int, base_center: Vector, materials: dict) -> None:
+    """Belfry stage with louvered openings and overshooting corner fins, clock stage, stepped crown and cross
+    (all scaled by TOWER_UPPER_SCALE); the stair shaft runs hollow through the belfry and the clock room."""
     scale = TOWER_UPPER_SCALE
-    belfry_half = 1.7 * scale
-    belfry_top = 8.65 * scale
+    belfry_half = BELFRY_HALF
+    belfry_top = BELFRY_HEIGHT
+    belfry_wall = BELFRY_HALF - TOWER_SHAFT_HALF
     belfry = make_span(f"Belfry{tag}", (base_center.x - belfry_half, base_center.y - belfry_half, base_center.z), (base_center.x + belfry_half, base_center.y + belfry_half, base_center.z + belfry_top), materials["wall"])
     cutters = []
+
+    carve(belfry, [tower_shaft_cut(f"BelfryShaft{tag}", side_sign, base_center.z - 0.5, base_center.z + belfry_top + 0.5, materials["stone"])], lining=True)
     faces = {
         "-Y": Vector((0, -belfry_half, 0)),
         "+Y": Vector((0, belfry_half, 0)),
@@ -1111,11 +1169,16 @@ def build_tower_upper(tag: str, base_center: Vector, materials: dict) -> None:
         "+X": Vector((belfry_half, 0, 0)),
     }
     corner_offsets = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    opening_width = 0.34 * scale
+    opening_bottom = base_center.z + 1.1 * scale
+    opening_height = 6.4 * scale
 
     for (facing, face_offset), slit_offset in itertools.product(faces.items(), (-0.42, 0.42)):
         lateral = Vector((slit_offset * scale, 0, 0)) if facing in ("-Y", "+Y") else Vector((0, slit_offset * scale, 0))
         position = base_center + face_offset + lateral + Vector((0, 0, 1.1 * scale))
-        wall_opening(f"BelfrySlit{tag}{facing}{slit_offset:+.1f}", rectangle_profile(0.34 * scale, 6.4 * scale), tuple(position), facing, 0.5, materials["dark"], cutters, pane_depth=1.0)
+        inward = -face_offset.normalized() * (belfry_wall / 2.0)
+        wall_opening(f"BelfrySlit{tag}{facing}{slit_offset:+.1f}", rectangle_profile(opening_width, opening_height), tuple(position), facing, belfry_wall, None, cutters)
+        build_belfry_louvers(f"BelfryLouver{tag}{facing}{slit_offset:+.1f}", base_center + face_offset + lateral + inward, facing, opening_width + 0.06, opening_bottom, opening_height, belfry_wall, materials["wood_dark"])
 
     carve(belfry, cutters)
 
@@ -1123,10 +1186,11 @@ def build_tower_upper(tag: str, base_center: Vector, materials: dict) -> None:
         corner = (base_center.x + corner_x * belfry_half, base_center.y + corner_y * belfry_half)
         make_span(f"BelfryCornerFin{tag}{corner_index}", (corner[0] - 0.3 * scale, corner[1] - 0.3 * scale, base_center.z), (corner[0] + 0.3 * scale, corner[1] + 0.3 * scale, base_center.z + belfry_top + 0.6 * scale), materials["trim"])
 
-    clock_half = 1.5 * scale
-    clock_bottom = base_center.z + belfry_top
-    clock_top = clock_bottom + 3.4 * scale
-    make_span(f"ClockStage{tag}", (base_center.x - clock_half, base_center.y - clock_half, clock_bottom), (base_center.x + clock_half, base_center.y + clock_half, clock_top), materials["wall"])
+    clock_half = CLOCK_HALF
+    clock_bottom = CLOCK_FLOOR
+    clock_top = clock_bottom + CLOCK_HEIGHT
+    clock_stage = make_span(f"ClockStage{tag}", (base_center.x - clock_half, base_center.y - clock_half, clock_bottom), (base_center.x + clock_half, base_center.y + clock_half, clock_top), materials["wall"])
+    carve(clock_stage, [tower_shaft_cut(f"ClockShaft{tag}", side_sign, clock_bottom - 0.5, clock_top, materials["stone"])], lining=True)
     make_span(f"ClockCornice{tag}", (base_center.x - 1.75 * scale, base_center.y - 1.75 * scale, clock_top), (base_center.x + 1.75 * scale, base_center.y + 1.75 * scale, clock_top + 0.3 * scale), materials["trim"])
 
     for facing_index, facing_angle in enumerate((0.0, math.pi / 2.0, math.pi, -math.pi / 2.0)):
@@ -1221,7 +1285,10 @@ def build_side_wall(side_sign: int, materials: dict) -> None:
 
 def build_nave(materials: dict) -> None:
     """Arcade walls with round arches on round columns, clerestory slits, coffered ceiling and the tiled roof."""
-    nave_roof_profile = [(-NAVE_HALF - 0.9, BASE + NAVE_WALL_TOP - 0.1), (0.0, BASE + NAVE_WALL_TOP + 2.2), (NAVE_HALF + 0.9, BASE + NAVE_WALL_TOP - 0.1)]
+    eave_x, eave_z = NAVE_EAVE[0], BASE + NAVE_EAVE[1]
+    ridge_z = BASE + NAVE_RIDGE
+    gable_profile = [(-eave_x, eave_z), (eave_x, eave_z), (0.0, ridge_z)]
+    roof_length = BODY_LENGTH - NARTHEX_DEPTH + 0.6
     coffer_ribs_y = [NARTHEX_DEPTH - 2.7 + 5.4 * rib_index for rib_index in range(7)]
 
     for side_sign, facing in ((-1, "-X"), (1, "+X")):
@@ -1235,9 +1302,31 @@ def build_nave(materials: dict) -> None:
 
     make_span("NaveCeiling", (-NAVE_HALF - WALL, 1.0, BASE + NAVE_CEILING), (NAVE_HALF + WALL, BODY_LENGTH, BASE + NAVE_CEILING + 0.4), materials["trim"])
     make_span("NarthexRoof", (-CENTER_HALF, FACADE_DEPTH, BASE + NAVE_WALL_TOP - 0.2), (CENTER_HALF, NARTHEX_DEPTH, BASE + NAVE_WALL_TOP + 0.2), materials["trim"])
-    make_profile_prism("NaveRoof", nave_roof_profile, BODY_LENGTH - NARTHEX_DEPTH + 0.6, Matrix.Translation((0, NARTHEX_DEPTH, 0)), materials["roof"])
-    make_span("NaveCornice", (-NAVE_HALF - WALL - 0.25, NARTHEX_DEPTH, BASE + NAVE_WALL_TOP - 0.3), (NAVE_HALF + WALL + 0.25, BODY_LENGTH + 0.2, BASE + NAVE_WALL_TOP), materials["trim"])
+    # Telhado oco: telhas por fora, tabuado por dentro; o sótão com as tesouras fica em build_cathedral_towers.py.
+    for side_sign in (-1, 1):
+        make_profile_prism(f"NaveRoof{side_sign:+d}", roof_slab_profile(side_sign, 0.0, ROOF_SHELL), roof_length, Matrix.Translation((0, NARTHEX_DEPTH, 0)), materials["roof"])
+        make_profile_prism(f"NaveRoofBoards{side_sign:+d}", roof_slab_profile(side_sign, ROOF_SHELL, ROOF_SHELL + 0.03), roof_length - 0.6, Matrix.Translation((0, NARTHEX_DEPTH, 0)), materials["wood_dark"])
+
+    make_profile_prism("NaveGableFront", gable_profile, 0.3, Matrix.Translation((0, NARTHEX_DEPTH - 0.3, 0)), materials["wall"])
+    make_profile_prism("NaveGableBack", gable_profile, WALL, Matrix.Translation((0, BODY_LENGTH - WALL, 0)), materials["wall"])
+    make_mirrored_span("NaveCornice", (NAVE_HALF, NARTHEX_DEPTH, BASE + NAVE_WALL_TOP - 0.3), (NAVE_HALF + WALL + 0.25, BODY_LENGTH + 0.2, BASE + NAVE_WALL_TOP), materials["trim"])
     make_span("NaveBackUpper", (-NAVE_HALF - WALL, BODY_LENGTH - WALL, BASE + NAVE_CEILING), (NAVE_HALF + WALL, BODY_LENGTH, BASE + NAVE_WALL_TOP), materials["wall"])
+
+
+def roof_slab_profile(side_sign: int, top_offset: float, bottom_offset: float) -> list:
+    """XZ quad of one slope of the nave roof between two depths measured down from the tiles."""
+    eave_x, eave_z = side_sign * NAVE_EAVE[0], BASE + NAVE_EAVE[1]
+    ridge_z = BASE + NAVE_RIDGE
+
+    return [(eave_x, eave_z - top_offset), (0.0, ridge_z - top_offset), (0.0, ridge_z - bottom_offset), (eave_x, eave_z - bottom_offset)]
+
+
+def roof_underside_height(x: float) -> float:
+    """Height of the attic's ceiling (the roof boards) above plan position x."""
+    eave_x, eave_z = NAVE_EAVE[0], BASE + NAVE_EAVE[1]
+    ridge_z = BASE + NAVE_RIDGE
+
+    return ridge_z - (ridge_z - eave_z) * abs(x) / eave_x - ROOF_SHELL - 0.03
 
 
 def build_arcade_wall(side_sign: int, facing: str, materials: dict) -> None:
@@ -2029,7 +2118,7 @@ def build_colliders() -> None:
     make_span("Retable-colonly", (-3.0, RETABLE_Y, CHANCEL_FLOOR + 1.6), (3.0, RETABLE_Y + 0.6, CHANCEL_FLOOR + 5.5), None)
     make_span("Lintel-colonly", (-PORTAL_WIDTH / 2.0, 0.0, BASE + PORTAL_SPRING), (PORTAL_WIDTH / 2.0, FACADE_DEPTH, BASE + NAVE_WALL_TOP), None)
     make_mirrored_span("Jamb-colonly", (PORTAL_WIDTH / 2.0, -0.3, BASE), (CENTER_HALF, FACADE_DEPTH, BASE + NAVE_WALL_TOP), None)
-    make_mirrored_span("Tower-colonly", (CENTER_HALF, -0.3, 0.0), (TOWER_OUTER, NARTHEX_DEPTH, BASE + TOWER_BASE_TOP), None)
+    build_tower_colliders()
     make_mirrored_span("AisleFront-colonly", (TOWER_OUTER, 0.0, 0.0), (HALF_WIDTH, FACADE_DEPTH, BASE + AISLE_TOP), None)
     make_mirrored_span("SideWall-colonly", (HALF_WIDTH - WALL, 0.0, 0.0), (HALF_WIDTH + 0.3, BODY_LENGTH, BASE + AISLE_TOP), None)
     make_mirrored_span("BackWall-colonly", (NAVE_HALF, BODY_LENGTH - WALL, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE + AISLE_TOP), None)
@@ -2057,6 +2146,43 @@ def build_colliders() -> None:
 
     for spot_index, (statue_x, statue_y) in enumerate(STATUE_SPOTS):
         make_box(f"Statue{spot_index}-colonly", (statue_x, statue_y, (PEDESTAL_HEIGHT + 2.6) / 2.0), (1.9, 1.9, PEDESTAL_HEIGHT + 2.6), None)
+
+
+def build_tower_colliders() -> None:
+    """Walls of both towers around the hollow stair shaft (the stair, floors and rails are in build_cathedral_towers.py),
+    with the stair door to the nave and the door to the attic, and the hollow nave roof over the attic."""
+    shaft_low_y, shaft_high_y = TOWER_CENTER_Y - TOWER_SHAFT_HALF, TOWER_CENTER_Y + TOWER_SHAFT_HALF
+    shaft_inner_x, shaft_outer_x = TOWER_MIDDLE_X - TOWER_SHAFT_HALF, TOWER_MIDDLE_X + TOWER_SHAFT_HALF
+    door_x = (TOWER_MIDDLE_X - TOWER_DOOR[0] / 2.0, TOWER_MIDDLE_X + TOWER_DOOR[0] / 2.0)
+    top = BASE + TOWER_BASE_TOP + 0.35
+    clock_top = CLOCK_FLOOR + CLOCK_HEIGHT
+    stages = [(BELFRY_BOTTOM, CLOCK_FLOOR, BELFRY_HALF), (CLOCK_FLOOR, clock_top, CLOCK_HALF)]
+
+    make_mirrored_span("TowerInner-colonly", (CENTER_HALF, -0.3, 0.0), (shaft_inner_x, NARTHEX_DEPTH, top), None)
+    make_mirrored_span("TowerOuter-colonly", (shaft_outer_x, -0.3, 0.0), (TOWER_OUTER, NARTHEX_DEPTH, top), None)
+    make_mirrored_span("TowerFront-colonly", (shaft_inner_x, -0.3, 0.0), (shaft_outer_x, shaft_low_y, top), None)
+    make_mirrored_span("TowerFloor-colonly", (shaft_inner_x, shaft_low_y, 0.0), (shaft_outer_x, shaft_high_y, BASE), None)
+    make_mirrored_span("TowerBackLeft-colonly", (shaft_inner_x, shaft_high_y, 0.0), (door_x[0], NARTHEX_DEPTH, ATTIC_WALK), None)
+    make_mirrored_span("TowerBackRight-colonly", (door_x[1], shaft_high_y, 0.0), (shaft_outer_x, NARTHEX_DEPTH, top), None)
+    make_mirrored_span("TowerBackLintel-colonly", (door_x[0], shaft_high_y, BASE + TOWER_DOOR[1]), (door_x[1], NARTHEX_DEPTH, top), None)
+    make_mirrored_span("TowerBackAtticSide-colonly", (ATTIC_DOOR_X[1], shaft_high_y, ATTIC_WALK), (door_x[0], NARTHEX_DEPTH, top), None)
+    make_mirrored_span("TowerBackAtticLintel-colonly", (ATTIC_DOOR_X[0], shaft_high_y, ATTIC_WALK + ATTIC_DOOR_HEIGHT), (ATTIC_DOOR_X[1], NARTHEX_DEPTH, top), None)
+
+    for stage_index, (bottom, stage_top, half) in enumerate(stages):
+        outer = (TOWER_MIDDLE_X - half, TOWER_CENTER_Y - half, TOWER_MIDDLE_X + half, TOWER_CENTER_Y + half)
+        make_mirrored_span(f"TowerStage{stage_index}Inner-colonly", (outer[0], outer[1], bottom), (shaft_inner_x, outer[3], stage_top), None)
+        make_mirrored_span(f"TowerStage{stage_index}Outer-colonly", (shaft_outer_x, outer[1], bottom), (outer[2], outer[3], stage_top), None)
+        make_mirrored_span(f"TowerStage{stage_index}Front-colonly", (shaft_inner_x, outer[1], bottom), (shaft_outer_x, shaft_low_y, stage_top), None)
+        make_mirrored_span(f"TowerStage{stage_index}Back-colonly", (shaft_inner_x, shaft_high_y, bottom), (shaft_outer_x, outer[3], stage_top), None)
+
+    make_mirrored_span("TowerCeiling-colonly", (shaft_inner_x, shaft_low_y, clock_top), (shaft_outer_x, shaft_high_y, clock_top + 0.4), None)
+    make_span("AtticFloor-colonly", (-NAVE_HALF - WALL, NARTHEX_DEPTH, BASE + NAVE_CEILING), (NAVE_HALF + WALL, BODY_LENGTH - WALL, ATTIC_FLOOR), None)
+    make_span("AtticGableFront-colonly", (-CENTER_HALF, NARTHEX_DEPTH - 0.3, ATTIC_FLOOR), (CENTER_HALF, NARTHEX_DEPTH, BASE + NAVE_RIDGE), None)
+    make_span("AtticGableBack-colonly", (-NAVE_HALF - WALL, BODY_LENGTH - WALL, ATTIC_FLOOR), (NAVE_HALF + WALL, BODY_LENGTH, BASE + NAVE_RIDGE), None)
+
+    for side_sign in (-1, 1):
+        make_profile_prism(f"AtticRoof{side_sign:+d}-colonly", roof_slab_profile(side_sign, 0.0, ROOF_SHELL + 0.03), BODY_LENGTH - NARTHEX_DEPTH, Matrix.Translation((0, NARTHEX_DEPTH, 0)), None)
+        make_span(f"AtticEave{side_sign:+d}-colonly", (min(side_sign * NAVE_HALF, side_sign * (NAVE_HALF + WALL)), NARTHEX_DEPTH, ATTIC_FLOOR), (max(side_sign * NAVE_HALF, side_sign * (NAVE_HALF + WALL)), BODY_LENGTH, BASE + NAVE_WALL_TOP), None)
 
 
 # ---------- export ----------
