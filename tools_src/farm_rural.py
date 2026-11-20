@@ -273,7 +273,7 @@ def tulha_inside(b: Builder, frames: dict, half: float, depth: float) -> None:
     rooms.against("north", "sack_pile", 2.4, inner["back"])
     rooms.put("decimal_scale", -2.4, 3.4, 90.0)
     rooms.put("pilao", 2.6, 2.0)
-    rooms.put("coffee_floor_heap", -4.8, 3.3, 8.0)
+    rooms.put("coffee_floor_heap", -4.8, 3.0, 8.0)
     rooms.against("north", "sack_pile", -2.6, inner["back"], seed=5)
     rooms.against("east", "sack_pile", 1.3, inner["east"], seed=6)
 

@@ -7,17 +7,19 @@ Runs inside Blender, imported by build_prop_sheet.py and build_farm.py. Contract
 centred on 0, front faces -Y, back at +size[1] / 2, Z up from the floor.
 """
 
+import itertools
 import math
 import random
 import sys
 from pathlib import Path
 
+import bmesh
 from mathutils import Matrix
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_town_houses import Builder, srgb  # noqa: E402
-from shop_props_common import lathe, wicker_basket, wood_box  # noqa: E402
+from shop_props_common import wicker_basket, wood_box  # noqa: E402
 from shop_props_orphanage import (  # noqa: E402
     BRASS_AGED,
     CAST_IRON,
@@ -59,27 +61,48 @@ def coffee_heap(b: Builder, frame: Matrix, half_x: float, half_y: float, bottom:
         _sphere(b, frame, (x, y, bottom + (top - bottom) * 0.6), 0.09, "paint", generator.choice(COFFEE_SHADES), scale=(1.4, 1.0, 0.35), segments=5)
 
 
-MOUND_RINGS = 10
-MOUND_SIDES = 24
-MOUND_SHAPE = 0.7  # exponent of the profile: below 1 the shoulder is full and rounded, the edge falls steeply
+MOUND_RINGS = 16
+MOUND_SIDES = 36
+MOUND_SHAPE = 1.6  # exponent of the profile: the crest is round, the flank falls at about the angle of repose
 
 
 def mound_height(radius_fraction: float, top: float) -> float:
-    """Height of the mound at a fraction of its radius: a rounded dome, falling to the floor at the edge."""
-    return top * (1.0 - radius_fraction**2) ** MOUND_SHAPE
+    """Height of the mound at a fraction of its radius: a round crest and a flank that runs out onto the floor."""
+    return top * (1.0 - radius_fraction**MOUND_SHAPE)
+
+
+def mound_reach(angle: float) -> float:
+    """Outline of the heap: the radius at an angle, slightly lumpy so it is not a perfect ellipse."""
+    return 1.0 + 0.06 * math.sin(2.0 * angle + 1.0) + 0.04 * math.sin(3.0 * angle + 2.0)
 
 
 def coffee_mound(b: Builder, frame: Matrix, half_x: float, half_y: float, top: float, generator: random.Random) -> None:
-    """Rounded mound of dried coffee: a surface of revolution with many rings along a dome profile, stretched to
-    the ellipse of the heap, with bean speckles lying on the surface."""
-    profile = [(1.0 - ring / MOUND_RINGS, mound_height(1.0 - ring / MOUND_RINGS, top)) for ring in range(MOUND_RINGS + 1)]
-    stretch = Matrix.Diagonal((half_x, half_y, 1.0, 1.0))
+    """Rounded mound of dried coffee: rings of smooth-shaded faces along the heap profile, a lumpy outline stretched
+    to the ellipse of the heap, with bean speckles lying on the surface."""
+    angles = [2.0 * math.pi * side / MOUND_SIDES for side in range(MOUND_SIDES)]
+    fractions = [1.0 - ring / MOUND_RINGS for ring in range(MOUND_RINGS)]
+    mound = bmesh.new()
+    rings = [
+        [mound.verts.new((half_x * fraction * mound_reach(angle) * math.cos(angle), half_y * fraction * mound_reach(angle) * math.sin(angle), mound_height(fraction, top))) for angle in angles]
+        for fraction in fractions
+    ]
+    peak = mound.verts.new((0.0, 0.0, top))
 
-    lathe(b, profile, MOUND_SIDES, "paint", COFFEE_SHADES[0], frame @ stretch)
+    for (lower, upper), side in itertools.product(zip(rings, rings[1:]), range(MOUND_SIDES)):
+        mound.faces.new((lower[side], lower[(side + 1) % MOUND_SIDES], upper[(side + 1) % MOUND_SIDES], upper[side]))
+
+    for side in range(MOUND_SIDES):
+        mound.faces.new((rings[-1][side], rings[-1][(side + 1) % MOUND_SIDES], peak))
+
+    for face in mound.faces:
+        face.smooth = True
+
+    b._link(mound, "paint", srgb(COFFEE_SHADES[0]), None, frame)
 
     for _ in range(40):
         angle, fraction = generator.uniform(0.0, 2.0 * math.pi), math.sqrt(generator.uniform(0.0, 0.8))
-        spot = (half_x * fraction * math.cos(angle), half_y * fraction * math.sin(angle), mound_height(fraction, top) - 0.01)
+        reach = fraction * mound_reach(angle)
+        spot = (half_x * reach * math.cos(angle), half_y * reach * math.sin(angle), mound_height(fraction, top) - 0.01)
         _sphere(b, frame, spot, 0.09, "paint", generator.choice(COFFEE_SHADES), scale=(1.4, 1.0, 0.35), segments=5)
 
 

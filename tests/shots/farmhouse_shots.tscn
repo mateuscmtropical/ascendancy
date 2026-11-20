@@ -65,3 +65,33 @@ fov = 75.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.2, 2.4, -9.5)
 rotation = Vector3(-0.22, -0.32, 0)
 fov = 75.0
+
+[node name="MeninosPorta" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 79.0, 2.5, -38.2)
+rotation = Vector3(-0.25, 2.77, 0)
+fov = 75.0
+
+[node name="MeninosFundo" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 78.6, 2.5, -36.3)
+rotation = Vector3(-0.12, 0.137, 0)
+fov = 75.0
+
+[node name="MeninasPorta" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 81.6, 2.5, -37.9)
+rotation = Vector3(-0.25, 2.53, 0)
+fov = 75.0
+
+[node name="MeninasFundo" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80.75, 2.5, -35.8)
+rotation = Vector3(-0.12, 0.0, 0)
+fov = 75.0
+
+[node name="TulhaMound" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95.0, 2.2, -19.0)
+rotation = Vector3(-0.3, -0.75, 0)
+fov = 70.0
+
+[node name="TulhaMoundNear" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96.0, 2.0, -24.2)
+rotation = Vector3(-0.3, -2.56, 0)
+fov = 60.0
