@@ -14,6 +14,7 @@ Usage:
 
 import itertools
 import math
+import random
 from collections import defaultdict
 from pathlib import Path
 
@@ -70,6 +71,17 @@ PEW_PITCH = 1.15
 PEW_GAP_ROW = 10  # fileira omitida: corredor transversal entre as portas laterais
 PEW_BLOCKS = ((1.3, 3.6), (4.6, 6.3), (8.8, 11.2))  # x (do eixo para fora) de cada bloco: nave interna, nave externa, nave lateral
 SIDE_DOOR_Y = 19.0
+STATIONS_LEFT_Y = (6.2, 10.6, 16.2, 21.8, 27.4, 33.0, 35.8)  # via-sacra entre as janelas baixas; à direita o monumento da cripta ocupa 32,6-36
+STATIONS_RIGHT_Y = (6.2, 10.6, 16.2, 21.8, 27.4, 31.9, 37.0)
+STATION_BOTTOM = 2.0  # acima do lambri
+STATION_SIZE = (0.86, 0.72)  # largura e nascença do arco ogival
+PULPIT_CENTER = (-6.05, 31.8)  # canto esquerdo do presbitério, à frente da coluna
+PULPIT_RADIUS = 0.65
+PULPIT_FLOOR = CHANCEL_HEIGHT + 5 * 0.2  # piso do púlpito: cinco degraus acima do presbitério
+PULPIT_STEPS = 5
+PULPIT_TREAD = 0.36
+PULPIT_RISE = 0.2
+FONT_SPOT = (2.0, 6.0)
 LOFT_HEIGHT = 7.4  # laje do coro alto sobre o nartex
 RETABLE_Y = BODY_LENGTH + APSE_RADIUS - 1.3
 LANCET_ANGLES = (30.0, 55.0, 78.0)  # graus do eixo da abside, de cada lado
@@ -1530,7 +1542,7 @@ def build_chancel_floor(materials: dict) -> None:
         make_span(f"ChancelStep{step_index}", (-CHANCEL_STAIR_HALF, step_front, BASE), (CHANCEL_STAIR_HALF, CHANCEL_FRONT, BASE + (step_index + 1) * CHANCEL_HEIGHT / CHANCEL_STEPS), materials["marble_white"])
 
     make_span("ChancelRunner", (-1.1, CHANCEL_FRONT, floor_top), (1.1, platform_front, floor_top + 0.01), materials["carpet"])
-    make_balustrade("CommunionRailL", (-NAVE_HALF, CHANCEL_FRONT + 0.3), (-1.3, CHANCEL_FRONT + 0.3), floor_top, materials)
+    make_balustrade("CommunionRailL", (PULPIT_CENTER[0] + 0.3, CHANCEL_FRONT + 0.3), (-1.3, CHANCEL_FRONT + 0.3), floor_top, materials)
     make_balustrade("CommunionRailR", (1.3, CHANCEL_FRONT + 0.3), (NAVE_HALF, CHANCEL_FRONT + 0.3), floor_top, materials)
 
     for step_index in range(2):
@@ -1662,6 +1674,7 @@ def build_pews(materials: dict) -> None:
     """Three blocks of pews on each side of the centre aisle (nave inner, nave outer, side aisle), all facing the altar.
     One mesh: seat, back with a lighter top rail, kneeler and scrolled end panels."""
     pew_bmesh = bmesh.new()
+    book_bmesh = bmesh.new()
     stairs_front = CHANCEL_FRONT - CHANCEL_STEPS * CHANCEL_TREAD
     row_count = int(round((PEW_ROWS[1] - PEW_ROWS[0]) / PEW_PITCH)) + 1
     rows = [PEW_ROWS[0] + index * PEW_PITCH for index in range(row_count) if index != PEW_GAP_ROW]
@@ -1682,8 +1695,22 @@ def build_pews(materials: dict) -> None:
         bm_box(pew_bmesh, (middle_x, row_y - 0.44, BASE + 0.14), (length - 0.2, 0.16, 0.05))
         bm_prism_yz(pew_bmesh, low_x + 0.04, 0.08, [(row_y + y, BASE + z) for y, z in end_profile])
         bm_prism_yz(pew_bmesh, high_x - 0.04, 0.08, [(row_y + y, BASE + z) for y, z in end_profile])
+        bm_box(pew_bmesh, (middle_x, row_y - 0.36, BASE + 0.74), (length - 0.2, 0.18, 0.02))  # prateleira dos livros nas costas
+        bm_box(pew_bmesh, (middle_x, row_y - 0.44, BASE + 0.79), (length - 0.2, 0.02, 0.1))
+        bm_box(pew_bmesh, (low_x - 0.005, row_y - 0.06, BASE + 0.3), (0.02, 0.3, 0.32))  # almofada saliente nas cabeceiras
+        bm_box(pew_bmesh, (high_x + 0.005, row_y - 0.06, BASE + 0.3), (0.02, 0.3, 0.32))
+        add_hymnals(book_bmesh, middle_x, row_y, length, random.Random(int(row_y * 10 + middle_x * 100)))
 
     object_from_bmesh("Pews", pew_bmesh, materials["pew_wood"])
+    object_from_bmesh("PewHymnals", book_bmesh, materials["paint_red"])
+
+
+def add_hymnals(book_bmesh, middle_x: float, row_y: float, length: float, generator: random.Random) -> None:
+    """A few hymn books standing in the rack on the back of a pew, some missing."""
+    slots = [middle_x - length / 2.0 + 0.3 + 0.55 * index for index in range(int((length - 0.4) / 0.55))]
+
+    for book_x in [slot for slot in slots if generator.random() < 0.7]:
+        bm_box(book_bmesh, (book_x + generator.uniform(-0.1, 0.1), row_y - 0.36, BASE + 0.85), (0.04, 0.13, 0.2))
 
 
 def pew_block_spans() -> list:
@@ -1752,6 +1779,113 @@ def build_side_altar(side_sign: int, figure: list, materials: dict) -> None:
 
     make_span(f"Kneeler{tag}", (altar_x - 0.8, wall_y - 2.6, BASE), (altar_x + 0.8, wall_y - 2.3, BASE + 0.2), materials["pew_wood"])
     make_span(f"KneelerRail{tag}", (altar_x - 0.8, wall_y - 2.35, BASE + 0.2), (altar_x + 0.8, wall_y - 2.25, BASE + 0.85), materials["pew_wood"])
+
+
+# ---------- furnishing of the nave ----------
+
+def pointed_arch_profile(width: float, spring_height: float, segments: int = 8) -> list:
+    """Equilateral pointed arch in XZ: each side is an arc whose center is the opposite springing point."""
+    half = width / 2.0
+    right_side = [(-half + width * math.cos(math.radians(60.0) * step / segments), spring_height + width * math.sin(math.radians(60.0) * step / segments)) for step in range(segments + 1)]
+    left_side = [(half + width * math.cos(math.radians(120.0 + 60.0 * step / segments)), spring_height + width * math.sin(math.radians(120.0 + 60.0 * step / segments))) for step in range(1, segments + 1)]
+
+    return [(-half, 0.0), (half, 0.0)] + right_side + left_side
+
+
+def place_parts(parts: list, frame: Matrix) -> None:
+    for part in parts:
+        part.data.transform(frame)
+
+
+def build_stations_of_the_cross(materials: dict) -> None:
+    """Fourteen carved stations on the aisle walls, seven a side between the low windows: a gilded pointed frame,
+    a white relief (the cross and the figures around it), a small cross on top and the number tablet below."""
+    stations = [(-1, station_y) for station_y in STATIONS_LEFT_Y] + [(1, station_y) for station_y in STATIONS_RIGHT_Y]
+
+    for index, (side_sign, station_y) in enumerate(stations):
+        frame = Matrix.Translation((side_sign * (HALF_WIDTH - WALL), station_y, BASE + STATION_BOTTOM)) @ Matrix.Rotation(math.radians(-90.0 * side_sign), 4, "Z")
+        build_station(f"Station{index}", frame, random.Random(index), materials)
+
+
+def build_station(tag: str, frame: Matrix, generator: random.Random, materials: dict) -> None:
+    """One station, built facing -Y with its back on the wall at y = 0 and then placed."""
+    width, spring = STATION_SIZE
+    cross_x = generator.uniform(-0.12, 0.12)
+    cross_tilt = generator.uniform(-35.0, 35.0)
+    figure_spots = generator.sample((-0.24, -0.12, 0.12, 0.24), 2)
+    parts = [
+        make_profile_prism(f"{tag}Frame", pointed_arch_profile(width, spring), 0.06, Matrix.Translation((0.0, -0.06, 0.0)), materials["gold"]),
+        make_profile_prism(f"{tag}Relief", pointed_arch_profile(width - 0.16, spring - 0.02), 0.03, Matrix.Translation((0.0, -0.09, 0.08)), materials["marble_white"]),
+        make_box(f"{tag}Ground", (0.0, -0.11, 0.14), (width - 0.2, 0.03, 0.05), materials["marble_white"]),
+        make_box(f"{tag}CrossPost", (0.0, 0.0, 0.0), (0.035, 0.03, 0.62), materials["marble_white"]),
+        make_box(f"{tag}CrossBar", (0.0, 0.0, 0.13), (0.3, 0.03, 0.035), materials["marble_white"]),
+        make_box(f"{tag}Tablet", (0.0, -0.07, -0.12), (0.26, 0.03, 0.12), materials["paint_red"]),
+        make_box(f"{tag}TopPost", (0.0, -0.04, spring + width * 0.87 + 0.12), (0.03, 0.03, 0.26), materials["gold"]),
+        make_box(f"{tag}TopBar", (0.0, -0.04, spring + width * 0.87 + 0.16), (0.14, 0.03, 0.03), materials["gold"]),
+    ]
+    place_parts(parts[3:5], Matrix.Translation((cross_x, -0.12, 0.62)) @ Matrix.Rotation(math.radians(cross_tilt), 4, "Y"))
+
+    for figure_index, figure_x in enumerate(figure_spots):
+        figure_height = generator.uniform(0.3, 0.4)
+        parts.append(make_cone(f"{tag}Robe{figure_index}", (figure_x, -0.12, 0.165), 0.06, figure_height, 6, materials["marble_white"], top_radius=0.035))
+        parts.append(make_sphere(f"{tag}Head{figure_index}", (figure_x, -0.12, 0.165 + figure_height + 0.04), 0.04, materials["marble_white"]))
+
+    place_parts(parts, frame)
+
+
+def build_pulpit(materials: dict) -> None:
+    """Carved wooden pulpit at the left corner of the chancel: hexagonal tub on a stem and corbel, a panel up the back
+    to the sounding board with its crown, and a stair coming down to the chancel floor behind the communion rail."""
+    x, y = PULPIT_CENTER
+    floor = BASE + PULPIT_FLOOR
+    stair_x = (x - 0.25, x + 0.25)
+    apothem = PULPIT_RADIUS * math.cos(math.radians(30.0))
+    tub_back = y + apothem
+
+    make_cylinder("PulpitStem", (x, y, BASE), 0.18, PULPIT_FLOOR - 0.55, 8, materials["wood_dark"])
+    make_cylinder("PulpitStemBase", (x, y, BASE), 0.3, 0.12, 8, materials["pew_wood"])
+    make_cone("PulpitCorbel", (x, y, floor - 0.6), 0.18, 0.6, 6, materials["pew_wood"], rotation=math.radians(30.0), top_radius=PULPIT_RADIUS)
+    make_cone("PulpitTub", (x, y, floor), PULPIT_RADIUS, 1.05, 6, materials["pew_wood"], rotation=math.radians(30.0), top_radius=PULPIT_RADIUS)
+    make_cone("PulpitBaseMoulding", (x, y, floor - 0.04), PULPIT_RADIUS + 0.04, 0.1, 6, materials["gold"], rotation=math.radians(30.0), top_radius=PULPIT_RADIUS + 0.04)
+    make_cone("PulpitBookRest", (x, y, floor + 1.0), PULPIT_RADIUS + 0.06, 0.07, 6, materials["wood_dark"], rotation=math.radians(30.0), top_radius=PULPIT_RADIUS + 0.06)
+
+    for face_index in range(6):
+        angle = math.radians(60.0 * face_index)
+        panel = make_profile_prism(f"PulpitPanel{face_index}", pointed_arch_profile(0.32, 0.38), 0.02, Matrix.Translation((0.0, -0.02, 0.0)), materials["wood_dark"])
+        figure = make_cone(f"PulpitFigure{face_index}", (0.0, -0.035, 0.08), 0.06, 0.34, 6, materials["gold"], top_radius=0.03)
+        place_parts([panel, figure], Matrix.Translation((x + apothem * math.cos(angle), y + apothem * math.sin(angle), floor + 0.25)) @ Matrix.Rotation(angle + math.pi / 2.0, 4, "Z"))
+
+    make_span("PulpitBackPanel", (x - apothem - 0.08, y - 0.3, floor + 1.05), (x - apothem, y + 0.3, floor + 2.5), materials["wood_dark"])
+    make_cone("PulpitSoundingBoard", (x, y, floor + 2.5), PULPIT_RADIUS + 0.2, 0.14, 6, materials["pew_wood"], rotation=math.radians(30.0), top_radius=PULPIT_RADIUS + 0.2)
+    make_cone("PulpitValance", (x, y, floor + 2.42), PULPIT_RADIUS + 0.22, 0.08, 6, materials["gold"], rotation=math.radians(30.0), top_radius=PULPIT_RADIUS + 0.22)
+    make_cone("PulpitCrown", (x, y, floor + 2.64), PULPIT_RADIUS + 0.05, 0.55, 6, materials["wood_dark"], rotation=math.radians(30.0), top_radius=0.06)
+    make_sphere("PulpitFinial", (x, y, floor + 3.24), 0.08, materials["gold"])
+    make_sphere("PulpitDove", (x, y, floor + 2.38), 0.06, materials["marble_white"])
+
+    for step in range(PULPIT_STEPS):
+        step_front = tub_back + step * PULPIT_TREAD
+        step_top = floor - step * PULPIT_RISE
+        make_span(f"PulpitStep{step}", (stair_x[0], step_front, BASE), (stair_x[1], step_front + PULPIT_TREAD, step_top), materials["pew_wood"])
+        make_span(f"PulpitStep{step}-colonly", (stair_x[0], step_front, BASE), (stair_x[1], step_front + PULPIT_TREAD, step_top), None)
+
+    make_slope("PulpitHandrail", (stair_x[1] + 0.03, tub_back + PULPIT_STEPS * PULPIT_TREAD, BASE + CHANCEL_HEIGHT + 0.95), (stair_x[1] + 0.03, tub_back, floor + 1.0), 0.05, 0.06, materials["wood_dark"])
+    make_span("PulpitBody-colonly", (x - PULPIT_RADIUS, y - PULPIT_RADIUS, BASE), (x + PULPIT_RADIUS, tub_back, floor), None)
+    make_span("PulpitFront-colonly", (x - PULPIT_RADIUS, y - PULPIT_RADIUS, floor), (x + PULPIT_RADIUS, y - PULPIT_RADIUS + 0.1, floor + 1.05), None)
+    make_span("PulpitNaveSide-colonly", (x + PULPIT_RADIUS - 0.1, y - PULPIT_RADIUS, floor), (x + PULPIT_RADIUS, tub_back, floor + 1.05), None)
+    make_span("PulpitAisleSide-colonly", (x - PULPIT_RADIUS, y - PULPIT_RADIUS, floor), (x - PULPIT_RADIUS + 0.1, tub_back, floor + 1.05), None)
+
+
+def build_holy_water_fonts(materials: dict) -> None:
+    """Marble stoups on baluster stems either side of the centre aisle, just inside the doors."""
+    for side_sign in (-1, 1):
+        x, y = side_sign * FONT_SPOT[0], FONT_SPOT[1]
+        tag = "L" if side_sign < 0 else "R"
+
+        make_cylinder(f"FontFoot{tag}", (x, y, BASE), 0.2, 0.1, 12, materials["marble_grey"])
+        make_cone(f"FontStem{tag}", (x, y, BASE + 0.1), 0.11, 0.62, 12, materials["marble_grey"], top_radius=0.07)
+        make_cone(f"FontBowl{tag}", (x, y, BASE + 0.72), 0.1, 0.22, 16, materials["marble_white"], top_radius=0.3)
+        make_cylinder(f"FontWater{tag}", (x, y, BASE + 0.9), 0.27, 0.02, 16, materials["slit_glass"])
+        make_span(f"Font{tag}-colonly", (x - 0.3, y - 0.3, BASE), (x + 0.3, y + 0.3, BASE + 0.95), None)
 
 
 STATUE_SOURCE = PROJECT_DIR / "art" / "characters" / "villager_male.gltf"  # CC0, montado por build_characters.py
@@ -2421,6 +2555,9 @@ def build_cathedral() -> Path:
     build_high_altar(materials)
     build_pews(materials)
     build_chandeliers(materials)
+    build_stations_of_the_cross(materials)
+    build_pulpit(materials)
+    build_holy_water_fonts(materials)
 
     saint = build_saint_figure(materials, SAINT_DRESSES["facade"])
     joseph = build_saint_figure(materials, SAINT_DRESSES["joseph"])

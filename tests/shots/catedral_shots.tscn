@@ -100,3 +100,23 @@ fov = 45
 position = Vector3(9.000, 4.200, 13.000)
 rotation = Vector3(0.2200, -1.1071, 0)
 fov = 45
+
+[node name="PulpitEye" type="Camera3D" parent="."]
+position = Vector3(38.500, 2.650, -2.000)
+rotation = Vector3(0.1524, -0.9995, 0)
+fov = 60
+
+[node name="FontEye" type="Camera3D" parent="."]
+position = Vector3(23.000, 2.650, 0.400)
+rotation = Vector3(-0.2214, 1.0304, 0)
+fov = 60
+
+[node name="PewBackEye" type="Camera3D" parent="."]
+position = Vector3(20.500, 2.650, -3.000)
+rotation = Vector3(-0.2391, -1.1903, 0)
+fov = 60
+
+[node name="StationEye" type="Camera3D" parent="."]
+position = Vector3(37.000, 2.650, -10.200)
+rotation = Vector3(0.2994, -0.9965, 0)
+fov = 50
