@@ -30,3 +30,48 @@ fov = 70
 position = Vector3(-30.000, 45.000, -14.000)
 rotation = Vector3(-1.5686, -3.1416, 0)
 fov = 70
+
+[node name="TowerFootEye" type="Camera3D" parent="."]
+position = Vector3(24.000, 2.650, 3.500)
+rotation = Vector3(-0.0676, 2.0142, 0)
+fov = 70
+
+[node name="TowerWellEye" type="Camera3D" parent="."]
+position = Vector3(16.600, 2.650, 7.450)
+rotation = Vector3(1.4469, 0.8067, 0)
+fov = 75
+
+[node name="TowerMidEye" type="Camera3D" parent="."]
+position = Vector3(16.675, 11.700, 5.175)
+rotation = Vector3(-0.0421, 1.5708, 0)
+fov = 75
+
+[node name="BelfryEye" type="Camera3D" parent="."]
+position = Vector3(16.675, 29.600, 5.175)
+rotation = Vector3(-0.4487, 2.3562, 0)
+fov = 75
+
+[node name="ClockRoomEye" type="Camera3D" parent="."]
+position = Vector3(16.675, 36.250, 7.525)
+rotation = Vector3(-0.4769, 0.7662, 0)
+fov = 75
+
+[node name="AtticEye" type="Camera3D" parent="."]
+position = Vector3(20.000, 20.750, 0.000)
+rotation = Vector3(-0.0175, -1.5708, 0)
+fov = 75
+
+[node name="AtticDoorEye" type="Camera3D" parent="."]
+position = Vector3(20.500, 20.750, -0.300)
+rotation = Vector3(-0.1034, 2.6601, 0)
+fov = 75
+
+[node name="CathedralFront" type="Camera3D" parent="."]
+position = Vector3(-14.000, 1.600, 0.000)
+rotation = Vector3(0.5982, -1.5708, 0)
+fov = 70
+
+[node name="BelfryOutside" type="Camera3D" parent="."]
+position = Vector3(4.000, 31.000, 16.000)
+rotation = Vector3(-0.1324, -0.8726, 0)
+fov = 50

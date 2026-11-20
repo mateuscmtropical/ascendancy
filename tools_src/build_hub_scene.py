@@ -594,6 +594,7 @@ def add_buildings(scene: SceneWriter) -> None:
     scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), -math.pi / 2.0)
     add_cathedral_crypt(scene)
+    add_cathedral_towers(scene)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     add_town_lots(scene, lots)
@@ -643,6 +644,43 @@ def add_cathedral_crypt(scene: SceneWriter) -> None:
         "box": f"AABB({', '.join(f'{value:.3f}' for value in (*room_minimum, *room_size))})",
     })
     scene.add_node("CryptMonument", "Buildings/CathedralCrypt", instance=scene.external_id("PackedScene", "res://features/hub/crypt_monument.tscn"), properties={"position": vector(*CRYPT_MONUMENT)})
+
+
+def add_cathedral_towers(scene: SceneWriter) -> None:
+    """Stairs, bells and clocks inside the two towers and the attic over the nave (same transform as the cathedral):
+    hidden from afar like a shop interior, with the lanterns of its sidecar (no shadows, faded with distance)."""
+    model = "res://art/town/cathedral_towers.gltf"
+    sidecar = model_sidecar(model)
+    interior_script = scene.external_id("Script", "res://features/hub/shop_interior.gd")
+
+    if not sidecar:
+        return
+
+    scene.add_node("CathedralTowers", "Buildings", "Node3D", properties={"position": vector(CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), "rotation": vector(0.0, -math.pi / 2.0, 0.0)})
+    scene.add_node("Interior", "Buildings/CathedralTowers", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
+    place(scene, "Stairs", "Buildings/CathedralTowers/Interior", model, (0.0, 0.0, 0.0))
+
+    for box_index, box in enumerate(sidecar["ambience"]):
+        scene.add_node(f"Ambience{box_index}", "Buildings/CathedralTowers", "ReflectionProbe", properties={
+            "position": vector(*box["center"]),
+            "size": vector(*box["size"]),
+            "interior": "true",
+            "ambient_mode": "2",
+            "ambient_color": CRYPT_AMBIENT,
+            "ambient_color_energy": f"{box['energy']}",
+            "cull_mask": "0",
+            "update_mode": "0",
+            "blend_distance": "0.0",
+        })
+
+    for light_index, light in enumerate(sidecar["lights"]):
+        scene.add_node(f"Light{light_index}", "Buildings/CathedralTowers", "OmniLight3D", properties={
+            "position": vector(*light["position"]),
+            "light_color": hex_color(light["color"]),
+            "light_energy": f"{light['energy']}",
+            "omni_range": f"{light['range']}",
+            **light_fade("shop"),
+        })
 
 
 def add_casarao(scene: SceneWriter, lots: list) -> None:
@@ -1216,7 +1254,7 @@ def cathedral_glass_spots() -> list:
 
 
 def add_cathedral_lights(scene: SceneWriter) -> None:
-    """Warm lamps along the nave, a spot on the crucifix, gold backlight in the retable, coloured light from the apse
+    """Warm lamps along the nave (night only: by day the windows and the sky light it), a spot on the crucifix, gold backlight in the retable, coloured light from the apse
     windows and a small lamp at each side altar (the stained glass glows on its own)."""
     nave_lights = [CATHEDRAL_FACADE_X + offset for offset in (8.0, 15.0, 22.0, 29.0)]
     altar_light = (CATHEDRAL_FACADE_X + 39.7, CHANCEL_FLOOR + 9.0, 0.0)
@@ -1227,7 +1265,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
     scene.add_node("CathedralLights", ".", "Node3D")
 
     for index, light_x in enumerate(nave_lights):
-        scene.add_node(f"NaveLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(light_x, CATHEDRAL_FLOOR + 9.0, 0.0), "light_energy": "1.6", "omni_range": "13.0"})
+        scene.add_node(f"NaveLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(light_x, CATHEDRAL_FLOOR + 9.0, 0.0), "light_energy": "1.6", "omni_range": "13.0"}, groups=["night_lights"])
 
     scene.add_node("AltarLight", "CathedralLights", "SpotLight3D", properties={
         "position": vector(*altar_light),
@@ -1243,7 +1281,7 @@ def add_cathedral_lights(scene: SceneWriter) -> None:
         scene.add_node(f"RetableBacklight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_color": "Color(1, 0.8, 0.45, 1)", "light_energy": "0.6", "omni_range": "4.0"})
 
     for index, position in enumerate(side_altar_lights):
-        scene.add_node(f"SideAltarLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_energy": "0.8", "omni_range": "4.0"})
+        scene.add_node(f"SideAltarLight{index}", "CathedralLights", "OmniLight3D", properties={**warm_omni, "position": vector(*position), "light_energy": "0.8", "omni_range": "4.0"}, groups=["night_lights"])
 
     sun_script = scene.external_id("Script", "res://features/sky/sun_through_glass.gd")
 
