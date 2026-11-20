@@ -3,15 +3,17 @@ extends Node
 ## intervalo e imprime tempo de CPU/GPU e contagem de draw calls (cena principal e sombras).
 ## Argumentos (depois de --): [--cameras=A,B,C] [--warmup=5] [--measure=5] [--time-of-day=0.8]
 ## [--disable=ssao,ssil,glow,fog,shadows,sky,lights,aa] para achar o gargalo desligando um custo,
-## [--hide=Trees,Buildings,...] esconde filhos diretos da praça.
+## [--hide=Trees,Buildings,...] esconde filhos diretos da praça,
+## [--scene=res://...tscn] mede outra cena de câmeras (os salões ficam em shop_shots.tscn).
 
-const HUB_SHOTS_PATH: String = "res://tests/shots/hub_shots.tscn"
+const DEFAULT_SCENE_PATH: String = "res://tests/shots/hub_shots.tscn"
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const CAMERAS_ARGUMENT: String = "--cameras="
 const WARMUP_ARGUMENT: String = "--warmup="
 const MEASURE_ARGUMENT: String = "--measure="
 const DISABLE_ARGUMENT: String = "--disable="
 const HIDE_ARGUMENT: String = "--hide="
+const SCENE_ARGUMENT: String = "--scene="
 const DEFAULT_CAMERAS: PackedStringArray = [
 	"SpawnEye", "LawnEye", "StreetEye", "FarmEye", "CityOverview", "CathedralEye"
 ]
@@ -24,6 +26,7 @@ var _warmup_seconds: float = 5.0
 var _measure_seconds: float = 5.0
 var _disabled_features: PackedStringArray = []
 var _hidden_nodes: PackedStringArray = []
+var _scene_path: String = DEFAULT_SCENE_PATH
 var _hub_shots: Node
 var _environment_disablers: Dictionary[String, Callable] = {
 	"ssao": func(environment: Environment) -> void: environment.ssao_enabled = false,
@@ -57,6 +60,9 @@ func _read_arguments() -> void:
 		if argument.begins_with(HIDE_ARGUMENT):
 			_hidden_nodes = argument.trim_prefix(HIDE_ARGUMENT).split(",")
 
+		if argument.begins_with(SCENE_ARGUMENT):
+			_scene_path = argument.trim_prefix(SCENE_ARGUMENT)
+
 
 func _run_benchmark() -> void:
 	var viewport_rid: RID = get_viewport().get_viewport_rid()
@@ -75,7 +81,7 @@ func _run_benchmark() -> void:
 
 ## O jogador só existe depois de escolher o personagem; o bench quer o custo dele na cena.
 func _load_scene() -> void:
-	var packed: PackedScene = load(HUB_SHOTS_PATH)
+	var packed: PackedScene = load(_scene_path)
 	var hub: Hub
 
 	_hub_shots = packed.instantiate()

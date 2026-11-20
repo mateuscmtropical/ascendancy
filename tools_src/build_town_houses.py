@@ -17,6 +17,7 @@ Usage:
   blender -b --factory-startup -P tools_src/build_town_houses.py -- [model_name ...]
 """
 
+import contextlib
 import hashlib
 import itertools
 import json
@@ -168,6 +169,7 @@ def build_materials() -> dict:
         "glass": plain_material("M_TownGlass", srgb("3A4E66"), 0.12, 0.4),
         "vitrine": plain_material("M_TownVitrine", srgb("BFD8E8"), 0.05, 0.0, alpha=0.25),
         "shopfront": plain_material("M_TownShopfront", srgb("BFD8E8"), 0.05, 0.0, alpha=0.25),  # vitrine da loja: acende à noite (features/sky/window_glass.gd)
+        "inner_glass": plain_material("M_TownInnerGlass", srgb("1A2A44"), 0.1, alpha=0.3),  # vidro de dentro das janelas do casarão: escuro à noite (features/sky/window_glass.gd)
         "paint": plain_material("M_TownPaint", WHITE, 0.75),
         "metal": plain_material("M_TownMetal", WHITE, 0.45, 0.7),
         "water": plain_material("M_Water", srgb("3C7FA0"), 0.1),
@@ -269,12 +271,16 @@ class Builder:
         self.count = 0
         self.lights = []
         self.markers = {}
+        self.turning_parts = {}
 
     # -- low level --
 
-    def _link(self, mesh_bmesh, material_key: str, tint: tuple, uv: tuple, transform: Matrix):
+    def _link(self, mesh_bmesh, material_key: str, tint: tuple, uv: tuple, transform: Matrix, recalc_normals: bool = True):
         bmesh.ops.transform(mesh_bmesh, matrix=transform, verts=mesh_bmesh.verts)
-        bmesh.ops.recalc_face_normals(mesh_bmesh, faces=mesh_bmesh.faces)
+
+        if recalc_normals:
+            bmesh.ops.recalc_face_normals(mesh_bmesh, faces=mesh_bmesh.faces)
+
         self.count += 1
         mesh_data = bpy.data.meshes.new(f"P{self.count}")
         mesh_bmesh.to_mesh(mesh_data)
@@ -317,6 +323,15 @@ class Builder:
         bmesh.ops.translate(prism_bmesh, vec=(0.0, depth_to - depth_from, 0.0), verts=moved)
 
         return self._link(prism_bmesh, material_key, tint, uv, frame or Matrix.Identity(4))
+
+    def pane(self, profile: list, depth: float, material_key: str, tint: tuple = WHITE, frame: Matrix = None, facing: int = 1):
+        """One single-sided polygon in the facade plane (u, z) at d = depth, its face toward +d (facing 1: into the
+        building, seen from inside only by a back-culling material) or -d (facing -1)."""
+        pane_bmesh = bmesh.new()
+        points = profile if facing < 0 else list(reversed(profile))
+        pane_bmesh.faces.new([pane_bmesh.verts.new((u, depth, z)) for u, z in points])
+
+        return self._link(pane_bmesh, material_key, tint, None, frame or Matrix.Identity(4), recalc_normals=False)
 
     def side_prism(self, profile: list, u_from: float, u_to: float, material_key: str, tint: tuple = WHITE, frame: Matrix = None, uv: tuple = None):
         """Polygon in the (d, z) plane extruded along u: cornices, slabs and roof sections."""
@@ -363,12 +378,26 @@ class Builder:
         collider_bmesh.free()
         bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{name}{self.count}-colonly", mesh_data))
 
-    def light(self, position: tuple, color: str, energy: float, light_range: float = 7.0, frame: Matrix = None) -> None:
+    def light(self, position: tuple, color: str, energy: float, light_range: float = 7.0, frame: Matrix = None, group: str = "") -> None:
+        """group: Godot group of the light node (day_lights lamps are on by day only, see features/sky/day_night_cycle.gd)."""
         world = (frame or Matrix.Identity(4)) @ Vector(position)
-        self.lights.append({"position": blender_to_godot(world), "color": color, "energy": energy, "range": light_range})
+        self.lights.append({"position": blender_to_godot(world), "color": color, "energy": energy, "range": light_range, **({"group": group} if group else {})})
 
     def marker(self, name: str, position: tuple, frame: Matrix = None) -> None:
         self.markers[name] = blender_to_godot((frame or Matrix.Identity(4)) @ Vector(position))
+
+    @contextlib.contextmanager
+    def turning_part(self, name: str, axle: tuple, frame: Matrix = None):
+        """Pieces made inside the block leave finish() as ONE mesh called `name` whose origin sits on `axle` (facade
+        coords), so the game can spin it around the axle (the wheels of a wagon)."""
+        before = set(bpy.data.objects)
+
+        yield
+
+        for index, piece in enumerate(sorted(set(bpy.data.objects) - before, key=lambda candidate: candidate.name)):
+            piece.name = f"{name}_{index}"
+
+        self.turning_parts[name] = (frame or Matrix.Identity(4)) @ Vector(axle)
 
     # -- kit grafts --
 
@@ -410,14 +439,17 @@ class Builder:
 
         unify_materials(everything)
         apart = [scene_object for scene_object in everything if separate and scene_object.name.startswith(separate)]
-        visible = untinted_first([scene_object for scene_object in everything if scene_object not in apart])
+        turning = {name: [part for part in everything if part.name.startswith(f"{name}_")] for name in self.turning_parts}
+        loose = {part for parts in turning.values() for part in parts}
+        visible = untinted_first([scene_object for scene_object in everything if scene_object not in apart and scene_object not in loose])
 
         with bpy.context.temp_override(active_object=visible[0], selected_editable_objects=visible):
             bpy.ops.object.join()
 
         building = visible[0]
         building.name = self.name
-        corners = [vertex.co for part in [building, *apart, *colliders] for vertex in part.data.vertices]
+        turned = [self.join_turning_part(name, parts) for name, parts in turning.items()]
+        corners = [vertex.co for part in [building, *apart, *turned, *colliders] for vertex in part.data.vertices]
         minimum = [min(corner[axis] for corner in corners) for axis in range(3)]
         maximum = [max(corner[axis] for corner in corners) for axis in range(3)]
         godot_minimum = [minimum[0], minimum[2], -maximum[1]]
@@ -426,6 +458,12 @@ class Builder:
         for template_objects in self.library.values():
             for template, _matrix in template_objects:
                 bpy.data.objects.remove(template, do_unlink=True)
+
+        for wheel in turned:
+            axle = self.turning_parts[wheel.name]
+
+            wheel.data.transform(Matrix.Translation(-axle))
+            wheel.location = axle
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         bpy.ops.export_scene.gltf(
@@ -449,6 +487,17 @@ class Builder:
         output_path.with_suffix(".json").write_text(json.dumps(sidecar, indent=1), encoding="utf-8", newline="\n")
 
         return sidecar
+
+    def join_turning_part(self, name: str, parts: list):
+        """The pieces of one turning part as a single object (the origin moves to the axle just before export)."""
+        ordered = untinted_first(parts)
+
+        with bpy.context.temp_override(active_object=ordered[0], selected_editable_objects=ordered):
+            bpy.ops.object.join()
+
+        ordered[0].name = name
+
+        return ordered[0]
 
 
 def stamp_buffer_hash(gltf_path: Path) -> None:

@@ -15,10 +15,68 @@
   {
    "x": 0.0,
    "width": 3.0,
-   "enterable": false
+   "enterable": true
   }
  ],
- "lights": [],
+ "ambient_volume": {
+  "min": [
+   -8.7,
+   0.7,
+   -0.3
+  ],
+  "max": [
+   8.7,
+   3.9,
+   -6.1
+  ]
+ },
+ "night_ambient": 0.1,
+ "lights": [
+  {
+   "position": [
+    -2.25,
+    2.66,
+    -3.2
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5,
+   "group": "day_lights"
+  },
+  {
+   "position": [
+    -2.25,
+    2.66,
+    -3.2
+   ],
+   "color": "FFC98A",
+   "energy": 1.5,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    2.25,
+    2.66,
+    -3.2
+   ],
+   "color": "FFE8CC",
+   "energy": 1.5,
+   "range": 7.5,
+   "group": "day_lights"
+  },
+  {
+   "position": [
+    2.25,
+    2.66,
+    -3.2
+   ],
+   "color": "FFC98A",
+   "energy": 1.5,
+   "range": 7.5,
+   "group": "night_lights"
+  }
+ ],
  "markers": {
   "door": [
    0.0,

@@ -11,7 +11,7 @@ import math
 
 from mathutils import Matrix
 
-from build_town_houses import STONE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, srgb
+from build_town_houses import STONE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, Opening, blender_to_godot, srgb
 from farm_colonial import (
     ACCENT,
     CAIADO,
@@ -24,6 +24,7 @@ from farm_colonial import (
     TIMBER,
     TIMBER_UV,
     hip_roof,
+    open_leaves,
     rafter_tails,
     slope_ribs,
     solid_hull,
@@ -31,6 +32,7 @@ from farm_colonial import (
     wall_frames,
     window,
 )
+from farm_sede_rooms import Rooms, boards, hollow_wall
 from shop_props_common import ring
 
 IDENTITY = Matrix.Identity(4)
@@ -44,14 +46,20 @@ def shade(tint: tuple, factor: float) -> tuple:
 
 # ---------- plank doors, platform and ladder ----------
 
-def plank_door(b: Builder, frame: Matrix, u: float, width: float, height: float, bottom: float = 0.0) -> None:
+def plank_door(b: Builder, frame: Matrix, u: float, width: float, height: float, bottom: float = 0.0, open_into: float = 0.0) -> None:
     """Big double door of vertical planks in the accent colour, with battens, a diagonal brace in each leaf, strap
-    hinges, ring handles, a timber lintel and jambs."""
+    hinges, ring handles, a timber lintel and jambs. open_into = thickness of a hollow wall: the leaves stand open
+    against its inner face."""
+    door_case(b, frame, u, width, height, bottom)
+
+    if open_into:
+        open_leaves(b, frame @ Matrix.Translation((0.0, 0.0, bottom)), u, width, height, True, open_into)
+        return
+
     leaf_width = width / 2.0
     plank_count = max(2, round(leaf_width / 0.2))
     plank = leaf_width / plank_count
     accent = srgb(ACCENT)
-    timber = srgb(TIMBER)
     iron = srgb(IRON)
 
     for side, index in itertools.product((-1, 1), range(plank_count)):
@@ -76,6 +84,11 @@ def plank_door(b: Builder, frame: Matrix, u: float, width: float, height: float,
             b.box((strap_from, -0.145, bottom + height * fraction - 0.04), (strap_to, -0.125, bottom + height * fraction + 0.04), "metal", iron, frame=frame)
 
         ring(b, (u + side * 0.16, -0.15, bottom + height * 0.45), 0.055, 0.013, "metal", IRON, frame, sides=8, tube_sides=4, axis="Y")
+
+
+def door_case(b: Builder, frame: Matrix, u: float, width: float, height: float, bottom: float) -> None:
+    """Timber jambs and lintel and a stone threshold around a plank door."""
+    timber = srgb(TIMBER)
 
     b.box((u - width / 2.0 - 0.25, -0.18, bottom), (u - width / 2.0, 0.0, bottom + height + 0.3), "wood", timber, frame=frame, uv=TIMBER_UV)
     b.box((u + width / 2.0, -0.18, bottom), (u + width / 2.0 + 0.25, 0.0, bottom + height + 0.3), "wood", timber, frame=frame, uv=TIMBER_UV)
@@ -126,8 +139,12 @@ TULHA_OVERHANG = 1.0
 TULHA_PITCH = 28.0
 TULHA_BAY = 2.25
 TULHA_DOOR_WIDTH = 3.0
+TULHA_DOOR_HEIGHT = 3.0
+TULHA_WALL = 0.3
+TULHA_TIE_BEAMS = (-6.75, -2.25, 2.25, 6.75)
 TULHA_LOADING_AXIS = 5.625
 TULHA_LOADING_SILL = 1.55
+TULHA_NIGHT_AMBIENT = 0.1  # ambient inside at night, lit by its two oil lamps
 
 
 def timber_frame(b: Builder, frame: Matrix, half: float, bays: int, gaps: tuple) -> None:
@@ -183,7 +200,7 @@ def tulha_front(b: Builder, frame: Matrix, half: float) -> None:
     gaps = ((0.0, TULHA_DOOR_WIDTH / 2.0 + 0.4), (TULHA_LOADING_AXIS, 0.95))
 
     timber_frame(b, frame, half, 8, gaps)
-    plank_door(b, frame, 0.0, TULHA_DOOR_WIDTH, 3.0, TULHA_BASE)
+    plank_door(b, frame, 0.0, TULHA_DOOR_WIDTH, TULHA_DOOR_HEIGHT, TULHA_BASE, open_into=TULHA_WALL)
     plank_door(b, frame, TULHA_LOADING_AXIS, 1.2, 1.6, TULHA_LOADING_SILL)
 
     for u in (-7.875, -5.625, -3.375, 3.375, 7.875):
@@ -214,8 +231,7 @@ def tulha(b: Builder, half: float, depth: float) -> dict:
 
     b.box((-half - 0.1, -0.1, 0.0), (half + 0.1, depth + 0.1, TULHA_BASE - 0.1), "stone", stone)
     b.box((-half - 0.14, -0.14, TULHA_BASE - 0.12), (half + 0.14, depth + 0.14, TULHA_BASE), "trim", srgb(CREAM))
-    b.box((-half, 0.0, TULHA_BASE), (half, depth, TULHA_WALL_TOP), "plaster", srgb(CAIADO))
-    b.collider((-half - 0.1, 0.0, 0.0), (half + 0.1, depth + 0.1, TULHA_WALL_TOP + 0.2))
+    tulha_inside(b, frames, half, depth)
 
     for vent in (-6.0, -1.5, 1.5, 6.0):
         b.box((vent - 0.2, -0.14, 0.18), (vent + 0.2, -0.09, 0.45), "glass", (1.0, 1.0, 1.0), frame=frames["front"])
@@ -227,7 +243,60 @@ def tulha(b: Builder, half: float, depth: float) -> dict:
     rafter_tails(b, (roof_half, -TULHA_OVERHANG, depth + TULHA_OVERHANG), (half, 0.0, depth), TULHA_EAVE, spacing=0.75)
     b.marker("door", (0.0, -2.2, 0.0))
 
-    return {"lot_width": half * 2.0, "lot_depth": depth, "doors": [{"x": 0.0, "width": TULHA_DOOR_WIDTH, "enterable": False}]}
+    return {
+        "lot_width": half * 2.0,
+        "lot_depth": depth,
+        "doors": [{"x": 0.0, "width": TULHA_DOOR_WIDTH, "enterable": True}],
+        "ambient_volume": tulha_volume(half, depth),
+        "night_ambient": TULHA_NIGHT_AMBIENT,
+    }
+
+
+def tulha_volume(half: float, depth: float) -> dict:
+    """Box (model-local Godot coords) of the air inside the tulha for the interior ambient probe."""
+    low = blender_to_godot((-half + TULHA_WALL, TULHA_WALL, TULHA_BASE))
+    high = blender_to_godot((half - TULHA_WALL, depth - TULHA_WALL, TULHA_WALL_TOP))
+
+    return {"min": low, "max": high}
+
+
+def tulha_inside(b: Builder, frames: dict, half: float, depth: float) -> None:
+    """Hollow walls (only the big door is open), a board floor, tie beams under the roof, and the coffee store:
+    bins of dried coffee along the back, sacks by the walls, the scale, the tool rack and lamps on the beams."""
+    door = Opening(0.0, TULHA_DOOR_WIDTH, TULHA_BASE, TULHA_DOOR_HEIGHT)
+    spans = {"front": half, "back": half, "west": depth / 2.0 - TULHA_WALL, "east": depth / 2.0 - TULHA_WALL}
+    rooms = Rooms(b, half, depth, TULHA_BASE + 0.02, TULHA_WALL_TOP)
+    inner = {"back": depth - TULHA_WALL, "front": TULHA_WALL, "west": -half + TULHA_WALL, "east": half - TULHA_WALL}
+
+    for wall, span in spans.items():
+        hollow_wall(b, frames[wall], -span, span, TULHA_BASE, TULHA_WALL_TOP, [door] if wall == "front" else [], thickness=TULHA_WALL)
+
+    boards(b, (inner["west"], inner["east"], inner["front"], inner["back"]), TULHA_BASE, rooms.floor, ROUGH_WOOD)
+    b.collider((-half, 0.0, 0.0), (half, depth, rooms.floor))
+
+    for beam_x in TULHA_TIE_BEAMS:
+        b.box((beam_x - 0.1, inner["front"], TULHA_WALL_TOP - 0.24), (beam_x + 0.1, inner["back"], TULHA_WALL_TOP), "wood", srgb(TIMBER), uv=TIMBER_UV)
+
+    for bin_x in (-7.45, -5.15, 5.15, 7.45):
+        rooms.against("north", "coffee_bin", bin_x, inner["back"])
+
+    rooms.against("west", "sack_pile", 1.3, inner["west"])
+    rooms.against("west", "sack_pile", 2.95, inner["west"])
+    rooms.against("south", "sack_pile", -5.6, inner["front"])
+    rooms.against("south", "sack_pile", 3.4, inner["front"])
+    rooms.against("east", "farm_tool_rack", 3.2, inner["east"])
+    rooms.against("north", "sack_pile", 2.4, inner["back"])
+    rooms.put("decimal_scale", -2.4, 3.4, 90.0)
+    rooms.put("pilao", 2.6, 2.0)
+    rooms.put("coffee_floor_heap", -4.8, 3.0, 8.0)
+    rooms.against("north", "sack_pile", -2.6, inner["back"], seed=5)
+    rooms.against("east", "sack_pile", 1.3, inner["east"], seed=6)
+
+    for basket_x, basket_y, seed in ((-2.75, 4.3, 1), (-2.6, 3.65, 2), (-2.95, 2.4, 3), (4.1, 1.0, 4)):
+        rooms.put("coffee_basket", basket_x, basket_y, seed=seed)
+
+    for lamp_x in TULHA_TIE_BEAMS[1:3]:
+        rooms.put("hanging_oil_lamp", lamp_x, depth / 2.0, z=TULHA_WALL_TOP - 0.24)
 
 
 # ---------- the rancho (animal shelter on round posts) ----------

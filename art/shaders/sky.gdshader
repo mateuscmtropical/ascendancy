@@ -1,8 +1,10 @@
 shader_type sky;
 // Céu procedural da cidade: gradiente azul saturado de dia (zênite #5C8FD1, horizonte #D7EEF5), pôr do
-// sol quente, noite escura sem poluição luminosa com estrelas densas, a faixa da Via Láctea, duas
-// galáxias distantes e a lua; nuvens que andam devagar; estrelas cadentes e eclipses vindos de
-// features/sky/day_night_cycle.gd. Tudo na direção do olhar (EYEDIR), sem textura.
+// sol quente, noite azul-marinho quase preta com milhares de estrelas nítidas (quentes e frias) num
+// campo ralo e juntas em dois braços longos de um redemoinho, as mais fortes com halo e raios de
+// difração, um astro dourado no fim do braço quente e a lua; nuvens que andam devagar (ralas de
+// noite); estrelas cadentes e eclipses vindos de features/sky/day_night_cycle.gd. Tudo na direção
+// do olhar (EYEDIR), sem textura.
 // Desempenho: o Godot refaz a radiância (luz ambiente e reflexo vindos do céu) sempre que um uniform
 // do material muda ou o shader lê TIME. Por isso o tempo que move nuvens e estrelas é o global
 // sky_time (não suja o material) e o script só reescreve sol, lua e quantidades quando a mudança
@@ -10,17 +12,19 @@ shader_type sky;
 
 const int METEOR_SLOTS = 8;
 const int CLOUD_OCTAVES = 5;
-const int DUST_OCTAVES = 4;
 
 uniform vec3 zenith_day_color : source_color = vec3(0.361, 0.561, 0.82);
 uniform vec3 horizon_day_color : source_color = vec3(0.843, 0.933, 0.961);
-uniform vec3 zenith_night_color : source_color = vec3(0.008, 0.012, 0.035);
-uniform vec3 horizon_night_color : source_color = vec3(0.03, 0.045, 0.09);
+uniform vec3 zenith_night_color : source_color = vec3(0.004, 0.006, 0.02);
+uniform vec3 horizon_night_color : source_color = vec3(0.016, 0.024, 0.05);
 uniform vec3 sunset_color : source_color = vec3(1.0, 0.55, 0.3);
 uniform vec3 sun_color : source_color = vec3(1.0, 0.886, 0.69);
 uniform vec3 ground_color : source_color = vec3(0.35, 0.42, 0.33);
 uniform vec3 cloud_color : source_color = vec3(1.0, 1.0, 1.0);
 uniform vec3 moon_color : source_color = vec3(0.92, 0.94, 1.0);
+uniform vec3 warm_star_color : source_color = vec3(1.0, 0.82, 0.6);
+uniform vec3 cool_star_color : source_color = vec3(0.72, 0.84, 1.0);
+uniform vec3 orb_color : source_color = vec3(1.0, 0.78, 0.5);
 
 // Tempo de jogo em segundos (global de project.godot, day_night_cycle.gd escreve a cada quadro).
 global uniform float sky_time;
@@ -42,7 +46,16 @@ uniform float cloud_coverage : hint_range(0.0, 1.0) = 0.42;
 uniform float cloud_scale = 1.6;
 uniform vec2 cloud_wind = vec2(0.012, 0.004);
 uniform float star_density : hint_range(0.0, 1.0) = 0.9;
-uniform vec3 galaxy_plane_normal = vec3(0.42, 0.3, 0.86);
+// Redemoinho de estrelas: centro (ao norte, ~54° de altura, longe do caminho da lua), quanto os
+// braços enrolam, achatamento, nitidez dos braços e até onde vão (ângulo em radianos do centro).
+uniform vec3 swirl_center = vec3(-0.3, 0.8, -0.5);
+uniform float swirl_twist : hint_range(0.0, 6.0) = 3.0;
+uniform float swirl_squash : hint_range(0.5, 3.0) = 1.5;
+uniform float swirl_arm_sharpness : hint_range(1.0, 30.0) = 5.0;
+uniform float swirl_reach : hint_range(0.5, 3.0) = 1.8;
+// Astro dourado parado na ponta de dentro do braço quente.
+uniform vec3 orb_direction = vec3(-0.548, 0.787, -0.282);
+uniform float orb_size : hint_range(0.0, 0.05) = 0.018;
 // Além deste ângulo (radianos) do centro da lua o brilho dela é menor que 1e-5: nem calcula.
 uniform float moon_reach = 0.3;
 
@@ -149,38 +162,112 @@ vec3 moon_disc(vec3 direction, float night_amount) {
 }
 
 
-float milky_way(vec3 direction) {
-	vec3 normal = normalize(galaxy_plane_normal);
-	float band_offset = dot(direction, normal);
-	float band = exp(-band_offset * band_offset * 28.0);
-	float core = exp(-pow(length(direction - normalize(cross(normal, vec3(0.0, 1.0, 0.0)) + vec3(0.0, 0.25, 0.0))), 2.0) * 3.0);
-	float clouds = fractal_noise(direction * 6.0, DUST_OCTAVES);
-	float dust = smoothstep(0.42, 0.62, fractal_noise(direction * 11.0 + vec3(5.0), DUST_OCTAVES)) * exp(-band_offset * band_offset * 120.0);
+// Redemoinho de estrelas: dois braços em espiral logarítmica em volta de swirl_center, medidos pelo
+// ângulo até o centro (achatado em swirl_squash), por isso os braços passam do zênite e descem do
+// outro lado do céu. Devolve (densidade do braço 0..1, quanto é o braço quente 0..1).
+vec2 star_swirl(vec3 direction) {
+	vec3 center = normalize(swirl_center);
+	vec3 side = normalize(cross(center, vec3(0.0, 1.0, 0.0)));
+	vec3 rise = cross(side, center);
+	vec2 plane = vec2(dot(direction, side), dot(direction, rise));
+	vec2 squashed = plane * vec2(1.0, swirl_squash);
+	float angle_to_center = atan(length(plane), dot(direction, center));
+	float radius = max(angle_to_center * length(squashed) / max(length(plane), 0.0001), 0.001);
+	float arm_phase = atan(squashed.y, squashed.x) - swirl_twist * log(radius);
+	float arm = pow(0.5 + 0.5 * cos(2.0 * arm_phase), swirl_arm_sharpness);
+	float reach = smoothstep(0.18, 0.38, radius) * (1.0 - smoothstep(swirl_reach * 0.6, swirl_reach, radius));
+	float clumps = smoothstep(0.25, 0.75, value_noise_3d(direction * 9.0));
+	float warmth = smoothstep(-0.35, 0.35, cos(arm_phase));
 
-	return band * (0.35 + 0.9 * clouds) * (1.0 + 1.5 * core) * (1.0 - 0.85 * dust);
+	return vec2(arm * reach * mix(0.45, 1.0, clumps), warmth);
 }
 
 
-float star_field(vec3 direction, float twinkle_time) {
-	vec3 cell_point = direction * 260.0;
-	vec3 cell = floor(cell_point);
-	float chance = hash_3d(cell);
-	vec3 star_center = cell + vec3(hash_3d(cell + 11.0), hash_3d(cell + 23.0), hash_3d(cell + 37.0)) * 0.6 + 0.2;
-	float distance_to_star = length(cell_point - star_center);
-	float brightness = pow(hash_3d(cell + 51.0), 6.0) * 3.0 + 0.25;
-	float twinkle = 0.75 + 0.25 * sin(twinkle_time * (2.0 + 4.0 * hash_3d(cell + 7.0)) + chance * 40.0);
-	float is_star = step(1.0 - 0.09 * star_density, chance);
+// Raio de difração: forte e fino no eixo, apagando até spike_length (em células) da estrela.
+float diffraction_ray(float along, float across, float spike_length, float ray_width) {
+	float fade = 1.0 - smoothstep(0.0, spike_length, abs(along));
 
-	return is_star * brightness * twinkle * smoothstep(0.35, 0.0, distance_to_star);
+	return fade * fade * exp(-abs(across) / ray_width);
 }
 
 
-float distant_galaxy(vec3 direction, vec3 center, vec3 axis, float size) {
-	vec3 offset = direction - normalize(center);
-	float along = dot(offset, normalize(axis));
-	float across = length(offset - normalize(axis) * along);
+// Face do cubo que a direção atravessa: colunas = eixo da face (com sinal), eixo u, eixo v.
+mat3 cube_face_axes(vec3 direction) {
+	vec3 magnitude = abs(direction);
+	vec3 side = sign(direction);
 
-	return exp(-(along * along) / (size * size) - (across * across) / (size * size * 0.12));
+	if (magnitude.x >= magnitude.y && magnitude.x >= magnitude.z) {
+		return mat3(vec3(side.x, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0));
+	}
+
+	if (magnitude.y >= magnitude.z) {
+		return mat3(vec3(0.0, side.y, 0.0), vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0));
+	}
+
+	return mat3(vec3(0.0, 0.0, side.z), vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+}
+
+
+// Uma camada de estrelas em células de ângulo igual sobre as faces do cubo (cada célula cobre quase o
+// mesmo pedaço do céu, a borda da face cai na borda da célula): no máximo uma estrela por célula,
+// parada no céu, sem tremer. A chance soma o campo ralo e o braço do redemoinho medido na estrela;
+// tamanho, brilho e cor (quente ou fria, puxada pela cor do braço) vêm do hash da célula. Estrelas
+// com raios de difração ficam longe da borda da célula para o raio não ser cortado.
+vec3 star_layer(vec3 direction, mat3 face, vec2 face_angles, float cells_per_face, float field_chance, float swirl_chance, float star_radius, float spike_length, float brightness) {
+	float cells_per_radian = cells_per_face / (0.5 * PI);
+	vec2 cell = floor(face_angles * cells_per_radian);
+	vec3 cell_key = vec3(cell, dot(face[0], vec3(1.0, 3.0, 9.0)) * 1000.0 + cells_per_face);
+	float chance = hash_3d(cell_key);
+
+	if (chance < 1.0 - (field_chance + swirl_chance) * star_density) {
+		return vec3(0.0);
+	}
+
+	// Célula de ângulo igual mede 0,71 a 1 do ângulo nominal: a folga cobre o pior caso.
+	float margin = min(max(star_radius, spike_length) * 1.42, 0.49);
+	vec2 jitter = vec2(hash_3d(cell_key + 11.0), hash_3d(cell_key + 23.0));
+	vec2 star_angles = (cell + margin + jitter * (1.0 - 2.0 * margin)) / cells_per_radian;
+	vec2 star_plane = tan(star_angles);
+	vec3 star_direction = normalize(face[0] + face[1] * star_plane.x + face[2] * star_plane.y);
+	float plane_stretch = 1.0 + dot(star_plane, star_plane);
+	float cell_area = (1.0 + star_plane.x * star_plane.x) * (1.0 + star_plane.y * star_plane.y) / pow(plane_stretch, 1.5);
+	vec2 swirl = star_swirl(star_direction);
+	float has_star = step(1.0 - (field_chance + swirl_chance * swirl.x) * star_density * cell_area, chance);
+	vec3 offset = (direction - star_direction) * cells_per_radian;
+	// Raios na vertical e na horizontal do céu; o desvio mínimo só evita divisão por zero no zênite.
+	vec3 across = normalize(cross(vec3(0.0, 1.0, 0.0), star_direction) + vec3(0.0, 0.0, 0.0001));
+	vec2 flat_offset = vec2(dot(offset, across), dot(offset, cross(star_direction, across)));
+	vec2 diagonal_offset = vec2(flat_offset.x + flat_offset.y, flat_offset.x - flat_offset.y) * 0.7071;
+	float size_roll = hash_3d(cell_key + 51.0);
+	float radius = star_radius * mix(0.55, 1.0, size_roll);
+	float distance_to_star = length(flat_offset);
+	float core = smoothstep(radius, radius * 0.35, distance_to_star);
+	float halo = exp(-3.0 * distance_to_star / radius) * 0.5;
+	float ray_width = radius * 0.1;
+	float spikes = 0.0;
+	float twinkle = 0.8 + 0.2 * sin(sky_time * (1.5 + 3.0 * hash_3d(cell_key + 7.0)) + chance * 40.0);
+	float warmth = clamp(swirl.x * (swirl.y - 0.5) * 1.6 + hash_3d(cell_key + 63.0), 0.0, 1.0);
+	vec3 tint = mix(cool_star_color, warm_star_color, warmth);
+	float shine = brightness * mix(0.3, 1.0, size_roll * size_roll) * (1.0 + 0.5 * swirl.x);
+
+	if (spike_length > 0.0) {
+		spikes = diffraction_ray(flat_offset.x, flat_offset.y, spike_length, ray_width)
+			+ diffraction_ray(flat_offset.y, flat_offset.x, spike_length, ray_width)
+			+ 0.3 * diffraction_ray(diagonal_offset.x, diagonal_offset.y, spike_length * 0.45, ray_width)
+			+ 0.3 * diffraction_ray(diagonal_offset.y, diagonal_offset.x, spike_length * 0.45, ray_width);
+	}
+
+	return tint * shine * twinkle * has_star * (core + halo + spikes * 0.8);
+}
+
+
+// Astro dourado: disco creme com halo laranja, menor que a lua.
+vec3 swirl_orb(vec3 direction) {
+	float angle = acos(clamp(dot(direction, normalize(orb_direction)), -1.0, 1.0));
+	float disc = smoothstep(orb_size, orb_size * 0.8, angle);
+	float glow = exp(-2.0 * angle / orb_size) * 1.4 + exp(-angle * 30.0) * 0.08;
+
+	return orb_color * (disc * 3.0 + glow);
 }
 
 
@@ -189,14 +276,18 @@ vec3 night_sky(vec3 direction, float night_amount) {
 		return vec3(0.0);
 	}
 
-	float stars = star_field(direction, sky_time);
-	float galaxy_band = milky_way(direction);
-	float galaxies = distant_galaxy(direction, vec3(-0.5, 0.62, 0.6), vec3(1.0, 0.3, 0.2), 0.035)
-		+ distant_galaxy(direction, vec3(0.7, 0.45, -0.55), vec3(0.2, 1.0, 0.4), 0.025) * 0.7;
-	vec3 band_color = mix(vec3(0.55, 0.62, 0.85), vec3(0.95, 0.85, 0.7), galaxy_band * 0.6);
+	mat3 face = cube_face_axes(direction);
+	vec2 face_plane = vec2(dot(direction, face[1]), dot(direction, face[2])) / dot(direction, face[0]);
+	vec2 face_angles = atan(face_plane);
+	// Camadas (células por face, chance no campo, chance a mais no braço, raio e raio de difração em
+	// células, brilho): poeira fina, estrelas médias com halo, brilhantes com raios e raros faróis.
+	vec3 dust_stars = star_layer(direction, face, face_angles, 174.0, 0.06, 0.9, 0.15, 0.0, 0.7);
+	vec3 medium_stars = star_layer(direction, face, face_angles, 68.0, 0.009, 0.55, 0.11, 0.0, 1.8);
+	vec3 bright_stars = star_layer(direction, face, face_angles, 16.0, 0.012, 0.92, 0.04, 0.17, 4.0);
+	vec3 beacon_stars = star_layer(direction, face, face_angles, 4.0, 0.0, 0.8, 0.015, 0.165, 8.0);
 	float horizon_fade = smoothstep(0.0, 0.18, direction.y);
 
-	return (vec3(stars) + band_color * galaxy_band * 0.42 + vec3(0.8, 0.75, 0.95) * galaxies * 0.45)
+	return (dust_stars + medium_stars + bright_stars + beacon_stars + swirl_orb(direction))
 		* night_amount * horizon_fade;
 }
 
@@ -263,6 +354,6 @@ void sky() {
 
 		color += heavens + moon_disc(direction, max(night_amount, 0.35)) + sun_disc(direction);
 		color += vec3(1.0, 0.95, 0.85) * meteors;
-		COLOR = mix(color, clouds.rgb, clouds.a * (1.0 - 0.15 * night_amount));
+		COLOR = mix(color, clouds.rgb, clouds.a * (1.0 - 0.9 * night_amount));
 	}
 }

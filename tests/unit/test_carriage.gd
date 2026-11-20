@@ -29,3 +29,40 @@ func test_point_along_wraps_around_laps() -> void:
 
 	assert_almost_eq(first_lap.distance_to(third_lap), 0.0, 0.001)
 	assert_almost_eq(first_lap.distance_to(backwards), 0.0, 0.001)
+
+
+func test_wheels_roll_with_the_distance_travelled() -> void:
+	var carriage: Carriage = _build_moving_carriage()
+	var wheel: MeshInstance3D = carriage.find_child("WheelL", true, false) as MeshInstance3D
+	var radius: float = wheel.get_aabb().size.y / 2.0
+
+	await wait_physics_frames(30)
+
+	assert_almost_eq(wheel.rotation.x, fposmod(carriage.get_travelled() / radius, TAU), 0.001)
+	assert_gt(wheel.rotation.x, 0.0)
+
+
+func test_horse_walks_in_step_with_the_carriage() -> void:
+	var carriage: Carriage = _build_moving_carriage()
+	var animation_player: AnimationPlayer = (
+		carriage.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	)
+
+	assert_eq(animation_player.current_animation, String(Carriage.WALK_ANIMATION))
+	assert_almost_eq(
+		animation_player.speed_scale, carriage.speed / Carriage.HORSE_STRIDE_SPEED, 0.001
+	)
+	assert_eq(
+		animation_player.get_animation(Carriage.WALK_ANIMATION).loop_mode, Animation.LOOP_LINEAR
+	)
+
+
+func _build_moving_carriage() -> Carriage:
+	var carriage: Carriage = Carriage.new()
+
+	carriage.wagon_scene = load("res://art/town/farm/farm_wagon.gltf")
+	carriage.horse_scene = load("res://art/town/farm/animals/horse_harness.gltf")
+	carriage.route = SQUARE_ROUTE
+	add_child_autofree(carriage)
+
+	return carriage
