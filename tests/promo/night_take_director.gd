@@ -1,8 +1,9 @@
 class_name NightTakeDirector
 extends Node
-## Plano-sequência "Uma noite em Ascendancy", sem cortes: a câmera de jogo segue a heroína
-## da praça no fim da tarde até a cripta e de volta, já de noite, e sobe para o céu no fim.
-## Pernas em NightTakeRoute.LEGS; hora do dia em NightTakeRoute.TIME_KEYS.
+## Plano-sequência "Uma noite em Ascendancy", sem cortes: a heroína vai da praça no fim da
+## tarde até a cripta e volta já de noite, e a câmera sobe para o céu no fim. A lente não é a
+## câmera de jogo: cada perna diz de que lado dela filmar (NightTakeRoute) e a câmera gira em
+## volta dela de uma perna à outra, sempre com o rosto ou o caminho no quadro.
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const CHARACTER_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
@@ -15,11 +16,23 @@ const GROUND_PROBE_UP: float = 1.2
 const GROUND_PROBE_DOWN: float = 2.4
 const ACTOR_AVOIDANCE_RADIUS: float = 0.5
 const HEAD_HEIGHT: float = 1.55
-const CAMERA_WALL_MARGIN: float = 0.25
-const CAMERA_FOLLOW_RATE: float = 3.0
-const CAMERA_TURN_RATE: float = 2.2
-const ZOOM_RATE: float = 1.5
+const CAMERA_WALL_MARGIN: float = 0.3
+const FRAMING_RATE: float = 1.1
+const CAMERA_HEADING_RATE: float = 1.6
+const CAMERA_SETTLE_RATE: float = 9.0
+const ANCHOR_RATE: float = 2.2
 const LOOK_AHEAD: float = 2.0
+const LANTERN_BONE: StringName = &"hand_r"
+const LANTERN_COLOR: Color = Color(1.0, 0.68, 0.36)
+const LANTERN_ENERGY: float = 2.4
+const LANTERN_RANGE: float = 7.5
+const LANTERN_FADE_SECONDS: float = 1.2
+## Morador a menos disso dela é empurrado de lado: o avoidance do jogo deixa passar colado.
+const PERSONAL_SPACE: float = 1.1
+const LENS_SPACE: float = 1.8
+## Lados tentados em volta dela quando uma parede tapa a lente (graus somados ao "orbit").
+const DODGE_ORBITS: Array[float] = [0.0, 35.0, -35.0, 70.0, -70.0, 110.0, -110.0]
+const DODGE_RATE: float = 3.0
 const CRANE_RISE: float = 2.5
 const END_HOLD_SECONDS: float = 3.0
 
@@ -35,8 +48,16 @@ var _elapsed_seconds: float = 0.0
 var _total_seconds: float = 0.0
 var _ground_height: float = 0.0
 var _heading: Vector3 = Vector3.LEFT
-var _camera_distance: float = 4.0
-var _camera_height: float = 1.9
+var _orbit: float = 0.0
+var _camera_distance: float = 3.2
+var _camera_height: float = 1.6
+var _camera_heading: Vector3 = Vector3.LEFT
+var _anchor_weight: float = 0.0
+var _anchor: Vector3
+var _lantern: OmniLight3D
+var _lantern_lit_at: float = -1.0
+var _dodge: float = 0.0
+var _villagers: Array[Node] = []
 var _crane_from: Transform3D
 var _passage: SecretPassage
 var _presence: AnimatableBody3D
@@ -51,7 +72,6 @@ func _ready() -> void:
 	while NavigationServer3D.map_get_iteration_id(camera.get_world_3d().navigation_map) == 0:
 		await get_tree().physics_frame
 
-	_route_legs_on_navmesh()
 	_measure_legs()
 	_passage = hub.find_child(PASSAGE_NODE_NAME, true, false) as SecretPassage
 
@@ -59,12 +79,17 @@ func _ready() -> void:
 	add_child(actor)
 	actor.set_body(BODY_SCENE, HAIR_COLOR)
 	_add_presence()
+	_add_lantern()
+	_villagers = hub.find_children("*", "WalkingNpc", true, false)
 	_heading = PathWalk.heading_along(_legs[0]["path"], 0.0).normalized()
+	_camera_heading = _heading
 	_update_actor(_legs[0])
 
 	camera.make_current()
 	_start_leg(0)
-	_place_camera_behind()
+	_frame_toward(_legs[0], 1.0)
+	camera.global_position = _orbit_position()
+	camera.look_at(_look_target())
 
 
 func _process(delta: float) -> void:
@@ -87,23 +112,9 @@ func _process(delta: float) -> void:
 	hub.set_time_of_day(_time_of_day_at(_elapsed_seconds))
 	_update_actor(leg)
 	_update_camera(leg, delta)
-
-
-## Pernas com "navigate": o caminho vira a rota da navmesh dos NPCs entre as pontas,
-## então a heroína contorna bancos e canteiros como um jogador faria.
-func _route_legs_on_navmesh() -> void:
-	var map: RID = camera.get_world_3d().navigation_map
-
-	for leg in _legs:
-		if not leg.get("navigate", false):
-			continue
-
-		var route: PackedVector3Array = NavigationServer3D.map_get_path(
-			map, leg["path"][0], leg["path"][-1], true
-		)
-
-		if route.size() >= 2:
-			leg["path"] = Array(route)
+	_update_lantern()
+	_hide_prompt()
+	_keep_villagers_apart()
 
 
 ## Duração de cada perna: caminho / velocidade, ou "seconds" nas paradas e no guindaste.
@@ -142,6 +153,9 @@ func _start_leg(index: int) -> void:
 
 	if leg.get("open_passage", false) and not _passage.is_open:
 		_passage.toggle()
+
+	if leg.get("lantern", false) and _lantern_lit_at < 0.0:
+		_lantern_lit_at = _elapsed_seconds
 
 	if action.is_empty():
 		actor.play_animation(
@@ -197,33 +211,76 @@ func _probe_ground(point: Vector3) -> float:
 
 func _update_camera(leg: Dictionary, delta: float) -> void:
 	var head: Vector3 = actor.global_position + Vector3.UP * HEAD_HEIGHT
+	var rate: float = leg.get("rate", 1.0)
 	var wanted: Vector3
-	var look_target: Vector3
-	var rate: float = leg.get("camera_rate", 1.0)
 
 	if leg.get("crane", false):
 		_update_crane(leg, head)
 
 		return
 
-	_camera_distance = lerpf(_camera_distance, leg.get("camera_distance", 4.0), delta * ZOOM_RATE)
-	_camera_height = lerpf(_camera_height, leg.get("camera_height", 1.9), delta * ZOOM_RATE)
-	wanted = head - _heading * _camera_distance + Vector3.UP * (_camera_height - HEAD_HEIGHT)
-	wanted = _keep_off_walls(head, wanted)
-	look_target = head + _heading * LOOK_AHEAD
-
-	if leg.has("camera_at"):
-		wanted = leg["camera_at"]
-		look_target = head
-
-	# A câmera chega atrasada: na curva ela varre por fora, então o ponto já suavizado
-	# também é puxado para fora da parede, senão o quadro fica dentro da pedra.
-	camera.global_position = _keep_off_walls(
-		head, camera.global_position.lerp(wanted, minf(1.0, delta * CAMERA_FOLLOW_RATE * rate))
+	_frame_toward(leg, minf(1.0, delta * FRAMING_RATE * rate))
+	_camera_heading = _turned(
+		_camera_heading, _heading, minf(1.0, delta * CAMERA_HEADING_RATE * rate)
 	)
-	camera.global_transform = camera.global_transform.interpolate_with(
-		camera.global_transform.looking_at(look_target), minf(1.0, delta * CAMERA_TURN_RATE * rate)
+	_anchor = leg.get("camera_at", _anchor)
+	_anchor_weight = move_toward(
+		_anchor_weight, 1.0 if leg.has("camera_at") else 0.0, delta * ANCHOR_RATE
 	)
+	_dodge = rad_to_deg(
+		lerp_angle(
+			deg_to_rad(_dodge), deg_to_rad(_clear_dodge(head)), minf(1.0, delta * DODGE_RATE)
+		)
+	)
+	wanted = _keep_off_walls(head, _orbit_position(_dodge))
+	wanted = wanted.lerp(_anchor, smoothstep(0.0, 1.0, _anchor_weight))
+	camera.global_position = camera.global_position.lerp(
+		wanted, minf(1.0, delta * CAMERA_SETTLE_RATE)
+	)
+	camera.look_at(_look_target().lerp(head, _anchor_weight))
+
+
+## Lente em volta da heroína: "orbit" graus a partir das costas, na distância e altura da perna.
+func _orbit_position(dodge: float = 0.0) -> Vector3:
+	var around: Vector3 = (-_camera_heading).rotated(Vector3.UP, deg_to_rad(_orbit + dodge))
+
+	return actor.global_position + around * _camera_distance + Vector3.UP * _camera_height
+
+
+## Desvio de órbita com a lente mais longe da parede: em corredor a câmera contorna a heroína
+## em vez de encostar na cabeça dela.
+func _clear_dodge(head: Vector3) -> float:
+	var best: float = _dodge
+	var best_reach: float = -1.0
+
+	for dodge in DODGE_ORBITS:
+		var spot: Vector3 = _keep_off_walls(head, _orbit_position(dodge))
+		var reach: float = spot.distance_to(head)
+
+		if reach >= _camera_distance * 0.9:
+			return dodge
+
+		if reach > best_reach:
+			best = dodge
+			best_reach = reach
+
+	return best
+
+
+## De costas a lente olha à frente dela; de frente, para o rosto.
+func _look_target() -> Vector3:
+	var head: Vector3 = actor.global_position + Vector3.UP * HEAD_HEIGHT
+	var ahead: float = LOOK_AHEAD * maxf(0.0, cos(deg_to_rad(_orbit)))
+
+	return head + _camera_heading * ahead
+
+
+func _frame_toward(leg: Dictionary, weight: float) -> void:
+	var orbit: float = lerp_angle(deg_to_rad(_orbit), deg_to_rad(leg.get("orbit", _orbit)), weight)
+
+	_orbit = rad_to_deg(orbit)
+	_camera_distance = lerpf(_camera_distance, leg.get("distance", _camera_distance), weight)
+	_camera_height = lerpf(_camera_height, leg.get("height", _camera_height), weight)
 
 
 ## No fim a câmera sobe por trás da heroína e inclina até "look_up", no céu.
@@ -251,15 +308,6 @@ func _keep_off_walls(head: Vector3, wanted: Vector3) -> Vector3:
 		return wanted
 
 	return hit["position"] + (head - wanted).normalized() * CAMERA_WALL_MARGIN
-
-
-func _place_camera_behind() -> void:
-	var head: Vector3 = actor.global_position + Vector3.UP * HEAD_HEIGHT
-
-	camera.global_position = (
-		head - _heading * _camera_distance + Vector3.UP * (_camera_height - HEAD_HEIGHT)
-	)
-	camera.look_at(head + _heading * LOOK_AHEAD)
 
 
 func _time_of_day_at(seconds: float) -> float:
@@ -299,13 +347,80 @@ func _add_presence() -> void:
 	actor.add_child(_obstacle)
 
 
-## Gira o rumo pelo ângulo no plano: slerp de vetores quase opostos dá eixo torto na curva.
 func _turn_towards(direction: Vector3, weight: float) -> void:
-	var yaw: float = lerp_angle(
-		atan2(_heading.x, _heading.z), atan2(direction.x, direction.z), weight
-	)
+	_heading = _turned(_heading, direction, weight)
 
-	_heading = Vector3(sin(yaw), 0.0, cos(yaw))
+
+## Gira pelo ângulo no plano: slerp de vetores quase opostos dá eixo torto na curva.
+func _turned(from: Vector3, direction: Vector3, weight: float) -> Vector3:
+	var yaw: float = lerp_angle(atan2(from.x, from.z), atan2(direction.x, direction.z), weight)
+
+	return Vector3(sin(yaw), 0.0, cos(yaw))
+
+
+## Lanterna na mão direita: acesa na boca da escada, ilumina a cripta por onde ela passa.
+func _add_lantern() -> void:
+	var skeleton: Skeleton3D = actor.find_child("Skeleton3D", true, false)
+	var hand: BoneAttachment3D = BoneAttachment3D.new()
+	var body: MeshInstance3D = MeshInstance3D.new()
+	var glass: CylinderMesh = CylinderMesh.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+
+	hand.bone_name = LANTERN_BONE
+	skeleton.add_child(hand)
+	glass.top_radius = 0.06
+	glass.bottom_radius = 0.075
+	glass.height = 0.18
+	material.albedo_color = Color(0.25, 0.2, 0.15)
+	material.emission_enabled = true
+	material.emission = LANTERN_COLOR
+	material.emission_energy_multiplier = 0.0
+	glass.material = material
+	body.mesh = glass
+	body.position = Vector3(0.0, -0.16, 0.0)
+	hand.add_child(body)
+
+	_lantern = OmniLight3D.new()
+	_lantern.light_color = LANTERN_COLOR
+	_lantern.light_energy = 0.0
+	_lantern.omni_range = LANTERN_RANGE
+	_lantern.shadow_enabled = true
+	_lantern.position = Vector3(0.0, -0.1, 0.0)
+	body.add_child(_lantern)
+
+
+func _update_lantern() -> void:
+	var lit: float = 0.0
+	var glass: CylinderMesh = (_lantern.get_parent() as MeshInstance3D).mesh
+
+	if _lantern_lit_at >= 0.0:
+		lit = smoothstep(0.0, LANTERN_FADE_SECONDS, _elapsed_seconds - _lantern_lit_at)
+
+	_lantern.light_energy = LANTERN_ENERGY * lit
+	(glass.material as StandardMaterial3D).emission_energy_multiplier = 3.0 * lit
+
+
+## Moradores fora do espaço dela e da frente da lente: ninguém tapa o quadro.
+func _keep_villagers_apart() -> void:
+	for villager in _villagers:
+		_push_away(villager as Node3D, actor.global_position, PERSONAL_SPACE)
+		_push_away(villager as Node3D, camera.global_position, LENS_SPACE)
+
+
+func _push_away(villager: Node3D, center: Vector3, space: float) -> void:
+	var apart: Vector3 = _flat(villager.global_position - center)
+	var gap: float = apart.length()
+
+	if gap < space and gap > 0.01:
+		villager.global_position += apart / gap * (space - gap)
+
+
+## O aviso "E: empurrar" é do jogo; no vídeo a tela fica limpa.
+func _hide_prompt() -> void:
+	var prompt: Label3D = _passage.get_node_or_null("Prompt")
+
+	if prompt:
+		prompt.visible = false
 
 
 func _flat(vector: Vector3) -> Vector3:
