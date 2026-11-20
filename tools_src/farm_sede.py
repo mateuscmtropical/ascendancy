@@ -7,7 +7,7 @@ import math
 
 from mathutils import Matrix
 
-from build_town_houses import STONE, WOOD, Builder, Opening, srgb
+from build_town_houses import STONE, WOOD, Builder, Opening, blender_to_godot, srgb
 from farm_colonial import (
     ACCENT_LIGHT,
     CAIADO,
@@ -35,6 +35,7 @@ from shop_props_common import lathe
 BASE = 0.9  # stone plinth: the floor of the house and of the veranda
 WALL_HEIGHT = 3.9
 WALL_TOP = BASE + WALL_HEIGHT
+NIGHT_AMBIENT = 0.05  # ambient of the rooms at night, lit by their oil lamps (casarão wings use 0.08)
 EAVE = WALL_TOP + 0.18
 OVERHANG = 0.9
 HIP_PITCH = 27.0
@@ -78,7 +79,7 @@ def front_wall(b: Builder, frame: Matrix) -> list:
     fan_height = FRONT_DOOR[0] * 0.32 + 0.1
 
     for u in WINDOW_AXES:
-        window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE)
+        window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE, inside_glass=True)
 
     entrance_door(b, frame @ Matrix.Translation((0.0, 0.0, BASE)), 0.0, *FRONT_DOOR, open_into=WALL)
 
@@ -87,7 +88,7 @@ def front_wall(b: Builder, frame: Matrix) -> list:
 
 def back_wall(b: Builder, frame: Matrix) -> list:
     for u in WINDOW_AXES:
-        window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE)
+        window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE, inside_glass=True)
 
     entrance_door(b, frame @ Matrix.Translation((0.0, 0.0, BASE)), 0.0, *BACK_DOOR, double=False, fanlight=False, open_into=WALL)
     stone_stair(b, frame, 0.8, BASE, 0.0, 3, 0.36, name="BackStair")
@@ -97,7 +98,7 @@ def back_wall(b: Builder, frame: Matrix) -> list:
 
 def end_wall(b: Builder, frame: Matrix) -> list:
     for u in END_WINDOW_AXES:
-        window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE)
+        window(b, frame, u, WINDOW_BOTTOM, *WINDOW_SIZE, inside_glass=True)
 
     return window_openings(END_WINDOW_AXES)
 
@@ -219,4 +220,18 @@ def casa_grande(b: Builder, half: float, depth: float) -> dict:
     chimney(b, *CHIMNEY, WALL_TOP + 1.2, ridge_z + 0.9)
     b.marker("door", (0.0, -VERANDA_DEPTH - STAIR_STEPS * STAIR_TREAD - 0.4, 0.0))
 
-    return {"lot_width": half * 2.0, "lot_depth": depth, "doors": [{"x": 0.0, "width": FRONT_DOOR[0], "enterable": True}]}
+    return {
+        "lot_width": half * 2.0,
+        "lot_depth": depth,
+        "doors": [{"x": 0.0, "width": FRONT_DOOR[0], "enterable": True}],
+        "ambient_volume": interior_volume(half, depth),
+        "night_ambient": NIGHT_AMBIENT,
+    }
+
+
+def interior_volume(half: float, depth: float) -> dict:
+    """Box (model-local Godot coords) of the air inside the house for the interior ambient probe: floor to forro, walls to their inner faces."""
+    low = blender_to_godot((-half + WALL, WALL, BASE))
+    high = blender_to_godot((half - WALL, depth - WALL, WALL_TOP - 0.12))
+
+    return {"min": low, "max": high}

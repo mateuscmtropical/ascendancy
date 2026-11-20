@@ -32,6 +32,7 @@ FRONT_DOOR_Y = 3.4  # doors in the cross walls, front band
 BACK_DOOR_Y = 7.6  # and back band
 ALCOVE_DOOR_Y = 3.6
 LAMP_TINT = "FFC98A"
+NIGHT_LAMP_ENERGY = 1.0
 
 
 def load_props() -> dict:
@@ -68,7 +69,10 @@ class Rooms:
 
         if entry.get("light"):
             position, color, energy, light_range = entry["light"]
-            self.b.light(tuple(frame @ Vector(position)), color, energy, light_range)
+            lamp = tuple(frame @ Vector(position))
+
+            self.b.light(lamp, color, energy, light_range, None, "day_lights")  # the daylight that fills the rooms by day
+            self.b.light(lamp, LAMP_TINT, energy * NIGHT_LAMP_ENERGY, light_range, None, "night_lights")  # the lamp itself, lit at night only
 
     def against(self, wall: str, name: str, along: float, at: float, **options) -> None:
         """Prop with its back to a wall face: wall is the side the wall is on (north +y, south -y, east +x, west -x)."""

@@ -30,6 +30,7 @@ RIB_RADIUS = 0.07
 
 TIMBER_UV = ("band", *WOOD_DARK_BAND, 1.5)
 PLANK_UV = ("band", *WOOD_LIGHT_BAND, 1.5)
+INNER_PANE_DEPTH = 0.2  # the glass seen from inside a hollow wall: dark at night, behind the glass that glows outside
 
 
 # ---------- wall frames: one drawing helper, any wall ----------
@@ -205,13 +206,17 @@ def frange(start: float, stop: float, step: float) -> list:
 
 # ---------- openings ----------
 
-def window(b: Builder, frame: Matrix, u: float, bottom: float, width: float, height: float, shutters: bool = True, top: str = "segment") -> None:
+def window(b: Builder, frame: Matrix, u: float, bottom: float, width: float, height: float, shutters: bool = True, top: str = "segment", inside_glass: bool = False) -> None:
     """Tall window on a whitewashed wall: accent frame ring with a cream moulding, dark glass in a recessed plane,
     white glazing bars, sill on corbels and louvred shutters folded back against the wall."""
     opening = Opening(u, width, bottom, height, top)
     glass = opening.outline(0.0)
 
     b.prism(glass, -0.025, 0.0, "glass", WHITE, frame=frame)
+
+    if inside_glass:
+        b.pane(glass, INNER_PANE_DEPTH, "inner_glass", frame=frame)
+
     ring_prism(b, opening.outline(0.15), glass, -0.09, 0.0, "paint", srgb(ACCENT), frame)
     ring_prism(b, opening.outline(0.24), opening.outline(0.15), -0.06, 0.0, "trim", srgb(CREAM), frame, uv=("band", 0.44, 0.66, 1.0))
 
@@ -266,6 +271,9 @@ def entrance_door(b: Builder, frame: Matrix, u: float, width: float, leaf_height
         fan = Opening(u, width, leaf_height + 0.12, fan_height, "segment")
 
         b.prism(fan.outline(0.0), -0.04, 0.0, "glass", WHITE, frame=frame)
+
+        if open_into:
+            b.pane(fan.outline(0.0), INNER_PANE_DEPTH, "inner_glass", frame=frame)
 
         for spoke in range(-2, 3):
             tip = (u + spoke * width * 0.22, fan.apex - 0.08)

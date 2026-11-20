@@ -11,7 +11,7 @@ import math
 
 from mathutils import Matrix
 
-from build_town_houses import STONE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, Opening, srgb
+from build_town_houses import STONE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, Opening, blender_to_godot, srgb
 from farm_colonial import (
     ACCENT,
     CAIADO,
@@ -144,6 +144,7 @@ TULHA_WALL = 0.3
 TULHA_TIE_BEAMS = (-6.75, -2.25, 2.25, 6.75)
 TULHA_LOADING_AXIS = 5.625
 TULHA_LOADING_SILL = 1.55
+TULHA_NIGHT_AMBIENT = 0.1  # ambient inside at night, lit by its two oil lamps
 
 
 def timber_frame(b: Builder, frame: Matrix, half: float, bays: int, gaps: tuple) -> None:
@@ -242,7 +243,21 @@ def tulha(b: Builder, half: float, depth: float) -> dict:
     rafter_tails(b, (roof_half, -TULHA_OVERHANG, depth + TULHA_OVERHANG), (half, 0.0, depth), TULHA_EAVE, spacing=0.75)
     b.marker("door", (0.0, -2.2, 0.0))
 
-    return {"lot_width": half * 2.0, "lot_depth": depth, "doors": [{"x": 0.0, "width": TULHA_DOOR_WIDTH, "enterable": True}]}
+    return {
+        "lot_width": half * 2.0,
+        "lot_depth": depth,
+        "doors": [{"x": 0.0, "width": TULHA_DOOR_WIDTH, "enterable": True}],
+        "ambient_volume": tulha_volume(half, depth),
+        "night_ambient": TULHA_NIGHT_AMBIENT,
+    }
+
+
+def tulha_volume(half: float, depth: float) -> dict:
+    """Box (model-local Godot coords) of the air inside the tulha for the interior ambient probe."""
+    low = blender_to_godot((-half + TULHA_WALL, TULHA_WALL, TULHA_BASE))
+    high = blender_to_godot((half - TULHA_WALL, depth - TULHA_WALL, TULHA_WALL_TOP))
+
+    return {"min": low, "max": high}
 
 
 def tulha_inside(b: Builder, frames: dict, half: float, depth: float) -> None:
