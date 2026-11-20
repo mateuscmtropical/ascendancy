@@ -129,7 +129,7 @@ const LEGS: Array[Dictionary] = [
 	},
 	## Na curva da escada a lente passa para trás dela ainda no salão aberto e sobe atrás:
 	## de frente ela ficaria colada na parede do corredor estreito. Perto e baixa, para não
-## cortar a laje da nave na boca da escada.
+	## cortar a laje da nave na boca da escada.
 	{
 		"stance": PlayerController.Stance.RUN,
 		"path":

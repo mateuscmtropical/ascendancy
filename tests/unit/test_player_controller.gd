@@ -87,3 +87,52 @@ func test_flying_holds_altitude_without_gravity() -> void:
 	start_height = _player.global_position.y
 
 	assert_almost_eq(start_height, 5.0, 0.05, "no gravity while flying")
+
+
+func test_camera_never_drops_under_the_floor_when_looking_up() -> void:
+	var pitch_steps: int = 28
+
+	for step in pitch_steps + 1:
+		var pitch: float = lerpf(0.0, PlayerController.PITCH_MAX, float(step) / pitch_steps)
+		var camera_height: float = (
+			PlayerController.camera_pivot_height_for(pitch)
+			- PlayerController.camera_arm_length_for(pitch) * sin(pitch)
+		)
+
+		assert_gte(camera_height, PlayerController.LOOK_UP_CAMERA_HEIGHT - 0.001)
+
+
+func test_camera_stays_inside_when_a_wall_is_beside_the_player() -> void:
+	# Encostado na parede: o ombro da câmera (0,35 m) passaria do lado de fora dela.
+	var wall_x: float = 0.34
+	var camera: Camera3D
+
+	_add_wall(Vector3(wall_x + 0.5, 1.5, 0.0), Vector3(1.0, 3.0, 12.0))
+	await wait_physics_frames(3)
+	camera = get_viewport().get_camera_3d()
+
+	assert_lt(camera.global_position.x, wall_x, "camera on the player's side of the wall")
+
+
+func test_camera_stays_inside_when_a_wall_is_behind_the_player() -> void:
+	var wall_z: float = 1.0
+	var camera: Camera3D
+
+	_add_wall(Vector3(0.0, 1.5, wall_z + 0.5), Vector3(12.0, 3.0, 1.0))
+	await wait_physics_frames(3)
+	camera = get_viewport().get_camera_3d()
+
+	assert_lt(camera.global_position.z, wall_z, "camera in front of the wall")
+
+
+func _add_wall(center: Vector3, size: Vector3) -> void:
+	var wall_body: StaticBody3D = StaticBody3D.new()
+	var wall_shape: CollisionShape3D = CollisionShape3D.new()
+	var box: BoxShape3D = BoxShape3D.new()
+
+	box.size = size
+	wall_shape.shape = box
+	wall_body.add_child(wall_shape)
+	wall_body.position = center
+	add_child_autofree(wall_body)
+	_player.make_camera_current()
