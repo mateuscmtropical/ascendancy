@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://features/hub/secret_passage.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://art/town/cathedral_crypt_monument.gltf" id="2_model"]
@@ -14,6 +14,9 @@ size = Vector3(2.6, 2.4, 4.2)
 
 [sub_resource type="BoxShape3D" id="below_shape"]
 size = Vector3(1.6, 3.2, 3.6)
+
+[sub_resource type="BoxShape3D" id="path_shape"]
+size = Vector3(1.55, 2.85, 3.4)
 
 [node name="CryptMonument" type="Node3D"]
 script = ExtResource("1_script")
@@ -42,6 +45,15 @@ shape = SubResource("reach_shape")
 [node name="Below" type="CollisionShape3D" parent="Reach"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.725, -1.7, 0)
 shape = SubResource("below_shape")
+
+[node name="Path" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 6
+monitorable = false
+
+[node name="Collision" type="CollisionShape3D" parent="Path"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.775, 1.475, 0)
+shape = SubResource("path_shape")
 
 [node name="Prompt" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.8, 1.5, 0)
