@@ -23,6 +23,8 @@ Action RPG em terceira pessoa, fantasia estilizada (referências de clima: anime
 | Rodar Godot, testes, prints | `godot-run` |
 | Arte, cena, luz, shader, validação visual | `style-bible` |
 | Baixar/importar modelo, textura, animação, addon | `asset-intake` |
+| Vídeo de divulgação, trailer, teaser (listar os já feitos, não repetir) | `promo-video` |
+| Voz, música, modelo 3D ou arte gerados por IA; qualquer vídeo ou áudio (lembrar dos recursos) | `creative-tools` |
 
 Depois de editar código: `gdformat` + `gdlint` (zero aviso) + testes headless.
 
