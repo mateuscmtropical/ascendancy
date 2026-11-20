@@ -1,0 +1,133 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="1_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="2_ext"]
+
+[node name="CryptShots" type="Node3D"]
+
+[node name="Hub" parent="." instance=ExtResource("2_ext")]
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("1_ext")
+seconds_before_capture = 3.0
+
+[node name="MonumentAisle" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.0, 2.65, 6.0)
+rotation = Vector3(-0.20000, -2.35619, 0)
+fov = 72.0
+
+[node name="StairTop" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50.4, 2.75, 11.67)
+rotation = Vector3(-0.66323, 1.57080, 0)
+fov = 72.0
+
+[node name="StairLanding" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.6, -3.15, 11.75)
+rotation = Vector3(-0.08727, 0.00000, 0)
+fov = 72.0
+
+[node name="SaintsAisle" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37.6, -3.05, 0.0)
+rotation = Vector3(-0.10472, -1.57080, 0)
+fov = 72.0
+
+[node name="SaintsAltar" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47.8, -2.9, 0.0)
+rotation = Vector3(-0.20944, -1.57080, 0)
+fov = 72.0
+
+[node name="SaintsUrnWest" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.0, -3.05, -7.4)
+rotation = Vector3(-0.25000, 0.00000, 0)
+fov = 72.0
+
+[node name="SaintsUrnEast" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47.4, -3.05, 6.3)
+rotation = Vector3(-0.25000, 3.14159, 0)
+fov = 72.0
+
+[node name="SaintsUrnClose" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.0, -2.55, -9.9)
+rotation = Vector3(-0.80000, 0.00000, 0)
+fov = 72.0
+
+[node name="SaintsBack" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.0, -2.9, -9.5)
+rotation = Vector3(-0.13963, 2.35619, 0)
+fov = 72.0
+
+[node name="ArchiveDoor" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35.9, -3.1, -6.0)
+rotation = Vector3(-0.10472, 1.57080, 0)
+fov = 72.0
+
+[node name="ArchiveCorner" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.0, -3.0, -1.0)
+rotation = Vector3(-0.10472, -0.78540, 0)
+fov = 72.0
+
+[node name="CatacombDoor" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.0, -3.15, -1.8)
+rotation = Vector3(-0.10000, 1.57080, 0)
+fov = 72.0
+
+[node name="CatacombGallery" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.0, -3.15, -2.2)
+rotation = Vector3(-0.05000, 1.57080, 0)
+fov = 72.0
+
+[node name="CatacombOssuary" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.0, -3.15, -2.2)
+rotation = Vector3(-0.05000, 1.57080, 0)
+fov = 72.0
+
+[node name="CatacombBarrel" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, -3.0, -2.2)
+rotation = Vector3(-0.20000, 1.57080, 0)
+fov = 72.0
+
+[node name="CatacombChapel" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.0, -3.15, 9.5)
+rotation = Vector3(-0.10000, 3.14159, 0)
+fov = 72.0
+
+[node name="CatacombLoop" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0, -3.15, 13.0)
+rotation = Vector3(-0.05000, 1.57080, 0)
+fov = 72.0
+
+[node name="CabinetDoor" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35.9, -3.1, 5.0)
+rotation = Vector3(-0.10472, 1.57080, 0)
+fov = 72.0
+
+[node name="CabinetCorner" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.0, -3.0, 11.6)
+rotation = Vector3(-0.10472, -0.78540, 0)
+fov = 72.0
+
+[node name="CabinetCircle" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.0, -2.2, 3.0)
+rotation = Vector3(-0.48869, 2.35619, 0)
+fov = 72.0
+
+[node name="ChapelAltar" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.0, -2.55, 12.0)
+rotation = Vector3(-0.10000, -1.57080, 0)
+fov = 72.0
+
+[node name="ChapelAltarClose" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, -2.45, 12.0)
+rotation = Vector3(-0.10000, -1.57080, 0)
+fov = 38.0
+
+[node name="ChapelAltarSide" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, -2.4, 10.2)
+rotation = Vector3(-0.20000, -2.03400, 0)
+fov = 60.0
+
+[node name="Mover" parent="Hub/Buildings/CathedralCrypt/CryptMonument" index="0"]
+position = Vector3(-1.55, 0, 0)
+
+[editable path="Hub"]
+[editable path="Hub/Buildings/CathedralCrypt/CryptMonument"]

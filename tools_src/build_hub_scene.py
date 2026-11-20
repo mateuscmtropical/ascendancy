@@ -37,6 +37,13 @@ CATHEDRAL_FACADE_X = 13.0  # catedral de 26 x 47,6 m (build_cathedral.py): fundo
 CATHEDRAL_FLOOR = 1.05
 CHANCEL_FLOOR = CATHEDRAL_FLOOR + 0.9
 CATHEDRAL_CRUCIFIX = (CATHEDRAL_FACADE_X + 45.4, CHANCEL_FLOOR + 5.6, 0.0)  # peito do Cristo no retábulo
+# Cripta escondida sob a nave (build_cathedral_crypt.py; Blender x vira z e y vira x - CATHEDRAL_FACADE_X aqui).
+# O poço da escada atravessa o chão da cidade: o chão abre esse buraco (x, z de, x, z até) por baixo da catedral.
+CRYPT_SHAFT_HOLE = ((CATHEDRAL_FACADE_X + 25.9, 10.8), (CATHEDRAL_FACADE_X + 36.4, 12.5))
+CRYPT_MONUMENT = (12.4, CATHEDRAL_FLOOR, -34.3)  # pedestal do santo que tampa a escada, no espaço do modelo (Godot)
+CRYPT_ROOM = ((-12.9, -5.6, -39.9), (15.6, -0.1, 22.6))  # caixa das salas e da catacumba no espaço do modelo (Godot); passa do chão (-4.75) e do teto (-0.35): face na borda da sonda listra
+CRYPT_AMBIENT = "Color(0.42, 0.34, 0.27, 1)"  # pedra à luz de velas: nada do céu chega lá embaixo
+CRYPT_AMBIENT_ENERGY = 0.35
 ADRO_WIDTH = 30.0  # cobre as estátuas da escadaria (z = ±12,2)
 COREO_POSITION = (-46.0, -13.0)  # no gramado a noroeste do chafariz
 COREO_APRON_RADIUS = 4.6
@@ -439,17 +446,43 @@ uv1_triplanar = true
 uv1_world_triplanar = true''')
 
 
+COUNTRYSIDE_HALF = 250.0
+GROUND_COLLISION_HALF = 1000.0
+GROUND_COLLISION_DEPTH = 1.0
+
+
+def rectangles_around(hole: tuple, half: float) -> list:
+    """Four rectangles ((x, z) min, max) covering the square of half size `half` around the origin minus the hole."""
+    (hole_min_x, hole_min_z), (hole_max_x, hole_max_z) = hole
+
+    return [
+        ((-half, -half), (hole_min_x, half)),
+        ((hole_max_x, -half), (half, half)),
+        ((hole_min_x, -half), (hole_max_x, hole_min_z)),
+        ((hole_min_x, hole_max_z), (hole_max_x, half)),
+    ]
+
+
 def add_ground(scene: SceneWriter) -> None:
-    """Streets, curbed pavements and raised beds come modelled from build_ground.py; here only the endless floor under them."""
-    scene.add_sub_resource('''
-[sub_resource type="WorldBoundaryShape3D" id="ground_shape"]''')
-    scene.add_sub_resource('''
-[sub_resource type="PlaneMesh" id="countryside_mesh"]
-material = SubResource("countryside_material")
-size = Vector2(500, 500)''')
+    """Streets, curbed pavements and raised beds come modelled from build_ground.py; here the floor under them, out to
+    the horizon: countryside planes and collision slabs around the hole of the crypt stair (CRYPT_SHAFT_HOLE)."""
     scene.add_node("Ground", ".", "StaticBody3D", groups=[NAVIGATION_SOURCE_GROUP])
-    scene.add_node("Collision", "Ground", "CollisionShape3D", properties={"position": vector(0, -STREET_DROP, 0), "shape": 'SubResource("ground_shape")'})
-    scene.add_node("Countryside", "Ground", "MeshInstance3D", properties={"position": vector(0, -STREET_DROP - 0.03, 0), "mesh": 'SubResource("countryside_mesh")'})
+
+    for index, (minimum, maximum) in enumerate(rectangles_around(CRYPT_SHAFT_HOLE, GROUND_COLLISION_HALF)):
+        size = (maximum[0] - minimum[0], GROUND_COLLISION_DEPTH, maximum[1] - minimum[1])
+        center = ((minimum[0] + maximum[0]) / 2.0, -STREET_DROP - GROUND_COLLISION_DEPTH / 2.0, (minimum[1] + maximum[1]) / 2.0)
+        scene.add_sub_resource(f'''
+[sub_resource type="BoxShape3D" id="ground_shape_{index}"]
+size = {vector(*size)}''')
+        scene.add_node(f"Collision{index}", "Ground", "CollisionShape3D", properties={"position": vector(*center), "shape": f'SubResource("ground_shape_{index}")'})
+
+    for index, (minimum, maximum) in enumerate(rectangles_around(CRYPT_SHAFT_HOLE, COUNTRYSIDE_HALF)):
+        scene.add_sub_resource(f'''
+[sub_resource type="PlaneMesh" id="countryside_mesh_{index}"]
+material = SubResource("countryside_material")
+size = Vector2({maximum[0] - minimum[0]:.3f}, {maximum[1] - minimum[1]:.3f})''')
+        scene.add_node(f"Countryside{index}", "Ground", "MeshInstance3D", properties={"position": vector((minimum[0] + maximum[0]) / 2.0, -STREET_DROP - 0.03, (minimum[1] + maximum[1]) / 2.0), "mesh": f'SubResource("countryside_mesh_{index}")'})
+
     place(scene, "City", "Ground", "res://art/town/ground.gltf", (0, 0, 0))
 
 
@@ -523,10 +556,52 @@ def add_buildings(scene: SceneWriter) -> None:
     check_town_plan(lots)
     scene.add_node("Buildings", ".", "Node3D", groups=[NAVIGATION_SOURCE_GROUP])
     place(scene, "Cathedral", "Buildings", "res://art/town/cathedral.gltf", (CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), -math.pi / 2.0)
+    add_cathedral_crypt(scene)
     place(scene, "Coreto", "Buildings", "res://art/town/coreto.gltf", (COREO_POSITION[0], 0, COREO_POSITION[1]), math.pi / 2.0)
 
     add_town_lots(scene, lots)
     add_casarao(scene, lots)
+
+
+def add_cathedral_crypt(scene: SceneWriter) -> None:
+    """The crypt under the nave (same transform as the cathedral): its rooms hidden from afar like a shop interior,
+    the candle lights of its sidecar, an interior probe that keeps the sky's ambient out, and the saint's plinth
+    that slides off the stair (features/hub/crypt_monument.tscn)."""
+    model = "res://art/town/cathedral_crypt.gltf"
+    sidecar = model_sidecar(model)
+    interior_script = scene.external_id("Script", "res://features/hub/shop_interior.gd")
+    room_minimum, room_maximum = CRYPT_ROOM
+    room_center = tuple((low + high) / 2.0 for low, high in zip(room_minimum, room_maximum))
+    room_size = tuple(high - low for low, high in zip(room_minimum, room_maximum))
+
+    if not sidecar:
+        return
+
+    scene.add_node("CathedralCrypt", "Buildings", "Node3D", properties={"position": vector(CATHEDRAL_FACADE_X, 0, EAST_SQUARE[1]), "rotation": vector(0.0, -math.pi / 2.0, 0.0)})
+    scene.add_node("Interior", "Buildings/CathedralCrypt", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
+    place(scene, "Rooms", "Buildings/CathedralCrypt/Interior", model, (0.0, 0.0, 0.0))
+
+    for light_index, light in enumerate(sidecar["lights"]):
+        scene.add_node(f"Light{light_index}", "Buildings/CathedralCrypt", "OmniLight3D", properties={
+            "position": vector(*light["position"]),
+            "light_color": hex_color(light["color"]),
+            "light_energy": f"{light['energy']}",
+            "omni_range": f"{light['range']}",
+            **light_fade("shop"),
+        })
+
+    scene.add_node("Ambience", "Buildings/CathedralCrypt", "ReflectionProbe", properties={
+        "position": vector(*room_center),
+        "size": vector(*room_size),
+        "interior": "true",
+        "ambient_mode": "2",
+        "ambient_color": CRYPT_AMBIENT,
+        "ambient_color_energy": f"{CRYPT_AMBIENT_ENERGY}",
+        "cull_mask": "0",
+        "update_mode": "0",
+        "blend_distance": "0.0",
+    })
+    scene.add_node("CryptMonument", "Buildings/CathedralCrypt", instance=scene.external_id("PackedScene", "res://features/hub/crypt_monument.tscn"), properties={"position": vector(*CRYPT_MONUMENT)})
 
 
 def add_casarao(scene: SceneWriter, lots: list) -> None:

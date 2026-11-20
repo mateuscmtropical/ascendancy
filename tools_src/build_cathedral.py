@@ -84,6 +84,9 @@ CHRIST_CHEST_HEIGHT = 5.6  # acima do piso do presbitério; abaixo da spec (6,3)
 WING_FIGURE_SCALE = 0.85
 RETABLE_PEDIMENT_RISE = 0.9
 SIDE_DOOR_SIZE = (1.8, 3.0)
+CRYPT_SHAFT = ((10.95, 12.4), (26.2, 36.0))  # poço da escada da cripta (x, y): build_cathedral_crypt.py
+CRYPT_OPENING_Y = (32.6, 36.0)  # vão no piso da nave, tampado pelo pedestal do santo que desliza (secret_passage.gd)
+CRYPT_SLAB = 0.25  # espessura do piso da nave que fica por cima do resto do poço
 TOWER_UPPER_SCALE = 1.3  # sineira, relógio e coroamento crescem com a catedral (cruz a ~46 m)
 
 GLASS_COLORS = numpy.array([
@@ -996,9 +999,15 @@ def make_cross(name: str, base: tuple, height: float, thickness: float, material
 # ---------- cathedral parts ----------
 
 def build_podium(materials: dict) -> None:
-    make_span("Plinth", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), materials["stone"])
+    plinth = make_span("Plinth", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), materials["stone"])
     make_cylinder("ApsePlinth", (0, BODY_LENGTH, 0), APSE_RADIUS + WALL, BASE, 32, materials["stone"])
-    make_span("NaveFloor", (-HALF_WIDTH + WALL, FACADE_DEPTH - 0.1, BASE), (HALF_WIDTH - WALL, BODY_LENGTH, BASE + 0.02), materials["floor"])
+    nave_floor = make_span("NaveFloor", (-HALF_WIDTH + WALL, FACADE_DEPTH - 0.1, BASE), (HALF_WIDTH - WALL, BODY_LENGTH, BASE + 0.02), materials["floor"])
+    (shaft_x, shaft_y), opening_y = CRYPT_SHAFT, CRYPT_OPENING_Y
+
+    carve([plinth, nave_floor], [
+        make_span("CryptShaftCut", (shaft_x[0], shaft_y[0], -1.0), (shaft_x[1], shaft_y[1], BASE - CRYPT_SLAB), None),
+        make_span("CryptOpeningCut", (shaft_x[0], opening_y[0], BASE - CRYPT_SLAB - 0.1), (shaft_x[1], opening_y[1], BASE + 0.5), None),
+    ])
 
     for step_index in range(STEP_COUNT):
         step_front = -(STEP_COUNT - step_index) * STEP_TREAD
@@ -2005,7 +2014,12 @@ def build_colliders() -> None:
     make_stair_ramp("Stairs", 18.0, -STEP_COUNT * STEP_TREAD, STEP_COUNT, STEP_TREAD, STEP_RISE, 0.0)
     make_stair_ramp("ChancelSteps", 2.0 * CHANCEL_STAIR_HALF, CHANCEL_FRONT - CHANCEL_STEPS * CHANCEL_TREAD, CHANCEL_STEPS, CHANCEL_TREAD, CHANCEL_HEIGHT / CHANCEL_STEPS, BASE)
 
-    make_span("Plinth-colonly", (-HALF_WIDTH, 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), None)
+    (shaft_x, shaft_y), opening_y = CRYPT_SHAFT, CRYPT_OPENING_Y
+    make_span("Plinth-colonly", (-HALF_WIDTH, 0.0, 0.0), (shaft_x[0], BODY_LENGTH, BASE), None)
+    make_span("PlinthShaftSide-colonly", (shaft_x[1], 0.0, 0.0), (HALF_WIDTH, BODY_LENGTH, BASE), None)
+    make_span("PlinthFront-colonly", (shaft_x[0], 0.0, 0.0), (shaft_x[1], shaft_y[0], BASE), None)
+    make_span("PlinthBack-colonly", (shaft_x[0], shaft_y[1], 0.0), (shaft_x[1], BODY_LENGTH, BASE), None)
+    make_span("PlinthShaftSlab-colonly", (shaft_x[0], shaft_y[0], BASE - CRYPT_SLAB), (shaft_x[1], opening_y[0], BASE), None)
     make_span("ApsePlinth-colonly", (-APSE_RADIUS - WALL, BODY_LENGTH, 0.0), (APSE_RADIUS + WALL, BODY_LENGTH + APSE_RADIUS + WALL, BASE), None)
     make_span("Chancel-colonly", (-NAVE_HALF, CHANCEL_FRONT, BASE), (NAVE_HALF, BODY_LENGTH + APSE_RADIUS, BASE + CHANCEL_HEIGHT), None)
     make_span("AltarPlatform0-colonly", (-ALTAR_PLATFORM[0] / 2.0, platform_front, CHANCEL_FLOOR), (ALTAR_PLATFORM[0] / 2.0, platform_front + ALTAR_PLATFORM[1], CHANCEL_FLOOR + 0.15), None)

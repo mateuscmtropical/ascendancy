@@ -418,6 +418,7 @@ class Builder:
         colliders = [scene_object for scene_object in bpy.context.scene.objects if scene_object.name.endswith("-colonly")]
 
         for mesh_object in everything:
+            strip_extra_layers(mesh_object)
             map_uvs(mesh_object)
             paint_vertex_colors(mesh_object)
 
@@ -591,6 +592,19 @@ def untinted_first(objects: list) -> list:
         print("AVISO sem material neutro para a primeira superfície: o primeiro material vai aparecer sem tinta")
 
     return sorted(objects, key=lambda mesh_object: mesh_object is not leader)
+
+
+def strip_extra_layers(mesh_object) -> None:
+    """Meshes carved from imported characters bring their own UV sets and colour layers, and the join keeps the union
+    of every part's layers (six UV sets and four colour sets per vertex in the cathedral). Keep one UV set and drop
+    the colours: paint_vertex_colors writes the tint."""
+    mesh = mesh_object.data
+
+    for uv_layer in list(mesh.uv_layers)[1:]:
+        mesh.uv_layers.remove(uv_layer)
+
+    for attribute in list(mesh.color_attributes):
+        mesh.color_attributes.remove(attribute)
 
 
 def paint_vertex_colors(mesh_object) -> None:
