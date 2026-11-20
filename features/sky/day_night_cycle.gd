@@ -12,6 +12,8 @@ extends Node
 ## Por dentro dos salões do casarão a luz ambiente do céu não vale à noite: cada salão tem sua sonda
 ## de ambiência (grupo interior_ambience), acesa só à noite com um branco quente e neutro, em vez do
 ## azul do céu.
+## Debaixo da terra (SunlessZone com a câmera dentro) a luz direcional apaga: nem sol nem lua
+## chegam lá.
 ## A radiância custa caro: o tempo que move nuvens e estrelas vai no global `sky_time` (não suja o
 ## material) e sol, lua e quantidades só são reescritos no material quando a mudança aparece.
 ##
@@ -92,6 +94,7 @@ var _meteor_heads: PackedVector4Array = PackedVector4Array()
 var _meteor_tails: PackedVector4Array = PackedVector4Array()
 var _lamp_amount: float = -1.0
 var _interior_probes: Array[ReflectionProbe] = []
+var _sunless_zones: Array[SunlessZone] = []
 var _sent_sun_direction: Vector3 = Vector3.ZERO
 var _sent_sky_amounts: Vector4 = -Vector4.ONE
 var _sent_meteor_count: int = 0
@@ -103,6 +106,7 @@ func _ready() -> void:
 	_meteor_heads.resize(METEOR_SLOTS)
 	_meteor_tails.resize(METEOR_SLOTS)
 	_interior_probes.assign(get_tree().get_nodes_in_group(INTERIOR_AMBIENCE_GROUP))
+	_sunless_zones.assign(get_tree().get_nodes_in_group(SunlessZone.GROUP))
 	_read_arguments(arguments)
 
 	if world_environment and world_environment.environment.sky:
@@ -270,12 +274,25 @@ func _light_with_sun_or_moon(
 
 	sun.light_color = sun_tint if is_sun_up else moon_tint
 	sun.light_energy = SUN_ENERGY * sun_strength if is_sun_up else MOON_ENERGY * moon_strength
-	sun.visible = sun.light_energy > 0.001
+	sun.visible = sun.light_energy > 0.001 and not _is_camera_sunless()
 
 	if source_direction.y <= 0.0:
 		return
 
 	sun.global_basis = Basis.looking_at(-source_direction, Vector3.UP)
+
+
+func _is_camera_sunless() -> bool:
+	var camera: Camera3D = get_viewport().get_camera_3d()
+
+	if camera == null:
+		return false
+
+	for zone in _sunless_zones:
+		if zone.contains(camera.global_position):
+			return true
+
+	return false
 
 
 func _tint_environment(day_amount: float, twilight_amount: float, solar_eclipse: float) -> void:

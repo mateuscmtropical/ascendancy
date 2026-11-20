@@ -4,7 +4,10 @@ extends Node
 ## Argumentos (depois de --): [--cameras=A,B,C] [--warmup=5] [--measure=5] [--time-of-day=0.8]
 ## [--disable=ssao,ssil,glow,fog,shadows,sky,lights,aa] para achar o gargalo desligando um custo,
 ## [--hide=Trees,Buildings,...] esconde filhos diretos da praça,
-## [--scene=res://...tscn] mede outra cena de câmeras (os salões ficam em shop_shots.tscn).
+## [--scene=res://...tscn] mede outra cena de câmeras (os salões ficam em shop_shots.tscn),
+## [--stop=WalkingNpc,AnimationPlayer,...] desliga o processamento dos nós dessa classe (nativa ou
+## class_name) para medir quanto custam por quadro,
+## [--no-shadow=LeafCards,...] tira a sombra das malhas com esse nome.
 
 const DEFAULT_SCENE_PATH: String = "res://tests/shots/hub_shots.tscn"
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
@@ -14,6 +17,8 @@ const MEASURE_ARGUMENT: String = "--measure="
 const DISABLE_ARGUMENT: String = "--disable="
 const HIDE_ARGUMENT: String = "--hide="
 const SCENE_ARGUMENT: String = "--scene="
+const STOP_ARGUMENT: String = "--stop="
+const NO_SHADOW_ARGUMENT: String = "--no-shadow="
 const DEFAULT_CAMERAS: PackedStringArray = [
 	"SpawnEye", "LawnEye", "StreetEye", "FarmEye", "CityOverview", "CathedralEye"
 ]
@@ -26,6 +31,8 @@ var _warmup_seconds: float = 5.0
 var _measure_seconds: float = 5.0
 var _disabled_features: PackedStringArray = []
 var _hidden_nodes: PackedStringArray = []
+var _stopped_classes: PackedStringArray = []
+var _shadowless_meshes: PackedStringArray = []
 var _scene_path: String = DEFAULT_SCENE_PATH
 var _hub_shots: Node
 var _environment_disablers: Dictionary[String, Callable] = {
@@ -59,6 +66,12 @@ func _read_arguments() -> void:
 
 		if argument.begins_with(HIDE_ARGUMENT):
 			_hidden_nodes = argument.trim_prefix(HIDE_ARGUMENT).split(",")
+
+		if argument.begins_with(NO_SHADOW_ARGUMENT):
+			_shadowless_meshes = argument.trim_prefix(NO_SHADOW_ARGUMENT).split(",")
+
+		if argument.begins_with(STOP_ARGUMENT):
+			_stopped_classes = argument.trim_prefix(STOP_ARGUMENT).split(",")
 
 		if argument.begins_with(SCENE_ARGUMENT):
 			_scene_path = argument.trim_prefix(SCENE_ARGUMENT)
@@ -114,9 +127,41 @@ func _apply_disabled_features() -> void:
 	if "lights" in _disabled_features:
 		_hide_local_lights(hub)
 
+	_stop_classes(hub)
+	_remove_shadows(hub)
+
 	if "aa" in _disabled_features:
 		get_viewport().msaa_3d = Viewport.MSAA_DISABLED
 		get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+
+
+func _remove_shadows(hub: Node) -> void:
+	var meshes: Array[Node] = hub.find_children("*", "GeometryInstance3D", true, false)
+
+	if _shadowless_meshes.is_empty():
+		return
+
+	for mesh in meshes:
+		if String(mesh.name).rstrip("0123456789") in _shadowless_meshes:
+			(mesh as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+func _stop_classes(hub: Node) -> void:
+	var nodes: Array[Node] = hub.find_children("*", "", true, false)
+
+	if _stopped_classes.is_empty():
+		return
+
+	for node in nodes:
+		if _is_stopped_class(node):
+			node.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+func _is_stopped_class(node: Node) -> bool:
+	var script: Script = node.get_script()
+	var script_class: String = script.get_global_name() if script else ""
+
+	return node.get_class() in _stopped_classes or script_class in _stopped_classes
 
 
 func _hide_local_lights(hub: Node) -> void:
@@ -135,6 +180,9 @@ func _measure_camera(camera_name: String, viewport_rid: RID) -> void:
 	var cpu_total: float = 0.0
 	var gpu_samples: PackedFloat64Array = []
 	var frame_samples: PackedFloat64Array = []
+	var process_total: float = 0.0
+	var physics_total: float = 0.0
+	var navigation_total: float = 0.0
 	var last_usec: int
 	var started_msec: int
 	var elapsed_seconds: float
@@ -151,6 +199,9 @@ func _measure_camera(camera_name: String, viewport_rid: RID) -> void:
 		cpu_total += RenderingServer.viewport_get_measured_render_time_cpu(viewport_rid)
 		gpu_samples.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport_rid))
 		frame_samples.append((Time.get_ticks_usec() - last_usec) / MICROSECONDS_PER_MILLISECOND)
+		process_total += Performance.get_monitor(Performance.TIME_PROCESS)
+		physics_total += Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)
+		navigation_total += Performance.get_monitor(Performance.TIME_NAVIGATION_PROCESS)
 		last_usec = Time.get_ticks_usec()
 
 	elapsed_seconds = (Time.get_ticks_msec() - started_msec) / MILLISECONDS_PER_SECOND
@@ -162,6 +213,9 @@ func _measure_camera(camera_name: String, viewport_rid: RID) -> void:
 			"fps_median": MILLISECONDS_PER_SECOND / _median(frame_samples),
 			"cpu_ms": cpu_total / frames,
 			"gpu_median_ms": _median(gpu_samples),
+			"process_ms": process_total / frames * MILLISECONDS_PER_SECOND,
+			"physics_ms": physics_total / frames * MILLISECONDS_PER_SECOND,
+			"navigation_ms": navigation_total / frames * MILLISECONDS_PER_SECOND,
 		}
 	)
 
@@ -188,6 +242,7 @@ func _print_row(camera_name: String, viewport_rid: RID, timing: Dictionary) -> v
 			(
 				"BENCH %s fps=%.1f fps_med=%.1f cpu_ms=%.2f gpu_med_ms=%.2f calls=%d"
 				+ " shadow_calls=%d objects=%d tris_m=%.2f shadow_tris_m=%.2f"
+				+ " process_ms=%.2f physics_ms=%.2f navigation_ms=%.2f"
 			)
 			% [
 				camera_name,
@@ -200,6 +255,9 @@ func _print_row(camera_name: String, viewport_rid: RID, timing: Dictionary) -> v
 				visible_objects,
 				visible_primitives / MILLION,
 				shadow_primitives / MILLION,
+				timing["process_ms"],
+				timing["physics_ms"],
+				timing["navigation_ms"],
 			]
 		)
 	)
