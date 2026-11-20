@@ -167,6 +167,45 @@ turbulence_noise_scale = 2.5
 turbulence_influence_min = 0.04
 turbulence_influence_max = 0.12
 
+[sub_resource type="ParticleProcessMaterial" id="turbo_flame_process"]
+emission_shape = 1
+emission_sphere_radius = 0.12
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 0, -1)
+spread = 7.0
+initial_velocity_min = 14.0
+initial_velocity_max = 20.0
+gravity = Vector3(0, 0.5, 0)
+damping_min = 3.0
+damping_max = 5.0
+scale_min = 1.3
+scale_max = 2.2
+scale_curve = SubResource("flame_scale")
+color_ramp = SubResource("fade")
+turbulence_enabled = true
+turbulence_noise_strength = 0.8
+turbulence_noise_scale = 2.0
+turbulence_influence_min = 0.05
+turbulence_influence_max = 0.15
+
+[sub_resource type="ParticleProcessMaterial" id="turbo_smoke_process"]
+emission_shape = 1
+emission_sphere_radius = 0.2
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 0, -1)
+spread = 15.0
+initial_velocity_min = 4.0
+initial_velocity_max = 7.0
+gravity = Vector3(0, 1.2, 0)
+damping_min = 2.0
+damping_max = 3.0
+scale_min = 1.4
+scale_max = 2.4
+scale_curve = SubResource("smoke_scale")
+color_ramp = SubResource("smoke_fade")
+
 [sub_resource type="ParticleProcessMaterial" id="smoke_process"]
 emission_shape = 1
 emission_sphere_radius = 0.15
@@ -439,3 +478,29 @@ no_depth_test = true
 font_size = 40
 outline_size = 10
 pixel_size = 0.003
+
+[node name="TurboJet" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, -1.0)
+
+[node name="Flames" type="GPUParticles3D" parent="TurboJet"]
+emitting = false
+amount = 64
+lifetime = 0.55
+visibility_aabb = AABB(-5, -4, -16, 10, 9, 18)
+process_material = SubResource("turbo_flame_process")
+draw_pass_1 = SubResource("flame_quad")
+
+[node name="Smoke" type="GPUParticles3D" parent="TurboJet"]
+emitting = false
+amount = 20
+lifetime = 1.2
+visibility_aabb = AABB(-5, -3, -16, 10, 9, 18)
+process_material = SubResource("turbo_smoke_process")
+draw_pass_1 = SubResource("smoke_quad")
+
+[node name="Light" type="OmniLight3D" parent="TurboJet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.8)
+visible = false
+light_color = Color(1, 0.5, 0.15, 1)
+light_energy = 3.0
+omni_range = 7.0

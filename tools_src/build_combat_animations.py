@@ -306,8 +306,8 @@ RIDE_BASE = {
     "pelvis": V(-0.018, 0.0, 0.0), "chest": V(0.0, 8.0, 0.0),
     "foot_l": V(0.186, -0.2, 0.13), "knee_l": V(0.5, -1.0, 0.0), "sole_l": V(0.0, 10.0, 0.0),
     "foot_r": V(-0.241, -0.62, 0.13), "knee_r": V(-0.5, -1.0, 0.0), "sole_r": V(0.0, 10.0, 0.0),
-    "hand_l": V(0.087, -0.13, -0.278), "elbow_l": V(0.5, 0.3, -1.0),
-    "hand_r": V(0.031, -0.297, -0.183), "elbow_r": V(-0.5, 0.3, -1.0),
+    "hand_l": V(0.037, -0.25, -0.40), "elbow_l": V(0.6, 0.5, -0.6),
+    "hand_r": V(0.081, -0.417, -0.305), "elbow_r": V(-0.6, 0.5, -0.6),
 }
 # The Saci (tools_src/build_saci.py) has no right leg: he stands on the left foot under his middle, the stump
 # of the right thigh a little forward, arms loose and out for balance.
