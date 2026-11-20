@@ -2050,7 +2050,10 @@ def sitter(bench: tuple) -> tuple:
 
 
 COUPLE_SEAT_SPREAD = 0.34  # metros do meio do banco até cada um dos dois
-COUPLE_TURN = math.radians(16.0)  # cada um vira um pouco para o outro
+COUPLE_TURN = math.radians(26.0)  # cada um vira para o outro, como quem conversa
+# Os clipes Sitting_* da UAL sentam num assento de ~0,46 m e o tampo do banco fica a 0,53 m: sem erguer, as coxas
+# afundam ~6 cm na madeira. 4 cm divide a diferença (o pé fica quase no chão, a coxa quase no tampo).
+COUPLE_SEAT_LIFT = 0.04
 
 
 def add_couple(scene: SceneWriter, bench: tuple) -> None:
@@ -2059,13 +2062,13 @@ def add_couple(scene: SceneWriter, bench: tuple) -> None:
     along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco
     his_seat = (x + along_x * COUPLE_SEAT_SPREAD, z + along_z * COUPLE_SEAT_SPREAD)
     her_seat = (x - along_x * COUPLE_SEAT_SPREAD, z - along_z * COUPLE_SEAT_SPREAD)
-    his = stand(his_seat, rotation_y - COUPLE_TURN, "ual1/Sitting_Talking", 0.0)
-    hers = stand(her_seat, rotation_y + COUPLE_TURN, "ual1/Sitting_Idle", 1.3)
+    his = stand(his_seat, rotation_y - COUPLE_TURN, "ual1/Sitting_Talking", 0.0, height=ground_height(his_seat) + COUPLE_SEAT_LIFT)
+    hers = stand(her_seat, rotation_y + COUPLE_TURN, "ual1/Sitting_Idle", 1.3, height=ground_height(her_seat) + COUPLE_SEAT_LIFT)
 
     his["smile_every_seconds"] = "5.0"
     hers["smile_every_seconds"] = "3.5"
     npc(scene, "BenchCoupleHim", "couple_him", "black", his)
-    npc(scene, "BenchCoupleHer", "couple_her", "dark", hers)
+    npc(scene, "BenchCoupleHer", "couple_her", "brown", hers)
 
 
 def add_saci(scene: SceneWriter) -> None:

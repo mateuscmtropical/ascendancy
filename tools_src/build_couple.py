@@ -14,7 +14,8 @@ browns of vest, belt and boots that share the atlas never bleed into each other.
 (features/player/character_model.gd tints every MI_Hair material).
 
 Usage:
-  blender -b --factory-startup -P tools_src/build_couple.py -- [couple_him|couple_her ...]
+  blender -b --factory-startup -P tools_src/build_couple.py -- [couple_him|couple_her ...] [--touch-up]
+  (--touch-up only repaints the touch-ups on the outfit texture of characters already built)
 """
 
 import math
@@ -45,6 +46,12 @@ DARK_TROUSERS = (0.12, 0.13, 0.16)
 DARK_SHOES = (0.11, 0.095, 0.085)
 WHITE_BLOUSE = (0.93, 0.92, 0.89)
 LIGHT_DENIM = (0.50, 0.62, 0.76)
+ANKLE_HEIGHT = 0.13  # metres: above this the tall boots are dyed as the trouser leg, so a low shoe is left
+VEST_OPENING_HALF_WIDTH = (0.035, 0.1)  # metres each side of the middle of her chest, at the waist and at the neck,
+# where the open vest shows the T-shirt (a V that widens to the collar)
+CLOTH_FOLDS = 0.45  # share of the original cloth's light and shade a dyed garment keeps
+TEE_FOLDS = 0.12  # the plain T-shirt keeps little of it: the corset's lacing underneath must not show
+VEST_OPENING_RANGE = (1.0, 1.42)  # heights of that opening, from the waist to the neckline
 VEST_MIN_SATURATION = 0.22  # on her body piece, the leather and corset are saturated or dark; the blouse is neither
 VEST_MAX_VALUE = 0.42
 
@@ -55,6 +62,7 @@ COUPLE = {
         "hair": ["Hair_Buzzed", "Hair_Beard"],
         "skin": ("multiply", (0.92, 0.80, 0.70)),
         "garments": {"Body": ("all", BLACK_SHIRT), "Arms": ("all", BLACK_SHIRT), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
+        "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS)],
     },
     "couple_her": {
         "outfit": "Female_Peasant",
@@ -62,6 +70,7 @@ COUPLE = {
         "hair": ["Hair_Long"],
         "skin": ("lift", (1.0, 0.95, 0.93)),
         "garments": {"Body": ("vest", LIGHT_DENIM), "Arms": ("all", WHITE_BLOUSE), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
+        "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS), ("Body", "vest_opening", WHITE_BLOUSE)],
     },
 }
 
@@ -121,11 +130,17 @@ def copy_image(source, name: str):
     return image
 
 
-def uv_footprint(mesh_object, material_index: int, width: int, height: int) -> numpy.ndarray:
-    """Pixels of the atlas the mesh's faces with this material cover (rows from the bottom, as Blender stores them)."""
+def uv_footprint(mesh_object, material_index: int, width: int, height: int, region=None) -> numpy.ndarray:
+    """Pixels of the atlas the mesh's faces with this material cover (rows from the bottom, as Blender stores them).
+
+    region, when given, keeps only the pixels whose world-space point on the surface (an array of x, y, z, from the
+    corners blended by the same barycentric weights) and triangle normal it accepts.
+    """
     mesh = mesh_object.data
     uv_data = mesh.uv_layers.active.data
     mask = numpy.zeros((height, width), dtype=bool)
+    to_world = mesh_object.matrix_world
+    normal_to_world = to_world.to_3x3().inverted().transposed()
 
     mesh.calc_loop_triangles()
 
@@ -146,6 +161,12 @@ def uv_footprint(mesh_object, material_index: int, width: int, height: int) -> n
         first = ((bx - xs) * (cy - ys) - (cx - xs) * (by - ys)) / area
         second = ((cx - xs) * (ay - ys) - (ax - xs) * (cy - ys)) / area
         inside = (first >= -0.02) & (second >= -0.02) & (first + second <= 1.02)
+
+        if region:
+            points = numpy.array([(to_world @ mesh.vertices[mesh.loops[loop].vertex_index].co)[:] for loop in triangle.loops])
+            weights = numpy.stack([first, second, 1.0 - first - second], axis=-1)
+            inside &= region(weights @ points, (normal_to_world @ triangle.normal).normalized())
+
         mask[low[1]:high[1] + 1, low[0]:high[0] + 1] |= inside
 
     for _ in range(MASK_GROW_PIXELS):
@@ -159,11 +180,11 @@ def uv_footprint(mesh_object, material_index: int, width: int, height: int) -> n
     return mask
 
 
-def dye(pixels: numpy.ndarray, mask: numpy.ndarray, color: tuple) -> None:
-    """Paints the masked cloth in color, keeping its light and shade relative to its own average."""
+def dye(pixels: numpy.ndarray, mask: numpy.ndarray, color: tuple, folds: float = CLOTH_FOLDS) -> None:
+    """Paints the masked cloth in color, keeping this share of its light and shade relative to its own average."""
     luminance = pixels[..., :3].mean(axis=2)
     average = max(float(numpy.median(luminance[mask])), 1e-3)
-    shade = (0.55 + 0.45 * luminance / average)[..., None]
+    shade = (1.0 - folds + folds * luminance / average)[..., None]
 
     pixels[mask, :3] = (numpy.array(color) * shade)[mask]
 
@@ -173,6 +194,43 @@ def vest_pixels(pixels: numpy.ndarray) -> numpy.ndarray:
     saturation = (value - pixels[..., :3].min(axis=2)) / numpy.maximum(value, 1e-4)
 
     return (saturation > VEST_MIN_SATURATION) | (value < VEST_MAX_VALUE)
+
+
+def boot_shaft(points: numpy.ndarray, _normal: Vector) -> numpy.ndarray:
+    return points[..., 2] > ANKLE_HEIGHT
+
+
+def vest_opening(points: numpy.ndarray, normal: Vector) -> numpy.ndarray:
+    """The front of the chest between the open vest's edges (the character faces -Y)."""
+    low, high = VEST_OPENING_RANGE
+    heights = points[..., 2]
+    waist_width, neck_width = VEST_OPENING_HALF_WIDTH
+    half_width = waist_width + (neck_width - waist_width) * (heights - low) / (high - low)
+
+    return (numpy.abs(points[..., 0]) < half_width) & (heights > low) & (heights < high) & (normal.y < -0.3)
+
+
+TOUCH_UP_REGIONS = {"boot_shaft": (boot_shaft, CLOTH_FOLDS), "vest_opening": (vest_opening, TEE_FOLDS)}
+
+
+def touch_up(touch_ups: list) -> None:
+    """Repaints parts of garments picked by where they sit on the body, over the atlas recolour_garments already made.
+
+    Its own entry point too (`-- --touch-up`): run on a built character, it only rewrites the outfit texture.
+    """
+    for part, region_name, color in touch_ups:
+        piece = outfit_piece(part)
+        region, folds = TOUCH_UP_REGIONS[region_name]
+
+        for index, material in enumerate(piece.data.materials):
+            image = base_color_image(material)
+            width, height = image.size
+            pixels = image_pixels(image)
+            mask = uv_footprint(piece, index, width, height, region)
+
+            dye(pixels, mask, color, folds)
+            store_pixels(image, pixels)
+            print(f"  {part} {region_name}: {int(mask.sum())} pixels of {image.name} repainted")
 
 
 def recolor_garments(garments: dict, prefix: str) -> None:
@@ -368,6 +426,7 @@ def build_partner(name: str) -> Path:
     bpy.context.view_layer.update()  # matrix_world of the re-parented pieces is stale until then
     downscale_large_textures()
     recolor_garments(recipe["garments"], prefix)
+    touch_up(recipe["touch_ups"])
 
     if name == "couple_her":
         short_sleeves_and_bare_forearms(recipe["base_body"], armature, head.data.materials[0])
@@ -385,8 +444,25 @@ def build_partner(name: str) -> Path:
     return output_path
 
 
+def touch_up_built(name: str) -> None:
+    """Applies only the touch-ups to a character already built, rewriting its outfit texture and nothing else."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    import_gltf(OUTPUT_DIR / f"{name}.gltf")
+    touch_up(COUPLE[name]["touch_ups"])
+
+    for image in {base_color_image(material) for part, _, _ in COUPLE[name]["touch_ups"] for material in outfit_piece(part).data.materials}:
+        path = OUTPUT_DIR / "textures" / f"{image.name}.png"
+
+        image.save(filepath=str(path))
+        print(f"  saved {path}")
+
+
 if __name__ == "__main__":
     script_arguments = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    partners = [argument for argument in script_arguments if not argument.startswith("--")] or list(COUPLE)
 
-    for partner in script_arguments or list(COUPLE):
-        print(f"BUILT {partner} -> {build_partner(partner)}")
+    for partner in partners:
+        if "--touch-up" in script_arguments:
+            touch_up_built(partner)
+        else:
+            print(f"BUILT {partner} -> {build_partner(partner)}")
