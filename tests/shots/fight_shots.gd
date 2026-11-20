@@ -1,6 +1,6 @@
 extends Node3D
 ## Folha de prints de luta e de rosto: congela um clipe num instante e põe uma expressão no rosto.
-## Argumentos (depois de --): [--character=male|female|villager_male|villager_female|saci]
+## Argumentos (depois de --): [--character=male|female|villager_male|villager_female|saci|couple_him|couple_her]
 ## [--animation=<biblioteca/clipe>] [--seconds=<instante do clipe>]
 ## [--mood=<nome de FaceAnimator.Mood>] [--blink] fecha os olhos.
 ## Câmeras: FightSide, FightThree, FightFront, FaceClose (segue a cabeça).
@@ -12,6 +12,8 @@ const BODY_BY_CHARACTER: Dictionary[String, PackedScene] = {
 	"villager_male": preload("res://art/characters/villager_male.gltf"),
 	"villager_female": preload("res://art/characters/villager_female.gltf"),
 	"saci": preload("res://art/characters/saci.gltf"),
+	"couple_him": preload("res://art/characters/couple_him.gltf"),
+	"couple_her": preload("res://art/characters/couple_her.gltf"),
 }
 const HAIR_COLOR: Color = Color(0.29, 0.204, 0.149)
 const CAMERA_TARGETS: Dictionary[String, Vector3] = {

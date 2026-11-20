@@ -2049,6 +2049,25 @@ def sitter(bench: tuple) -> tuple:
     return (x + 0.15 * math.sin(rotation_y), z + 0.15 * math.cos(rotation_y)), rotation_y
 
 
+COUPLE_SEAT_SPREAD = 0.34  # metros do meio do banco até cada um dos dois
+COUPLE_TURN = math.radians(16.0)  # cada um vira um pouco para o outro
+
+
+def add_couple(scene: SceneWriter, bench: tuple) -> None:
+    """Casal sentado conversando no banco do chafariz que fica de frente para quem sai do coreto (tools_src/build_couple.py)."""
+    (x, z), rotation_y = sitter(bench)
+    along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco
+    his_seat = (x + along_x * COUPLE_SEAT_SPREAD, z + along_z * COUPLE_SEAT_SPREAD)
+    her_seat = (x - along_x * COUPLE_SEAT_SPREAD, z - along_z * COUPLE_SEAT_SPREAD)
+    his = stand(his_seat, rotation_y - COUPLE_TURN, "ual1/Sitting_Talking", 0.0)
+    hers = stand(her_seat, rotation_y + COUPLE_TURN, "ual1/Sitting_Idle", 1.3)
+
+    his["smile_every_seconds"] = "5.0"
+    hers["smile_every_seconds"] = "3.5"
+    npc(scene, "BenchCoupleHim", "couple_him", "black", his)
+    npc(scene, "BenchCoupleHer", "couple_her", "dark", hers)
+
+
 def add_saci(scene: SceneWriter) -> None:
     """The Saci (tools_src/build_saci.py) hopping on one leg up and down the farm lane, inside the east gate."""
     west, east = SACI_LANE
@@ -2067,7 +2086,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     perimeter_loop = [(center_x - half_x + 2.6, center_z - half_z + 2.6), (center_x + half_x - 2.6, center_z - half_z + 2.6), (center_x + half_x - 2.6, center_z + half_z - 2.6), (center_x - half_x + 2.6, center_z + half_z - 2.6)]
     east_square_loop = [(8.0, -16.5), (63.0, -16.5), (63.0, 16.5), (8.0, 16.5)]
     worshipper_route = [(8.0, 5.0), (CATHEDRAL_FACADE_X - 4.0, 0.0), (CATHEDRAL_FACADE_X + 26.0, 0.0)]
-    west_bench_seat, west_bench_facing = sitter(benches["fountain"][3])
+    west_bench_seat, west_bench_facing = sitter(benches["fountain"][0])
     east_bench_seat, east_bench_facing = sitter(benches["esplanade"][3])
     cathedral_bench_seat, cathedral_bench_facing = sitter(benches["cathedral"][0])
     median_z = sum(MEDIAN_Z) / 2.0
@@ -2091,6 +2110,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "TalkerA", "villager_male", "brown", stand(talker_a, facing_yaw(talker_a, talker_b), "ual1/Idle_Talking", 0.0))
     npc(scene, "TalkerB", "villager_female", "blond", stand(talker_b, facing_yaw(talker_b, talker_a), "ual2/Idle_FoldArms", 0.7))
     npc(scene, "SittingWest", "villager_female", "grey", stand(west_bench_seat, west_bench_facing, "ual1/Sitting_Idle", 0.3))
+    add_couple(scene, benches["fountain"][3])
     npc(scene, "SittingEast", "villager_male", "black", stand(east_bench_seat, east_bench_facing, "ual1/Sitting_Talking", 0.0))
     npc(scene, "SittingCathedral", "adventurer_male", "brown", stand(cathedral_bench_seat, cathedral_bench_facing, "ual1/Sitting_Talking", 0.5))
     npc(scene, "Bard", "adventurer_female", "auburn", stand((COREO_POSITION[0], COREO_POSITION[1]), math.pi / 2.0, "ual1/Idle_Talking", 0.2, height=1.2))
