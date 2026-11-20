@@ -3,7 +3,7 @@
   "generator": "Khronos glTF Blender I/O v5.2.41",
   "version": "2.0",
   "extras": {
-   "buffer_md5": "066ef54d034847acc82b43fa5d4dc7ab"
+   "buffer_md5": "9502b48e3c486adb74bdd6ed93b109c7"
   }
  },
  "scene": 0,
@@ -119,7 +119,7 @@
   {
    "bufferView": 0,
    "componentType": 5126,
-   "count": 21950,
+   "count": 23131,
    "max": [
     0,
     2.7616169452667236,
@@ -135,32 +135,32 @@
   {
    "bufferView": 1,
    "componentType": 5126,
-   "count": 21950,
+   "count": 23131,
    "type": "VEC3"
   },
   {
    "bufferView": 2,
    "componentType": 5126,
-   "count": 21950,
+   "count": 23131,
    "type": "VEC2"
   },
   {
    "bufferView": 3,
    "componentType": 5126,
-   "count": 21950,
+   "count": 23131,
    "type": "VEC2"
   },
   {
    "bufferView": 4,
    "componentType": 5123,
-   "count": 21950,
+   "count": 23131,
    "normalized": true,
    "type": "VEC4"
   },
   {
    "bufferView": 5,
    "componentType": 5123,
-   "count": 22194,
+   "count": 23691,
    "type": "SCALAR"
   },
   {
@@ -261,110 +261,110 @@
  "bufferViews": [
   {
    "buffer": 0,
-   "byteLength": 263400,
+   "byteLength": 277572,
    "byteOffset": 0,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 263400,
-   "byteOffset": 263400,
+   "byteLength": 277572,
+   "byteOffset": 277572,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 175600,
-   "byteOffset": 526800,
+   "byteLength": 185048,
+   "byteOffset": 555144,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 175600,
-   "byteOffset": 702400,
+   "byteLength": 185048,
+   "byteOffset": 740192,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 175600,
-   "byteOffset": 878000,
+   "byteLength": 185048,
+   "byteOffset": 925240,
    "target": 34962
   },
   {
    "buffer": 0,
-   "byteLength": 44388,
-   "byteOffset": 1053600,
+   "byteLength": 47382,
+   "byteOffset": 1110288,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 24480,
-   "byteOffset": 1097988,
+   "byteOffset": 1157672,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 24480,
-   "byteOffset": 1122468,
+   "byteOffset": 1182152,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 16320,
-   "byteOffset": 1146948,
+   "byteOffset": 1206632,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 16320,
-   "byteOffset": 1163268,
+   "byteOffset": 1222952,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 16320,
-   "byteOffset": 1179588,
+   "byteOffset": 1239272,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 5472,
-   "byteOffset": 1195908,
+   "byteOffset": 1255592,
    "target": 34963
   },
   {
    "buffer": 0,
    "byteLength": 3360,
-   "byteOffset": 1201380,
+   "byteOffset": 1261064,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 3360,
-   "byteOffset": 1204740,
+   "byteOffset": 1264424,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 2240,
-   "byteOffset": 1208100,
+   "byteOffset": 1267784,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 2240,
-   "byteOffset": 1210340,
+   "byteOffset": 1270024,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 2240,
-   "byteOffset": 1212580,
+   "byteOffset": 1272264,
    "target": 34962
   },
   {
    "buffer": 0,
    "byteLength": 912,
-   "byteOffset": 1214820,
+   "byteOffset": 1274504,
    "target": 34963
   }
  ],
@@ -376,7 +376,7 @@
  ],
  "buffers": [
   {
-   "byteLength": 1215732,
+   "byteLength": 1275416,
    "uri": "cathedral_crypt_monument.bin"
   }
  ]
