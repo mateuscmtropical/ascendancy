@@ -191,13 +191,17 @@ def furnish_infirmary(f) -> None:
 
 
 def furnish_sacristy(f) -> None:
-    """Sacristy (u -6.25..-0.65, d 13.75..18.80): vestment press and linen press, a vesting table, the lavabo, a
-    crucifix; isolation room (d 19.10..24.10): two beds behind a screen, a washstand and a chair."""
+    """Sacristy (u -6.25..-0.65, d 13.75..18.80): vestment press and linen press, the paramenteiro (wide drawers of
+    flat-laid chasubles, the day's vestments on top) under the crucifix, the lavabo, the albs on pegs, a prie-dieu
+    and a side table; isolation room (d 19.10..24.10): two beds behind a screen, a washstand and a chair."""
     f.on_face("d", SACRISTY_WALL - WALL_HALF, -1, "wardrobe", -5.0)
     f.on_face("d", SACRISTY_WALL - WALL_HALF, -1, "linen_press", -2.6)
-    f.put("side_table", -3.4, 16.0)
-    f.on_face("u", SACRISTY_WEST, 1, "washstand", 15.0)
-    f.on_face("u", SACRISTY_WEST, 1, "wall_crucifix", 16.6)
+    f.on_face("u", SACRISTY_WEST, 1, "vesting_chest", 16.9)
+    f.on_face("u", SACRISTY_WEST, 1, "wall_crucifix", 16.9)
+    f.on_face("u", SACRISTY_WEST, 1, "washstand", 14.6)
+    f.on_face("d", BACK_FACE, 1, "clothes_pegs", -5.3)
+    f.on_face("u", SACRISTY_EAST, -1, "prie_dieu", 14.6)
+    f.put("side_table", -2.9, 16.4)
     f.put("hanging_oil_lamp", -3.4, 16.2)
 
     for bed_u in (-4.8, -2.1):

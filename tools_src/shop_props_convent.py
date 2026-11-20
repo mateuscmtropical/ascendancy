@@ -22,11 +22,13 @@ from mathutils import Matrix
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_town_houses import Builder  # noqa: E402
-from shop_props_common import wood_box  # noqa: E402
+from shop_props_common import bevel_box, knob, wood_box  # noqa: E402
 from shop_props_orphanage import (  # noqa: E402
     BLANKET_COLOURS,
     BRASS_AGED,
+    BRASS_BRIGHT,
     CAST_IRON,
+    CHAPEL_WINE,
     HONEY_WOOD,
     LEATHER_BROWN,
     LINEN_CREAM,
@@ -406,7 +408,39 @@ def chopping_block(b: Builder, frame: Matrix, **options) -> None:
     _box(b, blade, (0.06, -0.012, 0.03), (0.2, 0.012, 0.055), "wood", WALNUT_DARK)
 
 
+VESTMENT_GOLD = "D4B062"
+VESTMENT_GREEN = "3E6B4A"
+
+
+def vesting_chest(b: Builder, frame: Matrix, **options) -> None:
+    """Paramenteiro of the sacristy (back at +Y): a long low chest of wide shallow drawers where the chasubles lie
+    flat, the vestments of the day laid out on the top (folded chasuble with its gold orphrey cross, the stole across
+    it, the amice), the missal and the little sacristy bell."""
+    half_w, half_d, top = 1.0, 0.36, 0.95
+    drawer_rows = (0.12, 0.33, 0.54, 0.75)
+
+    bevel_box(b, frame, (-half_w, -half_d, 0.0), (half_w, half_d, 0.1), WALNUT_DARK, bevel=0.01)
+    bevel_box(b, frame, (-half_w + 0.02, -half_d + 0.02, 0.1), (half_w - 0.02, half_d, top - 0.04), WALNUT_MID, bevel=0.008)
+
+    for row_bottom in drawer_rows:
+        bevel_box(b, frame, (-half_w + 0.05, -half_d - 0.005, row_bottom), (half_w - 0.05, -half_d + 0.02, row_bottom + 0.18), HONEY_WOOD, bevel=0.006)
+
+        for pull_x in (-0.55, 0.55):
+            knob(b, frame, pull_x, -half_d - 0.012, row_bottom + 0.09, 0.016, BRASS_AGED)
+
+    bevel_box(b, frame, (-half_w - 0.03, -half_d - 0.03, top - 0.04), (half_w + 0.03, half_d, top), WALNUT_DARK, bevel=0.012, light=True)
+    _soft_block(b, frame, (-0.3, -0.02, top + 0.02), (0.42, 0.3, 0.02), VESTMENT_GREEN, bevel=0.012)
+    _box(b, frame, (-0.34, -0.3, top + 0.04), (-0.26, 0.28, top + 0.043), "paint", VESTMENT_GOLD)
+    _box(b, frame, (-0.62, 0.0, top + 0.04), (0.02, 0.07, top + 0.043), "paint", VESTMENT_GOLD)
+    _box(b, frame, (-0.5, -0.24, top + 0.044), (-0.1, -0.18, top + 0.05), "paint", CHAPEL_WINE)
+    _soft_block(b, frame, (0.35, 0.05, top + 0.012), (0.2, 0.15, 0.012), LINEN_CREAM, bevel=0.008)
+    _book_open(b, frame, 0.72, 0.0, top, 0.32, 0.24, CHAPEL_WINE, yaw=8.0)
+    _cyl(b, frame, (0.72, 0.24, top), 0.04, 0.07, 10, "metal", BRASS_BRIGHT, top_radius=0.025)
+    _cyl(b, frame, (0.72, 0.24, top + 0.07), 0.008, 0.06, 5, "wood", WALNUT_DARK)
+
+
 PROPS = {
+    "vesting_chest": {"build": vesting_chest, "size": (2.06, 0.75, 1.05), "solid": True, "clearance": 0.7},
     "child_bed": {"build": child_bed, "size": (0.86, 1.85, 1.09), "solid": True, "variants": ["grey_blue", "ochre", "dull_red", "green"]},
     "cot": {"build": cot, "size": (0.75, 1.45, 1.05), "solid": True, "variants": list(BLANKET_COLOURS)},
     "latrine_stall": {"build": latrine_stall, "size": (1.0, 1.3, 2.1), "solid": True},
