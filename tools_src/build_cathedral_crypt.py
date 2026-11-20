@@ -36,7 +36,7 @@ from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from build_cathedral import BASE, CRYPT_OPENING_Y, CRYPT_SHAFT, CRYPT_SLAB, MARY_PARTS, MARY_SOURCE, OUTPUT_DIR, PRAYER_POSE, STATUE_PARTS, STATUE_SOURCE, import_posed_meshes, make_draped_cone  # noqa: E402
+from build_cathedral import BASE, CRYPT_OPENING_Y, CRYPT_SHAFT, CRYPT_SLAB, MARY_PARTS, MARY_SOURCE, OUTPUT_DIR, PRAYER_POSE, STATUE_PARTS, STATUE_SOURCE, TUNIC, import_posed_meshes, make_cincture, make_hemmed_drape  # noqa: E402
 from build_market_shops import PROPS as SHOP_PROPS  # noqa: E402
 from build_town_houses import Builder, srgb  # noqa: E402
 from shop_props_crypt import CRYPT_STONE, DARK_STONE, GILT, LIMESTONE, MARBLE, OSSUARY_LENGTH, URN_BED  # noqa: E402
@@ -318,7 +318,8 @@ def add_standing_statue(b: Builder, placement: Matrix) -> None:
     """Stone statue of a praying monk-saint (the game's male model), standing on placement's origin facing -Y."""
     before = set(bpy.context.scene.objects)
     import_posed_meshes(STATUE_SOURCE, STATUE_PARTS, PRAYER_POSE, "MonumentSaint", b.materials["stone"])
-    make_draped_cone("MonumentSaintRobe", 0.03, 1.35, 0.34, 0.18, 9, 0.035, b.materials["stone"])
+    make_hemmed_drape("MonumentSaintRobe", TUNIC, 9, 0.035, b.materials["stone"], b.materials["stone"])
+    make_cincture("MonumentSaint", b.materials["stone"])
     added = [scene_object for scene_object in bpy.context.scene.objects if scene_object not in before and scene_object.type == "MESH"]
 
     for part in added:
