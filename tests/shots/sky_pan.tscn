@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://features/hub/hub.tscn" id="1_hub"]
+[ext_resource type="Script" path="res://tests/shots/sky_pan.gd" id="2_pan"]
+
+[node name="SkyPan" type="Node3D"]
+script = ExtResource("2_pan")
+
+[node name="Hub" parent="." instance=ExtResource("1_hub")]
+
+[node name="PanCamera" type="Camera3D" parent="."]
+position = Vector3(-40.000, 1.700, 10.000)
+fov = 70.0
+far = 2000.0
