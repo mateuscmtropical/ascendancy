@@ -7,6 +7,7 @@ Runs inside Blender, imported by build_prop_sheet.py and build_farm.py. Contract
 centred on 0, front faces -Y, back at +size[1] / 2, Z up from the floor.
 """
 
+import math
 import random
 import sys
 from pathlib import Path
@@ -16,18 +17,22 @@ from mathutils import Matrix
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from build_town_houses import Builder, srgb  # noqa: E402
-from shop_props_common import wicker_basket, wood_box  # noqa: E402
+from shop_props_common import lathe, wicker_basket, wood_box  # noqa: E402
 from shop_props_orphanage import (  # noqa: E402
     BRASS_AGED,
     CAST_IRON,
+    BOOK_COLOURS,
     CHAPEL_WINE,
     HONEY_WOOD,
     LINEN_CREAM,
     PINE_SCRUB,
+    SLATE_DARK,
+    TERRACOTTA_DARK,
     WALNUT_DARK,
     WALNUT_MID,
     _at,
     _beam,
+    _book_closed,
     _box,
     _candlestick,
     _cyl,
@@ -54,13 +59,36 @@ def coffee_heap(b: Builder, frame: Matrix, half_x: float, half_y: float, bottom:
         _sphere(b, frame, (x, y, bottom + (top - bottom) * 0.6), 0.09, "paint", generator.choice(COFFEE_SHADES), scale=(1.4, 1.0, 0.35), segments=5)
 
 
+MOUND_RINGS = 10
+MOUND_SIDES = 24
+MOUND_SHAPE = 0.7  # exponent of the profile: below 1 the shoulder is full and rounded, the edge falls steeply
+
+
+def mound_height(radius_fraction: float, top: float) -> float:
+    """Height of the mound at a fraction of its radius: a rounded dome, falling to the floor at the edge."""
+    return top * (1.0 - radius_fraction**2) ** MOUND_SHAPE
+
+
+def coffee_mound(b: Builder, frame: Matrix, half_x: float, half_y: float, top: float, generator: random.Random) -> None:
+    """Rounded mound of dried coffee: a surface of revolution with many rings along a dome profile, stretched to
+    the ellipse of the heap, with bean speckles lying on the surface."""
+    profile = [(1.0 - ring / MOUND_RINGS, mound_height(1.0 - ring / MOUND_RINGS, top)) for ring in range(MOUND_RINGS + 1)]
+    stretch = Matrix.Diagonal((half_x, half_y, 1.0, 1.0))
+
+    lathe(b, profile, MOUND_SIDES, "paint", COFFEE_SHADES[0], frame @ stretch)
+
+    for _ in range(40):
+        angle, fraction = generator.uniform(0.0, 2.0 * math.pi), math.sqrt(generator.uniform(0.0, 0.8))
+        spot = (half_x * fraction * math.cos(angle), half_y * fraction * math.sin(angle), mound_height(fraction, top) - 0.01)
+        _sphere(b, frame, spot, 0.09, "paint", generator.choice(COFFEE_SHADES), scale=(1.4, 1.0, 0.35), segments=5)
+
+
 def coffee_floor_heap(b: Builder, frame: Matrix, **options) -> None:
-    """Coffee in the husk dumped on the tulha floor to finish drying: a broad low mound, the wooden rake
+    """Coffee in the husk dumped on the tulha floor to finish drying: a broad rounded mound, the wooden rake
     (rodo) left in it and a round sieve leaning on its flank."""
     generator = random.Random(options.get("seed", 4))
 
-    coffee_heap(b, frame, 1.55, 1.1, 0.0, 0.5, generator)
-    coffee_heap(b, frame, 0.9, 0.7, 0.0, 0.72, generator)
+    coffee_mound(b, frame, 1.55, 1.1, 0.72, generator)
     _beam(b, frame, (0.5, -0.3, 0.45), (1.6, -1.6, 1.35), 0.035, 0.035, "wood", HONEY_WOOD)
     _box(b, frame, (0.2, -0.36, 0.3), (0.8, -0.24, 0.5), "wood", HONEY_WOOD)
     sieve = _at(frame, (-1.3, -0.95, 0.3), 25.0) @ Matrix.Rotation(1.15, 4, "X")
@@ -219,7 +247,64 @@ def cane_settee(b: Builder, frame: Matrix, **options) -> None:
     _soft_block(b, frame, (-0.55, 0.12, seat + 0.13), (0.18, 0.06, 0.13), LINEN_CREAM, bevel=0.05)
 
 
+def child_desk(b: Builder, frame: Matrix, **options) -> None:
+    """Small pine writing table of a child (0.9 x 0.5 m, child sits on the -Y side): turned legs, an apron with a
+    drawer knob, a slate in a wooden frame, two copybooks and a clay inkwell."""
+    width, depth, top = 0.9, 0.5, 0.68
+
+    for corner_x in (-width / 2.0 + 0.04, width / 2.0 - 0.04):
+        for corner_y in (-depth / 2.0 + 0.04, depth / 2.0 - 0.04):
+            _cyl(b, frame, (corner_x, corner_y, 0.0), 0.025, top, 6, "wood", WALNUT_MID)
+
+    _box(b, frame, (-width / 2.0, -depth / 2.0, top - 0.1), (width / 2.0, depth / 2.0, top - 0.02), "wood", WALNUT_MID)
+    _box(b, frame, (-0.2, -depth / 2.0 - 0.012, top - 0.09), (0.2, -depth / 2.0, top - 0.03), "wood", HONEY_WOOD)
+    _sphere(b, frame, (0.0, -depth / 2.0 - 0.025, top - 0.06), 0.014, "metal", BRASS_AGED, segments=6)
+    _box(b, frame, (-width / 2.0 - 0.02, -depth / 2.0 - 0.02, top - 0.02), (width / 2.0 + 0.02, depth / 2.0 + 0.02, top), "wood", PINE_SCRUB)
+    _box(b, frame, (-0.36, -0.12, top), (-0.08, 0.1, top + 0.012), "wood", WALNUT_DARK)
+    _box(b, frame, (-0.345, -0.105, top + 0.012), (-0.095, 0.085, top + 0.016), "paint", SLATE_DARK)
+    _book_closed(b, frame, 0.15, 0.0, top, 0.16, 0.2, 0.02, BOOK_COLOURS[1], yaw=8.0)
+    _book_closed(b, frame, 0.15, 0.0, top + 0.02, 0.15, 0.19, 0.016, BOOK_COLOURS[4], yaw=-6.0)
+    _cyl(b, frame, (0.33, 0.14, top), 0.025, 0.04, 8, "paint", TERRACOTTA_DARK)
+
+
+def toy_blocks(b: Builder, frame: Matrix, **options) -> None:
+    """Floor toys: a few painted wooden cubes tumbled over, a spinning top and a rag ball."""
+    generator = random.Random(options.get("seed", 3))
+
+    for index, hue in enumerate(("B5453A", "3E6B94", "D9B347", "5E8A4E", "B5453A")):
+        spot = (generator.uniform(-0.18, 0.18), generator.uniform(-0.12, 0.12), 0.0)
+        block = _at(frame, spot, generator.uniform(0.0, 90.0))
+        _box(b, block, (-0.035, -0.035, 0.0), (0.035, 0.035, 0.07), "paint", hue)
+
+    top = _at(frame, (0.24, 0.1, 0.0))
+    _cyl(b, top, (0.0, 0.0, 0.0), 0.002, 0.05, 8, "wood", HONEY_WOOD, top_radius=0.04)
+    _cyl(b, top, (0.0, 0.0, 0.05), 0.04, 0.012, 8, "paint", "B5453A")
+    _sphere(b, frame, (-0.25, -0.1, 0.055), 0.055, "paint", LINEN_CREAM, segments=8)
+
+
+def toy_shelf(b: Builder, frame: Matrix, **options) -> None:
+    """Narrow wall shelf for a child (0.9 m, built at its mounting height, back against +Y): a plank on two
+    brackets with a row of primers, a wooden horse and a rag doll leaning on the books."""
+    _box(b, frame, (-0.45, -0.1, 0.0), (0.45, 0.11, 0.025), "wood", HONEY_WOOD)
+
+    for side in (-0.34, 0.34):
+        _box(b, frame, (side - 0.015, 0.0, -0.12), (side + 0.015, 0.11, 0.0), "wood", WALNUT_DARK)
+
+    for index in range(6):
+        _book_closed(b, frame, -0.38 + index * 0.05, 0.02, 0.025, 0.04, 0.16, 0.14 + (index % 3) * 0.03, BOOK_COLOURS[index % len(BOOK_COLOURS)])
+
+    _box(b, frame, (0.02, -0.04, 0.025), (0.16, 0.0, 0.05), "wood", WALNUT_MID)
+    _box(b, frame, (0.03, -0.035, 0.05), (0.15, -0.005, 0.12), "wood", WALNUT_MID)
+    _box(b, frame, (0.11, -0.035, 0.12), (0.15, -0.005, 0.2), "wood", WALNUT_MID)
+    doll = _at(frame, (0.3, 0.02, 0.025), 0.0)
+    _box(b, doll, (-0.04, -0.02, 0.0), (0.04, 0.02, 0.16), "paint", "B5453A")
+    _sphere(b, doll, (0.0, 0.0, 0.2), 0.04, "paint", "E9CDB0", segments=8)
+
+
 PROPS = {
+    "child_desk": {"build": child_desk, "size": (0.94, 0.54, 0.78), "solid": True},
+    "toy_blocks": {"build": toy_blocks, "size": (0.6, 0.35, 0.1), "solid": False},
+    "toy_shelf": {"build": toy_shelf, "size": (0.9, 0.22, 0.3), "solid": False},
     "coffee_floor_heap": {"build": coffee_floor_heap, "size": (3.2, 2.3, 0.75), "solid": True},
     "coffee_basket": {"build": coffee_basket, "size": (0.5, 0.5, 0.4), "solid": True},
     "coffee_bin": {"build": coffee_bin, "size": (2.2, 2.0, 2.05), "solid": True},

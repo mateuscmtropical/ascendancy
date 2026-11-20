@@ -216,6 +216,10 @@ def boys_room(rooms: Rooms) -> None:
     rooms.against("north", "night_table", -6.55, FACE["spine_front"])
     rooms.put("bed_trunk", -7.45, 2.35)
     rooms.against("east", "wardrobe", 1.15, FACE["alcove_w"])
+    rooms.put("rug", -7.2, 1.3, 90.0, variant="green")
+    rooms.against("west", "child_desk", 1.0, FACE["west"])
+    rooms.put("stool_round", -7.2, 1.0)
+    rooms.put("toy_blocks", -7.25, 1.75, 20.0)
     rooms.against("north", "wall_crucifix", -7.45, FACE["spine_front"] - 0.02)
     rooms.put("hanging_oil_lamp", -7.0, 2.4)
 
@@ -224,8 +228,11 @@ def girls_room(rooms: Rooms) -> None:
     rooms.against("north", "iron_bed", -4.75, FACE["spine_front"], variant="dull_red")
     rooms.against("north", "night_table", -3.95, FACE["spine_front"])
     rooms.put("bed_trunk", -4.75, 2.35)
-    rooms.against("east", "washstand", 1.3, FACE["cross_west_w"])
+    rooms.against("east", "wardrobe", 1.2, FACE["cross_west_w"])
     rooms.against("west", "dollhouse", 1.25, FACE["alcove_e"])
+    rooms.against("west", "toy_shelf", 1.25, FACE["alcove_e"], z=rooms.floor + 1.5)
+    rooms.put("rug", -4.8, 1.3, 0.0, variant="blue")
+    rooms.put("toy_blocks", -5.0, 1.85, -15.0)
     rooms.put("hanging_oil_lamp", -4.8, 2.4)
 
 
