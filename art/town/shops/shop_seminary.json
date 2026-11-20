@@ -2,7 +2,7 @@
  "aabb_min": [
   -14.97,
   0.0,
-  -19.52
+  -24.52
  ],
  "aabb_max": [
   14.85,
@@ -10,80 +10,99 @@
   0.12
  ],
  "lot_width": 30,
- "lot_depth": 20.0,
+ "lot_depth": 25.0,
  "shop": "seminary",
  "doors": [],
  "entry": [
   14.55,
-  -3.0
+  -12.2
  ],
+ "ambient_volume": {
+  "min": [
+   -14.65,
+   0.0,
+   -24.2
+  ],
+  "max": [
+   14.65,
+   5.2,
+   -0.2
+  ]
+ },
+ "night_ambient": 0.08,
  "lights": [
   {
    "position": [
     -9.7,
     4.3,
-    -5.564
+    -6.964
    ],
    "color": "FFDCB0",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
     -9.7,
     4.3,
-    -13.836
+    -17.436
    ],
    "color": "FFDCB0",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
     0.0,
     4.3,
-    -5.564
+    -6.964
    ],
    "color": "FFDCB0",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
     0.0,
     4.3,
-    -13.836
+    -17.436
    ],
    "color": "FFDCB0",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
     9.7,
     4.3,
-    -5.564
+    -6.964
    ],
    "color": "FFDCB0",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   },
   {
    "position": [
     9.7,
     4.3,
-    -13.836
+    -17.436
    ],
    "color": "FFDCB0",
    "energy": 1.3,
-   "range": 10.0
+   "range": 10.0,
+   "group": "day_lights"
   }
  ],
  "markers": {
   "shopkeeper": [
-   0.0,
+   6.0,
    0.05,
-   -16.8
+   -18.925
   ]
  }
 }

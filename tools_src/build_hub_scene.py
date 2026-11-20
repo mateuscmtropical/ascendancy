@@ -630,6 +630,7 @@ LOT_WIDTHS = (6, 8, 10, 12)
 LOT_FRONT_OVERHANG = 1.2  # beiral, sacada e placa podem avançar sobre a calçada
 LOT_EDGE_CLEARANCE = 0.02
 TOWN_SEED = 4421
+CASARAO_DEPTH = 25.0  # o casarão cresce para trás até perto do muro (x = -100 de -102): o orfanato inteiro cabe em dois andares
 SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio: 1/3 de quadra ou mais (docs/research/shops.md)
     "smith": (24, 20.0),
     "armor": (18, 20.0),
@@ -639,11 +640,11 @@ SHOP_LOTS = {  # tipo -> (largura, profundidade) do prédio: 1/3 de quadra ou ma
     "alchemy": (18, 20.0),
     "general": (18, 20.0),
     "guild": (24, 20.0),
-    "library": (30, 20.0),
-    "vestibule": (30, 20.0),
-    "school": (30, 20.0),
-    "reading": (30, 20.0),
-    "seminary": (30, 20.0),
+    "library": (30, CASARAO_DEPTH),
+    "vestibule": (30, CASARAO_DEPTH),
+    "school": (30, CASARAO_DEPTH),
+    "reading": (30, CASARAO_DEPTH),
+    "seminary": (30, CASARAO_DEPTH),
 }
 FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da fileira; trechos sem lote fixo são preenchidos
     (0, "S"): [(-99.0, -75.0, "smith")],
@@ -900,10 +901,10 @@ SHOPKEEPERS = {  # prédio -> (corpo, cabelo, animação) de quem atende atrás 
     "general": ("villager_female", "brown", "ual1/Idle_Talking"),
     "guild": ("adventurer_female", "dark", "ual2/Idle_FoldArms"),
     "library": ("villager_female", "dark", "ual1/Idle"),
-    "vestibule": ("villager_male", "black", "ual1/Idle"),
+    "vestibule": ("villager_female", "black", "ual1/Idle"),  # a irmã porteira, na portaria
     "school": ("villager_male", "brown", "ual1/Idle_Talking"),
     "reading": ("villager_female", "auburn", "ual1/Idle"),
-    "seminary": ("villager_male", "grey", "ual1/Idle"),
+    "seminary": ("villager_female", "grey", "ual1/Idle"),  # a irmã sacristã, na capela
 }
 SHOP_SIGN_SCALE = 1.6  # as placas foram feitas para fachadas de 8 m
 SHOP_SIGN_OFFSET = 0.45  # da borda da porta até o braço da placa, no pilar entre a porta e a primeira vitrine
@@ -992,7 +993,33 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
             "light_energy": f"{light['energy']}",
             "omni_range": f"{light['range']}",
             **light_fade("shop"),
-        })
+        }, groups=[light["group"]] if "group" in light else None)
+
+    if "ambient_volume" in sidecar:
+        add_ambient_probe(scene, shop_name, sidecar["ambient_volume"], sidecar.get("night_ambient"))
+
+
+def add_ambient_probe(scene: SceneWriter, shop_name: str, volume: dict, night_energy: float = None) -> None:
+    """Interior ambience of a casarão hall: a reflection probe that only supplies ambient light (its cube captures
+    nothing, so no sky reflection indoors); features/sky/day_night_cycle.gd lights it at night, at night_energy when the
+    hall sets its own (metadata night_ambient_energy)."""
+    low, high = volume["min"], volume["max"]
+    center = [(low[axis] + high[axis]) / 2.0 for axis in range(3)]
+    size = [abs(high[axis] - low[axis]) for axis in range(3)]
+
+    own_level = {} if night_energy is None else {"metadata/night_ambient_energy": f"{night_energy}"}
+
+    scene.add_node("Ambience", f"Shops/{shop_name}", "ReflectionProbe", properties={
+        **own_level,
+        "visible": "false",
+        "position": vector(*center),
+        "size": vector(*size),
+        "interior": "true",
+        "ambient_mode": "2",
+        "cull_mask": "0",
+        "update_mode": "0",
+        "blend_distance": "0.0",
+    }, groups=["interior_ambience"])
 
 
 def light_fade(place_kind: str) -> dict:
@@ -2055,18 +2082,89 @@ SHOP_SHOT_VIEWS = {  # sufixo -> (olho, alvo) em coordenadas do lote: x ao longo
     "Out": ((0.0, 1.6, -15.0), (0.0, 1.6, 0.0)),
     "Top": ((0.0, 30.0, -9.5), (0.0, 0.0, -9.6)),
 }
-HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (o vestíbulo do casarão tem dois andares)
+HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (x = u, y = altura sobre o piso, z = -d); o vestíbulo tem dois andares
     "vestibule": {
-        "Stair": ((0.0, 1.6, -6.5), (0.0, 3.2, -17.0)),
-        "Cross": ((-11.0, 1.6, -3.0), (14.0, 1.7, -3.0)),
-        "Lane": ((8.5, 1.6, -9.0), (2.0, 2.4, -17.0)),
-        "Landing": ((0.0, 4.45, -18.2), (0.0, 5.6, -4.0)),
-        "Flight": ((3.3, 5.0, -15.0), (3.3, 6.6, -6.0)),
-        "Gallery": ((0.0, 7.25, -2.4), (0.0, 6.6, -16.0)),
-        "GalleryCross": ((-11.0, 7.25, -3.0), (14.0, 7.3, -3.0)),
-        "GallerySide": ((12.0, 7.25, -17.0), (0.0, 6.0, -9.0)),
+        "Entrance": ((0.0, 1.6, -1.2), (0.0, 1.8, -15.0)),
+        "EntranceSide": ((3.5, 1.6, -9.5), (-4.0, 1.3, -1.5)),
+        "ParlourVisitors": ((-6.0, 1.6, -0.9), (-11.5, 1.4, -5.0)),
+        "ParlourSisters": ((-13.0, 1.6, -10.3), (-9.0, 1.4, -4.5)),
+        "Lodge": ((6.6, 1.6, -10.3), (6.0, 1.3, -2.0)),
+        "Office": ((11.4, 1.6, -10.3), (11.0, 1.3, -1.5)),
+        "Lavatory": ((12.6, 1.6, -17.4), (9.0, 1.0, -24.0)),
+        "Teachers": ((-12.6, 1.6, -17.4), (-8.0, 1.0, -23.0)),
+        "Stair": ((0.0, 1.6, -11.0), (0.0, 3.2, -22.0)),
+        "Cross": ((-11.0, 1.6, -13.5), (14.0, 1.7, -13.5)),
+        "Landing": ((0.0, 4.45, -23.2), (0.0, 5.6, -9.0)),
+        "Flight": ((3.3, 5.0, -20.0), (3.3, 6.6, -11.0)),
+        "Gallery": ((0.0, 7.25, -2.4), (0.0, 6.6, -21.0)),
+        "GalleryCross": ((-11.0, 7.25, -12.2), (14.0, 7.3, -12.2)),
+        "GalleryReading": ((-13.8, 7.25, -10.5), (-8.0, 6.0, -3.0)),
+        "GalleryToys": ((13.8, 7.25, -10.5), (8.0, 6.0, -3.0)),
+        "GalleryMusic": ((6.0, 7.25, -17.0), (10.0, 6.4, -24.0)),
+        "GalleryDrawing": ((-6.0, 7.25, -17.0), (-11.0, 6.4, -23.5)),
         "Balcony": ((0.0, 7.25, -6.0), (0.0, 7.0, 6.0)),
         "FromBalcony": ((0.0, 7.25, 1.1), (0.0, 6.0, 30.0)),
+    },
+    "library": {  # ala de serviço: refeitório, cozinha, copa, despensa, biblioteca, estudo, lavanderia, corredor
+        "RefDoor": ((-0.4, 1.6, -14.6), (-13.0, 1.2, -19.5)),
+        "RefFar": ((-12.4, 1.6, -23.4), (1.5, 1.2, -16.0)),
+        "RefHatch": ((1.4, 1.6, -19.0), (-14.0, 1.3, -19.0)),
+        "KitDoor": ((7.5, 1.6, -14.3), (4.0, 1.2, -22.5)),
+        "KitFar": ((3.4, 1.6, -21.6), (9.0, 1.3, -14.6)),
+        "KitRange": ((4.0, 1.6, -16.0), (9.65, 1.3, -18.5)),
+        "Scullery": ((10.5, 1.6, -14.5), (13.5, 1.0, -18.5)),
+        "Pantry": ((10.3, 1.6, -22.3), (14.0, 1.2, -21.0)),
+        "LibDoor": ((-3.4, 1.6, -9.9), (-13.5, 1.6, -2.0)),
+        "LibFar": ((-13.5, 1.6, -1.2), (-2.5, 1.5, -9.0)),
+        "StudyDoor": ((6.8, 1.6, -9.9), (-1.0, 1.4, -3.0)),
+        "StudyFront": ((-0.8, 2.0, -5.25), (7.0, 0.9, -5.25)),
+        "Laundry": ((11.0, 1.6, -9.9), (12.0, 1.2, -1.5)),
+        "LaundryFar": ((13.8, 1.6, -0.9), (9.0, 1.2, -9.0)),
+        "Corridor": ((-14.0, 1.6, -12.2), (14.5, 1.8, -12.2)),
+    },
+    "reading": {  # ala das crianças: dormitórios das meninas e dos meninos, lavatórios, rouparia, berçário, corredor
+        "GirlsDoor": ((-13.2, 1.6, -14.3), (5.0, 1.0, -19.0)),
+        "GirlsFar": ((5.3, 1.6, -23.6), (-12.0, 1.0, -16.0)),
+        "GirlsAisle": ((-12.5, 1.6, -16.3), (5.0, 1.0, -16.3)),
+        "GirlsWash": ((6.6, 1.6, -16.3), (9.0, 1.2, -23.0)),
+        "Linen": ((12.5, 1.6, -14.3), (12.0, 1.2, -23.0)),
+        "BoysDoor": ((-13.9, 1.6, -9.9), (1.0, 1.0, -3.0)),
+        "BoysFar": ((1.2, 1.6, -9.8), (-13.0, 1.0, -2.0)),
+        "BoysWindows": ((-13.8, 1.6, -1.2), (1.0, 1.0, -6.0)),
+        "BoysWash": ((2.4, 1.6, -9.6), (7.0, 1.2, -2.0)),
+        "Nursery": ((9.4, 1.6, -9.9), (13.0, 0.8, -2.0)),
+        "NurseryFar": ((11.5, 1.6, -0.9), (10.0, 0.8, -9.5)),
+        "Corridor": ((-14.0, 1.6, -12.2), (14.5, 1.8, -12.2)),
+    },
+    "school": {  # ala da escola: três salas de aula, sala de armas, sala de prática de magia, corredor
+        "Class1Door": ((13.4, 1.6, -9.9), (5.5, 1.5, -5.0)),
+        "Class1Front": ((5.6, 1.9, -8.6), (13.0, 0.9, -3.0)),
+        "Class2Door": ((4.0, 1.6, -9.9), (-4.5, 1.5, -5.0)),
+        "Class2Front": ((-4.6, 1.9, -8.6), (3.5, 0.9, -3.0)),
+        "Class3Door": ((-13.6, 1.6, -9.9), (-8.0, 0.9, -1.5)),
+        "Class3Back": ((-6.0, 1.6, -0.9), (-10.0, 1.6, -10.0)),
+        "SalleDoor": ((-2.0, 1.6, -14.4), (-13.5, 1.2, -19.0)),
+        "SalleFar": ((-13.8, 1.6, -14.6), (4.0, 1.2, -21.0)),
+        "SalleBack": ((3.8, 1.6, -23.5), (-13.0, 1.2, -16.0)),
+        "MagicDoor": ((6.2, 1.6, -14.4), (11.0, 1.0, -23.5)),
+        "MagicFar": ((13.8, 1.6, -23.6), (6.0, 1.3, -15.0)),
+        "Corridor": ((14.0, 1.6, -12.2), (-14.5, 1.8, -12.2)),
+    },
+    "seminary": {  # ala das irmãs: celas, lavatório, sala da comunidade, capela, sacristia, isolamento, enfermaria
+        "CellsDoor": ((-14.1, 1.6, -5.5), (4.0, 1.2, -5.5)),
+        "CellsAisle": ((4.3, 1.6, -5.5), (-14.0, 1.2, -5.5)),
+        "CellWindow": ((-9.2, 1.6, -3.0), (-9.694, 1.2, -0.3)),
+        "CellCorridor": ((-4.9, 1.6, -7.6), (-4.74, 1.0, -10.6)),
+        "Wash": ((6.6, 1.6, -9.9), (6.6, 1.2, -1.0)),
+        "Community": ((9.4, 1.6, -9.9), (12.0, 1.2, -1.5)),
+        "ChapelDoor": ((0.8, 1.6, -14.4), (14.0, 2.0, -18.9)),
+        "ChapelNave": ((0.6, 1.6, -18.9), (14.0, 1.8, -18.9)),
+        "ChapelAltar": ((13.0, 1.6, -15.0), (2.0, 1.2, -20.0)),
+        "Infirmary": ((-14.0, 1.6, -14.4), (-7.0, 1.0, -21.0)),
+        "InfFar": ((-7.0, 1.6, -19.0), (-14.0, 1.0, -16.0)),
+        "Sacristy": ((-3.5, 1.6, -14.4), (-4.0, 1.4, -18.8)),
+        "Isolation": ((-6.0, 1.6, -20.4), (-2.0, 1.0, -23.6)),
+        "Corridor": ((14.0, 1.6, -12.2), (-14.5, 1.8, -12.2)),
     },
 }
 

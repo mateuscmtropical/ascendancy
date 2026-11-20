@@ -20,13 +20,14 @@ from build_town_houses import STONE, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Buil
 from shop_props_common import lathe
 
 UPPER = shops.CASARAO_STOREYS[0]  # altura da laje do andar nobre
+WELL_SHIFT = shops.SHOP_LOTS["vestibule"][1] - 20.0  # a escada fica encostada no fundo: o salão cresceu para trás, o vão vai junto
 TOP = sum(shops.CASARAO_STOREYS)
 FLOOR_TOP = shops.FLOOR_TOP
 STAIR_HALF = 1.8  # meia largura do lance central
 SIDE_FLIGHT = (2.1, 4.5)  # |u| dos dois lances de volta
 WELL_HALF = 4.8  # o vão da escada vai até a face de fora das paredes que seguram a galeria
-WELL_FRONT = 11.2  # d da borda da galeria: pé do lance central e chegada dos lances de volta
-LANDING_FRONT = 16.0  # d da borda do patamar
+WELL_FRONT = 11.2 + WELL_SHIFT  # d da borda da galeria: pé do lance central e chegada dos lances de volta
+LANDING_FRONT = 16.0 + WELL_SHIFT  # d da borda do patamar
 RISERS = 16  # espelhos por lance
 TREAD = (LANDING_FRONT - WELL_FRONT) / (RISERS - 1)
 RISE = UPPER / (2 * RISERS)
@@ -37,17 +38,19 @@ RAIL_HEIGHT = 1.05
 STRINGER_RISE = 0.25  # a mureta ao lado do lance central passa isto da linha dos degraus
 STRINGER_RAIL = 0.8  # e o corrimão dela fica mais baixo, para dar a mesma altura sobre o degrau
 BAR_PITCH = 0.16
-WELL_ARCH = (13.7, 3.0, 3.3)  # (d do eixo, largura, altura) do arco de cada parede do vão, sob o lance de volta
 COLUMN_US = (-9.7, -1.95, 1.95, 9.7)  # colunata do térreo na borda da galeria
 GALLERY_COLUMN_US = (-4.65, -1.95, 1.95, 4.65)  # colunas do andar nobre: emolduram a chegada dos lances
 STAIR_WINDOWS = ((-2.9, 0.0, 2.9), 1.7, 4.3, 5.2)  # (eixos u, largura, peitoril, altura): janelão sobre o patamar
 BALCONY_BAYS = 3  # vãos do meio da fachada do andar nobre que são portas para a sacada
-LAYLIGHT = (3.3, 12.6, 17.7, 6, 4)  # (meia largura, d de, d até, colunas, fileiras) da claraboia de vidro colorido do vão
-LAYLIGHT_GLASS = ("glow_warm", "glow_amber", "glow_cyan")  # miolo, borda, cantos
+LAYLIGHT = (3.3, 12.6 + WELL_SHIFT, 17.7 + WELL_SHIFT, 6, 4)  # (meia largura, d de, d até, colunas, fileiras) da claraboia de vidro colorido do vão
+LAYLIGHT_GLASS = ("laylight_warm", "laylight_amber", "laylight_cyan")  # miolo, borda, cantos; vidro de claraboia (features/sky/window_glass.gd): claro de dia, quase apagado de noite
+LAYLIGHT_COLORS = {"laylight_warm": ("M_LaylightWarm", "FFD9A0"), "laylight_amber": ("M_LaylightAmber", "FFB347"), "laylight_cyan": ("M_LaylightCyan", "8FD8FF")}
 RUNNER_HALF = 0.9  # passadeira do portal ao patamar
 FLOOR_TILE = 1.2
 FLOOR_TINTS = (srgb("EBD6AC"), srgb("C99A6C"))  # xadrez do piso do térreo
 DADO_TOP = 1.5
+CORNICE_HEIGHT = 0.2  # the same cornice the wing halls run under their ceilings (build_market_shops.py)
+CORNICE_TINT = srgb("EFE6D2")
 DADO_REVEAL = 0.32  # o lambri para antes da moldura de cada vão
 PANEL_PITCH = 2.6  # largura aproximada de um painel de parede
 PANEL_TOP = 4.35
@@ -141,16 +144,15 @@ def shifted(opening: Opening, offset: float) -> Opening:
 
 
 def build_well_walls(b: Builder, room) -> None:
-    """The two walls that carry the gallery beside the stair, each with an arch under its return flight."""
-    arch_d, arch_width, arch_height = WELL_ARCH
+    """The two walls that carry the gallery beside the stair, whole: the rooms behind them open on the crossing."""
     wall = copy.copy(room)
     wall.storey = UPPER
     length = room.back - WELL_FRONT
     right = Matrix.Translation((WELL_HALF, WELL_FRONT, 0.0)) @ Matrix.Rotation(math.pi / 2.0, 4, "Z")
     left = Matrix.Translation((-WELL_HALF, room.back, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z")
 
-    shops.pierced_wall(b, wall, right, length, [Opening(arch_d - WELL_FRONT, arch_width, 0.0, arch_height, "round", kind="arch")])
-    shops.pierced_wall(b, wall, left, length, [Opening(room.back - arch_d, arch_width, 0.0, arch_height, "round", kind="arch")])
+    shops.pierced_wall(b, wall, right, length, [])
+    shops.pierced_wall(b, wall, left, length, [])
 
 
 # ---------- floors and ceilings ----------
@@ -241,14 +243,12 @@ def build_wall_finishes(b: Builder, room, storey: int) -> None:
     lift = (0.0, UPPER)[storey]
     finish = WALL_FINISHES[storey]
     door_d, door_width = shops.INNER_DOOR[:2]
-    arch_d, arch_width, _ = WELL_ARCH
     door_gap = [(door_d - door_width / 2.0 - DADO_REVEAL, door_d + door_width / 2.0 + DADO_REVEAL)]
-    arch_gap = [(arch_d - arch_width / 2.0 - DADO_REVEAL, arch_d + arch_width / 2.0 + DADO_REVEAL)]
     front = [(opening.u - room.half, opening) for opening in front_openings(room, storey)]
     front_gaps = [(u - opening.width / 2.0 - DADO_REVEAL, u + opening.width / 2.0 + DADO_REVEAL) for u, opening in front]
     sills = [(u, opening) for u, opening in front if opening.bottom > 0.5]
     side_spans = free_spans(room.front, room.back, door_gap)
-    well_spans = free_spans(WELL_FRONT, room.back, arch_gap) if storey == 0 else []
+    well_spans = [(WELL_FRONT, room.back)] if storey == 0 else []
     runs = [(("d", room.left, 1), span) for span in side_spans] + [(("d", room.right, -1), span) for span in side_spans]
     runs += [(("u", room.front, 1), span) for span in free_spans(room.left, room.right, front_gaps)]
     runs += [(("d", -WELL_HALF, -1), span) for span in well_spans] + [(("d", WELL_HALF, 1), span) for span in well_spans]
@@ -264,6 +264,13 @@ def build_wall_finishes(b: Builder, room, storey: int) -> None:
 
     for u, opening in sills:
         dress_wall(b, ("u", room.front, 1), (u - opening.width / 2.0 - DADO_REVEAL, u + opening.width / 2.0 + DADO_REVEAL), lift, finish, dado_top=opening.bottom - 0.2, panel_top=0.0)
+
+    ceiling = lift + room.ceiling
+    cornice_runs = [(("d", room.left, 1), (room.front, room.back)), (("d", room.right, -1), (room.front, room.back)), (("u", room.front, 1), (room.left, room.right)), (("u", room.back, -1), (room.left, room.right))]
+
+    for run, span in cornice_runs:
+        slab(b, run, span, (ceiling - CORNICE_HEIGHT, ceiling - CORNICE_HEIGHT * 0.6), 0.05, "plaster", CORNICE_TINT)
+        slab(b, run, span, (ceiling - CORNICE_HEIGHT * 0.6, ceiling), 0.1, "plaster", CORNICE_TINT)
 
 
 def build_gallery(b: Builder, room) -> None:
@@ -463,25 +470,32 @@ def build_railings(b: Builder, room) -> None:
 # ---------- assembly ----------
 
 def build_lights(b: Builder, room) -> None:
-    """Lamps under the gallery and under the top ceiling (the chandelier of the well comes with the furniture)."""
-    color = room.spec["light"]
-    spots = [(-9.7, 5.5), (0.0, 5.5), (9.7, 5.5), (-9.7, 15.2), (9.7, 15.2)]
+    """Day lamps under the gallery and under the top ceiling (daylight bouncing round the hall, see shops.day_lamp); at
+    night the chandeliers of the furniture light the hall."""
+    spots = [(-9.7, 5.5), (0.0, 5.5), (9.7, 5.5), (0.0, 12.2), (-9.7, 15.2 + WELL_SHIFT), (9.7, 15.2 + WELL_SHIFT)]
 
     for u, d in spots:
-        b.light((u, d, room.ceiling - 0.9), color, 1.3, 10.0)
-        b.light((u, d, UPPER + room.ceiling - 0.9), color, 1.3, 10.0)
+        b.light((u, d, room.ceiling - 0.9), *shops.day_lamp(room))
+        b.light((u, d, UPPER + room.ceiling - 0.9), *shops.day_lamp(room))
 
-    b.light((0.0, 15.0, UPPER + 2.4), color, 1.6, 12.0)
+    b.light((0.0, 15.0 + WELL_SHIFT, UPPER + 2.4), room.spec["day_light"], 1.6, 12.0, None, "day_lights")
 
 
 def build_shell(room) -> dict:
     b = Builder(f"shop_{room.shop_type}")
     b.materials["azulejo"] = town.textured_material("M_TownAzulejo", AZULEJO_TEXTURE, roughness=0.35)
 
+    for key, (material_name, hex_color) in LAYLIGHT_COLORS.items():
+        b.materials[key] = town.plain_material(material_name, srgb(hex_color), 0.4)
+
     build_walls(b, room)
     build_well_walls(b, room)
     build_wall_finishes(b, room, 0)
     build_wall_finishes(b, room, 1)
+
+    for partition in room.partitions:  # cômodos do térreo em volta do saguão (locutório, portaria, madre, costura, latrinas)
+        shops.build_partition(b, room, partition)
+
     build_ground_floor(b, room)
     build_gallery(b, room)
     build_top_ceiling(b, room)
