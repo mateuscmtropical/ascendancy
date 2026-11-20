@@ -50,19 +50,18 @@ ACTS = [
 ]
 # Título: (texto, tamanho, cor, y, segundo em que entra)
 TITLE_TEXTS = [
-    ("ASCENDANCY", 230, "FFFFFF", "(h-text_h)/2-40", 1.0),
-    ("A FANTASY RPG  -  IN DEVELOPMENT", 54, "E8C46A", "h/2+110", 2.2),
+    ("ASCENDANCY", 230, "FFFFFF", "(h-text_h)/2", 1.0),
 ]
 # Narração: (início e fim na faixa da voz, ato em que entra (None = grade), atraso em batidas)
 VOICE_LINES = [
-    ((0.00, 3.10), None, 4),  # One town. Every corner alive.
-    ((3.45, 4.75), 0, 2),  # Fields of dawn.
-    ((5.05, 7.35), 1, 2),  # Halls full of children learning magic.
-    ((7.55, 9.10), 2, 3),  # Streets that never sleep.
-    ((9.30, 12.95), 3, 2),  # But under the cathedral... there's a stair that shouldn't be there.
-    ((13.25, 15.70), 5, 1),  # And when night falls... the legends ride.
-    ((15.90, 17.05), 5, 16),  # Pick up your sword.
-    ((17.20, 18.30), 6, 3),  # Ascendancy.
+    ((0.00, 3.60), None, 4),  # One town. Every corner alive.
+    ((3.75, 5.30), 0, 2),  # Fields at dawn.
+    ((5.40, 8.35), 1, 2),  # Halls full of children learning magic.
+    ((8.45, 10.60), 2, 3),  # Streets that never sleep.
+    ((10.62, 14.95), 3, 2),  # But under the cathedral... there's a stair that shouldn't be there.
+    ((15.05, 18.45), 5, 1),  # And when night falls... the legends ride.
+    ((18.65, 20.10), 5, 16),  # Pick up your sword.
+    ((20.25, 21.60), 6, 3),  # Ascendancy.
 ]
 
 
@@ -254,8 +253,8 @@ def mix_audio(score: Path, voice: Path, starts: list, duration: float, work: Pat
     graph += f";[sb]atrim={SCORE_B - 0.015:.4f},asetpts=PTS-STARTPTS[b];[a][b]acrossfade=d=0.03,atrim=0:{duration:.3f}"
     graph += f",afade=t=out:st={duration - 2.0:.3f}:d=2.0,volume=0.7[music];" + ";".join(lines)
     graph += ";" + "".join(f"[v{index}]" for index in range(count))
-    graph += f"amix=inputs={count}:normalize=0,highpass=f=90,equalizer=f=3200:t=q:w=1.2:g=4,acompressor=threshold=0.1:ratio=3:makeup=2,volume=1.3,apad=whole_dur={duration:.3f},asplit=2[voice][key]"
-    graph += ";[music][key]sidechaincompress=threshold=0.015:ratio=12:attack=10:release=400[ducked]"
+    graph += f"amix=inputs={count}:normalize=0,volume=1.4,apad=whole_dur={duration:.3f},asplit=2[voice][key]"
+    graph += ";[music][key]sidechaincompress=threshold=0.02:ratio=8:attack=10:release=400[ducked]"
     graph += ";[ducked][voice]amix=inputs=2:normalize=0:duration=first,loudnorm=I=-14:TP=-1.0:LRA=11[out]"
     output = work / "mix.wav"
     run([*inputs, "-filter_complex", graph, "-map", "[out]", "-ar", "48000", output.name], work)
