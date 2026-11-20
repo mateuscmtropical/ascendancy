@@ -1,9 +1,11 @@
 extends Node3D
 ## Folha de prints da Mula sem cabeça: aponta cada câmera para o seu alvo e escolhe a animação
-## pela câmera pedida na linha de comando (--camera=<nome>) ou direto (--animation=<nome>).
+## pela câmera pedida na linha de comando (--camera=<nome>) ou direto (--animation=<nome>);
+## --pose-seconds=<s> congela a animação tocando nesse instante (quadros de um ciclo).
 
 const CAMERA_ARGUMENT: String = "--camera="
 const ANIMATION_ARGUMENT: String = "--animation="
+const POSE_ARGUMENT: String = "--pose-seconds="
 const CAMERA_TARGETS: Dictionary[String, Vector3] = {
 	"MulaThreeQuarter": Vector3(0.0, 1.35, 0.0),
 	"MulaSide": Vector3(0.0, 1.3, 0.0),
@@ -52,6 +54,9 @@ func _ready() -> void:
 		if argument.begins_with(ANIMATION_ARGUMENT):
 			_mula.play_animation(StringName(argument.trim_prefix(ANIMATION_ARGUMENT)))
 
+		if argument.begins_with(POSE_ARGUMENT):
+			_freeze_current_pose(float(argument.trim_prefix(POSE_ARGUMENT)))
+
 
 func _process(delta: float) -> void:
 	_mula.position.z += _walk_speed * delta
@@ -71,6 +76,14 @@ func _play_animation_of_camera(camera_name: String) -> void:
 
 	if POSE_SECONDS_BY_CAMERA.has(camera_name):
 		_freeze_pose_at(animation_name, POSE_SECONDS_BY_CAMERA[camera_name])
+
+
+func _freeze_current_pose(seconds: float) -> void:
+	var player: AnimationPlayer = (
+		_mula.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	)
+
+	_freeze_pose_at(player.current_animation, seconds)
 
 
 ## Congela a animação num quadro: pose de ataque para a conferência com a folha de conceito.
