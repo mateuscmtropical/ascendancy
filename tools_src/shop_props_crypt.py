@@ -220,6 +220,31 @@ def kneeler(b: Builder, frame: Matrix, **options) -> None:
     box(b, frame, (-0.55, 0.04, 0.8), (0.55, 0.26, 0.86), "wood", "4A3226")
 
 
+def chapel_altar(b: Builder, frame: Matrix, **options) -> None:
+    """Small stone altar of the bone chapel (back against +Y, 1.3 m wide): a limestone block on a plinth, a marble
+    slab, a white altar cloth hanging over the front with a red band and gilt hem, two candlesticks and a crucifix
+    standing in the middle. The candles only glow (no real light), the chapel is lit by its candle stands."""
+    half_width, half_depth, mensa = 0.65, 0.3, 0.95
+
+    box(b, frame, (-half_width - 0.08, -half_depth - 0.08, 0.0), (half_width + 0.08, half_depth + 0.08, 0.1), "stone", DARK_STONE)
+    box(b, frame, (-half_width, -half_depth, 0.1), (half_width, half_depth, mensa - 0.08), "stone", LIMESTONE)
+    box(b, frame, (-half_width - 0.05, -half_depth - 0.05, mensa - 0.08), (half_width + 0.05, half_depth + 0.05, mensa), "stone", MARBLE)
+
+    box(b, frame, (-half_width - 0.03, -half_depth - 0.06, mensa - 0.42), (half_width + 0.03, half_depth + 0.04, mensa + 0.01), "paint", "F4F0E8")
+    box(b, frame, (-half_width - 0.035, -half_depth - 0.065, mensa - 0.3), (half_width + 0.035, -half_depth - 0.055, mensa - 0.22), "paint", VELVET)
+    box(b, frame, (-half_width - 0.035, -half_depth - 0.065, mensa - 0.42), (half_width + 0.035, -half_depth - 0.055, mensa - 0.4), "metal", GILT)
+
+    for side in (-1.0, 1.0):
+        x = side * 0.4
+        lathe(b, [(0.06, 0.0), (0.02, 0.04), (0.02, 0.2), (0.045, 0.24)], 8, "metal", GILT, frame, base=(x, 0.0, mensa))
+        cyl(b, frame, (x, 0.0, mensa + 0.24), 0.02, 0.2, "paint", "F2EAD6", sides=6)
+        gem(b, frame, (x, 0.0, mensa + 0.47), 0.02, "glow_warm")
+
+    lathe(b, [(0.1, 0.0), (0.07, 0.05), (0.03, 0.12)], 8, "metal", GILT, frame, base=(0.0, 0.1, mensa))
+    box(b, frame, (-0.025, 0.08, mensa + 0.12), (0.025, 0.14, mensa + 0.62), "metal", GILT)
+    box(b, frame, (-0.17, 0.08, mensa + 0.4), (0.17, 0.14, mensa + 0.45), "metal", GILT)
+
+
 def railing(b: Builder, frame: Matrix, **options) -> None:
     """2 m of gilded iron railing on a marble kerb: balusters, top rail, two rings at mid height."""
     box(b, frame, (-1.0, -0.08, 0.0), (1.0, 0.08, 0.1), "stone", MARBLE)
@@ -447,6 +472,7 @@ PROPS = {
     "candle_stand": {"build": candle_stand, "size": (0.36, 0.36, 1.7), "solid": True, "light": ((0.0, 0.0, 1.72), "FFB060", 1.2, 5.5)},
     "flower_vase": {"build": flower_vase, "size": (0.36, 0.36, 0.7), "solid": False},
     "kneeler": {"build": kneeler, "size": (1.1, 0.51, 0.86), "solid": True},
+    "chapel_altar": {"build": chapel_altar, "size": (1.46, 0.76, 1.6), "solid": True},
     "railing": {"build": railing, "size": (2.0, 0.16, 0.97), "solid": True},
     "baroque_urn": {"build": baroque_urn, "size": (URN_LENGTH + 0.2, URN_WIDTH + 0.3, 2.0), "solid": True},
     "sarcophagus": {"build": sarcophagus, "size": (2.46, 1.16, 1.1), "solid": True},

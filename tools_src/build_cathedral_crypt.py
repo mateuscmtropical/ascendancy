@@ -530,6 +530,8 @@ def furnish_catacombs(place: Placer) -> None:
     place.against("catacumba", "east", "sarcophagus", -6.0, 15.0)
     place.put("catacumba", "candle_stand", 13.6, -7.6)
     place.put("catacumba", "candle_stand", 13.6, -4.4)
+    place.put("catacumba", "chapel_altar", 12.0, -2.9, 0.0)
+    place.put("catacumba", "kneeler", 12.0, -4.0, 0.0)
 
     for x, y, degrees in ((12.0, -2.05, 180.0), (12.0, -9.95, 0.0)):
         place.put("catacumba", "wall_lantern", x, y, degrees, z=lantern_z)

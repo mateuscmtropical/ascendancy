@@ -656,6 +656,42 @@ distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
+[node name="Light26" type="OmniLight3D" parent="Buildings/CathedralCrypt"]
+position = Vector3(13.600, -3.030, 7.600)
+light_color = Color(1.000, 0.690, 0.376, 1)
+light_energy = 1.2
+omni_range = 5.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light27" type="OmniLight3D" parent="Buildings/CathedralCrypt"]
+position = Vector3(13.600, -3.030, 4.400)
+light_color = Color(1.000, 0.690, 0.376, 1)
+light_energy = 1.2
+omni_range = 5.5
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light28" type="OmniLight3D" parent="Buildings/CathedralCrypt"]
+position = Vector3(12.000, -2.800, 1.930)
+light_color = Color(1.000, 0.690, 0.376, 1)
+light_energy = 1.3
+omni_range = 7.0
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
+[node name="Light29" type="OmniLight3D" parent="Buildings/CathedralCrypt"]
+position = Vector3(12.000, -2.800, 10.070)
+light_color = Color(1.000, 0.690, 0.376, 1)
+light_energy = 1.3
+omni_range = 7.0
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_length = 10.0
+
 [node name="Ambience" type="ReflectionProbe" parent="Buildings/CathedralCrypt"]
 position = Vector3(1.350, -2.850, -8.650)
 size = Vector3(28.500, 5.500, 62.500)
