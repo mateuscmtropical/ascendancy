@@ -90,6 +90,21 @@ func test_standing_npc_does_not_move() -> void:
 	assert_eq(npc.global_position, Vector3(3, 0, 4))
 
 
+func test_chatting_npc_smiles_now_and_then() -> void:
+	var npc: WalkingNpc = NPC_SCENE.instantiate()
+	var face: FaceAnimator
+
+	npc.body_scene = BODY_SCENE
+	npc.activity = WalkingNpc.Activity.STAND
+	npc.smile_every_seconds = 0.2
+	add_child_autofree(npc)
+	face = npc.find_child("FaceAnimator", true, false) as FaceAnimator
+	await wait_seconds(0.3)
+	face.advance(0.5)
+
+	assert_gt(face.weight_of(&"smile"), 0.5, "smiling after the first beat")
+
+
 func test_animation_steps_grow_with_distance() -> void:
 	assert_eq(CharacterModel.animation_step_for(5.0), 0.0, "near: every frame")
 	assert_almost_eq(CharacterModel.animation_step_for(25.0), 1.0 / 30.0, 0.0001)

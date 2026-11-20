@@ -62,6 +62,26 @@ position = Vector3(-24.000, 1.600, 8.000)
 rotation = Vector3(0.047, 0.896, 0.000)
 fov = 60.0
 
+[node name="CoupleClose" type="Camera3D" parent="."]
+position = Vector3(-29.094, 1.300, -3.186)
+rotation = Vector3(-0.134, -0.995, 0.000)
+fov = 55.0
+
+[node name="CoupleFaces" type="Camera3D" parent="."]
+position = Vector3(-28.004, 1.250, -3.894)
+rotation = Vector3(-0.038, -0.995, 0.000)
+fov = 40.0
+
+[node name="CoupleSide" type="Camera3D" parent="."]
+position = Vector3(-22.512, 1.600, -2.691)
+rotation = Vector3(-0.145, 1.161, 0.000)
+fov = 60.0
+
+[node name="CoupleBehind" type="Camera3D" parent="."]
+position = Vector3(-24.648, 1.600, -7.265)
+rotation = Vector3(-0.034, 2.231, 0.000)
+fov = 60.0
+
 [node name="CoretoClose" type="Camera3D" parent="."]
 position = Vector3(-43.500, 2.000, -16.500)
 rotation = Vector3(0.000, 2.176, 0.000)

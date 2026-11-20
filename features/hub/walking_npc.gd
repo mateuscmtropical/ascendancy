@@ -11,6 +11,8 @@ const WALK_ANIMATION: StringName = &"ual1/Walk"
 const TURN_SPEED: float = 6.0
 ## Folga de 2,5 m em volta do corpo: cobre a sombra (sol a 45°), que entra na tela antes dele.
 const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5.0, 3.5, 5.0))
+## Quanto dura cada sorriso de quem está conversando.
+const SMILE_HOLD_SECONDS: float = 2.4
 
 @export var body_scene: PackedScene
 @export var hair_color: Color = Color("4a3426")
@@ -23,6 +25,8 @@ const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5
 @export var walk_speed: float = 1.3
 @export var pause_seconds: float = 3.0
 @export var animation_offset_seconds: float = 0.0
+## Conversando: o rosto abre um sorriso a cada tantos segundos (0 = nunca).
+@export var smile_every_seconds: float = 0.0
 
 var _model: CharacterModel
 var _patrol_state: PatrolState = PatrolState.WALKING
@@ -51,6 +55,9 @@ func _ready() -> void:
 	_model.scale = Vector3.ONE * body_scale
 	add_child(_model)
 	_stop_animating_off_screen()
+
+	if smile_every_seconds > 0.0:
+		_start_smiling()
 
 	_navigation_agent.avoidance_enabled = is_walking
 	_obstacle.avoidance_enabled = not is_walking
@@ -83,6 +90,19 @@ func _stop_animating_off_screen() -> void:
 
 	animation_culling.aabb = ANIMATION_CULLING_BOUNDS
 	_model.add_child(animation_culling)
+
+
+func _start_smiling() -> void:
+	var smile_timer: Timer = Timer.new()
+
+	smile_timer.wait_time = smile_every_seconds
+	smile_timer.autostart = true
+	smile_timer.timeout.connect(_smile)
+	add_child(smile_timer)
+
+
+func _smile() -> void:
+	_model.show_expression(FaceAnimator.Mood.HAPPY, SMILE_HOLD_SECONDS)
 
 
 func _walk_toward_target(_delta: float) -> void:
