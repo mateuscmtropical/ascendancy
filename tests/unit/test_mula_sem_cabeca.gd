@@ -103,3 +103,26 @@ func test_play_animation_switches_the_clip() -> void:
 	_mula.play_animation(MulaSemCabeca.ATTACK_ANIMATION)
 
 	assert_eq(player.current_animation, String(MulaSemCabeca.ATTACK_ANIMATION))
+
+
+func test_animation_steps_every_frame_up_close() -> void:
+	assert_eq(MulaSemCabeca.animation_step_for(10.0, true), 0.0)
+
+
+func test_animation_steps_sparser_far_away() -> void:
+	var middle_step: float = MulaSemCabeca.animation_step_for(45.0, true)
+	var far_step: float = MulaSemCabeca.animation_step_for(150.0, true)
+
+	assert_gt(middle_step, 0.0)
+	assert_gt(far_step, middle_step)
+	assert_lt(far_step, INF)
+
+
+func test_animation_stops_off_screen() -> void:
+	assert_eq(MulaSemCabeca.animation_step_for(10.0, false), INF)
+
+
+func test_fire_shows_only_near_and_on_screen() -> void:
+	assert_true(MulaSemCabeca.should_show_fire(40.0, true))
+	assert_false(MulaSemCabeca.should_show_fire(MulaSemCabeca.FIRE_DETAIL_DISTANCE + 1.0, true))
+	assert_false(MulaSemCabeca.should_show_fire(40.0, false))

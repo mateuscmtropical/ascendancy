@@ -6,6 +6,9 @@ extends Node3D
 ## de chama, pendura brasas, fumaça e luz nos marcadores Fire* que o modelo traz presos aos ossos
 ## (cada um recebe a cópia do filho de FireTemplates do seu tipo), balança as pontas de corrente
 ## partida, faz as luzes do fogo tremerem e apaga o fogo quando a mula morre.
+## Longe da câmera ou fora da tela ela perde detalhe: a animação avança em passos mais espaçados
+## (esqueleto parado poupa o skinning e o arrasto das ~40 partículas presas aos ossos) e o fogo
+## preso ao corpo some (partícula escondida não é processada); a luz dele já esmaeceu antes disso.
 
 const IDLE_ANIMATION: StringName = &"Idle"
 const WALK_ANIMATION: StringName = &"Walk"
@@ -61,6 +64,17 @@ const DRIP_STAIN_SIZE: float = 0.16
 const DRIP_STAIN_SECONDS: float = 0.4
 const DRIP_STAIN_SPREAD: float = 0.3
 const MIN_BURN_TO_MARK: float = 0.5
+## Detalhe pela distância à câmera: até a distância x (m) a animação avança a cada y segundos
+## (0 = todo quadro); além da última, a cada FAR_ANIMATION_STEP_SECONDS.
+const ANIMATION_STEP_BY_DISTANCE: Array[Vector2] = [
+	Vector2(30.0, 0.0),
+	Vector2(60.0, 1.0 / 30.0),
+]
+const FAR_ANIMATION_STEP_SECONDS: float = 1.0 / 15.0
+## Daqui em diante o fogo preso ao corpo (labaredas, fumaça, faíscas, luzes) fica escondido.
+const FIRE_DETAIL_DISTANCE: float = 90.0
+## Caixa do aviso de tela: corpo, fogo e fumaça do toco (metros, no espaço da mula).
+const SCREEN_CHECK_BOUNDS: AABB = AABB(Vector3(-3.0, -0.5, -3.5), Vector3(6.0, 7.0, 7.0))
 
 @export var start_animation: StringName = IDLE_ANIMATION
 @export var vein_material: ShaderMaterial
@@ -83,6 +97,10 @@ var _hoof_is_down: PackedByteArray = PackedByteArray()
 var _stump_marker: Node3D
 var _seconds_to_drip_stain: float = 0.0
 var _body_scale: float = 1.0
+var _pending_animation_seconds: float = 0.0
+var _screen_check: VisibleOnScreenNotifier3D
+var _fire_nodes: Array[Node3D] = []
+var _is_fire_shown: bool = true
 
 @onready var _model: Node3D = $Model
 @onready var _skeleton: Skeleton3D = $Model.find_child("Skeleton3D") as Skeleton3D
@@ -109,12 +127,19 @@ func _ready() -> void:
 	_hang_fire_on_markers()
 	_collect_chain_bones()
 	_collect_lava_sources()
+	_watch_the_screen()
 	play_animation(start_animation)
 
 
 func _process(delta: float) -> void:
-	_seconds_alive += delta
+	var distance: float = _distance_to_camera()
+	var is_on_screen: bool = _screen_check.is_on_screen()
 
+	_seconds_alive += delta
+	_pending_animation_seconds += delta
+
+	_show_fire(should_show_fire(distance, is_on_screen))
+	_step_animation(animation_step_for(distance, is_on_screen))
 	_sway_chains()
 	_flicker_lights()
 
@@ -129,7 +154,24 @@ func play_animation(animation_name: StringName) -> void:
 
 	_chain_sway = CHAIN_SWAY_BY_ANIMATION.get(animation_name, 0.0)
 	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS)
+	_pending_animation_seconds = 0.0
 	_fade_fire_to(BURN_BY_ANIMATION.get(animation_name, 1.0))
+
+
+## Intervalo entre passos da animação a esta distância da câmera; INF = fora da tela, parada.
+static func animation_step_for(distance: float, is_on_screen: bool) -> float:
+	if not is_on_screen:
+		return INF
+
+	for reach in ANIMATION_STEP_BY_DISTANCE:
+		if distance < reach.x:
+			return reach.y
+
+	return FAR_ANIMATION_STEP_SECONDS
+
+
+static func should_show_fire(distance: float, is_on_screen: bool) -> bool:
+	return is_on_screen and distance < FIRE_DETAIL_DISTANCE
 
 
 ## Turbo da montaria: jato de fogo pela traseira, como um foguete.
@@ -167,7 +209,7 @@ func _hang_fire_on_markers() -> void:
 	var markers: Array[Node] = _skeleton.find_children(FIRE_MARKER_PATTERN, "Node3D", true, false)
 
 	for marker in markers:
-		_hang_fire_on_marker(marker as Node3D)
+		_fire_nodes.append(_hang_fire_on_marker(marker as Node3D))
 
 	_fire_templates.queue_free()
 
@@ -177,6 +219,43 @@ func _hang_fire_on_markers() -> void:
 
 	for emitter in _skeleton.find_children("*", "GPUParticles3D", true, false):
 		_fire_emitters.append(emitter as GPUParticles3D)
+
+
+## A animação avança à mão (AnimationPlayer em modo manual), no passo que a distância pede.
+func _step_animation(step_seconds: float) -> void:
+	if _pending_animation_seconds < step_seconds:
+		return
+
+	_animation_player.advance(_pending_animation_seconds)
+	_pending_animation_seconds = 0.0
+
+
+func _show_fire(is_shown: bool) -> void:
+	if is_shown == _is_fire_shown:
+		return
+
+	_is_fire_shown = is_shown
+
+	for fire in _fire_nodes:
+		fire.visible = is_shown
+
+
+func _watch_the_screen() -> void:
+	_animation_player.callback_mode_process = (
+		AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	)
+	_screen_check = VisibleOnScreenNotifier3D.new()
+	_screen_check.aabb = SCREEN_CHECK_BOUNDS
+	add_child(_screen_check)
+
+
+func _distance_to_camera() -> float:
+	var camera: Camera3D = get_viewport().get_camera_3d()
+
+	if camera == null:
+		return 0.0
+
+	return camera.global_position.distance_to(global_position)
 
 
 func _fade_fire_to(target_burn: float) -> void:
@@ -200,7 +279,7 @@ func _set_burn(burn: float) -> void:
 	_veins.set_instance_shader_parameter(BURN_PARAMETER, vein_burn)
 
 
-func _hang_fire_on_marker(marker: Node3D) -> void:
+func _hang_fire_on_marker(marker: Node3D) -> Node3D:
 	var marker_kind: String = marker.name.get_slice(FIRE_MARKER_NUMBER_SEPARATOR, 0)
 	var template_name: String = FIRE_TEMPLATE_BY_MARKER_KIND[marker_kind]
 	var template: Node3D = _fire_templates.get_node(template_name) as Node3D
@@ -209,6 +288,8 @@ func _hang_fire_on_marker(marker: Node3D) -> void:
 
 	fire.scale = Vector3.ONE / marker_scale
 	marker.add_child(fire)
+
+	return fire
 
 
 func _collect_chain_bones() -> void:
