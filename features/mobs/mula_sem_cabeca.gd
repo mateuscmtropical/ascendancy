@@ -93,6 +93,9 @@ var _animation_player: AnimationPlayer = $Model.find_child("AnimationPlayer") as
 @onready var _fire_templates: Node3D = $FireTemplates
 @onready var _lava_marks: LavaMarks = $LavaMarks
 @onready var _saddle: Marker3D = $Saddle
+@onready var _turbo_flames: GPUParticles3D = $TurboJet/Flames
+@onready var _turbo_smoke: GPUParticles3D = $TurboJet/Smoke
+@onready var _turbo_light: OmniLight3D = $TurboJet/Light
 
 
 func _ready() -> void:
@@ -127,6 +130,17 @@ func play_animation(animation_name: StringName) -> void:
 	_chain_sway = CHAIN_SWAY_BY_ANIMATION.get(animation_name, 0.0)
 	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS)
 	_fade_fire_to(BURN_BY_ANIMATION.get(animation_name, 1.0))
+
+
+## Turbo da montaria: jato de fogo pela traseira, como um foguete.
+func set_turbo(is_on: bool) -> void:
+	_turbo_flames.emitting = is_on
+	_turbo_smoke.emitting = is_on
+	_turbo_light.visible = is_on
+
+
+func is_turbo_on() -> bool:
+	return _turbo_light.visible
 
 
 ## Onde senta quem monta (posição global do lombo).
