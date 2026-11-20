@@ -1,6 +1,7 @@
 extends Node3D
 ## Folha de prints de luta e de rosto: congela um clipe num instante e põe uma expressão no rosto.
-## Argumentos (depois de --): [--character=male|female|villager_male|villager_female|saci|couple_him|couple_her]
+## Argumentos (depois de --): [--character=male|female|villager_male|villager_female|saci|
+## couple_him|couple_her]
 ## [--animation=<biblioteca/clipe>] [--seconds=<instante do clipe>]
 ## [--mood=<nome de FaceAnimator.Mood>] [--blink] fecha os olhos.
 ## Câmeras: FightSide, FightThree, FightFront, FaceClose (segue a cabeça).
