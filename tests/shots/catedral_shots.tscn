@@ -75,3 +75,28 @@ fov = 70
 position = Vector3(4.000, 31.000, 16.000)
 rotation = Vector3(-0.1324, -0.8726, 0)
 fov = 50
+
+[node name="StatueEye" type="Camera3D" parent="."]
+position = Vector3(6.500, 3.600, 15.200)
+rotation = Vector3(0.2320, -0.9391, 0)
+fov = 50
+
+[node name="SideAltarEye" type="Camera3D" parent="."]
+position = Vector3(47.000, 2.650, -9.000)
+rotation = Vector3(0.1889, -1.3877, 0)
+fov = 55
+
+[node name="SideAltarEyeR" type="Camera3D" parent="."]
+position = Vector3(47.000, 2.650, 9.000)
+rotation = Vector3(0.1889, -1.7539, 0)
+fov = 55
+
+[node name="RetableEye" type="Camera3D" parent="."]
+position = Vector3(44.000, 3.200, 0.000)
+rotation = Vector3(0.1651, -1.5708, 0)
+fov = 45
+
+[node name="StatueClose" type="Camera3D" parent="."]
+position = Vector3(9.000, 4.200, 13.000)
+rotation = Vector3(0.2200, -1.1071, 0)
+fov = 45

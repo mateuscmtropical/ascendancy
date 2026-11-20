@@ -624,7 +624,7 @@ def build_materials() -> dict:
         "marble_grey": make_plain_material("M_MarbleGrey", (0.55, 0.56, 0.58), 0.0, 0.4),
         "marble_green": make_plain_material("M_MarbleGreen", (0.12, 0.27, 0.2), 0.0, 0.35),
         "carpet": make_plain_material("M_Carpet", (0.6, 0.17, 0.17), 0.0, 0.95),
-        "blue_robe": make_plain_material("M_MaryRobe", (0.62, 0.76, 0.91), 0.0, 0.7),
+        "blue_robe": make_plain_material("M_MaryRobe", (0.3, 0.47, 0.8), 0.0, 0.7),
         "brown_robe": make_plain_material("M_JosephRobe", (0.55, 0.35, 0.24), 0.0, 0.7),
         "paint_red": make_plain_material("M_PaintRed", (0.6, 0.18, 0.14), 0.0, 0.8),
         "paint_ochre": make_plain_material("M_PaintOchre", (0.82, 0.6, 0.28), 0.0, 0.8),
@@ -1764,6 +1764,20 @@ CHRIST_HAIR = ("Hair_Long", "Hair_Beard", "Eyebrows_Regular")
 STATUE_SCALE = 1.45
 STATUE_SPOTS = [(-12.2, -2.4), (12.2, -2.4)]
 PEDESTAL_HEIGHT = 2.8
+TUNIC = (0.03, 1.4, 0.36, 0.17)  # draped cone of the saints' tunic: bottom, top, bottom radius, top radius
+MANTLE = (0.3, 1.52, 0.37, 0.19)
+MANTLE_OPENING = math.radians(110.0)  # the mantle hangs from the shoulders and leaves the front of the tunic free
+HEM_HEIGHT = 0.07
+WAIST_HEIGHT = 1.03
+CORD_DROP = 0.5
+# Material keys of each saint (painted statues, as in churches; the facade saints are carved in the facade stone).
+SAINT_DRESSES = {
+    "facade": dict.fromkeys(("body", "tunic", "mantle", "hem", "cord", "skin", "hair", "eyes", "staff", "bloom", "book", "pages", "base"), "trim"),
+    "joseph": {"body": "brown_robe", "tunic": "brown_robe", "mantle": "paint_ochre", "hem": "gold", "cord": "linen", "skin": "ivory", "hair": "wood_dark", "eyes": "dark", "staff": "wood", "bloom": "linen", "book": None, "pages": None, "base": "marble_white"},
+    "john": {"body": "marble_green", "tunic": "marble_green", "mantle": "paint_red", "hem": "gold", "cord": "gold", "skin": "ivory", "hair": "wood_dark", "eyes": "dark", "staff": None, "bloom": None, "book": "paint_red", "pages": "linen", "base": "marble_white"},
+}
+MARY_DRESS = {"body": "linen", "tunic": "linen", "mantle": "blue_robe", "hem": "gold", "cord": "gold", "skin": "ivory", "hair": "wood_dark", "eyes": "dark", "base": "marble_white"}
+FIGURE_SLOTS = {"Head_Skin": ("skin",), "Eyes": ("eyes",), "Eyebrows": ("hair",), "Hair": ("hair",), "Arms": ("body", "skin"), "Body": ("body",), "Feet": ("body",)}
 STATUE_POSE = [  # (bone, world axis, degrees), applied in order: arms lowered, right hand to the chest, left hand forward on the staff
     ("upperarm_l", "Y", 74.0),
     ("upperarm_r", "Y", -70.0),
@@ -1808,16 +1822,18 @@ def pose_bone_about_world_axis(armature, bone_name: str, axis: str, degrees: flo
     bpy.context.view_layer.update()
 
 
-def make_draped_cone(name: str, bottom: float, top: float, bottom_radius: float, top_radius: float, folds: int, fold_depth: float, material) -> bpy.types.Object:
-    """Robe as a fluted, slightly flattened cone: the folds deepen toward the hem."""
+def make_draped_cone(name: str, bottom: float, top: float, bottom_radius: float, top_radius: float, folds: int, fold_depth: float, material, rise_span: tuple = (0.0, 1.0), swell: float = 0.0, opening: float = 0.0) -> bpy.types.Object:
+    """Robe as a fluted, slightly flattened cone: the folds deepen toward the hem. rise_span keeps only part of its
+    height (0 = hem, 1 = top) and swell pushes it out, for bands laid over the cloth; opening (radians) leaves the
+    front (-Y) open, as a mantle falling from the shoulders."""
     drape_bmesh = bmesh.new()
     segments = folds * 6
     ring_count = 7
     rings = []
 
     for ring_index in range(ring_count):
-        rise = ring_index / (ring_count - 1)
-        radius = bottom_radius + (top_radius - bottom_radius) * rise ** 0.8
+        rise = rise_span[0] + (rise_span[1] - rise_span[0]) * ring_index / (ring_count - 1)
+        radius = bottom_radius + (top_radius - bottom_radius) * rise ** 0.8 + swell
         depth = fold_depth * (1.0 - rise) ** 1.5
         ring = []
 
@@ -1828,12 +1844,14 @@ def make_draped_cone(name: str, bottom: float, top: float, bottom_radius: float,
 
         rings.append(ring)
 
-    for lower, upper in zip(rings, rings[1:]):
-        for segment in range(segments):
-            following = (segment + 1) % segments
-            drape_bmesh.faces.new([lower[segment], lower[following], upper[following], upper[segment]])
+    closed_segments = [segment for segment in range(segments) if abs(math.remainder(2.0 * math.pi * (segment + 0.5) / segments + math.pi / 2.0, 2.0 * math.pi)) >= opening / 2.0]
 
-    drape_bmesh.faces.new(rings[-1])
+    for (lower, upper), segment in itertools.product(zip(rings, rings[1:]), closed_segments):
+        following = (segment + 1) % segments
+        drape_bmesh.faces.new([lower[segment], lower[following], upper[following], upper[segment]])
+
+    if not opening:
+        drape_bmesh.faces.new(rings[-1])
 
     for face in drape_bmesh.faces:
         face.smooth = True
@@ -1889,39 +1907,136 @@ def build_robed_figure(name: str, source: Path, part_names: tuple, pose: list, m
     return figure, bone_positions
 
 
-def build_saint_figure(materials: dict, robe_key: str = "marble", staff: bool = True) -> list:
-    """Robed saint carved in marble, with mantle, staff and halo. Meshes stand at the origin facing -Y, unscaled (1.8 m)."""
-    figure, bones = build_robed_figure("Saint", STATUE_SOURCE, STATUE_PARTS, STATUE_POSE, materials["marble"], tunic_material=materials[robe_key])
+def build_saint_figure(materials: dict, dress: dict) -> list:
+    """Saint from the game's male model, painted part by part from dress: hemmed tunic and mantle, a cord at the waist,
+    the staff in the left hand and a book held to the chest when the dress has them, halo. Meshes stand at the origin
+    facing -Y, unscaled (1.8 m)."""
+    figure, bones = build_robed_figure("Saint", STATUE_SOURCE, STATUE_PARTS + ("Eyes",), STATUE_POSE, materials[dress["body"]], tunic=False)
     staff_hand = bones["hand_l"]
     head_top = bones["Head"]
-    mantle = make_draped_cone("SaintMantle", 0.55, 1.52, 0.34, 0.19, 7, 0.03, materials[robe_key])
+    mantle = make_hemmed_drape("SaintMantle", MANTLE, 7, 0.03, materials[dress["mantle"]], materials[dress["hem"]], MANTLE_OPENING)
 
-    mantle.data.transform(Matrix.Translation((0.0, 0.035, 0.0)))
-    figure.append(mantle)
+    paint_figure(figure, materials, dress)
+    figure += make_hemmed_drape("SaintTunic", TUNIC, 9, 0.035, materials[dress["tunic"]], materials[dress["hem"]])
+    figure += make_cincture("Saint", materials[dress["cord"]])
 
-    if staff:
-        figure.append(make_cylinder("SaintStaff", (staff_hand.x, staff_hand.y - 0.02, 0.0), 0.022, 1.95, 8, materials["marble"]))
-        figure.append(make_sphere("SaintStaffBloom", (staff_hand.x, staff_hand.y - 0.02, 2.0), 0.075, materials["marble"]))
+    for piece in mantle:
+        piece.data.transform(Matrix.Translation((0.0, 0.035, 0.0)))
 
-    figure.append(make_cylinder("SaintBase", (0, 0, -0.14), 0.5, 0.16, 20, materials["marble"]))
+    figure += mantle
+
+    if dress["bloom"]:
+        figure.append(make_cylinder("SaintStaff", (staff_hand.x, staff_hand.y - 0.02, 0.0), 0.022, 1.95, 8, materials[dress["staff"]]))
+        figure += make_lily("Saint", (staff_hand.x, staff_hand.y - 0.02, 1.95), materials[dress["bloom"]], materials["gold"])
+
+    if dress["book"]:
+        figure += make_book("Saint", bones["hand_r"], materials[dress["book"]], materials[dress["pages"]])
+
+    figure.append(make_cylinder("SaintBase", (0, 0, -0.14), 0.5, 0.16, 20, materials[dress["base"]]))
     figure.append(make_halo("SaintHalo", (0.0, head_top.y + 0.1, head_top.z + 0.14), 0.19, materials["gold"]))
 
     return figure
 
 
 def build_mary_figure(materials: dict) -> list:
-    """Our Lady: veiled head, blue mantle, hands joined at the chest. Meshes at the origin facing -Y, unscaled."""
-    figure, bones = build_robed_figure("Mary", MARY_SOURCE, MARY_PARTS, PRAYER_POSE, materials["marble_white"], tunic_material=materials["marble_white"])
+    """Our Lady, painted: white tunic, blue mantle and veil with a gilded hem, hands joined at the chest. Meshes at
+    the origin facing -Y, unscaled."""
+    figure, bones = build_robed_figure("Mary", MARY_SOURCE, MARY_PARTS + ("Eyes",), PRAYER_POSE, materials[MARY_DRESS["body"]], tunic=False)
     head_top = bones["Head"]
-    mantle = make_draped_cone("MaryMantle", 0.05, 1.5, 0.38, 0.2, 8, 0.035, materials["blue_robe"])
-    veil = make_draped_cone("MaryVeil", 1.18, 1.76, 0.2, 0.125, 6, 0.012, materials["blue_robe"])
+    mantle = make_hemmed_drape("MaryMantle", (0.05, 1.5, 0.38, 0.2), 8, 0.035, materials[MARY_DRESS["mantle"]], materials[MARY_DRESS["hem"]], MANTLE_OPENING)
+    veil = make_hemmed_drape("MaryVeil", (1.18, 1.76, 0.2, 0.125), 6, 0.012, materials[MARY_DRESS["mantle"]], materials[MARY_DRESS["hem"]])
 
-    mantle.data.transform(Matrix.Translation((0.0, 0.04, 0.0)))
-    veil.data.transform(Matrix.Translation((0.0, 0.055, 0.0)))
-    figure += [mantle, veil, make_cylinder("MaryBase", (0, 0, -0.14), 0.5, 0.16, 20, materials["marble_white"])]
+    paint_figure(figure, materials, MARY_DRESS)
+    figure += make_hemmed_drape("MaryTunic", TUNIC, 9, 0.035, materials[MARY_DRESS["tunic"]], materials[MARY_DRESS["hem"]])
+    figure += make_cincture("Mary", materials[MARY_DRESS["cord"]])
+
+    for piece in mantle:
+        piece.data.transform(Matrix.Translation((0.0, 0.04, 0.0)))
+
+    for piece in veil:
+        piece.data.transform(Matrix.Translation((0.0, 0.055, 0.0)))
+
+    figure += mantle + veil
+    figure.append(make_cylinder("MaryBase", (0, 0, -0.14), 0.5, 0.16, 20, materials[MARY_DRESS["base"]]))
     figure.append(make_halo("MaryHalo", (0.0, head_top.y + 0.1, head_top.z + 0.12), 0.19, materials["gold"]))
 
     return figure
+
+
+def paint_figure(parts: list, materials: dict, dress: dict) -> None:
+    """Colour each part of a carved figure from dress, slot by slot (the arms carry the sleeve and the hand)."""
+    for part in parts:
+        slot_keys = next(keys for fragment, keys in FIGURE_SLOTS.items() if fragment in part.name)
+        set_materials(part.data, [materials[dress[key]] for key in slot_keys])
+
+
+def set_materials(mesh, slot_materials: list) -> None:
+    mesh.materials.clear()
+
+    for material in slot_materials:
+        mesh.materials.append(material)
+
+
+def drape_radius(drape: tuple, height: float) -> float:
+    """Radius of a draped cone (bottom, top, bottom radius, top radius) at a height, folds left out."""
+    bottom, top, bottom_radius, top_radius = drape
+
+    return bottom_radius + (top_radius - bottom_radius) * ((height - bottom) / (top - bottom)) ** 0.8
+
+
+def make_hemmed_drape(name: str, drape: tuple, folds: int, fold_depth: float, material, hem_material, opening: float = 0.0) -> list:
+    """Draped cone (bottom, top, bottom radius, top radius) with a band along the hem standing a little proud of the cloth."""
+    bottom, top, bottom_radius, top_radius = drape
+    cloth = make_draped_cone(name, bottom, top, bottom_radius, top_radius, folds, fold_depth, material, opening=opening)
+    hem = make_draped_cone(f"{name}Hem", bottom, top, bottom_radius, top_radius, folds, fold_depth, hem_material, rise_span=(0.0, HEM_HEIGHT / (top - bottom)), swell=0.008, opening=opening)
+
+    return [cloth, hem]
+
+
+def make_cincture(name: str, material) -> list:
+    """Cord tied round the waist over the tunic, a knot in front and its two ends hanging down the folds."""
+    waist_radius = drape_radius(TUNIC, WAIST_HEIGHT) + 0.012
+    end_height = WAIST_HEIGHT - CORD_DROP
+    end_radius = drape_radius(TUNIC, end_height) + 0.03
+    belt = make_torus(f"{name}Cincture", (0.0, 0.0, WAIST_HEIGHT), waist_radius, 0.016, material, minor_segments=5)
+    knot = make_sphere(f"{name}CinctureKnot", (0.03, -0.72 * waist_radius - 0.01, WAIST_HEIGHT), 0.028, material)
+    ends = [make_slope(f"{name}CinctureEnd{index}", (offset, -0.72 * waist_radius, WAIST_HEIGHT), (1.6 * offset, -0.72 * end_radius, end_height), 0.022, 0.022, material) for index, offset in enumerate((0.02, 0.05))]
+
+    belt.data.transform(Matrix.Scale(0.72, 4, (0.0, 1.0, 0.0)))
+
+    for end in ends:
+        bake_transform(end)
+
+    return [belt, knot, *ends]
+
+
+def make_book(name: str, hand: Vector, cover, pages) -> list:
+    """Closed book held upright against the chest under the hand: two boards, a spine and the lighter page block."""
+    held = Matrix.Translation((hand.x, hand.y - 0.05, hand.z - 0.1)) @ Matrix.Rotation(math.radians(-12.0), 4, "X")
+    parts = [
+        make_box(f"{name}BookFront", (0.0, -0.022, 0.0), (0.17, 0.008, 0.23), cover),
+        make_box(f"{name}BookBack", (0.0, 0.022, 0.0), (0.17, 0.008, 0.23), cover),
+        make_box(f"{name}BookSpine", (-0.081, 0.0, 0.0), (0.008, 0.052, 0.23), cover),
+        make_box(f"{name}BookPages", (0.0, 0.0, 0.0), (0.158, 0.038, 0.218), pages),
+    ]
+
+    for part in parts:
+        part.data.transform(held)
+
+    return parts
+
+
+def make_lily(name: str, top: tuple, petals, heart) -> list:
+    """Staff head: three flaring lily cups round a gilded knop."""
+    x, y, z = top
+    cups = [make_cone(f"{name}LilyCup{index}", (x + 0.03 * math.cos(angle), y + 0.03 * math.sin(angle), z), 0.01, 0.1, 6, petals, top_radius=0.05) for index, angle in enumerate((0.3, 2.4, 4.5))]
+
+    return [make_sphere(f"{name}LilyKnop", (x, y, z + 0.02), 0.035, heart), *cups]
+
+
+def bake_transform(part) -> None:
+    part.data.transform(part.matrix_world)
+    part.matrix_world = Matrix.Identity(4)
 
 
 def make_halo(name: str, center: tuple, radius: float, material) -> bpy.types.Object:
@@ -2307,9 +2422,9 @@ def build_cathedral() -> Path:
     build_pews(materials)
     build_chandeliers(materials)
 
-    saint = build_saint_figure(materials)
-    joseph = build_saint_figure(materials, robe_key="brown_robe")
-    john = build_saint_figure(materials, staff=False)
+    saint = build_saint_figure(materials, SAINT_DRESSES["facade"])
+    joseph = build_saint_figure(materials, SAINT_DRESSES["joseph"])
+    john = build_saint_figure(materials, SAINT_DRESSES["john"])
     mary = build_mary_figure(materials)
     christ = build_christ_figure(materials)
     build_statues(materials, saint)
