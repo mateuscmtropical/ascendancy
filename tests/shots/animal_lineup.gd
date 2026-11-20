@@ -3,7 +3,7 @@ extends Node3D
 ## padrão) em laço, e as câmeras com a meta `look_at` apontam para o alvo antes do print.
 
 const ANIMATION_ARGUMENT: String = "--animation="
-const DEFAULT_ANIMATION: StringName = &"Walk"
+const DEFAULT_ANIMATION: StringName = &"WalkSlow"
 const LOOK_AT_META: StringName = &"look_at"
 
 
