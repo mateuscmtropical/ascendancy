@@ -3,7 +3,7 @@ extends RefCounted
 ## Planos do trailer em ordem: duração em batidas, câmera, sol e ator (ver TrailerDirector).
 ## Ator: "stance" do PlayerController (velocidade e passo do jogo); "action" toca uma vez e para.
 
-enum CameraKind { DOLLY, FOLLOW, WATCH, ORBIT, SELECT }
+enum CameraKind { DOLLY, FOLLOW, WATCH, ORBIT, SELECT, NAMED }
 enum SunMood { DAY, GOLDEN }
 
 const SHOTS: Array[Dictionary] = [

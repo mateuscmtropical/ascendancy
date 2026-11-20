@@ -6,20 +6,21 @@ extends Node
 ## então o pé não desliza. Plano com "time" usa o relógio do céu (dia, pôr do sol, noite); os
 ## demais usam o sol fixo do trailer. Textos opcionais ("title", "subtitle", "caption") vão para os
 ## rótulos da cena, se ela os tiver. Conferir com trailer_check.tscn ou full_check.tscn e gravar com
-## tools_src/record.sh. Argumentos (depois de --): --from-shot=N --to-shot=M tocam só esse trecho.
+## tools_src/record.sh. Argumentos (depois de --): --from-shot=N --to-shot=M. NAMED: shot_views.gd.
 
-enum Reel { TRAILER, COMPLETE, MARKETING }
+enum Reel { TRAILER, COMPLETE, MARKETING, SHOWCASE }
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 ## MARKETING: 60 "batidas" por minuto, então "beats" é a duração do clipe em segundos (a edição e a
 ## trilha ficam em tools_src/cut_marketing_trailer.py).
 const BPM_BY_REEL: Dictionary[Reel, float] = {
-	Reel.TRAILER: 124.0, Reel.COMPLETE: 120.0, Reel.MARKETING: 60.0
+	Reel.TRAILER: 124.0, Reel.COMPLETE: 120.0, Reel.MARKETING: 60.0, Reel.SHOWCASE: 60.0
 }
 const SHOTS_BY_REEL: Dictionary[Reel, Array] = {
 	Reel.TRAILER: TrailerShots.SHOTS,
 	Reel.COMPLETE: FullShots.SHOTS,
 	Reel.MARKETING: MarketingShots.SHOTS,
+	Reel.SHOWCASE: ShowcaseShots.SHOTS,
 }
 const CHARACTER_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const BODY_BY_NAME: Dictionary[String, PackedScene] = {
@@ -94,12 +95,14 @@ var _mula_home: Transform3D
 var _is_mula_moved: bool = false
 var _text_tween: Tween
 var _fade_tween: Tween
+var _views: ShotViews = ShotViews.new()
 var _camera_updaters: Dictionary[TrailerShots.CameraKind, Callable] = {
 	TrailerShots.CameraKind.DOLLY: _update_dolly_camera,
 	TrailerShots.CameraKind.FOLLOW: _update_follow_camera,
 	TrailerShots.CameraKind.WATCH: _update_watch_camera,
 	TrailerShots.CameraKind.ORBIT: _update_orbit_camera,
 	TrailerShots.CameraKind.SELECT: _update_select_camera,
+	TrailerShots.CameraKind.NAMED: _update_named_camera,
 }
 
 
@@ -199,7 +202,7 @@ func _start_shot(index: int) -> void:
 	var shot: Dictionary = shots[index]
 
 	shot_index = index
-	camera.fov = shot["fov"]
+	camera.fov = shot.get("fov", camera.fov)
 	_flash_light.light_energy = 0.0
 	_has_reached_path_end = false
 	_place_actor(shot.get("actor", {}))
@@ -221,6 +224,8 @@ func _start_shot(index: int) -> void:
 
 	if shot.get("event", "") == "shower":
 		hub.start_meteor_shower()
+
+	_views.open_passage_if_asked(shot, hub)
 
 
 ## Hora e evento do céu quando o plano pede ("time"); senão o sol fixo do clima pedido.
@@ -402,6 +407,11 @@ func _update_orbit_camera(shot: Dictionary, progress: float) -> void:
 	var target: Vector3 = shot["center"] + Vector3(0.0, shot["look_height"], 0.0)
 
 	camera.look_at_from_position(eye, target)
+
+
+func _update_named_camera(shot: Dictionary, progress: float) -> void:
+	camera.global_transform = _views.camera_transform(shot, progress)
+	camera.fov = shot.get("fov", _views.fov_of(shot["view"]))
 
 
 ## A câmera é a da escolha de personagem do jogo; metade do plano em cada aventureiro.
