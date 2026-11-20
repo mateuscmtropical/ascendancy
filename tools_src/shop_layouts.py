@@ -10,6 +10,12 @@ inner walls ("u" | "d", fixed coordinate, from, to). The back wall and the sides
 prop that covers one.
 """
 
+import orphanage_vestibule
+import orphanage_wing_library
+import orphanage_wing_reading
+import orphanage_wing_school
+import orphanage_wing_seminary
+
 
 def furnish_generic(f) -> None:
     """Stand-in plan: counter at the back, shelves on the walls, tables of goods and rugs down the hall."""
@@ -325,127 +331,6 @@ def furnish_tavern(f) -> None:
     f.put("plant_pot", 1.7, 3.6, variant="fern")
 
 
-def furnish_school(f) -> None:
-    """School (30 m) on the casarão's ground floor, entered from the vestibule by the doorway at the front of the
-    right wall: the master's desk under a map and two blackboards at the back, three blocks of pupils' desks
-    facing it, a cloakroom with pegs and benches on the right past the doorway, an art corner with easels under
-    the windows of the left wall, an astronomy corner (orrery, globes, scrolls) at the back left, a science lab on
-    the right with benches and cabinets, and the headmaster's study partitioned off in the back right corner. A
-    brass bell and a planet mobile hang over the desks."""
-    f.grid("wheel_chandelier", (-5.94, 5.94), (5.4, 10.8), 2, 2)
-    f.put("teacher_desk", 0.0, 14.9)
-    f.put("globe_stand", -3.2, 15.4)
-    f.put("celestial_globe", 3.2, 15.4)
-    f.on_wall("back", "world_map_wall", 0.0)
-    f.on_wall("back", "blackboard_big", -4.9)
-    f.on_wall("back", "blackboard_big", 4.9)
-
-    for block_u in (-5.94, 0.0, 5.94):
-        # alunos olham para o fundo (lousa e mesa do mestre); 4 fileiras deixam ~1,2 m de corredor entre elas
-        f.grid("school_desk", (block_u - 0.8, block_u + 0.8), (4.4, 10.8), 2, 4)
-
-    f.put("rug_runner", -2.97, 9.7, variant="blue")  # entre as duas colunas do corredor, sem entrar nas sapatas
-    f.put("rug_runner", 2.97, 9.7, variant="blue")
-    f.put("planet_mobile", 0.0, 12.6)
-    f.put("school_bell", -2.6, 2.4)
-    f.put("bunting", 0.0, 3.6)
-
-    f.on_wall("left", "bench_long", 1.5)
-    f.on_wall("left", "bench_long", 7.6)
-    f.on_wall("left", "bench_long", 11.8)
-    f.put("plant_pot", f.left + 0.6, 5.5, variant="bush")
-    f.put("rug_ornate", -11.4, 9.0, 90.0, variant="green")
-    f.put("easel", -12.4, 7.0, 90.0)
-    f.put("easel", -11.0, 9.2, 60.0)
-    f.put("easel", -12.4, 11.2, 110.0)
-    f.put("stool_round", -10.2, 7.8)
-    f.put("stool_round", -9.4, 10.2)
-    f.put("reading_table", -9.0, 5.2, 90.0)
-
-    f.on_wall("back", "tall_bookcase_slim", -13.575)
-    f.on_wall("back", "tall_bookcase", -9.8)
-    f.put("rug_ornate", -11.4, 16.6, variant="plum")
-    f.put("orrery", -11.8, 16.6)
-    f.put("astrolabe", -9.2, 17.0)
-    f.on_wall("back", "scroll_rack", -7.6)
-
-    f.on_wall("right", "coat_rack_wall", 5.9)
-    f.on_wall("right", "coat_rack_wall", 8.1)
-    f.on_wall("right", "bench_long", 5.9)
-    f.on_wall("right", "bench_long", 8.1)
-    f.wall("right", ["skeleton_stand", "potion_wall", "recipe_board"], start=9.5, gap=0.4)
-    f.grid("lab_bench", (11.0, 11.0), (6.4, 11.6), 1, 3, 90.0)
-    f.put("mortar_table", 13.5, 13.8, -90.0)
-    f.put("plant_pot", f.right - 0.6, 0.95, variant="fern")
-
-    back_room_b(f, f.right - 6.0 - SCREEN_HALF_B, 3, 2, door_on="front", door_slot=1, has_right=False)
-    f.on_wall("back", "tall_bookcase", 9.8)
-    f.on_wall("back", "tall_bookcase_slim", 13.575)
-    f.put("rug_ornate", 11.55, 17.2, variant="red")
-    f.put("reading_table", 11.55, 17.0)
-    f.put("study_chair", 11.55, 15.95, 180.0)
-    f.put("globe_stand", 9.4, 15.8)
-    f.put("candle_stand", 13.8, 15.9)
-
-
-def furnish_seminary(f) -> None:
-    """Seminary (30 m) on the casarão's upper floor, entered from the gallery of the stair by the doorway at the
-    front of the right wall: a chapel nave in the middle (two blocks of pews on a runner, chancel altar with a gilded
-    reredos and candle stands, lectern, censers on chains), the refectory partitioned off on the left (long tables,
-    a high table, a reading pulpit, hearth and stove), the dormitory partitioned off on the right (beds between
-    curtains, wardrobes, washstands) and an entrance hall with a parlour hearth on one side and a study nook on the
-    other."""
-    f.on_wall("left", "fireplace_tall", 5.5, height=5.0)
-    f.grid("wheel_chandelier", (-2.9, 2.9), (4.4, 11.0), 2, 2)
-
-    f.on_wall("back", "chancel_altar", 0.0)
-    f.put("candle_stand", -2.5, 18.2)
-    f.put("candle_stand", 2.5, 18.2)
-    f.put("lectern", 0.0, 15.4)
-    f.put("rug_runner", 0.0, 9.0, variant="red")
-    f.put("censer_hanging", 0.0, 6.0)
-    f.put("censer_hanging", 0.0, 13.0)
-
-    for pew_u in (-2.9, 2.9):
-        f.grid("pew", (pew_u, pew_u), (4.2, 11.2), 1, 6, 180.0)
-
-    back_room_b(f, f.left, 4, 5, door_on="right", door_slot=2, variant="lattice", has_left=False)
-    f.on_wall("left", "fireplace_tall", 13.85, height=5.0)
-    f.on_wall("left", "reading_pulpit", 10.2)
-    f.grid("refectory_table", (-9.2, -9.2), (11.3, 14.9), 1, 2, 90.0)
-    f.put("refectory_table", -10.4, 17.6)
-    f.put("rug_ornate", -12.0, 14.0, 90.0, variant="green")
-    f.on_wall("back", "kitchen_stove", -7.3)
-    f.on_wall("back", "bread_rack", -13.4)
-    f.put("barrel_group", -12.9, 17.6, 90.0)
-    f.put("hanging_pots", -12.0, 11.5)
-
-    back_room_b(f, f.right - 8.0 - SCREEN_HALF_B, 4, 5, door_on="left", door_slot=2, variant="lattice", has_right=False)
-    f.grid("bed_single", (f.right - 1.05, f.right - 1.05), (10.4, 16.0), 1, 3, -90.0)
-    f.grid("cell_curtain", (f.right - 0.7, f.right - 0.7), (11.8, 14.6), 1, 2)
-    f.put("wardrobe", 13.7, 9.45, 180.0)
-    f.put("wardrobe", 12.4, 9.45, 180.0)
-    f.put("washstand", 7.4, 9.45, 180.0)
-    f.put("rug_ornate", 10.4, 13.6, 90.0, variant="plum")
-    f.put("chest_gold", 9.0, 18.3)
-    f.put("candle_stand", 8.0, 12.0)
-
-    f.put("rug_ornate", -9.6, 4.6, 90.0, variant="red")
-    f.put("armchair", -11.4, 4.3, -70.0)
-    f.put("armchair", -11.4, 6.7, -110.0)
-    f.put("plant_pot", -7.4, 2.0, variant="fern")
-
-    f.put("rug_ornate", 10.0, 4.8, variant="green")
-    f.put("reading_table", 10.0, 4.8)
-    f.grid("study_chair", (9.4, 10.6), (3.85, 3.85), 2, 1, 180.0)
-    f.grid("study_chair", (9.4, 10.6), (5.75, 5.75), 2, 1)
-    f.grid("tall_bookcase", (f.right - 0.23, f.right - 0.23), (5.6, 7.7), 1, 2, -90.0)
-    f.put("plant_pot", f.right - 0.6, 0.95, variant="fern")
-
-
-SHELF_PAIR_OFFSET = 0.25  # half the depth of a floor_shelf: two of them stand back to back
-
-
 def side_wall(f, side: str, tall: list, low: list, start: float = None, gap: float = 0.35) -> None:
     """Tall furniture against a blind side wall, low goods under the windows of an exposed one."""
     items = low if side in f.room.exposed else tall
@@ -465,6 +350,9 @@ def window_wall(f, side: str, pier_rows: list, sill_items: list, gap: float = 0.
 
         name, options = (item, {}) if isinstance(item, str) else item
         f.on_wall(side, name, (window_from + window_to) / 2.0, **options)
+
+
+SHELF_PAIR_OFFSET = 0.25  # half the depth of a floor_shelf: two of them stand back to back
 
 
 def shelf_island(f, u: float, d: float, variants: tuple) -> None:
@@ -709,248 +597,12 @@ def furnish_general(f) -> None:
     f.put("barrel_group", 7.8, 16.6)
 
 
-def furnish_library(f) -> None:
-    """Public library on the casarão's ground floor, entered from the vestibule by the doorway at the front of the
-    left wall: a two-tier gallery of bookcases along that wall, past the doorway, reached by a spiral stair at
-    its far end, a scriptorium partitioned off in the back left corner (printing press, scribe's
-    desk), a sunlit reading wall on the right (hearth nook with armchairs, benches under the windows, card
-    catalogues between them), back-to-back stacks, a nave of reading tables, a map table under floating books on the
-    axis and the librarian's counter before the back wall. Back-wall bookcases stand on the piers between the high
-    windows."""
-    f.on_wall("right", "fireplace_tall", 5.45, height=5.0)
-    f.grid("wheel_chandelier", (-5.94, 5.94), (5.4, 12.0), 3, 2)
-
-    f.put("rug_ornate", 0.0, 5.0, 90.0, variant="red")
-    f.put("globe_stand", -1.6, 5.0)
-    f.put("lectern", 1.6, 5.0)
-    f.put("rug_ornate", 0.0, 9.7, variant="red")
-    f.put("map_table", 0.0, 9.7)
-    f.put("floating_books", 0.0, 9.7)
-    f.put("counter_straight", 0.0, 14.6)
-    f.put("study_chair", 0.8, 16.4)
-    f.put("book_cart", -2.2, 15.4)
-
-    for pier_u in (-13.575, 13.575):
-        f.on_wall("back", "tall_bookcase_slim", pier_u)
-
-    for pier_u in (-9.8, 9.8):
-        f.on_wall("back", "tall_bookcase", pier_u)
-
-    f.on_wall("back", "scroll_rack", -2.2)
-    f.on_wall("back", "world_map_wall", 0.0)
-    f.on_wall("back", "scroll_rack", 2.2)
-    f.on_wall("back", "scroll_rack", -6.1)
-    f.on_wall("back", "scroll_rack", 6.1)
-    f.on_wall("back", "rolling_ladder", -4.95)
-    f.on_wall("back", "rolling_ladder", 4.95)
-
-    f.on_wall("left", "book_gallery", 6.7)
-    f.on_wall("left", "book_gallery", 10.86, open_end=1)
-    f.put("gallery_stair", f.left + 1.2, 13.86, -90.0, winding=-1)
-    f.put("plant_pot", f.left + 0.6, 0.95, variant="fern")
-
-    f.put("rug_runner", -10.4, 9.0, variant="plum")
-    f.put("candle_stand", -12.2, 7.4)
-    f.put("candle_stand", -12.2, 12.2)
-    f.put("floating_candles", -10.4, 6.4)
-    f.put("floating_candles", -10.4, 11.6)
-    f.put("reading_table", -9.4, 9.0, 90.0)
-    f.grid("study_chair", (-10.45, -8.35), (8.3, 9.7), 2, 2, 90.0)
-
-    back_room_b(f, f.left, 3, 2, door_on="front", door_slot=1, has_left=False)
-    f.on_wall("left", "printing_press", 17.6)
-    f.put("crate_stack", -13.4, 15.9)
-    f.put("reading_table", -11.2, 17.8)
-    f.put("study_chair", -11.2, 16.8, 180.0)
-    f.put("rug_ornate", -11.4, 17.0, variant="plum")
-    f.put("candle_stand", -9.2, 15.9)
-
-    f.on_wall("right", "wainscot", 9.7)
-    f.on_wall("right", "wainscot", 13.9)
-    f.on_wall("right", "wainscot", 17.75)
-    f.on_wall("right", "plant_pot", 3.35, variant="fern")
-    f.on_wall("right", "bench_long", 7.8)
-    f.on_wall("right", "bench_long", 11.75)
-    f.on_wall("right", "bench_long", 16.0)
-    f.on_wall("right", "card_catalog", 9.65)
-    f.on_wall("right", "globe_stand", 17.7)
-    f.on_wall("right", "card_catalog", 13.9)
-
-    f.put("rug_ornate", 12.0, 5.45, 90.0, variant="green")
-    f.put("armchair", 11.2, 4.1, 80.0)
-    f.put("armchair", 11.2, 6.9, 100.0)
-    f.put("plant_pot", 13.6, 8.0, variant="bush")
-
-    for row_d in (10.4, 13.0, 15.6):
-        f.put("tall_bookcase", 10.8, row_d - 0.2)
-        f.put("tall_bookcase", 10.8, row_d + 0.2, 180.0)
-
-    f.grid("reading_table", (-5.94, 5.94), (4.6, 11.8), 2, 3)
-
-    for table_u in (-5.94, 5.94):
-        f.grid("study_chair", (table_u - 0.6, table_u + 0.6), (3.85, 11.05), 2, 3, 180.0)
-        f.grid("study_chair", (table_u - 0.6, table_u + 0.6), (5.35, 12.55), 2, 3)
-
-    f.on_wall("front", "card_catalog", -4.4)
-    f.on_wall("front", "card_catalog", 4.4)
-    f.put("book_cart", -5.94, 14.2)
-    f.put("book_cart", 5.94, 14.2)
-    f.grid("hanging_lantern", (10.8, 10.8), (8.4, 14.2), 1, 2)
-
-
-VESTIBULE_WELL = (-4.8, 4.8, 11.2, 19.1)  # vão da escadaria (u de, u até, d de, d até)
-VESTIBULE_COLUMNS = (-9.7, 9.7)  # u das colunas do térreo fora do vão, em d = 11.2
-FACADE_PIERS = (5.14, 8.17, 11.21)  # |u| dos panos de parede entre as janelas da fachada de um salão
-
-
-def vestibule_walls(f, scenes: tuple) -> None:
-    """Both side walls of a storey of the vestibule past the doorways: console under a pier glass, a bench under a
-    painting and wall lanterns."""
-    for side, scene in zip(("left", "right"), scenes):
-        f.on_wall(side, "console_table", 6.6, seed=len(scene))
-        f.on_wall(side, "wall_mirror", 6.6)
-        f.on_wall(side, "wall_lantern", 5.2)
-        f.on_wall(side, "wall_lantern", 8.0)
-        f.on_wall(side, "bench_long", 9.9)
-        f.on_wall(side, "painting", 9.9, variant=scene)
-
-
-def furnish_vestibule(f) -> None:
-    """Vestibule of the casarão, two storeys round the grand stair. Ground floor: the porter's desk on the right of
-    the marble walk, urns and plants on the piers of the facade, consoles under pier glasses on the side walls, a
-    hearth lounge in the back right and a waiting room with the long-case clock in the back left. Upper floor
-    (the gallery): a salon between the stair and the balcony doors, a music room with the piano in the back right
-    and a tea corner in the back left. The gilt chandelier hangs in the stair well."""
-    gallery = f.upstairs(f.room.spec["storeys"][0])
-    well_left, well_right, well_front, well_back = VESTIBULE_WELL
-
-    f.block("escada", (well_left, well_right, well_front - 0.4, well_back))
-    gallery.block("vão", VESTIBULE_WELL)
-    gallery.block("chegada", (well_left, well_right, well_front - 1.6, well_front))
-
-    for column_u in VESTIBULE_COLUMNS:
-        f.block("coluna", (column_u - 0.35, column_u + 0.35, 10.85, 11.55))
-
-    gallery.put("grand_chandelier", 0.0, (well_front + well_back) / 2.0, drop=2.4)
-
-    # ground floor
-    f.put("teacher_desk", 6.4, 6.3)
-    f.put("rug_ornate", 6.4, 6.9, variant="blue")
-    f.grid("grand_chandelier", (-8.2, 8.2), (5.6, 5.6), 2, 1, drop=0.5)
-    vestibule_walls(f, ("seascape", "landscape"))
-
-    for pier_u in (-FACADE_PIERS[0], FACADE_PIERS[0], -FACADE_PIERS[2], FACADE_PIERS[2]):
-        f.put("pedestal_urn", pier_u, f.front + 0.36)
-
-    for pier_u in (-FACADE_PIERS[1], FACADE_PIERS[1]):
-        f.put("plant_pot", pier_u, f.front + 0.4, variant="bush")
-
-    for well_u in (well_left - 0.33, well_right + 0.33):
-        f.put("pedestal_urn", well_u, well_front + 0.5)
-
-    f.grid("pedestal_urn", (-2.4, 2.4), (4.4, 9.0), 2, 2)
-
-    f.on_wall("right", "fireplace", 15.4)
-    f.put("rug_ornate", 11.6, 15.4, 90.0, variant="red")
-    f.put("sofa", 10.2, 15.4, 90.0)
-    f.put("armchair", 12.2, 13.2, 160.0)
-    f.put("armchair", 12.2, 17.6, 20.0)
-    f.on_wall("back", "painting", 9.83, variant="portrait")
-    f.on_wall("back", "pedestal_urn", 6.0)
-    f.put("plant_pot", f.right - 0.6, 12.4, variant="fern")
-
-    f.on_wall("left", "long_case_clock", 15.4)
-    f.on_wall("left", "bench_long", 13.2)
-    f.on_wall("left", "bench_long", 17.6)
-    f.put("rug_ornate", -10.4, 15.4, 90.0, variant="green")
-    f.put("sofa", -6.2, 15.4, 90.0)
-    f.on_wall("back", "painting", -9.83, variant="lady")
-    f.on_wall("back", "console_table", -9.83, seed=7)
-    f.put("plant_pot", -5.6, 18.5, variant="fern")
-
-    # gallery
-    gallery.grid("grand_chandelier", (-8.2, 8.2), (5.6, 5.6), 2, 1, drop=0.5)
-    vestibule_walls(gallery, ("portrait", "lady"))
-    gallery.put("rug_ornate", 0.0, 6.2, variant="red")
-
-    for salon_u in (-3.4, 3.4):
-        gallery.put("pedestal_urn", salon_u, 8.4)
-
-    gallery.put("sofa", -4.6, 6.2, 90.0)
-    gallery.put("sofa", 4.6, 6.2, -90.0)
-
-    for pier_u in (-FACADE_PIERS[1], FACADE_PIERS[1], -FACADE_PIERS[2], FACADE_PIERS[2]):
-        gallery.put("pedestal_urn", pier_u, f.front + 0.36)
-
-    gallery.on_wall("back", "piano", 9.83)
-    gallery.grid("chair", (8.6, 11.0), (14.4, 15.6), 3, 2, 180.0)
-    gallery.put("rug_ornate", 9.8, 15.0, variant="plum")
-    gallery.on_wall("right", "painting", 15.2, variant="landscape")
-    gallery.on_wall("right", "sofa", 15.2)
-    gallery.on_wall("back", "long_case_clock", 13.6)
-    gallery.put("plant_pot", 5.5, 18.5, variant="fern")
-
-    gallery.put("rug_ornate", -9.8, 15.2, 90.0, variant="blue")
-    gallery.put("cafe_table_set", -9.8, 15.2)
-    gallery.on_wall("left", "sofa", 15.2)
-    gallery.on_wall("left", "painting", 15.2, variant="seascape")
-    gallery.on_wall("back", "console_table", -9.83, seed=3)
-    gallery.on_wall("back", "wall_mirror", -9.83)
-    gallery.on_wall("back", "pedestal_urn", -6.0)
-    gallery.put("plant_pot", -13.9, 12.2, variant="flower")
-
-
-def furnish_reading(f) -> None:
-    """Reading room on the casarão's upper floor, over the library, entered from the gallery of the stair by the
-    doorway at the front of the left wall: bookcases all along that wall and on the piers of the back wall, the
-    hearth on the axis behind the reader's desk, two rows of reading tables under the chandeliers and a sunlit
-    sitting wall on the right (sofas under the windows, consoles and the long-case clock between them)."""
-    f.on_wall("back", "fireplace_tall", 0.0, height=5.0)
-    f.grid("grand_chandelier", (-5.0, 5.0), (8.5, 8.5), 2, 1, drop=0.5)
-
-    f.put("teacher_desk", 0.0, 14.8)
-    f.put("rug_ornate", 0.0, 16.4, variant="red")
-    f.put("armchair", -3.0, 17.0, 60.0)
-    f.put("armchair", 3.0, 17.0, -60.0)
-    f.on_wall("back", "painting", -2.2, variant="portrait")
-    f.on_wall("back", "painting", 2.2, variant="lady")
-
-    for pier_u in (-13.575, 13.575):
-        f.on_wall("back", "tall_bookcase_slim", pier_u)
-
-    for pier_u in (-9.83, -5.815, 5.815, 9.83):
-        f.on_wall("back", "tall_bookcase", pier_u)
-
-    f.grid("tall_bookcase", (f.left + 0.23, f.left + 0.23), (5.6, 16.1), 1, 6, 90.0)
-    f.put("rug_runner", -9.2, 3.0, 90.0, variant="red")
-    f.put("plant_pot", f.left + 0.6, 0.95, variant="fern")
-
-    for table_d in (6.6, 10.6):
-        f.grid("reading_table", (-5.6, 5.6), (table_d, table_d), 3, 1)
-        f.grid("study_chair", (-5.6, 5.6), (table_d - 0.85, table_d - 0.85), 3, 1, 180.0)
-        f.grid("study_chair", (-5.6, 5.6), (table_d + 0.85, table_d + 0.85), 3, 1)
-
-    f.put("rug_ornate", 0.0, 8.6, variant="blue")
-    f.put("globe_stand", -9.6, 12.6)
-    f.put("celestial_globe", 9.0, 3.4)
-    f.put("lectern", -3.2, 3.2)
-
-    f.on_wall("right", "sofa", 7.6)
-    f.on_wall("right", "sofa", 11.8)
-    f.on_wall("right", "console_table", 5.5, seed=5)
-    f.on_wall("right", "long_case_clock", 9.7)
-    f.on_wall("right", "console_table", 13.9, seed=9)
-    f.put("rug_ornate", 11.6, 9.7, 90.0, variant="green")
-    f.put("armchair", 11.2, 7.6, 90.0)
-    f.put("armchair", 11.2, 11.8, 90.0)
-    f.put("plant_pot", f.right - 0.6, 0.95, variant="bush")
-
-
+WING_MODULES = (orphanage_vestibule, orphanage_wing_library, orphanage_wing_reading, orphanage_wing_school, orphanage_wing_seminary)  # orphanage wings: PLAN, NEW_WALL_FINISHES, furnish_<hall>
 PLANS = {
-    "vestibule": dict(keeper=(6.4, 7.4), posts=(), furnish=furnish_vestibule),
-    "reading": dict(keeper=(0.0, 16.0), furnish=furnish_reading),
-    "school": dict(keeper=(0.0, 16.6), furnish=furnish_school),
-    "seminary": dict(keeper=(0.0, 16.8), posts=((-4.4, 6.47), (4.4, 6.47), (-4.4, 12.93), (4.4, 12.93)), furnish=furnish_seminary),
+    "vestibule": orphanage_vestibule.PLAN,
+    "reading": orphanage_wing_reading.PLAN,
+    "school": orphanage_wing_school.PLAN,
+    "seminary": orphanage_wing_seminary.PLAN,
     "guild": dict(keeper=(0.0, 17.3), partitions=(("d", 12.0, 6.2, 11.55), ("u", 6.2, 14.2, 19.1)), furnish=furnish_guild),
     "smith": dict(keeper=(-5.0, 15.6), posts=((-8.4, 7.0), (-1.6, 7.0), (-8.4, 13.4), (-1.6, 13.4)), partitions=(("u", 3.1, 8.5, 12.3), ("u", 3.1, 14.3, 19.1)), furnish=furnish_smith),
     "armor": dict(keeper=(0.0, 16.2), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_armor),
@@ -959,7 +611,7 @@ PLANS = {
     "alchemy": dict(keeper=(0.0, 15.6), furnish=furnish_alchemy),
     "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),
     "general": dict(keeper=(-1.0, 15.6), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_general),
-    "library": dict(keeper=(0.0, 16.0), furnish=furnish_library),
+    "library": orphanage_wing_library.PLAN,
 }
 FILL = {  # prédio -> ilhas soltas que enchem o chão livre dos dois lados do corredor da porta (fill_floor)
     "smith": [],

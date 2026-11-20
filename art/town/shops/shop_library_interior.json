@@ -1,46 +1,291 @@
 {
  "aabb_min": [
-  -14.56,
-  0.05,
-  -19.11
+  -14.71,
+  0.045,
+  -24.23
  ],
  "aabb_max": [
-  14.545,
-  5.2,
-  -0.33
+  14.68,
+  5.204,
+  -0.19
  ],
  "shop": "library",
- "props": 109,
+ "props": 199,
  "lights": [
   {
    "position": [
-    13.82,
-    0.65,
-    -5.45
+    -10.0,
+    4.2,
+    -16.9
    ],
-   "color": "FF8A3D",
-   "energy": 2.5,
-   "range": 6.0
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
   },
   {
    "position": [
-    -5.94,
-    4.35,
-    -5.4
+    -10.0,
+    4.2,
+    -21.0
    ],
-   "color": "FFB347",
-   "energy": 1.6,
-   "range": 7.0
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
   },
   {
    "position": [
-    -5.94,
-    4.35,
-    -12.0
+    -5.15,
+    4.2,
+    -16.9
    ],
-   "color": "FFB347",
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -5.15,
+    4.2,
+    -21.0
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -0.3,
+    4.2,
+    -16.9
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -0.3,
+    4.2,
+    -21.0
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -13.55,
+    4.2,
+    -18.95
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    5.8,
+    1.15,
+    -22.57
+   ],
+   "color": "FFD4B3",
    "energy": 1.6,
-   "range": 7.0
+   "range": 5.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    6.0,
+    4.2,
+    -16.0
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    6.0,
+    4.2,
+    -20.6
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -11.555,
+    4.2,
+    -5.8
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -8.255,
+    4.2,
+    -5.8
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -4.955,
+    4.2,
+    -5.8
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    2.8,
+    4.2,
+    -3.0
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    2.8,
+    4.2,
+    -7.6
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    5.4,
+    4.2,
+    -3.0
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    5.4,
+    4.2,
+    -7.6
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    12.2,
+    4.2,
+    -16.2
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    10.2,
+    4.2,
+    -5.2
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    13.0,
+    4.2,
+    -5.2
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -5.0,
+    2.23,
+    -11.12
+   ],
+   "color": "FFF0DE",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    9.0,
+    2.23,
+    -11.12
+   ],
+   "color": "FFF0DE",
+   "energy": 0.96,
+   "range": 6.0,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    -9.0,
+    4.2,
+    -12.2
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    1.0,
+    4.2,
+    -12.2
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
+  },
+  {
+   "position": [
+    10.5,
+    4.2,
+    -12.2
+   ],
+   "color": "FFF0DE",
+   "energy": 1.2000000000000002,
+   "range": 7.5,
+   "group": "night_lights"
   }
  ],
  "markers": {}

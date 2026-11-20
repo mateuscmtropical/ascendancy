@@ -139,6 +139,7 @@ IRON, BRASS, STEEL, GOLD = "5A4A5E", "E8B84F", "B4C4DC", "FFD24A"
 BREAD_PALETTE = ("D9A05B", "C8843F", "E8B97A", "F0C98C")
 STEEL_PALETTE = ("A9BAD0", "B9C9E0", "9BB0CE")
 PAPER_PALETTE = ("F2E6CF", "E8D7B0", "F7EFD9")
+LINEN_PALETTE = ("F2EEE2", "E8E2D2", "DDE6EE", "F6F1E6", "D8E0D4")  # folded sheets and towels
 CLOTH_PALETTE = ("C9483B", "4F8FC9", "7FC46A", "E8C14F", "C46AA8", "6C5BB8")
 SHOE_PALETTE = ("8B5A3C", "B87C4A", "5A3A26", "C9483B", "4F6FA8")
 CRYSTAL_PALETTE = ("B57FE0", "5FD9C0", "4FB0D9", "F2B13C", "F59AD8")
@@ -309,6 +310,7 @@ SHELF_GOODS = {  # shelf variant -> (item shapes, palette)
     "boxes": (("box",), GOODS_PALETTE),
     "bread": (("loaf", "roll"), BREAD_PALETTE),
     "cloth": (("box",), CLOTH_PALETTE),
+    "linen": (("box",), LINEN_PALETTE),
     "helmets": (("helmet",), STEEL_PALETTE),
     "scrolls": (("roll", "book"), PAPER_PALETTE),
     "potions": (("bottle", "jar"), GLASS_PALETTE),

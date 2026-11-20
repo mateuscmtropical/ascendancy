@@ -9,6 +9,9 @@ extends Node
 ## Iluminação: a cidade não tem GI assado por hora do dia. Quem acompanha o ciclo é a luz
 ## direcional, a luz ambiente vinda do céu (radiância do Sky, refeita conforme o shader muda), a
 ## névoa e a exposição; as luzes locais (postes, lojas) são fixas e só os postes apagam de dia.
+## Por dentro dos salões do casarão a luz ambiente do céu não vale à noite: cada salão tem sua sonda
+## de ambiência (grupo interior_ambience), acesa só à noite com um branco quente e neutro, em vez do
+## azul do céu.
 ## A radiância custa caro: o tempo que move nuvens e estrelas vai no global `sky_time` (não suja o
 ## material) e sol, lua e quantidades só são reescritos no material quando a mudança aparece.
 ##
@@ -18,6 +21,11 @@ extends Node
 enum ForcedEvent { NONE, METEOR_SHOWER, SOLAR_ECLIPSE, LUNAR_ECLIPSE }
 
 const NIGHT_LIGHTS_GROUP: StringName = &"night_lights"
+const INTERIOR_AMBIENCE_GROUP: StringName = &"interior_ambience"
+## Metadado da sonda de um salão que quer o seu próprio nível de ambiente à noite.
+const NIGHT_AMBIENT_META: StringName = &"night_ambient_energy"
+## Lâmpadas que só valem de dia: a luz do dia que se espalha pelos salões do casarão.
+const DAY_LIGHTS_GROUP: StringName = &"day_lights"
 const BASE_ENERGY_META: StringName = &"day_night_base_energy"
 const TIME_ARGUMENT: String = "--time-of-day="
 const EVENT_ARGUMENT: String = "--sky-event="
@@ -47,6 +55,9 @@ const NIGHT_FOG: Color = Color(0.05, 0.07, 0.12)
 const DAY_EXPOSURE: float = 0.95
 const NIGHT_EXPOSURE: float = 1.35
 const NIGHT_AMBIENT_ENERGY: float = 0.45
+## Ambiente de dentro dos salões do casarão à noite: branco quente das velas, parelho nos cantos.
+const INTERIOR_NIGHT_AMBIENT: Color = Color(1.0, 0.98, 0.95)
+const INTERIOR_NIGHT_AMBIENT_ENERGY: float = 0.36
 ## Postes acendem quando o céu escurece abaixo disto e chegam ao máximo na noite fechada.
 const LAMPS_ON_DAY_AMOUNT: Vector2 = Vector2(0.15, 0.45)
 ## Estrela que começou na fatia anterior ainda pode estar riscando o céu.
@@ -80,6 +91,7 @@ var _forced_meteors: Array[SkyMeteor] = []
 var _meteor_heads: PackedVector4Array = PackedVector4Array()
 var _meteor_tails: PackedVector4Array = PackedVector4Array()
 var _lamp_amount: float = -1.0
+var _interior_probes: Array[ReflectionProbe] = []
 var _sent_sun_direction: Vector3 = Vector3.ZERO
 var _sent_sky_amounts: Vector4 = -Vector4.ONE
 var _sent_meteor_count: int = 0
@@ -90,6 +102,7 @@ func _ready() -> void:
 
 	_meteor_heads.resize(METEOR_SLOTS)
 	_meteor_tails.resize(METEOR_SLOTS)
+	_interior_probes.assign(get_tree().get_nodes_in_group(INTERIOR_AMBIENCE_GROUP))
 	_read_arguments(arguments)
 
 	if world_environment and world_environment.environment.sky:
@@ -290,15 +303,43 @@ func _switch_night_lights(day_amount: float) -> void:
 
 	_lamp_amount = lamp_amount
 	RenderingServer.global_shader_parameter_set(&"night_glow", lamp_amount)
+	_light_interiors(lamp_amount)
 
-	for node in get_tree().get_nodes_in_group(NIGHT_LIGHTS_GROUP):
-		var night_light: Light3D = node as Light3D
+	_scale_light_group(NIGHT_LIGHTS_GROUP, lamp_amount)
+	_scale_light_group(DAY_LIGHTS_GROUP, 1.0 - lamp_amount)
 
-		if not night_light.has_meta(BASE_ENERGY_META):
-			night_light.set_meta(BASE_ENERGY_META, night_light.light_energy)
 
-		night_light.light_energy = night_light.get_meta(BASE_ENERGY_META) * lamp_amount
-		night_light.visible = lamp_amount > 0.01
+## Energia original (guardada na primeira vez) vezes a fração; apagada abaixo de 1%.
+func _scale_light_group(group: StringName, fraction: float) -> void:
+	for node in get_tree().get_nodes_in_group(group):
+		var group_light: Light3D = node as Light3D
+
+		if not group_light.has_meta(BASE_ENERGY_META):
+			group_light.set_meta(BASE_ENERGY_META, group_light.light_energy)
+
+		group_light.light_energy = group_light.get_meta(BASE_ENERGY_META) * fraction
+		group_light.visible = fraction > 0.01
+
+
+## De dia as sondas ficam apagadas e o salão recebe o ambiente do céu, como antes; ao acender dos
+## postes o ambiente de dentro passa do do céu para o das velas.
+func _light_interiors(lamp_amount: float) -> void:
+	var environment: Environment = world_environment.environment if world_environment else null
+	var is_lit: bool = lamp_amount > 0.01
+
+	if environment == null:
+		return
+
+	for probe in _interior_probes:
+		var night_energy: float = probe.get_meta(NIGHT_AMBIENT_META, INTERIOR_NIGHT_AMBIENT_ENERGY)
+
+		probe.visible = is_lit
+		probe.ambient_color = environment.ambient_light_color.lerp(
+			INTERIOR_NIGHT_AMBIENT, lamp_amount
+		)
+		probe.ambient_color_energy = lerpf(
+			environment.ambient_light_energy, night_energy, lamp_amount
+		)
 
 
 ## Até METEOR_SLOTS estrelas cadentes no céu agora, das fatias atual e anterior; devolve quantas.
