@@ -1,4 +1,4 @@
-[gd_scene load_steps=209 format=3]
+[gd_scene load_steps=210 format=3]
 
 [ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
 [ext_resource type="Texture2D" path="res://art/town/textures/T_RockTrim_BaseColor.png" id="2_ext"]
@@ -120,29 +120,30 @@
 [ext_resource type="PackedScene" path="res://art/characters/villager_female.gltf" id="118_ext"]
 [ext_resource type="PackedScene" path="res://art/characters/adventurer_female.gltf" id="119_ext"]
 [ext_resource type="PackedScene" path="res://art/characters/adventurer_male.gltf" id="120_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/farmhouse.gltf" id="121_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/barn.gltf" id="122_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/farm_yard.gltf" id="123_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/farm_fields.gltf" id="124_ext"]
-[ext_resource type="Script" path="res://features/hub/farm_animal.gd" id="125_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/animals/cow.gltf" id="126_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/animals/pig.gltf" id="127_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/water_wheel.gltf" id="128_ext"]
-[ext_resource type="Script" path="res://features/hub/water_wheel.gd" id="129_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/monjolo_beam.gltf" id="130_ext"]
-[ext_resource type="Script" path="res://features/hub/monjolo.gd" id="131_ext"]
-[ext_resource type="PackedScene" path="res://features/mobs/mula_sem_cabeca.tscn" id="132_ext"]
-[ext_resource type="Script" path="res://features/hub/carriage.gd" id="133_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="134_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="135_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="136_ext"]
-[ext_resource type="Script" path="res://features/hub/distance_fade.gd" id="137_ext"]
-[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="138_ext"]
-[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="139_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="140_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="141_ext"]
-[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="142_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="143_ext"]
+[ext_resource type="PackedScene" path="res://art/characters/saci.gltf" id="121_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farmhouse.gltf" id="122_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/barn.gltf" id="123_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farm_yard.gltf" id="124_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farm_fields.gltf" id="125_ext"]
+[ext_resource type="Script" path="res://features/hub/farm_animal.gd" id="126_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/cow.gltf" id="127_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/pig.gltf" id="128_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/water_wheel.gltf" id="129_ext"]
+[ext_resource type="Script" path="res://features/hub/water_wheel.gd" id="130_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/monjolo_beam.gltf" id="131_ext"]
+[ext_resource type="Script" path="res://features/hub/monjolo.gd" id="132_ext"]
+[ext_resource type="PackedScene" path="res://features/mobs/mula_sem_cabeca.tscn" id="133_ext"]
+[ext_resource type="Script" path="res://features/hub/carriage.gd" id="134_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="135_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="136_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="137_ext"]
+[ext_resource type="Script" path="res://features/hub/distance_fade.gd" id="138_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="139_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="140_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="141_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="142_ext"]
+[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="143_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="144_ext"]
 
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -7140,6 +7141,16 @@ walk_speed = 1.0
 pause_seconds = 6.0
 idle_animation = &"ual1/Idle"
 
+[node name="Saci" parent="Townsfolk" instance=ExtResource("117_ext")]
+body_scene = ExtResource("121_ext")
+hair_color = Color(0.080, 0.070, 0.070, 1)
+route = PackedVector3Array(82.00, 0, 1.00, 97.00, 0, 1.00, 97.00, 0, -1.00, 82.00, 0, -1.00)
+walk_speed = 1.9
+pause_seconds = 3.0
+idle_animation = &"combat/Saci_Idle"
+walk_animation = &"combat/Saci_Hop"
+body_scale = 0.78
+
 [node name="Priest" parent="Townsfolk" instance=ExtResource("117_ext")]
 body_scene = ExtResource("116_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
@@ -7151,10 +7162,10 @@ animation_offset_seconds = 0.0
 
 [node name="Farm" type="Node3D" parent="." groups=["navigation_source"]]
 
-[node name="Farmhouse" parent="Farm" instance=ExtResource("121_ext")]
+[node name="Farmhouse" parent="Farm" instance=ExtResource("122_ext")]
 position = Vector3(85.500, 0.000, -34.600)
 
-[node name="Barn" parent="Farm" instance=ExtResource("122_ext")]
+[node name="Barn" parent="Farm" instance=ExtResource("123_ext")]
 position = Vector3(94.600, 0.000, -17.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -7378,10 +7389,10 @@ cull_mask = 0
 update_mode = 0
 blend_distance = 0.0
 
-[node name="FarmYard" parent="Farm" instance=ExtResource("123_ext")]
+[node name="FarmYard" parent="Farm" instance=ExtResource("124_ext")]
 position = Vector3(0.000, 0.000, 0.000)
 
-[node name="FarmFields" parent="Farm" instance=ExtResource("124_ext")]
+[node name="FarmFields" parent="Farm" instance=ExtResource("125_ext")]
 position = Vector3(0.000, 0.000, 0.000)
 
 [node name="Farmer" parent="Townsfolk" instance=ExtResource("117_ext")]
@@ -7571,8 +7582,8 @@ rotation = Vector3(0.000, 1.949, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("126_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("127_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 13988269
@@ -7585,8 +7596,8 @@ rotation = Vector3(0.000, 0.638, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("126_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("127_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 504954191
@@ -7599,8 +7610,8 @@ rotation = Vector3(0.000, -2.101, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("126_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("127_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 953990702
@@ -7613,8 +7624,8 @@ rotation = Vector3(0.000, 2.358, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("126_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("127_ext")
 pen = Rect2(78.50, 5.50, 20.50, 21.00)
 walk_speed = 0.55
 wander_seed = 379352014
@@ -7627,8 +7638,8 @@ rotation = Vector3(0.000, -0.656, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("127_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("128_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 500029480
@@ -7641,8 +7652,8 @@ rotation = Vector3(0.000, 1.740, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("127_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("128_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 837996492
@@ -7655,8 +7666,8 @@ rotation = Vector3(0.000, -0.443, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("127_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("128_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 801188445
@@ -7669,8 +7680,8 @@ rotation = Vector3(0.000, -1.305, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("127_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("128_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 591565649
@@ -7683,8 +7694,8 @@ rotation = Vector3(0.000, -2.875, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("125_ext")
-model_scene = ExtResource("127_ext")
+script = ExtResource("126_ext")
+model_scene = ExtResource("128_ext")
 pen = Rect2(86.50, 32.50, 12.50, 9.50)
 walk_speed = 0.5
 wander_seed = 743114111
@@ -7693,17 +7704,17 @@ obstacles = PackedVector3Array(89.00, 35.20, 0.21, 94.31, 39.90, 2.63, 97.69, 39
 
 [node name="FarmMachines" type="Node3D" parent="."]
 
-[node name="WaterWheel" parent="FarmMachines" instance=ExtResource("128_ext")]
+[node name="WaterWheel" parent="FarmMachines" instance=ExtResource("129_ext")]
 position = Vector3(137.500, 1.660, 32.000)
 rotation = Vector3(0.000, 3.142, 0.000)
-script = ExtResource("129_ext")
+script = ExtResource("130_ext")
 
-[node name="MonjoloBeam" parent="FarmMachines" instance=ExtResource("130_ext")]
+[node name="MonjoloBeam" parent="FarmMachines" instance=ExtResource("131_ext")]
 position = Vector3(131.500, 0.960, 37.900)
 rotation = Vector3(0.000, 3.142, 0.000)
-script = ExtResource("131_ext")
+script = ExtResource("132_ext")
 
-[node name="MulaSemCabeca" parent="." instance=ExtResource("132_ext")]
+[node name="MulaSemCabeca" parent="." instance=ExtResource("133_ext")]
 position = Vector3(112.500, 0.000, 32.000)
 rotation = Vector3(0.000, 3.142, 0.000)
 
@@ -7713,9 +7724,9 @@ rotation = Vector3(0.000, 3.142, 0.000)
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("133_ext")
-wagon_scene = ExtResource("134_ext")
-horse_scene = ExtResource("135_ext")
+script = ExtResource("134_ext")
+wagon_scene = ExtResource("135_ext")
+horse_scene = ExtResource("136_ext")
 driver_body = ExtResource("116_ext")
 driver_hair_color = Color(0.320, 0.210, 0.140, 1)
 driver_seat = Vector3(0.000, 1.010, 1.300)
@@ -7727,9 +7738,9 @@ start_distance = 0.00
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("133_ext")
-wagon_scene = ExtResource("136_ext")
-horse_scene = ExtResource("135_ext")
+script = ExtResource("134_ext")
+wagon_scene = ExtResource("137_ext")
+horse_scene = ExtResource("136_ext")
 driver_body = ExtResource("118_ext")
 driver_hair_color = Color(0.080, 0.070, 0.070, 1)
 driver_seat = Vector3(0.000, 1.010, 1.300)
@@ -7740,30 +7751,30 @@ start_distance = 235.41
 [node name="DistanceFades" type="Node" parent="."]
 
 [node name="GrassTufts" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("137_ext")
+script = ExtResource("138_ext")
 target = NodePath("../../Trees")
 child_prefixes = PackedStringArray("Grass")
 range_end = 45.0
 
 [node name="SquareSmallProps" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("137_ext")
+script = ExtResource("138_ext")
 target = NodePath("../../SquareProps")
 child_prefixes = PackedStringArray("Bench", "FlowerBush", "Planter")
 range_end = 70.0
 
 [node name="MarketProps" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("137_ext")
+script = ExtResource("138_ext")
 target = NodePath("../../Market")
 child_prefixes = PackedStringArray()
 range_end = 70.0
 
 [node name="FarmFieldCrops" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("137_ext")
+script = ExtResource("138_ext")
 target = NodePath("../../Farm/FarmFields")
 child_prefixes = PackedStringArray("Crops")
 range_end = 80.0
 
-[node name="Player" parent="." instance=ExtResource("138_ext")]
+[node name="Player" parent="." instance=ExtResource("139_ext")]
 position = Vector3(-38.400, 0.000, -13.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -7773,7 +7784,7 @@ rotation = Vector3(-0.120, 1.837, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
-script = ExtResource("139_ext")
+script = ExtResource("140_ext")
 
 [node name="Key0" type="Marker3D" parent="CinematicTour"]
 position = Vector3(-90.000, 28.000, -30.000)
@@ -7803,10 +7814,10 @@ rotation = Vector3(0.114, -1.571, 0.000)
 position = Vector3(-90.000, 4.000, -57.000)
 rotation = Vector3(-0.011, -1.571, 0.000)
 
-[node name="CharacterSelect" parent="." instance=ExtResource("140_ext")]
+[node name="CharacterSelect" parent="." instance=ExtResource("141_ext")]
 
-[node name="FpsCounter" parent="." instance=ExtResource("141_ext")]
+[node name="FpsCounter" parent="." instance=ExtResource("142_ext")]
 
-[node name="SettingsMenu" parent="." instance=ExtResource("142_ext")]
+[node name="SettingsMenu" parent="." instance=ExtResource("143_ext")]
 
-[node name="HubAudio" parent="." instance=ExtResource("143_ext")]
+[node name="HubAudio" parent="." instance=ExtResource("144_ext")]
