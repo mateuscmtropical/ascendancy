@@ -1,6 +1,8 @@
 extends Node
 ## Configurações de tela, gráficos e áudio do jogador: guarda em user://settings.cfg
 ## e aplica no motor.
+## Gráficos salvos com uma versão de padrões mais velha voltam ao padrão atual (o padrão mudou por
+## desempenho: MSAA 4x e luz indireta custavam metade do quadro).
 ## Só a cena principal usa o que o jogador salvou. Cenas de teste e de vídeo rodam com o padrão
 ## do projeto, para que prints e medições não dependam do que o jogador escolheu.
 
@@ -16,7 +18,7 @@ enum Setting {
 	MAX_FPS,
 	RENDER_SCALE,
 	MSAA,
-	FXAA,
+	SCREEN_SPACE_AA,
 	SHADOWS,
 	AMBIENT_OCCLUSION,
 	INDIRECT_LIGHT,
@@ -29,6 +31,9 @@ enum Setting {
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SETTINGS_SECTION: String = "settings"
+## Sobe quando o padrão dos gráficos muda; gráficos salvos com versão menor são descartados.
+const GRAPHICS_DEFAULTS_VERSION: int = 2
+const GRAPHICS_VERSION_KEY: String = "GRAPHICS_DEFAULTS_VERSION"
 const SECTION_BY_SETTING: Dictionary[Setting, Section] = {
 	Setting.MONITOR: Section.DISPLAY,
 	Setting.WINDOW_MODE: Section.DISPLAY,
@@ -37,7 +42,7 @@ const SECTION_BY_SETTING: Dictionary[Setting, Section] = {
 	Setting.MAX_FPS: Section.DISPLAY,
 	Setting.RENDER_SCALE: Section.DISPLAY,
 	Setting.MSAA: Section.GRAPHICS,
-	Setting.FXAA: Section.GRAPHICS,
+	Setting.SCREEN_SPACE_AA: Section.GRAPHICS,
 	Setting.SHADOWS: Section.GRAPHICS,
 	Setting.AMBIENT_OCCLUSION: Section.GRAPHICS,
 	Setting.INDIRECT_LIGHT: Section.GRAPHICS,
@@ -55,7 +60,7 @@ const LABEL_BY_SETTING: Dictionary[Setting, String] = {
 	Setting.MAX_FPS: "Limite de FPS",
 	Setting.RENDER_SCALE: "Escala de renderização",
 	Setting.MSAA: "Antisserrilhado (MSAA)",
-	Setting.FXAA: "Suavizar bordas (FXAA)",
+	Setting.SCREEN_SPACE_AA: "Suavizar bordas",
 	Setting.SHADOWS: "Qualidade das sombras",
 	Setting.AMBIENT_OCCLUSION: "Oclusão de ambiente",
 	Setting.INDIRECT_LIGHT: "Luz indireta",
@@ -77,6 +82,7 @@ const RESOLUTION_LABELS: PackedStringArray = [
 const VSYNC_LABELS: PackedStringArray = ["Desligado", "Ligado", "Adaptativo", "Mailbox"]
 const MAX_FPS_LABELS: PackedStringArray = ["Sem limite", "30", "60", "120", "144", "165", "240"]
 const MSAA_LABELS: PackedStringArray = ["Desligado", "2x", "4x", "8x"]
+const SCREEN_SPACE_AA_LABELS: PackedStringArray = ["Desligado", "FXAA", "SMAA"]
 const SHADOW_LABELS: PackedStringArray = ["Baixa", "Média", "Alta", "Ultra"]
 ## Ajustes contínuos viram slider em porcentagem: a opção escolhida é o próprio valor.
 const SLIDER_RANGE: Dictionary[Setting, Vector2i] = {
@@ -94,7 +100,7 @@ const FIXED_OPTION_LABELS: Dictionary[Setting, PackedStringArray] = {
 	Setting.VSYNC: VSYNC_LABELS,
 	Setting.MAX_FPS: MAX_FPS_LABELS,
 	Setting.MSAA: MSAA_LABELS,
-	Setting.FXAA: OFF_ON,
+	Setting.SCREEN_SPACE_AA: SCREEN_SPACE_AA_LABELS,
 	Setting.SHADOWS: SHADOW_LABELS,
 	Setting.AMBIENT_OCCLUSION: OFF_ON,
 	Setting.INDIRECT_LIGHT: OFF_ON,
@@ -108,11 +114,11 @@ const DEFAULT_OPTION: Dictionary[Setting, int] = {
 	Setting.VSYNC: 0,
 	Setting.MAX_FPS: 0,
 	Setting.RENDER_SCALE: 100,
-	Setting.MSAA: 2,
-	Setting.FXAA: 1,
+	Setting.MSAA: 0,
+	Setting.SCREEN_SPACE_AA: 2,
 	Setting.SHADOWS: 2,
 	Setting.AMBIENT_OCCLUSION: 1,
-	Setting.INDIRECT_LIGHT: 1,
+	Setting.INDIRECT_LIGHT: 0,
 	Setting.GLOW: 1,
 	Setting.MASTER_VOLUME: 80,
 	Setting.AMBIENT_VOLUME: 100,
@@ -139,6 +145,11 @@ const VSYNC_MODES: Array[DisplayServer.VSyncMode] = [
 ]
 const PERCENT: float = 0.01
 const MAX_FPS_VALUES: Array[int] = [0, 30, 60, 120, 144, 165, 240]
+const SCREEN_SPACE_AA_MODES: Array[Viewport.ScreenSpaceAA] = [
+	Viewport.SCREEN_SPACE_AA_DISABLED,
+	Viewport.SCREEN_SPACE_AA_FXAA,
+	Viewport.SCREEN_SPACE_AA_SMAA,
+]
 const MSAA_MODES: Array[Viewport.MSAA] = [
 	Viewport.MSAA_DISABLED,
 	Viewport.MSAA_2X,
@@ -164,7 +175,7 @@ var _appliers: Dictionary[Setting, Callable] = {
 	Setting.MAX_FPS: _apply_max_fps,
 	Setting.RENDER_SCALE: _apply_render_scale,
 	Setting.MSAA: _apply_msaa,
-	Setting.FXAA: _apply_fxaa,
+	Setting.SCREEN_SPACE_AA: _apply_screen_space_aa,
 	Setting.SHADOWS: _apply_shadows,
 	Setting.AMBIENT_OCCLUSION: _apply_ambient_occlusion,
 	Setting.INDIRECT_LIGHT: _apply_indirect_light,
@@ -252,7 +263,7 @@ func _load() -> void:
 	if config.load(SETTINGS_PATH) != OK:
 		return
 
-	for setting in _chosen_options:
+	for setting in _saved_settings_in(config):
 		var saved_option: int = config.get_value(
 			SETTINGS_SECTION, _key_of(setting), _chosen_options[setting]
 		)
@@ -267,7 +278,21 @@ func _save() -> void:
 	for setting in _chosen_options:
 		config.set_value(SETTINGS_SECTION, _key_of(setting), _chosen_options[setting])
 
+	config.set_value(SETTINGS_SECTION, GRAPHICS_VERSION_KEY, GRAPHICS_DEFAULTS_VERSION)
 	config.save(SETTINGS_PATH)
+
+
+## Configurações cujo valor salvo vale: os gráficos só se foram salvos com os padrões atuais.
+func _saved_settings_in(config: ConfigFile) -> Array[Setting]:
+	var saved_version: int = config.get_value(SETTINGS_SECTION, GRAPHICS_VERSION_KEY, 0)
+	var is_graphics_current: bool = saved_version >= GRAPHICS_DEFAULTS_VERSION
+	var settings: Array[Setting] = []
+
+	for setting in _chosen_options:
+		if is_graphics_current or SECTION_BY_SETTING[setting] != Section.GRAPHICS:
+			settings.append(setting)
+
+	return settings
 
 
 func _key_of(setting: Setting) -> String:
@@ -342,10 +367,8 @@ func _apply_msaa(option: int) -> void:
 	get_viewport().msaa_3d = MSAA_MODES[option]
 
 
-func _apply_fxaa(option: int) -> void:
-	get_viewport().screen_space_aa = (
-		Viewport.SCREEN_SPACE_AA_FXAA if option == 1 else Viewport.SCREEN_SPACE_AA_DISABLED
-	)
+func _apply_screen_space_aa(option: int) -> void:
+	get_viewport().screen_space_aa = SCREEN_SPACE_AA_MODES[option]
 
 
 func _apply_shadows(option: int) -> void:

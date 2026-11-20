@@ -448,7 +448,36 @@ uv1_world_triplanar = true''')
 
 COUNTRYSIDE_HALF = 250.0
 GROUND_COLLISION_HALF = 1000.0
+OCCLUDER_GROUND_HALF = 140.0  # a cidade e a fazenda; além disto só campo plano
+OCCLUDER_GROUND_THICKNESS = 0.1
+OCCLUDER_INSET = 0.35  # oclusor por dentro das paredes da casa (o contorno e os beirais ficam de fora)
+OCCLUDER_FRONT_SETBACK = 0.4  # atrás da fachada: varandas e portas recuadas
+OCCLUDER_WALL_SHARE = 0.55  # até o beiral; o telhado inclinado não tampa nada
 GROUND_COLLISION_DEPTH = 1.0
+
+
+def add_occluder(scene: SceneWriter, name: str, center: tuple, size: tuple, yaw: float = 0.0) -> None:
+    """Box the occlusion culling treats as solid: whatever hides fully behind it is not drawn."""
+    scene.add_sub_resource(f'''
+[sub_resource type="BoxOccluder3D" id="occluder_{name}"]
+size = {vector(*size)}''')
+    scene.add_node(name, "Occluders", "OccluderInstance3D", properties={"position": vector(*center), "rotation": vector(0.0, yaw, 0.0), "occluder": f'SubResource("occluder_{name}")'})
+
+
+def add_house_occluder(scene: SceneWriter, index: int, lot: dict) -> None:
+    """Houses are closed boxes from the street: an occluder inside the walls (inset, up to the eaves) hides what is
+    behind them. Porches, eaves and the roof slope stay outside the box, so nothing is culled while still visible."""
+    sidecar = model_sidecar(lot["model"])
+    minimum, maximum = sidecar["aabb_min"], sidecar["aabb_max"]
+    width = maximum[0] - minimum[0] - 2.0 * OCCLUDER_INSET
+    depth = -minimum[2] - OCCLUDER_FRONT_SETBACK - OCCLUDER_INSET
+    height = maximum[1] * OCCLUDER_WALL_SHARE
+    local_center = ((minimum[0] + maximum[0]) / 2.0, height / 2.0, -OCCLUDER_FRONT_SETBACK - depth / 2.0)
+
+    if width <= 0.0 or depth <= 0.0:
+        return
+
+    add_occluder(scene, f"House{index:03d}", lot_to_world(lot, local_center), (width, height, depth), lot["rotation"])
 
 
 def rectangles_around(hole: tuple, half: float) -> list:
@@ -484,6 +513,14 @@ size = Vector2({maximum[0] - minimum[0]:.3f}, {maximum[1] - minimum[1]:.3f})''')
         scene.add_node(f"Countryside{index}", "Ground", "MeshInstance3D", properties={"position": vector((minimum[0] + maximum[0]) / 2.0, -STREET_DROP - 0.03, (minimum[1] + maximum[1]) / 2.0), "mesh": f'SubResource("countryside_mesh_{index}")'})
 
     place(scene, "City", "Ground", "res://art/town/ground.gltf", (0, 0, 0))
+
+    # Chão como oclusor, com o furo da escada da cripta: de baixo a cidade não é desenhada, de cima a cripta.
+    scene.add_node("Occluders", ".", "Node3D")
+
+    for index, (minimum, maximum) in enumerate(rectangles_around(CRYPT_SHAFT_HOLE, OCCLUDER_GROUND_HALF)):
+        size = (maximum[0] - minimum[0], OCCLUDER_GROUND_THICKNESS, maximum[1] - minimum[1])
+        center = ((minimum[0] + maximum[0]) / 2.0, -STREET_DROP - OCCLUDER_GROUND_THICKNESS / 2.0 - 0.02, (minimum[1] + maximum[1]) / 2.0)
+        add_occluder(scene, f"Ground{index}", center, size)
 
 
 def grounded(x: float, z: float) -> tuple:
@@ -601,6 +638,10 @@ def add_cathedral_crypt(scene: SceneWriter) -> None:
         "cull_mask": "0",
         "update_mode": "0",
         "blend_distance": "0.0",
+    })
+    scene.add_node("SunlessZone", "Buildings/CathedralCrypt", "Node3D", properties={
+        "script": f'ExtResource("{scene.external_id("Script", "res://features/sky/sunless_zone.gd")}")',
+        "box": f"AABB({', '.join(f'{value:.3f}' for value in (*room_minimum, *room_size))})",
     })
     scene.add_node("CryptMonument", "Buildings/CathedralCrypt", instance=scene.external_id("PackedScene", "res://features/hub/crypt_monument.tscn"), properties={"position": vector(*CRYPT_MONUMENT)})
 
@@ -1065,6 +1106,7 @@ def add_town_lots(scene: SceneWriter, lots: list) -> None:
 
     for index, lot in enumerate(houses):
         place(scene, f"House{index:03d}", "Buildings", lot["model"], lot["position"], lot["rotation"])
+        add_house_occluder(scene, index, lot)
 
     for index, lot in enumerate(alleys):
         properties = {"position": vector(*lot["position"]), "rotation": vector(0.0, lot["rotation"], 0.0), "scale": vector(lot["width"], 1.0, 1.0)}
@@ -2104,7 +2146,7 @@ tonemap_white = 1.4
 ssao_enabled = true
 ssao_radius = 1.4
 ssao_intensity = 1.6
-ssil_enabled = true
+ssil_enabled = false
 glow_enabled = true
 glow_intensity = 0.35
 glow_bloom = 0.05
