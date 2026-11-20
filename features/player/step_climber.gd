@@ -8,11 +8,13 @@ const STEP_WALL_MAX_NORMAL_Y: float = 0.7
 
 
 ## Quanto o corpo tem de subir para o topo do degrau à frente, se o deslocamento horizontal motion
-## bate numa parede baixa (até STEP_HEIGHT) com chão firme em cima; 0 se não há degrau.
-static func step_top_ahead(body: CharacterBody3D, motion: Vector3) -> float:
+## bate numa parede baixa (até step_height) com chão firme em cima; 0 se não há degrau.
+static func step_top_ahead(
+	body: CharacterBody3D, motion: Vector3, step_height: float = STEP_HEIGHT
+) -> float:
 	var blocking_hit: KinematicCollision3D = KinematicCollision3D.new()
 	var landing_hit: KinematicCollision3D = KinematicCollision3D.new()
-	var lift: Vector3 = Vector3.UP * STEP_HEIGHT
+	var lift: Vector3 = Vector3.UP * step_height
 	var standing: Transform3D = body.global_transform
 	var raised: Transform3D = standing.translated(lift)
 	var is_blocked_by_wall: bool = (
@@ -34,4 +36,4 @@ static func step_top_ahead(body: CharacterBody3D, motion: Vector3) -> float:
 	if not has_firm_landing:
 		return 0.0
 
-	return STEP_HEIGHT - landing_hit.get_travel().length()
+	return step_height - landing_hit.get_travel().length()

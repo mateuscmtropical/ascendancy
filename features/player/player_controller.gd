@@ -62,39 +62,6 @@ const DOUBLE_TAP_SECONDS: float = 0.3
 const HIDE_MODEL_DISTANCE: float = 0.7
 ## Antecipação do teste do degrau, para o corpo encostar na borda já levantando.
 const STEP_PROBE_SECONDS: float = 0.08
-## Montado na Mula: passo, galope e disparada no chão; no ar voa para onde a câmera olha.
-const RIDE_SPEED_BY_STANCE: Dictionary[Stance, float] = {
-	Stance.IDLE: 0.0,
-	Stance.WALK: 3.0,
-	Stance.RUN: 10.0,
-	Stance.SPRINT: 15.0,
-	Stance.AIRBORNE: 10.0,
-	Stance.HOVER: 0.0,
-	Stance.FLY: 18.0,
-}
-const MULA_ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
-	Stance.IDLE: MulaSemCabeca.IDLE_ANIMATION,
-	Stance.WALK: MulaSemCabeca.WALK_ANIMATION,
-	Stance.RUN: MulaSemCabeca.RUN_ANIMATION,
-	Stance.SPRINT: MulaSemCabeca.RUN_ANIMATION,
-	Stance.AIRBORNE: MulaSemCabeca.RUN_ANIMATION,
-	Stance.HOVER: MulaSemCabeca.WALK_ANIMATION,
-	Stance.FLY: MulaSemCabeca.RUN_ANIMATION,
-}
-const RIDE_IDLE_ANIMATION: StringName = &"combat/Ride_Idle"
-const RIDE_GALLOP_ANIMATION: StringName = &"combat/Ride_Gallop"
-const RIDER_ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
-	Stance.IDLE: RIDE_IDLE_ANIMATION,
-	Stance.HOVER: RIDE_IDLE_ANIMATION,
-}
-const RIDE_ACCELERATION: float = 14.0
-const RIDE_TURN_SPEED: float = 5.0
-const RIDE_CLIMB_SPEED: float = 7.0
-## O assento do esqueleto fica esta altura acima dos pés do modelo.
-const RIDER_SEAT_HEIGHT: float = 0.78
-const RIDE_CAMERA_LIFT: float = 1.0
-## Apeando, o jogador desce por este lado da mula (metros, para a esquerda dela).
-const DISMOUNT_SIDE_OFFSET: float = 1.3
 
 @export var is_input_enabled: bool = true
 
@@ -104,8 +71,7 @@ var _stance: Stance = Stance.IDLE
 var _takeoff_speed: float = 0.0
 var _last_jump_press_seconds: float = -1.0
 var _ground_collision_mask: int
-var _mount: MulaSemCabeca
-var _is_mount_flying: bool = false
+var _rider: MountRider
 
 @onready var _model: CharacterModel = $CharacterModel
 @onready var _fighter: UnarmedFighter = $UnarmedFighter
@@ -117,6 +83,7 @@ var _is_mount_flying: bool = false
 func _ready() -> void:
 	_ground_collision_mask = collision_mask
 	_camera_yaw.ignore_body(get_rid())
+	_rider = MountRider.new(self, _model, _camera_yaw, _avoidance_obstacle)
 	_fighter.move_started.connect(_on_move_started)
 	_fighter.strike_reached.connect(_on_strike_reached)
 
@@ -135,6 +102,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"jump") and not event.is_echo():
 		_detect_double_jump_tap()
 
+	if event.is_action_pressed(&"summon_mount") and not is_riding():
+		_summon_mount()
+
 	_request_attack_from(event)
 
 	if event is InputEventMouseMotion and is_mouse_captured:
@@ -151,8 +121,8 @@ func _physics_process(delta: float) -> void:
 
 	_fighter.advance(delta)
 
-	if _mount != null:
-		_ride(input_vector, delta)
+	if is_riding():
+		_rider.advance(input_vector, delta)
 
 		return
 
@@ -172,38 +142,33 @@ func set_appearance(body_scene: PackedScene, hair_color: Color) -> void:
 	_model.set_body(body_scene, hair_color)
 
 
-## Sobe na mula: o corpo vai para o lugar dela e daí em diante guia a mula (ver _ride).
+## Sobe na mula: daí em diante quem anda é o MountRider.
 func ride(mount: MulaSemCabeca) -> void:
 	set_flying(false)
-	_mount = mount
-	_is_mount_flying = false
 	_mount_collision.disabled = false
-	_camera_yaw.lift = RIDE_CAMERA_LIFT
-	global_position = mount.global_position
-	_model.global_rotation.y = mount.global_rotation.y
-	_stance = Stance.AIRBORNE
+	_rider.start(mount)
 
 
-## Desce pela esquerda da mula, que fica parada onde está.
+## Desce da mula, que fica parada onde está.
 func dismount() -> void:
-	var side_step: Vector3 = _model.global_basis.x * DISMOUNT_SIDE_OFFSET
-
-	if _mount == null:
+	if not is_riding():
 		return
 
-	_mount.is_airborne = false
-	_mount.play_animation(MulaSemCabeca.IDLE_ANIMATION)
-	_mount = null
-	_is_mount_flying = false
+	_rider.stop()
 	_mount_collision.disabled = true
-	_camera_yaw.lift = 0.0
-	_model.position = Vector3.ZERO
 	_stance = Stance.AIRBORNE
-	move_and_collide(side_step)
+
+
+## Chama a montaria: ela vem voando de onde estiver e pousa ao lado.
+func _summon_mount() -> void:
+	var mount: MulaMount = get_tree().get_first_node_in_group(MulaMount.GROUP) as MulaMount
+
+	if mount != null:
+		mount.summon_to(self)
 
 
 func is_riding() -> bool:
-	return _mount != null
+	return _rider.mount != null
 
 
 func set_flying(should_fly: bool) -> void:
@@ -252,8 +217,8 @@ func _walk(input_vector: Vector2, delta: float) -> void:
 
 ## Sobe o corpo até o topo do degrau à frente, se o deslocamento horizontal motion bate numa
 ## parede baixa (até STEP_HEIGHT) com chão firme em cima. Devolve se subiu.
-func climb_step(motion: Vector3) -> bool:
-	var step_top: float = StepClimber.step_top_ahead(self, motion)
+func climb_step(motion: Vector3, step_height: float = StepClimber.STEP_HEIGHT) -> bool:
+	var step_top: float = StepClimber.step_top_ahead(self, motion, step_height)
 
 	if step_top <= safe_margin:
 		return false
@@ -267,7 +232,7 @@ func _fly(input_vector: Vector2, delta: float) -> void:
 	var look_direction: Vector3 = (
 		_camera_yaw.get_look_basis() * Vector3(input_vector.x, 0.0, input_vector.y)
 	)
-	var climb: float = _read_climb_input()
+	var climb: float = read_climb_input()
 	var stance: Stance = Stance.FLY if input_vector.length() > 0.0 or climb != 0.0 else Stance.HOVER
 	var boost: float = FLY_BOOST if Input.is_action_pressed(&"sprint") else 1.0
 	var target_velocity: Vector3 = (
@@ -284,92 +249,6 @@ func _fly(input_vector: Vector2, delta: float) -> void:
 	_apply_stance(stance)
 
 
-## Guia a mula: no chão anda como a pé (mais rápido, gira devagar); o pulo levanta voo e, no
-## ar, vai para onde a câmera olha, pulo sobe e Ctrl desce; encostando no chão sem subir, pousa.
-func _ride(input_vector: Vector2, delta: float) -> void:
-	var climb: float = _read_climb_input()
-	var wants_takeoff: bool = is_input_enabled and Input.is_action_just_pressed(&"jump")
-	var steer_basis: Basis = (
-		_camera_yaw.get_look_basis() if _is_mount_flying else _camera_yaw.global_basis
-	)
-	var move_direction: Vector3 = steer_basis * Vector3(input_vector.x, 0.0, input_vector.y)
-	var stance: Stance
-
-	_is_mount_flying = _is_mount_flying or wants_takeoff
-	stance = _choose_ride_stance(input_vector, climb)
-	_move_mount(move_direction, climb, RIDE_SPEED_BY_STANCE[stance], delta)
-
-	if _is_mount_flying and is_on_floor() and climb <= 0.0:
-		_is_mount_flying = false
-
-	_turn_model_toward(Vector3(move_direction.x, 0.0, move_direction.z), delta, RIDE_TURN_SPEED)
-	_carry_mount()
-	_apply_ride_stance(stance)
-
-
-func _choose_ride_stance(input_vector: Vector2, climb: float) -> Stance:
-	var is_moving: bool = not input_vector.is_zero_approx()
-
-	if _is_mount_flying:
-		return Stance.FLY if is_moving or climb != 0.0 else Stance.HOVER
-
-	if not is_on_floor():
-		return Stance.AIRBORNE
-
-	if not is_moving:
-		return Stance.IDLE
-
-	if Input.is_action_pressed(&"sprint"):
-		return Stance.SPRINT
-
-	if Input.is_action_pressed(&"walk"):
-		return Stance.WALK
-
-	return Stance.RUN
-
-
-func _move_mount(move_direction: Vector3, climb: float, speed: float, delta: float) -> void:
-	var target_velocity: Vector3 = move_direction.normalized() * speed
-
-	if _is_mount_flying:
-		target_velocity += Vector3.UP * climb * RIDE_CLIMB_SPEED
-		velocity = velocity.move_toward(target_velocity, RIDE_ACCELERATION * delta)
-		move_and_slide()
-
-		return
-
-	velocity.x = move_toward(velocity.x, target_velocity.x, RIDE_ACCELERATION * delta)
-	velocity.z = move_toward(velocity.z, target_velocity.z, RIDE_ACCELERATION * delta)
-	velocity.y -= FALL_GRAVITY * delta
-
-	if is_on_floor():
-		climb_step(Vector3(velocity.x, 0.0, velocity.z) * STEP_PROBE_SECONDS)
-
-	move_and_slide()
-
-
-## A mula vai junto com o corpo e o cavaleiro senta no lombo dela.
-func _carry_mount() -> void:
-	var seat_drop: Vector3 = Vector3.DOWN * RIDER_SEAT_HEIGHT
-
-	_mount.global_position = global_position
-	_mount.global_rotation.y = _model.global_rotation.y
-	_mount.is_airborne = _is_mount_flying or not is_on_floor()
-	_model.global_position = _mount.get_saddle_position() + seat_drop
-	_avoidance_obstacle.velocity = Vector3(velocity.x, 0.0, velocity.z)
-
-
-func _apply_ride_stance(stance: Stance) -> void:
-	var rider_animation: StringName = RIDER_ANIMATION_BY_STANCE.get(stance, RIDE_GALLOP_ANIMATION)
-
-	if stance == _stance:
-		return
-
-	_stance = stance
-	_mount.play_animation(MULA_ANIMATION_BY_STANCE[stance])
-	_model.play_animation(rider_animation)
-
-
 func _read_move_input() -> Vector2:
 	if not is_input_enabled:
 		return Vector2.ZERO
@@ -377,7 +256,8 @@ func _read_move_input() -> Vector2:
 	return Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 
 
-func _read_climb_input() -> float:
+## Subir (pulo) menos descer (Ctrl), para o voo.
+func read_climb_input() -> float:
 	var climb_up: float = 1.0 if Input.is_action_pressed(&"jump") else 0.0
 	var climb_down: float = 1.0 if Input.is_action_pressed(&"walk") else 0.0
 
