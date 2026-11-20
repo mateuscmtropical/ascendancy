@@ -1,0 +1,383 @@
+{
+ "asset": {
+  "generator": "Khronos glTF Blender I/O v5.2.41",
+  "version": "2.0",
+  "extras": {
+   "buffer_md5": "066ef54d034847acc82b43fa5d4dc7ab"
+  }
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "mesh": 0,
+   "name": "cathedral_crypt_monument"
+  }
+ ],
+ "materials": [
+  {
+   "doubleSided": true,
+   "name": "M_TownStone",
+   "normalTexture": {
+    "index": 0
+   },
+   "pbrMetallicRoughness": {
+    "baseColorTexture": {
+     "index": 1
+    },
+    "metallicFactor": 0,
+    "roughnessFactor": 0.8999999761581421
+   }
+  },
+  {
+   "doubleSided": true,
+   "name": "M_TownPaint",
+   "pbrMetallicRoughness": {
+    "metallicFactor": 0,
+    "roughnessFactor": 0.75
+   }
+  },
+  {
+   "doubleSided": true,
+   "name": "M_TownMetal",
+   "pbrMetallicRoughness": {
+    "metallicFactor": 0.699999988079071,
+    "roughnessFactor": 0.44999998807907104
+   }
+  }
+ ],
+ "meshes": [
+  {
+   "name": "P1",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "TEXCOORD_0": 2,
+      "TEXCOORD_1": 3,
+      "COLOR_0": 4
+     },
+     "indices": 5,
+     "material": 0
+    },
+    {
+     "attributes": {
+      "POSITION": 6,
+      "NORMAL": 7,
+      "TEXCOORD_0": 8,
+      "TEXCOORD_1": 9,
+      "COLOR_0": 10
+     },
+     "indices": 11,
+     "material": 1
+    },
+    {
+     "attributes": {
+      "POSITION": 12,
+      "NORMAL": 13,
+      "TEXCOORD_0": 14,
+      "TEXCOORD_1": 15,
+      "COLOR_0": 16
+     },
+     "indices": 17,
+     "material": 2
+    }
+   ]
+  }
+ ],
+ "textures": [
+  {
+   "sampler": 0,
+   "source": 0
+  },
+  {
+   "sampler": 0,
+   "source": 1
+  }
+ ],
+ "images": [
+  {
+   "mimeType": "image/png",
+   "name": "T_UnevenBrick_Normal.png",
+   "uri": "textures/T_UnevenBrick_Normal.png"
+  },
+  {
+   "mimeType": "image/png",
+   "name": "T_TownStone_BaseColor.png",
+   "uri": "textures/T_TownStone_BaseColor.png"
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 21950,
+   "max": [
+    0,
+    2.7616169452667236,
+    1.7300000190734863
+   ],
+   "min": [
+    -1.4800000190734863,
+    0,
+    -1.7300000190734863
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 21950,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5126,
+   "count": 21950,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 3,
+   "componentType": 5126,
+   "count": 21950,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 4,
+   "componentType": 5123,
+   "count": 21950,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 5,
+   "componentType": 5123,
+   "count": 22194,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 6,
+   "componentType": 5126,
+   "count": 2040,
+   "max": [
+    -0.5579648017883301,
+    1.6458781957626343,
+    1.5054450035095215
+   ],
+   "min": [
+    -1.4250000715255737,
+    0.33000001311302185,
+    -1.4731866121292114
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 7,
+   "componentType": 5126,
+   "count": 2040,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 8,
+   "componentType": 5126,
+   "count": 2040,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 9,
+   "componentType": 5126,
+   "count": 2040,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 10,
+   "componentType": 5123,
+   "count": 2040,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 11,
+   "componentType": 5123,
+   "count": 2736,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 12,
+   "componentType": 5126,
+   "count": 280,
+   "max": [
+    -0.6298943758010864,
+    1.2899999618530273,
+    1.4500000476837158
+   ],
+   "min": [
+    -0.8201056718826294,
+    0.949999988079071,
+    -1.4500000476837158
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 13,
+   "componentType": 5126,
+   "count": 280,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 14,
+   "componentType": 5126,
+   "count": 280,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 15,
+   "componentType": 5126,
+   "count": 280,
+   "type": "VEC2"
+  },
+  {
+   "bufferView": 16,
+   "componentType": 5123,
+   "count": 280,
+   "normalized": true,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 17,
+   "componentType": 5123,
+   "count": 456,
+   "type": "SCALAR"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteLength": 263400,
+   "byteOffset": 0,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 263400,
+   "byteOffset": 263400,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 175600,
+   "byteOffset": 526800,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 175600,
+   "byteOffset": 702400,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 175600,
+   "byteOffset": 878000,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 44388,
+   "byteOffset": 1053600,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24480,
+   "byteOffset": 1097988,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24480,
+   "byteOffset": 1122468,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 16320,
+   "byteOffset": 1146948,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 16320,
+   "byteOffset": 1163268,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 16320,
+   "byteOffset": 1179588,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 5472,
+   "byteOffset": 1195908,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 3360,
+   "byteOffset": 1201380,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 3360,
+   "byteOffset": 1204740,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2240,
+   "byteOffset": 1208100,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2240,
+   "byteOffset": 1210340,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2240,
+   "byteOffset": 1212580,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 912,
+   "byteOffset": 1214820,
+   "target": 34963
+  }
+ ],
+ "samplers": [
+  {
+   "magFilter": 9729,
+   "minFilter": 9987
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 1215732,
+   "uri": "cathedral_crypt_monument.bin"
+  }
+ ]
+}

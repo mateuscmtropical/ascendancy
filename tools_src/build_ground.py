@@ -458,8 +458,7 @@ def build_field_slab(name: str, domain: tuple, fields_of, surfaces: list, window
         region_mesh(f"{name}WindowSurface{surface_index}", clip_region(surface_triangles, [(2, SLAB_CURB_WIDTH, True)]), lambda corner: 0.0, materials[key])
 
     for piece_index, piece in enumerate(pieces):
-        make_slab_collider(f"{name}Piece{piece_index}-convcolonly", *piece)
-        add_inset_surfaces(f"{name}Piece{piece_index}", domain, [(overlap, key) for overlap, key in ((rectangle_overlap(piece, (minimum, maximum)), key) for minimum, maximum, key in surfaces) if overlap], materials)
+        add_holed_slab(f"{name}Piece{piece_index}", piece, [((minimum, maximum), key) for minimum, maximum, key in surfaces], materials, domain)
 
 
 def add_inset_surfaces(name: str, slab: tuple, surfaces: list, materials: dict) -> None:
@@ -483,8 +482,7 @@ def build_slabs(materials: dict) -> None:
 
         if window is None:
             make_curb_frame(f"{name}Curb", minimum, maximum, materials["curb"])
-            make_slab_collider(f"{name}-convcolonly", minimum, maximum)
-            add_inset_surfaces(name, (minimum, maximum), [((surface_minimum, surface_maximum), key) for surface_minimum, surface_maximum, key in surfaces], materials)
+            add_holed_slab(name, (minimum, maximum), [((surface_minimum, surface_maximum), key) for surface_minimum, surface_maximum, key in surfaces], materials, (minimum, maximum))
 
             continue
 
@@ -574,7 +572,23 @@ def build_inlays(materials: dict) -> None:
 
 
 def build_streets(materials: dict) -> None:
-    make_flat_quad("Streets", layout.CITY_MIN, layout.CITY_MAX, -layout.STREET_DROP, materials["street"])
+    """Asphalt under the whole city, open where the crypt stair goes down (layout.CRYPT_SHAFT_HOLE)."""
+    city = (layout.CITY_MIN, layout.CITY_MAX)
+
+    for piece_index, (minimum, maximum) in enumerate(rectangle_minus(city, rectangle_overlap(city, layout.CRYPT_SHAFT_HOLE))):
+        make_flat_quad(f"Streets{piece_index}", minimum, maximum, -layout.STREET_DROP, materials["street"])
+
+
+def add_holed_slab(name: str, slab: tuple, surfaces: list, materials: dict, domain: tuple) -> None:
+    """Collider and surfaces of a plain stretch of a slab (domain is the whole slab, whose edges keep the curb band);
+    a stretch that holds the crypt stair is split around its hole, which lies under the cathedral, far from edges."""
+    hole = rectangle_overlap(slab, layout.CRYPT_SHAFT_HOLE)
+    pieces = rectangle_minus(slab, hole) if hole else [slab]
+
+    for piece_index, piece in enumerate(pieces):
+        suffix = f"Piece{piece_index}" if len(pieces) > 1 else ""
+        make_slab_collider(f"{name}{suffix}-convcolonly", *piece)
+        add_inset_surfaces(f"{name}{suffix}", domain, [(overlap, key) for overlap, key in ((rectangle_overlap(piece, surface), key) for surface, key in surfaces) if overlap], materials)
 
 
 # ---------- export ----------
