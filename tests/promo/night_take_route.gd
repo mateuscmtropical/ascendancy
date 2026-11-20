@@ -10,6 +10,22 @@ const NAVE: float = 1.05
 const CRYPT: float = -4.75
 ## Espiral do céu: ao norte, ~54° acima da heroína parada no adro.
 const SWIRL_LOOK: Vector3 = Vector3(6.0, 11.0, -8.0)
+## Bancos: a nave tem corredor central (z = 0) e acaba antes da escada do coro (x = 43,6); a
+## heroína cruza entre os dois e passa ao corredor lateral (z de 7 a 8,8) até a passagem.
+const PEW_END_X: float = 42.8
+const AISLE_TO_PASSAGE: Array[Vector3] = [
+	Vector3(PEW_END_X, NAVE, 0.0),
+	Vector3(PEW_END_X, NAVE, 7.4),
+	Vector3(45.2, NAVE, 8.4),
+	Vector3(50.8, NAVE, 9.6),
+]
+const PASSAGE_TO_DOOR: Array[Vector3] = [
+	Vector3(50.8, NAVE, 9.6),
+	Vector3(45.2, NAVE, 8.4),
+	Vector3(PEW_END_X, NAVE, 7.4),
+	Vector3(PEW_END_X, NAVE, 0.0),
+	Vector3(16.0, NAVE, 0.0),
+]
 
 const LEGS: Array[Dictionary] = [
 	{
@@ -32,13 +48,12 @@ const LEGS: Array[Dictionary] = [
 	},
 	{
 		"stance": PlayerController.Stance.RUN,
-		"navigate": true,
-		"path": [Vector3(16.0, NAVE, 0.0), Vector3(44.0, NAVE, 9.6)],
+		"path": [Vector3(16.0, NAVE, 0.0), Vector3(PEW_END_X, NAVE, 0.0)],
 		"camera_distance": 3.6,
 	},
 	{
 		"stance": PlayerController.Stance.WALK,
-		"path": [Vector3(44.0, NAVE, 9.6), Vector3(50.8, NAVE, 9.6)],
+		"path": AISLE_TO_PASSAGE,
 		"camera_distance": 3.0,
 	},
 	{"seconds": 1.0, "face": Vector3(47.3, NAVE, 12.4), "camera_distance": 3.0},
@@ -99,8 +114,7 @@ const LEGS: Array[Dictionary] = [
 	},
 	{
 		"stance": PlayerController.Stance.RUN,
-		"navigate": true,
-		"path": [Vector3(50.8, NAVE, 9.6), Vector3(16.0, NAVE, 0.0)],
+		"path": PASSAGE_TO_DOOR,
 		"camera_distance": 3.4,
 		"camera_height": 1.9,
 	},
