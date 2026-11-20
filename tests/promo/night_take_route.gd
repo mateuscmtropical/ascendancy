@@ -118,6 +118,7 @@ const LEGS: Array[Dictionary] = [
 		],
 		"camera_distance": 3.0,
 		"camera_height": 1.8,
+		"camera_rate": 3.0,
 	},
 	{
 		"stance": PlayerController.Stance.RUN,

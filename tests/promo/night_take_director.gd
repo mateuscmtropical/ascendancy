@@ -199,6 +199,7 @@ func _update_camera(leg: Dictionary, delta: float) -> void:
 	var head: Vector3 = actor.global_position + Vector3.UP * HEAD_HEIGHT
 	var wanted: Vector3
 	var look_target: Vector3
+	var rate: float = leg.get("camera_rate", 1.0)
 
 	if leg.get("crane", false):
 		_update_crane(leg, head)
@@ -214,11 +215,14 @@ func _update_camera(leg: Dictionary, delta: float) -> void:
 	if leg.has("camera_at"):
 		wanted = leg["camera_at"]
 		look_target = head
-	camera.global_position = camera.global_position.lerp(
-		wanted, minf(1.0, delta * CAMERA_FOLLOW_RATE)
+
+	# A câmera chega atrasada: na curva ela varre por fora, então o ponto já suavizado
+	# também é puxado para fora da parede, senão o quadro fica dentro da pedra.
+	camera.global_position = _keep_off_walls(
+		head, camera.global_position.lerp(wanted, minf(1.0, delta * CAMERA_FOLLOW_RATE * rate))
 	)
 	camera.global_transform = camera.global_transform.interpolate_with(
-		camera.global_transform.looking_at(look_target), minf(1.0, delta * CAMERA_TURN_RATE)
+		camera.global_transform.looking_at(look_target), minf(1.0, delta * CAMERA_TURN_RATE * rate)
 	)
 
 
