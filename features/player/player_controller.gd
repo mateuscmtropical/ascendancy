@@ -58,29 +58,43 @@ const JUMP_VELOCITY: float = 7.0
 const RISE_GRAVITY: float = 22.0
 const FALL_GRAVITY: float = 30.0
 const DOUBLE_TAP_SECONDS: float = 0.3
-const MOUSE_SENSITIVITY: float = 0.0025
-const PITCH_MIN: float = -1.1
-## Quase na vertical: dá para deitar o olhar no céu e ver as estrelas.
-const PITCH_MAX: float = 1.4
-## Olhando para cima o braço da câmera encurta e o pivô sobe até a cabeça, senão a câmera
-## desceria para baixo do chão atrás do personagem.
-const CAMERA_ARM_LENGTH: float = 4.2
-## Altura mínima da câmera acima dos pés quando olha para cima (o braço encurta para caber); perto
-## da vertical ela sobe até a cabeça, o corpo some (HIDE_MODEL_DISTANCE) e o céu fica livre.
-const LOOK_UP_CAMERA_HEIGHT: float = 0.5
-const STARGAZE_CAMERA_HEIGHT: float = 1.45
-const STARGAZE_PITCH: Vector2 = Vector2(0.9, 1.35)
-const CAMERA_PIVOT_HEIGHT: float = 1.55
-const LOOK_UP_PIVOT_HEIGHT: float = 1.75
-## Câmera mais perto que isso do pivô (parede atrás, olhar para cima) esconde o corpo, que só
-## taparia a tela por dentro.
+## Câmera mais perto que isso do pivô esconde o corpo.
 const HIDE_MODEL_DISTANCE: float = 0.7
-## Degrau que o personagem sobe andando, sem pular: meio-fio, soleira, borda do terreiro.
-const STEP_HEIGHT: float = 0.2
-## Abaixo disto a normal do obstáculo é parede (degrau); acima, rampa que o move_and_slide já sobe.
-const STEP_WALL_MAX_NORMAL_Y: float = 0.7
 ## Antecipação do teste do degrau, para o corpo encostar na borda já levantando.
 const STEP_PROBE_SECONDS: float = 0.08
+## Montado na Mula: passo, galope e disparada no chão; no ar voa para onde a câmera olha.
+const RIDE_SPEED_BY_STANCE: Dictionary[Stance, float] = {
+	Stance.IDLE: 0.0,
+	Stance.WALK: 3.0,
+	Stance.RUN: 10.0,
+	Stance.SPRINT: 15.0,
+	Stance.AIRBORNE: 10.0,
+	Stance.HOVER: 0.0,
+	Stance.FLY: 18.0,
+}
+const MULA_ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
+	Stance.IDLE: MulaSemCabeca.IDLE_ANIMATION,
+	Stance.WALK: MulaSemCabeca.WALK_ANIMATION,
+	Stance.RUN: MulaSemCabeca.RUN_ANIMATION,
+	Stance.SPRINT: MulaSemCabeca.RUN_ANIMATION,
+	Stance.AIRBORNE: MulaSemCabeca.RUN_ANIMATION,
+	Stance.HOVER: MulaSemCabeca.WALK_ANIMATION,
+	Stance.FLY: MulaSemCabeca.RUN_ANIMATION,
+}
+const RIDE_IDLE_ANIMATION: StringName = &"combat/Ride_Idle"
+const RIDE_GALLOP_ANIMATION: StringName = &"combat/Ride_Gallop"
+const RIDER_ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
+	Stance.IDLE: RIDE_IDLE_ANIMATION,
+	Stance.HOVER: RIDE_IDLE_ANIMATION,
+}
+const RIDE_ACCELERATION: float = 14.0
+const RIDE_TURN_SPEED: float = 5.0
+const RIDE_CLIMB_SPEED: float = 7.0
+## O assento do esqueleto fica esta altura acima dos pés do modelo.
+const RIDER_SEAT_HEIGHT: float = 0.78
+const RIDE_CAMERA_LIFT: float = 1.0
+## Apeando, o jogador desce por este lado da mula (metros, para a esquerda dela).
+const DISMOUNT_SIDE_OFFSET: float = 1.3
 
 @export var is_input_enabled: bool = true
 
@@ -90,24 +104,19 @@ var _stance: Stance = Stance.IDLE
 var _takeoff_speed: float = 0.0
 var _last_jump_press_seconds: float = -1.0
 var _ground_collision_mask: int
-var _camera_collision_mask: int
+var _mount: MulaSemCabeca
+var _is_mount_flying: bool = false
 
 @onready var _model: CharacterModel = $CharacterModel
 @onready var _fighter: UnarmedFighter = $UnarmedFighter
-@onready var _camera_yaw: Node3D = $CameraYaw
-@onready var _camera_pitch: Node3D = $CameraYaw/CameraPitch
-@onready var _camera: Camera3D = $CameraYaw/CameraPitch/ShoulderArm/SpringArm3D/Camera3D
-@onready var _shoulder_arm: SpringArm3D = $CameraYaw/CameraPitch/ShoulderArm
-@onready var _spring_arm: SpringArm3D = $CameraYaw/CameraPitch/ShoulderArm/SpringArm3D
+@onready var _camera_yaw: PlayerCamera = $CameraYaw
 @onready var _avoidance_obstacle: NavigationObstacle3D = $AvoidanceObstacle
+@onready var _mount_collision: CollisionShape3D = $MountCollision
 
 
 func _ready() -> void:
 	_ground_collision_mask = collision_mask
-	_camera_collision_mask = _spring_arm.collision_mask
-	_shoulder_arm.add_excluded_object(get_rid())
-	_spring_arm.add_excluded_object(get_rid())
-	_follow_camera_pitch()
+	_camera_yaw.ignore_body(get_rid())
 	_fighter.move_started.connect(_on_move_started)
 	_fighter.strike_reached.connect(_on_strike_reached)
 
@@ -129,17 +138,23 @@ func _unhandled_input(event: InputEvent) -> void:
 	_request_attack_from(event)
 
 	if event is InputEventMouseMotion and is_mouse_captured:
-		_rotate_camera(event.relative)
+		_camera_yaw.rotate_by_mouse(event.relative)
 
 
 func _process(_delta: float) -> void:
-	_hide_model_when_camera_is_close()
+	# Câmera colada no pivô (parede atrás, olhar para cima): o corpo só taparia a tela por dentro.
+	_model.visible = _camera_yaw.distance_to_pivot() > HIDE_MODEL_DISTANCE
 
 
 func _physics_process(delta: float) -> void:
 	var input_vector: Vector2 = _read_move_input()
 
 	_fighter.advance(delta)
+
+	if _mount != null:
+		_ride(input_vector, delta)
+
+		return
 
 	if is_flying:
 		_fly(input_vector, delta)
@@ -150,19 +165,52 @@ func _physics_process(delta: float) -> void:
 
 
 func make_camera_current() -> void:
-	_camera.make_current()
+	_camera_yaw.make_current()
 
 
 func set_appearance(body_scene: PackedScene, hair_color: Color) -> void:
 	_model.set_body(body_scene, hair_color)
 
 
+## Sobe na mula: o corpo vai para o lugar dela e daí em diante guia a mula (ver _ride).
+func ride(mount: MulaSemCabeca) -> void:
+	set_flying(false)
+	_mount = mount
+	_is_mount_flying = false
+	_mount_collision.disabled = false
+	_camera_yaw.lift = RIDE_CAMERA_LIFT
+	global_position = mount.global_position
+	_model.global_rotation.y = mount.global_rotation.y
+	_stance = Stance.AIRBORNE
+
+
+## Desce pela esquerda da mula, que fica parada onde está.
+func dismount() -> void:
+	var side_step: Vector3 = _model.global_basis.x * DISMOUNT_SIDE_OFFSET
+
+	if _mount == null:
+		return
+
+	_mount.is_airborne = false
+	_mount.play_animation(MulaSemCabeca.IDLE_ANIMATION)
+	_mount = null
+	_is_mount_flying = false
+	_mount_collision.disabled = true
+	_camera_yaw.lift = 0.0
+	_model.position = Vector3.ZERO
+	_stance = Stance.AIRBORNE
+	move_and_collide(side_step)
+
+
+func is_riding() -> bool:
+	return _mount != null
+
+
 func set_flying(should_fly: bool) -> void:
 	is_flying = should_fly
 	_fighter.cancel()
 	collision_mask = 0 if should_fly else _ground_collision_mask
-	_spring_arm.collision_mask = 0 if should_fly else _camera_collision_mask
-	_shoulder_arm.collision_mask = _spring_arm.collision_mask
+	_camera_yaw.set_collides(not should_fly)
 	velocity = Vector3.ZERO
 
 
@@ -205,7 +253,7 @@ func _walk(input_vector: Vector2, delta: float) -> void:
 ## Sobe o corpo até o topo do degrau à frente, se o deslocamento horizontal motion bate numa
 ## parede baixa (até STEP_HEIGHT) com chão firme em cima. Devolve se subiu.
 func climb_step(motion: Vector3) -> bool:
-	var step_top: float = _step_top_ahead(motion)
+	var step_top: float = StepClimber.step_top_ahead(self, motion)
 
 	if step_top <= safe_margin:
 		return false
@@ -215,36 +263,9 @@ func climb_step(motion: Vector3) -> bool:
 	return true
 
 
-func _step_top_ahead(motion: Vector3) -> float:
-	var blocking_hit: KinematicCollision3D = KinematicCollision3D.new()
-	var landing_hit: KinematicCollision3D = KinematicCollision3D.new()
-	var lift: Vector3 = Vector3.UP * STEP_HEIGHT
-	var raised: Transform3D = global_transform.translated(lift)
-	var is_blocked_by_wall: bool = (
-		motion.length_squared() > 0.000001
-		and test_move(global_transform, motion, blocking_hit)
-		and blocking_hit.get_normal().y <= STEP_WALL_MAX_NORMAL_Y
-	)
-	var is_clear_above: bool = (
-		is_blocked_by_wall
-		and not test_move(global_transform, lift)
-		and not test_move(raised, motion)
-	)
-	var has_firm_landing: bool = (
-		is_clear_above
-		and test_move(raised.translated(motion), -lift, landing_hit)
-		and landing_hit.get_normal().y >= cos(floor_max_angle)
-	)
-
-	if not has_firm_landing:
-		return 0.0
-
-	return STEP_HEIGHT - landing_hit.get_travel().length()
-
-
 func _fly(input_vector: Vector2, delta: float) -> void:
 	var look_direction: Vector3 = (
-		_camera_pitch.global_basis * Vector3(input_vector.x, 0.0, input_vector.y)
+		_camera_yaw.get_look_basis() * Vector3(input_vector.x, 0.0, input_vector.y)
 	)
 	var climb: float = _read_climb_input()
 	var stance: Stance = Stance.FLY if input_vector.length() > 0.0 or climb != 0.0 else Stance.HOVER
@@ -261,6 +282,92 @@ func _fly(input_vector: Vector2, delta: float) -> void:
 	_avoidance_obstacle.velocity = Vector3.ZERO
 	_turn_model_toward(Vector3(look_direction.x, 0.0, look_direction.z), delta)
 	_apply_stance(stance)
+
+
+## Guia a mula: no chão anda como a pé (mais rápido, gira devagar); o pulo levanta voo e, no
+## ar, vai para onde a câmera olha, pulo sobe e Ctrl desce; encostando no chão sem subir, pousa.
+func _ride(input_vector: Vector2, delta: float) -> void:
+	var climb: float = _read_climb_input()
+	var wants_takeoff: bool = is_input_enabled and Input.is_action_just_pressed(&"jump")
+	var steer_basis: Basis = (
+		_camera_yaw.get_look_basis() if _is_mount_flying else _camera_yaw.global_basis
+	)
+	var move_direction: Vector3 = steer_basis * Vector3(input_vector.x, 0.0, input_vector.y)
+	var stance: Stance
+
+	_is_mount_flying = _is_mount_flying or wants_takeoff
+	stance = _choose_ride_stance(input_vector, climb)
+	_move_mount(move_direction, climb, RIDE_SPEED_BY_STANCE[stance], delta)
+
+	if _is_mount_flying and is_on_floor() and climb <= 0.0:
+		_is_mount_flying = false
+
+	_turn_model_toward(Vector3(move_direction.x, 0.0, move_direction.z), delta, RIDE_TURN_SPEED)
+	_carry_mount()
+	_apply_ride_stance(stance)
+
+
+func _choose_ride_stance(input_vector: Vector2, climb: float) -> Stance:
+	var is_moving: bool = not input_vector.is_zero_approx()
+
+	if _is_mount_flying:
+		return Stance.FLY if is_moving or climb != 0.0 else Stance.HOVER
+
+	if not is_on_floor():
+		return Stance.AIRBORNE
+
+	if not is_moving:
+		return Stance.IDLE
+
+	if Input.is_action_pressed(&"sprint"):
+		return Stance.SPRINT
+
+	if Input.is_action_pressed(&"walk"):
+		return Stance.WALK
+
+	return Stance.RUN
+
+
+func _move_mount(move_direction: Vector3, climb: float, speed: float, delta: float) -> void:
+	var target_velocity: Vector3 = move_direction.normalized() * speed
+
+	if _is_mount_flying:
+		target_velocity += Vector3.UP * climb * RIDE_CLIMB_SPEED
+		velocity = velocity.move_toward(target_velocity, RIDE_ACCELERATION * delta)
+		move_and_slide()
+
+		return
+
+	velocity.x = move_toward(velocity.x, target_velocity.x, RIDE_ACCELERATION * delta)
+	velocity.z = move_toward(velocity.z, target_velocity.z, RIDE_ACCELERATION * delta)
+	velocity.y -= FALL_GRAVITY * delta
+
+	if is_on_floor():
+		climb_step(Vector3(velocity.x, 0.0, velocity.z) * STEP_PROBE_SECONDS)
+
+	move_and_slide()
+
+
+## A mula vai junto com o corpo e o cavaleiro senta no lombo dela.
+func _carry_mount() -> void:
+	var seat_drop: Vector3 = Vector3.DOWN * RIDER_SEAT_HEIGHT
+
+	_mount.global_position = global_position
+	_mount.global_rotation.y = _model.global_rotation.y
+	_mount.is_airborne = _is_mount_flying or not is_on_floor()
+	_model.global_position = _mount.get_saddle_position() + seat_drop
+	_avoidance_obstacle.velocity = Vector3(velocity.x, 0.0, velocity.z)
+
+
+func _apply_ride_stance(stance: Stance) -> void:
+	var rider_animation: StringName = RIDER_ANIMATION_BY_STANCE.get(stance, RIDE_GALLOP_ANIMATION)
+
+	if stance == _stance:
+		return
+
+	_stance = stance
+	_mount.play_animation(MULA_ANIMATION_BY_STANCE[stance])
+	_model.play_animation(rider_animation)
 
 
 func _read_move_input() -> Vector2:
@@ -286,7 +393,7 @@ func _detect_double_jump_tap() -> void:
 
 	_last_jump_press_seconds = now_seconds
 
-	if not OS.is_debug_build() or not is_double_tap:
+	if not OS.is_debug_build() or not is_double_tap or is_riding():
 		return
 
 	_last_jump_press_seconds = -1.0
@@ -294,7 +401,7 @@ func _detect_double_jump_tap() -> void:
 
 
 func _request_attack_from(event: InputEvent) -> void:
-	var can_attack: bool = is_on_floor() and not is_flying
+	var can_attack: bool = is_on_floor() and not is_flying and not is_riding()
 
 	if not can_attack or event.is_echo():
 		return
@@ -363,50 +470,11 @@ func _apply_stance(stance: Stance) -> void:
 	_model.play_animation(ANIMATION_BY_STANCE[stance], animation_speed)
 
 
-func _turn_model_toward(direction: Vector3, delta: float) -> void:
+func _turn_model_toward(direction: Vector3, delta: float, turn_speed: float = TURN_SPEED) -> void:
 	var target_yaw: float
 
 	if direction.length_squared() < 0.01:
 		return
 
 	target_yaw = atan2(direction.x, direction.z)
-	_model.global_rotation.y = lerp_angle(_model.global_rotation.y, target_yaw, TURN_SPEED * delta)
-
-
-func _rotate_camera(mouse_delta: Vector2) -> void:
-	_camera_yaw.rotation.y -= mouse_delta.x * MOUSE_SENSITIVITY
-	_camera_pitch.rotation.x = clampf(
-		_camera_pitch.rotation.x - mouse_delta.y * MOUSE_SENSITIVITY, PITCH_MIN, PITCH_MAX
-	)
-	_follow_camera_pitch()
-
-
-## Altura do pivô da câmera acima dos pés: sobe até a cabeça conforme o olhar vai para cima.
-static func camera_pivot_height_for(pitch: float) -> float:
-	return lerpf(CAMERA_PIVOT_HEIGHT, LOOK_UP_PIVOT_HEIGHT, smoothstep(0.0, PITCH_MAX, pitch))
-
-
-## Comprimento do braço para a câmera nunca descer abaixo de LOOK_UP_CAMERA_HEIGHT (pitch > 0
-## põe a câmera abaixo do pivô).
-static func camera_arm_length_for(pitch: float) -> float:
-	var stargaze: float = smoothstep(STARGAZE_PITCH.x, STARGAZE_PITCH.y, pitch)
-	var lowest_camera: float = lerpf(LOOK_UP_CAMERA_HEIGHT, STARGAZE_CAMERA_HEIGHT, stargaze)
-	var drop_room: float = camera_pivot_height_for(pitch) - lowest_camera
-
-	if pitch <= 0.0:
-		return CAMERA_ARM_LENGTH
-
-	return minf(CAMERA_ARM_LENGTH, drop_room / sin(pitch))
-
-
-func _follow_camera_pitch() -> void:
-	var pitch: float = _camera_pitch.rotation.x
-
-	_spring_arm.spring_length = camera_arm_length_for(pitch)
-	_camera_yaw.position.y = camera_pivot_height_for(pitch)
-
-
-func _hide_model_when_camera_is_close() -> void:
-	var camera_distance: float = _camera.global_position.distance_to(_camera_yaw.global_position)
-
-	_model.visible = camera_distance > HIDE_MODEL_DISTANCE
+	_model.global_rotation.y = lerp_angle(_model.global_rotation.y, target_yaw, turn_speed * delta)

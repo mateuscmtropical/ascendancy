@@ -31,7 +31,7 @@ Depois de editar código: `gdformat` + `gdlint` (zero aviso) + testes headless.
 
 ## Rodar e testar
 - Jogar: `jogar.bat` (praça com escolha de personagem; `jogar.bat --character=female` pula a escolha; `--cinematic` roda o tour de câmera).
-- Controles: WASD anda (trote), Shift corre, Ctrl caminha, Espaço pula, mouse gira câmera (clique captura, Esc solta), botão esquerdo ou F soca, botão direito ou G chuta (apertar de novo durante o golpe encadeia o combo).
+- Controles: WASD anda (trote), Shift corre, Ctrl caminha, Espaço pula, mouse gira câmera (clique captura, Esc solta), botão esquerdo ou F soca, botão direito ou G chuta (apertar de novo durante o golpe encadeia o combo). E perto da Mula monta/apeia; montado, Espaço levanta voo, no ar vai para onde a câmera olha (Espaço sobe, Ctrl desce, encostar no chão pousa).
 - Testes headless (GUT 9.7.1 em `addons/gut`): `tools/Godot_v4.7.2-stable_win64_console.exe --headless --audio-driver Dummy --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gexit`.
 - Prints: `bash tools_src/shot.sh res://tests/shots/hub_shots.tscn <saida.png> [Camera] [--character=male|--cinematic] [--shot-delay=s]` (janela 64x64 fora da tela, sem foco).
 - Prints de luta e rosto: `bash tools_src/shot.sh res://tests/shots/fight_shots.tscn <saida.png> <FightSide|FightThree|FightFront|FaceClose> [--character=female] [--animation=combat/Kick_Side --seconds=0.4] [--mood=effort] [--blink]` (congela o clipe no instante pedido e o rosto na expressão).
