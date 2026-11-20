@@ -381,6 +381,38 @@ def build_lamp_post(materials: dict) -> None:
     make_cylinder("LampPost-colonly", (0, 0, 0), 0.25, 2.5, 8, None)
 
 
+def build_lamp_candelabra(materials: dict) -> None:
+    """Tall centre lamp of a round plaza: stone plinth, cast-iron post, four arms on scroll brackets and a crown globe."""
+    arm_height = 3.6
+    arm_reach = 0.8
+
+    make_cylinder("Plinth", (0, 0, 0), 0.55, 0.5, 8, materials["stone"]).rotation_euler.z = math.pi / 8.0
+    make_cylinder("PlinthCap", (0, 0, 0.5), 0.6, 0.08, 8, materials["trim"]).rotation_euler.z = math.pi / 8.0
+    make_frustum("Base", 0.58, 0.32, 0.15, 0.7, 8, materials["metal"])
+    make_cylinder("Post", (0, 0, 1.28), 0.085, 3.3, 10, materials["metal"])
+
+    for ring_height in (1.3, 2.4, arm_height - 0.08):
+        make_cylinder(f"Collar{ring_height}", (0, 0, ring_height), 0.13, 0.12, 10, materials["metal"])
+
+    make_cylinder("CrownCup", (0, 0, 4.55), 0.1, 0.14, 10, materials["metal"])
+    make_sphere("CrownGlobe", (0, 0, 4.9), 0.25, materials["lamp_glass"])
+
+    for arm_index in range(4):
+        angle = arm_index * math.pi / 2.0
+        direction = (math.cos(angle), math.sin(angle))
+        tip = (direction[0] * arm_reach, direction[1] * arm_reach)
+        arm = make_box(f"Arm{arm_index}", (0, 0, 0), (arm_reach, 0.06, 0.06), materials["metal"])
+        arm.location = (tip[0] / 2.0, tip[1] / 2.0, arm_height)
+        arm.rotation_euler.z = angle
+        bracket = make_box(f"Bracket{arm_index}", (0, 0, 0), (0.62, 0.04, 0.04), materials["metal"])
+        bracket.location = (direction[0] * 0.3, direction[1] * 0.3, arm_height - 0.3)
+        bracket.rotation_euler = (0.0, -math.radians(52.0), angle)
+        make_cylinder(f"ArmCup{arm_index}", (tip[0], tip[1], arm_height), 0.09, 0.15, 10, materials["metal"])
+        make_sphere(f"Globe{arm_index}", (tip[0], tip[1], arm_height + 0.36), 0.22, materials["lamp_glass"])
+
+    make_cylinder("LampCandelabra-colonly", (0, 0, 0), 0.6, 2.5, 8, None)
+
+
 def make_oriented_box(name: str, center: tuple, size: tuple, angle: float, material):
     """Box of the given size centred at center and turned by angle around its own vertical axis."""
     box = make_box(name, (0, 0, 0), size, material)
@@ -577,6 +609,7 @@ PROPS = {
     "fountain_large": build_large_fountain,
     "fountain_small": build_small_fountain,
     "lamp_post": build_lamp_post,
+    "lamp_candelabra": build_lamp_candelabra,
     "coreto": build_coreto,
     "planter": build_planter,
     "palm": build_palm,
