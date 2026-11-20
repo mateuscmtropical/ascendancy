@@ -11,6 +11,10 @@
 [ext_resource type="Shader" path="res://art/shaders/lava_mark.gdshader" id="8_lava_mark"]
 [ext_resource type="Shader" path="res://art/shaders/lava_mark_flame.gdshader" id="9_lava_flame"]
 [ext_resource type="Script" path="res://features/mobs/lava_marks.gd" id="10_lava_marks"]
+[ext_resource type="Script" path="res://features/mobs/mula_mount.gd" id="11_mount"]
+
+[sub_resource type="SphereShape3D" id="mount_reach"]
+radius = 2.6
 
 [sub_resource type="ShaderMaterial" id="vein_material"]
 shader = ExtResource("3_vein")
@@ -414,3 +418,24 @@ multimesh = SubResource("lava_stains")
 [node name="Flames" type="MultiMeshInstance3D" parent="LavaMarks"]
 cast_shadow = 0
 multimesh = SubResource("lava_flames")
+
+[node name="Saddle" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, -0.05)
+
+[node name="MountReach" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("11_mount")
+
+[node name="Shape" type="CollisionShape3D" parent="MountReach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("mount_reach")
+
+[node name="Prompt" type="Label3D" parent="MountReach"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 0)
+billboard = 1
+no_depth_test = true
+font_size = 40
+outline_size = 10
+pixel_size = 0.003

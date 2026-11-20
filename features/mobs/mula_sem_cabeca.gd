@@ -66,6 +66,9 @@ const MIN_BURN_TO_MARK: float = 0.5
 @export var vein_material: ShaderMaterial
 @export var flame_ribbon_material: ShaderMaterial
 
+## No ar (montada, voando) os cascos não marcam o chão.
+var is_airborne: bool = false
+
 var _chain_sway: float = 0.0
 var _burn: float = 1.0
 var _burn_tween: Tween
@@ -89,6 +92,7 @@ var _animation_player: AnimationPlayer = $Model.find_child("AnimationPlayer") as
 @onready var _flames: MeshInstance3D = $Model.find_child("MulaFlames") as MeshInstance3D
 @onready var _fire_templates: Node3D = $FireTemplates
 @onready var _lava_marks: LavaMarks = $LavaMarks
+@onready var _saddle: Marker3D = $Saddle
 
 
 func _ready() -> void:
@@ -111,15 +115,23 @@ func _process(delta: float) -> void:
 	_sway_chains()
 	_flicker_lights()
 
-	if _burn > MIN_BURN_TO_MARK:
+	if _burn > MIN_BURN_TO_MARK and not is_airborne:
 		_leave_footprints()
 		_leave_drip_stains(delta)
 
 
 func play_animation(animation_name: StringName) -> void:
+	if _animation_player.current_animation == animation_name:
+		return
+
 	_chain_sway = CHAIN_SWAY_BY_ANIMATION.get(animation_name, 0.0)
 	_animation_player.play(animation_name, ANIMATION_BLEND_SECONDS)
 	_fade_fire_to(BURN_BY_ANIMATION.get(animation_name, 1.0))
+
+
+## Onde senta quem monta (posição global do lombo).
+func get_saddle_position() -> Vector3:
+	return _saddle.global_position
 
 
 ## Quanto do fogo está aceso: 1 viva, 0 morta e apagada.
