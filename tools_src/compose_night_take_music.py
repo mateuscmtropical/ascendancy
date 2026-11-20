@@ -13,8 +13,8 @@ import wave
 import numpy as np
 
 RATE = 48000
-CUES = {"town": 0.0, "cathedral": 12.6, "crypt": 31.6, "climb": 56.2, "sky": 77.2, "title": 86.0}  # pernas de tests/promo/night_take_route.gd
-DEFAULT_SECONDS = 92.4
+CUES = {"town": 0.0, "cathedral": 12.6, "crypt": 30.9, "climb": 54.6, "sky": 75.3, "title": 84.1}  # pernas de tests/promo/night_take_route.gd
+DEFAULT_SECONDS = 90.5
 CHORD_SECONDS = 4.0
 C_MINOR, A_FLAT, E_FLAT, B_FLAT = [48, 55, 60, 63], [44, 51, 56, 60], [51, 55, 58, 63], [46, 53, 58, 62]
 F_MINOR, G_MAJOR, G_MINOR = [41, 48, 53, 56], [43, 50, 55, 59], [43, 50, 55, 58]

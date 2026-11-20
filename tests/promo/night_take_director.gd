@@ -210,6 +210,10 @@ func _update_camera(leg: Dictionary, delta: float) -> void:
 	wanted = head - _heading * _camera_distance + Vector3.UP * (_camera_height - HEAD_HEIGHT)
 	wanted = _keep_off_walls(head, wanted)
 	look_target = head + _heading * LOOK_AHEAD
+
+	if leg.has("camera_at"):
+		wanted = leg["camera_at"]
+		look_target = head
 	camera.global_position = camera.global_position.lerp(
 		wanted, minf(1.0, delta * CAMERA_FOLLOW_RATE)
 	)
