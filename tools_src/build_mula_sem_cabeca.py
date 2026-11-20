@@ -19,7 +19,8 @@ Realistic on purpose (the mob is meant to look out of this world next to the res
      and light;
   5. bake charred hide (albedo, normal with muscle bulges/fibres, roughness) and the glow of veins, neck embers
      and hooves on the hide (emission) from 3D procedural nodes, seamless over UV islands;
-  6. rename the actions the mob plays; scale so the withers stand WITHERS_HEIGHT metres; export.
+  6. rename the actions the mob plays and swap the pack's run for a real gallop (tools_src/mula_gallop.py);
+     scale so the withers stand WITHERS_HEIGHT metres; export.
 
 Usage:
   blender -b --factory-startup -P tools_src/build_mula_sem_cabeca.py -- [--source <Horse.fbx|.glb>]
@@ -41,6 +42,7 @@ from mathutils.bvhtree import BVHTree
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mula_base  # noqa: E402
 import mula_body  # noqa: E402
+import mula_gallop  # noqa: E402
 from convert_farm_animals import import_source, make_materials_opaque  # noqa: E402
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -1341,6 +1343,7 @@ def build(source: Path, silhouette: Path | None = None) -> dict:
     flames = build_flames(mesh_object, armature, stump, crest)
     actions = rename_actions()
     stretch_proportions(armature, [mesh_object, veins, chains, flames], fire_markers)
+    mula_gallop.replace_run(armature, ACTION_NAMES["run"])
     unwrap(mesh_object)
 
     bpy.context.scene.render.engine = "CYCLES"
