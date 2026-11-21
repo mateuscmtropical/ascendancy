@@ -123,6 +123,22 @@ func test_summoned_mula_flies_to_the_caller() -> void:
 	assert_false(_mount.is_flying_to_caller())
 
 
+func test_rider_rises_and_falls_with_the_gallop() -> void:
+	var heights: PackedFloat32Array = []
+	var model: Node3D = _player.get_node("CharacterModel") as Node3D
+
+	_mount.toggle_ride(_player)
+	await wait_physics_frames(2)
+	Input.action_press(&"move_forward")
+
+	for frame in 40:
+		await wait_process_frames(1)
+		heights.append(model.global_position.y - _mula.global_position.y)
+
+	assert_gt(heights[heights.size() - 1] - 0.0, 0.5, "seated up on the back")
+	assert_gt(_spread(heights), 0.02, "the seat moves with the mula's back")
+
+
 func test_dismount_leaves_the_mula_and_frees_the_player() -> void:
 	_mount.toggle_ride(_player)
 	await wait_physics_frames(5)
@@ -139,3 +155,14 @@ func _tap(action: StringName) -> void:
 	await wait_physics_frames(2)
 	Input.action_release(action)
 	await wait_physics_frames(2)
+
+
+func _spread(values: PackedFloat32Array) -> float:
+	var lowest: float = INF
+	var highest: float = -INF
+
+	for value in values:
+		lowest = minf(lowest, value)
+		highest = maxf(highest, value)
+
+	return highest - lowest

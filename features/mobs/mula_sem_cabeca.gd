@@ -28,6 +28,8 @@ const FIRE_TEMPLATE_BY_MARKER_KIND: Dictionary[String, String] = {
 }
 ## Ossos das pontas de corrente partida (quantos houver: o gerador decide).
 const CHAIN_BONE_PREFIX: String = "Chain"
+## O assento vai preso a este osso: sobe, desce e balança com o galope, e quem monta junto.
+const SADDLE_BONE: StringName = &"Torso"
 ## Balanço das correntes (radianos) conforme o passo.
 const CHAIN_SWAY_BY_ANIMATION: Dictionary[StringName, float] = {
 	IDLE_ANIMATION: 0.07,
@@ -82,6 +84,8 @@ const SCREEN_CHECK_BOUNDS: AABB = AABB(Vector3(-3.0, -0.5, -3.5), Vector3(6.0, 7
 
 ## No ar (montada, voando) os cascos não marcam o chão.
 var is_airborne: bool = false
+## Montada: a câmera está colada nela, então anima a cada quadro e não confere distância nem tela.
+var has_rider: bool = false
 
 var _chain_sway: float = 0.0
 var _burn: float = 1.0
@@ -126,6 +130,7 @@ func _ready() -> void:
 	_loop_gait_animations()
 	_hang_fire_on_markers()
 	_collect_chain_bones()
+	_attach_saddle_to_back()
 	_collect_lava_sources()
 	_watch_the_screen()
 	play_animation(start_animation)
@@ -139,7 +144,7 @@ func _process(delta: float) -> void:
 	_pending_animation_seconds += delta
 
 	_show_fire(should_show_fire(distance, is_on_screen))
-	_step_animation(animation_step_for(distance, is_on_screen))
+	_step_animation(0.0 if has_rider else animation_step_for(distance, is_on_screen))
 	_sway_chains()
 	_flicker_lights()
 
@@ -185,9 +190,9 @@ func is_turbo_on() -> bool:
 	return _turbo_light.visible
 
 
-## Onde senta quem monta (posição global do lombo).
-func get_saddle_position() -> Vector3:
-	return _saddle.global_position
+## Onde senta quem monta: posição e inclinação globais do lombo, que acompanham o passo.
+func get_saddle_transform() -> Transform3D:
+	return _saddle.global_transform
 
 
 ## Quanto do fogo está aceso: 1 viva, 0 morta e apagada.
@@ -205,6 +210,15 @@ func _loop_gait_animations() -> void:
 ## O esqueleto vem na escala do pacote (o modelo é reduzido pelo nó raiz); o fogo é desenhado
 ## em metros do tamanho original e cresce só com a escala do nó Model, então cada cópia desfaz
 ## o resto da escala do marcador.
+func _attach_saddle_to_back() -> void:
+	var back: BoneAttachment3D = BoneAttachment3D.new()
+
+	back.name = "SaddleBone"
+	back.bone_name = SADDLE_BONE
+	_skeleton.add_child(back)
+	_saddle.reparent(back)
+
+
 func _hang_fire_on_markers() -> void:
 	var markers: Array[Node] = _skeleton.find_children(FIRE_MARKER_PATTERN, "Node3D", true, false)
 
