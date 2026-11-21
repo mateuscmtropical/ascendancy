@@ -17,23 +17,23 @@ from mathutils import Quaternion, Vector
 
 FPS = 24
 CYCLE_FRAMES = 12  # 0,5 s por passada
-DUTY = 0.38  # parte do ciclo em que cada pata fica no chão: a suspensão fica em ~1/5 do ciclo, como nas fotos
+DUTY = 0.36  # parte do ciclo em que cada pata fica no chão: a suspensão fica em ~1/5 do ciclo, como nas fotos
 SUSPENSION_LIFT = 0.45  # quanto o tronco sobe no meio da suspensão (unidades do pacote, ~3,4 por metro)
 # Pata: (osso de cima, osso de baixo, fase em que o casco toca o chão, perfil). Ordem dos tempos: posterior
 # esquerdo, posterior direito, anterior esquerdo, anterior direito (mão de dentro), suspensão.
 LEGS = (
     ("BackUpLeg.L", "BackLowLeg.L", 0.0, "hind"),
-    ("BackUpLeg.R", "BackLowLeg.R", 0.1, "hind"),
-    ("FrontUpLeg.L", "FrontLowLeg.L", 0.3, "fore"),
-    ("FrontUpLeg.R", "FrontLowLeg.R", 0.42, "fore"),
+    ("BackUpLeg.R", "BackLowLeg.R", 0.15, "hind"),
+    ("FrontUpLeg.L", "FrontLowLeg.L", 0.33, "fore"),
+    ("FrontUpLeg.R", "FrontLowLeg.R", 0.47, "fore"),
 )
 # Graus em torno do eixo X do mundo (positivo = casco para trás): onde a pata toca, onde larga o chão, quanto a
 # articulação de baixo dobra no ar (joelho da mão para trás, jarrete da pata para a frente), quanto cede no apoio,
 # os expoentes que adiantam (< 1) ou atrasam (> 1) a volta da pata no ar e a dobra (a mão dobra logo ao sair do chão e
 # chega esticada na frente; a pata traseira dobra no meio do voo).
 PROFILES = {
-    "fore": {"reach": -30.0, "push": 28.0, "fold": 80.0, "give": 0.0, "swing_ease": 0.75, "fold_ease": 0.9},
-    "hind": {"reach": -24.0, "push": 34.0, "fold": -48.0, "give": -10.0, "swing_ease": 0.7, "fold_ease": 1.0},
+    "fore": {"reach": -46.0, "push": 38.0, "fold": 80.0, "give": 0.0, "swing_ease": 0.75, "fold_ease": 0.9},
+    "hind": {"reach": -36.0, "push": 46.0, "fold": -48.0, "give": -10.0, "swing_ease": 0.7, "fold_ease": 1.0},
 }
 # Tronco, coluna, pescoço e cauda: (osso, amplitude em graus, fase do pico). Coluna arredonda na suspensão
 # (pernas recolhidas) e estica quando as patas se abrem.
