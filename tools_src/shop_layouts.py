@@ -15,6 +15,7 @@ import orphanage_wing_library
 import orphanage_wing_reading
 import orphanage_wing_school
 import orphanage_wing_seminary
+import alchemy_layout
 import tavern_layout
 
 
@@ -385,57 +386,6 @@ def furnish_magic(f) -> None:
     f.grid("hanging_lantern", (-1.8, 1.8), (2.0, 2.0), 2, 1)
 
 
-def furnish_alchemy(f) -> None:
-    """Alchemist: a big bubbling cauldron on a stone hearth in the middle with copper pipes over the back-right
-    distillery, a glass-walled greenhouse corner in the back left, potion walls and an alembic bench at the back,
-    mortar and glowing jars on the right, and the herb wing down the left (drying racks, seed drawers, planters
-    under hanging plants, baskets of herbs and mushrooms)."""
-    f.put("hearth_ring", 0.0, 9.7)
-    f.put("big_cauldron", 0.0, 9.7)
-    f.grid("wheel_chandelier", (-1.6, 1.6), (6.4, 12.6), 2, 2)
-    f.put("rug_ornate", 0.0, 4.8, variant="green")
-    f.put("counter_glass", 0.0, 14.2)
-    f.put("price_board", 1.9, 14.2)
-    f.put("stool_round", 0.9, 16.0)
-    f.on_wall("back", "potion_wall", 0.0)
-
-    back_room_b(f, -8.55 - 0.0, 3, 2, door_on="front", door_slot=1, variant="glazed", doorway="timber", has_left=False, has_right=True)
-    f.grid("planter_box", (-7.4, -7.4), (16.0, 18.4), 1, 2, 90.0)
-    f.put("flower_steps", -5.3, 18.3)
-    f.put("watering_cans", -3.3, 16.2)
-    f.put("hanging_plants", -5.6, 17.0)
-    f.put("hanging_plants", -3.4, 17.6)
-    f.put("plant_pot", -3.2, 18.6, variant="flower")
-
-    back_room_b(f, f.right - 6.0 - SCREEN_HALF_B, 3, 2, door_on="front", door_slot=1, variant="glazed", doorway="timber", has_right=False)
-    f.on_wall("back", "athanor_furnace", 7.3)
-    f.on_wall("back", "alembic_table", 4.7)
-    f.put("mortar_table", 3.8, 16.6)
-    f.put("copper_pipes", 5.55, 16.9)
-    f.put("glowing_jar", 6.9, 16.4, variant="green")
-    f.put("glowing_jar", 7.7, 16.6, variant="pink")
-    f.put("slime_jar", 6.2, 17.7)
-
-    side_wall(f, "left", ["drying_rack_herbs", ("wicker_basket", {"variant": "herbs"}), "drying_rack_herbs", ("wicker_basket", {"variant": "mushrooms"}), "seed_drawers", "drying_rack_herbs", ("plant_pot", {"variant": "fern"})], ["planter_box", ("wicker_basket", {"variant": "herbs"}), "planter_box", ("wicker_basket", {"variant": "mushrooms"}), "planter_box", ("plant_pot", {"variant": "flower"})], start=0.8, gap=0.5)
-    f.grid("planter_box", (-5.7, -5.7), (4.6, 11.8), 1, 3, 90.0)
-    f.grid("hanging_plants", (-5.7, -5.7), (4.6, 11.8), 1, 3)
-    f.put("herb_bundles", -5.7, 14.0)
-    f.put("ceiling_beam_hooks", -3.0, 6.0, variant="herbs")
-    f.put("ceiling_beam_hooks", 3.0, 6.0, variant="herbs")
-
-    side_wall(f, "right", [("wall_shelf", {"variant": "potions"}), "potion_wall", ("wall_shelf", {"variant": "jars"}), "recipe_board", ("wall_shelf", {"variant": "bottles"}), "skeleton_stand"], [("crate_open", {"variant": "bottles"}), ("glowing_jar", {"variant": "green"}), ("crate_open", {"variant": "roots"}), "barrel_group", ("wicker_basket", {"variant": "mushrooms"})], start=0.8, gap=0.4)
-    f.put("mortar_table", 5.7, 4.6, -90.0)
-    f.put("alembic_table", 5.7, 8.6, -90.0)
-    f.put("glowing_jar", 4.9, 11.6, variant="green")
-    f.put("glowing_jar", 5.7, 11.9, variant="cyan")
-    f.put("glowing_jar", 6.5, 11.6, variant="pink")
-    f.put("slime_jar", 5.7, 12.7)
-
-    f.wall("front", ["flower_steps", ("wicker_basket", {"variant": "herbs"}), "watering_cans", ("plant_pot", {"variant": "flower"})], start=f.left + 1.2)
-    f.wall("front", ["slime_jar", ("glowing_jar", {"variant": "pink"}), ("crate_open", {"variant": "bottles"}), ("glowing_jar", {"variant": "cyan"})], start=f.door_u + 2.0)
-    f.put("hanging_lantern", 5.7, 6.6)
-
-
 def furnish_tailor(f) -> None:
     """Tailor and jeweler (17 m): the cloth hall with a ring of dress forms on a rug, fabric walls, rails and hat
     shelves, the counter in the middle, a fitting dais with a mirror and panelled screen by the right windows, the
@@ -589,7 +539,7 @@ PLANS = {
     ),
     "tavern": tavern_layout.PLAN,
     "magic": dict(keeper=(0.0, 15.6), furnish=furnish_magic),
-    "alchemy": dict(keeper=(0.0, 15.6), furnish=furnish_alchemy),
+    "alchemy": alchemy_layout.PLAN,
     "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),
     "general": dict(keeper=(-1.0, 15.6), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_general),
     "library": orphanage_wing_library.PLAN,

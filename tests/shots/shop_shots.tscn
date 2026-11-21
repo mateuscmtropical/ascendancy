@@ -725,6 +725,60 @@ rotation = Vector3(-0.008, -3.142, 0.000)
 fov = 75.0
 far = 400.0
 
+[node name="AlchemyOffizin" type="Camera3D" parent="."]
+position = Vector3(31.600, 1.600, -71.200)
+rotation = Vector3(0.000, -1.161, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyCounter" type="Camera3D" parent="."]
+position = Vector3(37.000, 1.600, -70.000)
+rotation = Vector3(-0.043, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyShelves" type="Camera3D" parent="."]
+position = Vector3(35.000, 1.600, -73.000)
+rotation = Vector3(0.053, -1.504, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyHerbs" type="Camera3D" parent="."]
+position = Vector3(30.200, 1.600, -70.000)
+rotation = Vector3(-0.028, 0.553, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyLab" type="Camera3D" parent="."]
+position = Vector3(34.000, 1.600, -78.600)
+rotation = Vector3(-0.020, -0.758, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyHearth" type="Camera3D" parent="."]
+position = Vector3(37.000, 1.600, -81.000)
+rotation = Vector3(-0.051, -1.222, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyMortar" type="Camera3D" parent="."]
+position = Vector3(32.200, 1.600, -78.600)
+rotation = Vector3(-0.067, 1.062, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyStudy" type="Camera3D" parent="."]
+position = Vector3(32.200, 1.600, -83.800)
+rotation = Vector3(-0.050, 0.904, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="AlchemyFacade" type="Camera3D" parent="."]
+position = Vector3(31.000, 1.600, -60.000)
+rotation = Vector3(0.306, -0.322, 0.000)
+fov = 75.0
+far = 400.0
+
 [node name="LibraryRefDoor" type="Camera3D" parent="."]
 position = Vector3(-89.600, 1.600, -29.600)
 rotation = Vector3(-0.030, 2.771, 0.000)

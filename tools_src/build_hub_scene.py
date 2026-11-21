@@ -2307,6 +2307,17 @@ SHOP_SHOT_VIEWS = {  # sufixo -> (olho, alvo) em coordenadas do lote: x ao longo
     "Top": ((0.0, 30.0, -9.5), (0.0, 0.0, -9.6)),
 }
 HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (x = u, y = altura sobre o piso, z = -d); o vestíbulo tem dois andares
+    "alchemy": {  # cômodos da botica (tools_src/alchemy_layout.py)
+        "Offizin": ((-2.4, 1.6, -2.2), (7.5, 1.6, -6.5)),
+        "Counter": ((3.0, 1.6, -1.0), (3.0, 1.3, -8.0)),
+        "Shelves": ((1.0, 1.6, -4.0), (8.5, 2.0, -4.5)),
+        "Herbs": ((-3.8, 1.6, -1.0), (-7.5, 1.4, -7.0)),
+        "Lab": ((0.0, 1.6, -9.6), (7.0, 1.4, -17.0)),
+        "Hearth": ((3.0, 1.6, -12.0), (8.5, 1.3, -14.0)),
+        "Mortar": ((-1.8, 1.6, -9.6), (-7.0, 1.2, -12.5)),
+        "Study": ((-1.8, 1.6, -14.8), (-6.5, 1.3, -18.5)),
+        "Facade": ((-3.0, 1.6, 9.0), (0.0, 4.6, 0.0)),
+    },
     "tavern": {  # cômodos da taverna (tools_src/tavern_layout.py)
         "Taproom": ((-3.0, 1.6, -0.9), (-7.5, 1.3, -8.0)),
         "Bar": ((-6.4, 1.6, -3.0), (-4.6, 1.3, -12.0)),

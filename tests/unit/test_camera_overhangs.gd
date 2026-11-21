@@ -9,6 +9,7 @@ const CORETO_SCENE: PackedScene = preload("res://art/town/coreto.gltf")
 const MARQUEE_HOUSE_SCENE: PackedScene = preload("res://art/town/houses/artdeco_w10_0.gltf")
 const TOWERS_SCENE: PackedScene = preload("res://art/town/cathedral_towers.gltf")
 const TAVERN_SCENE: PackedScene = preload("res://art/town/shops/shop_tavern.gltf")
+const ALCHEMY_SCENE: PackedScene = preload("res://art/town/shops/shop_alchemy.gltf")
 const IMPORT_SCRIPT: GDScript = preload("res://features/audio/tag_ground_surfaces.gd")
 const LOOK_DOWN: Vector2 = Vector2(0.0, 2000.0)
 const CAMERA_STOP_PREFIX: String = "CameraStop"
@@ -67,7 +68,7 @@ func test_camera_stops_sit_on_a_layer_only_the_camera_arm_sees() -> void:
 	var player: PlayerController = PLAYER_SCENE.instantiate()
 	var spring_arm: SpringArm3D = player.get_node("CameraYaw/CameraPitch/ShoulderArm/SpringArm3D")
 	var camera_stops: Array[Node] = _camera_stops_of(
-		[SMITH_SCENE, CORETO_SCENE, MARQUEE_HOUSE_SCENE, TOWERS_SCENE, TAVERN_SCENE]
+		[SMITH_SCENE, CORETO_SCENE, MARQUEE_HOUSE_SCENE, TOWERS_SCENE, TAVERN_SCENE, ALCHEMY_SCENE]
 	)
 
 	add_child_autofree(player)
