@@ -531,6 +531,10 @@ def build_coreto(materials: dict) -> None:
     make_cone("LanternRoof", (0, 0, beam_top + 1.82), 1.62, 1.0, 8, materials["roof"], eighth)
     make_sphere("FinialBall", (0, 0, beam_top + 2.9), 0.14, materials["metal"])
     make_cone("Finial", (0, 0, beam_top + 2.98), 0.06, 0.6, 8, materials["metal"])
+    # Só a câmera enxerga (o import põe CameraStop* na camada "camera"): olhando para baixo ela para sob o forro e o beiral.
+    octagon("CameraStopCeiling-colonly", beam_top - 0.22, post_radius + 0.22, 0.22, None)
+    octagon("CameraStopEave-colonly", beam_top, 4.75, 0.1, None)
+    make_cone("CameraStopRoof-colonly", (0, 0, beam_top + 0.1), 4.8, 1.25, 8, None, eighth, top_radius=1.25)
 
     for corner_index, corner in enumerate(corners):
         rib_angle = eighth + corner_index * math.pi / 4.0

@@ -790,6 +790,10 @@ def build_awnings(b: Builder, room: Room, front: list) -> None:
         for arm_u in (left + 0.05, left + opening.width + 0.45):
             b.beam((arm_u, 0.0, top - 0.75), (arm_u, -AWNING_REACH, top - 0.6), 0.04, 0.04, "metal", room.house.iron_tint)
 
+        slab_frame = Matrix.Translation((0.0, 0.0, top)) @ Matrix.Rotation(math.atan2(0.6, AWNING_REACH), 4, "X")
+        b.collider((left, -math.hypot(AWNING_REACH, 0.6), -0.05), (left + opening.width + 0.5, 0.0, 0.0), slab_frame, name=town.CAMERA_STOP)
+        b.collider((left, -AWNING_REACH, top - 0.85), (left + opening.width + 0.5, -AWNING_REACH + 0.03, top - 0.58), name=town.CAMERA_STOP)
+
 
 def build_roof(b: Builder, room: Room) -> None:
     """Upper storeys, roof and signature details of the archetype the shop is dressed after."""

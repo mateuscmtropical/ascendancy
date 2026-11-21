@@ -10,6 +10,9 @@ const SOURCE_GROUP: StringName = &"navigation_source"
 const CITY_BOUNDS: AABB = AABB(Vector3(-102.0, -1.0, -96.0), Vector3(204.0, 6.0, 184.0))
 ## Malhas só de efeito (feixes de luz dos vitrais): não são chão nem parede.
 const EFFECT_MESH_PATTERN: String = "*LightShaft*"
+## Colisores só da câmera (camada 4, ver tag_ground_surfaces.gd) não são chão nem parede.
+const CAMERA_LAYER: int = 1 << 3
+const ALL_LAYERS: int = 0xFFFFFFFF
 
 
 func _initialize() -> void:
@@ -53,6 +56,7 @@ func _make_navigation_mesh() -> NavigationMesh:
 		NavigationMesh.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
 	)
 	navigation_mesh.geometry_source_group_name = SOURCE_GROUP
+	navigation_mesh.geometry_collision_mask = ALL_LAYERS & ~CAMERA_LAYER
 	navigation_mesh.filter_baking_aabb = CITY_BOUNDS
 	navigation_mesh.cell_size = 0.25
 	navigation_mesh.cell_height = 0.1
