@@ -7796,6 +7796,16 @@ target = NodePath("../../Farm/FarmFields")
 child_prefixes = PackedStringArray("Crops")
 range_end = 80.0
 
+[node name="FlatGroundShadowless" type="Node3D" parent="." node_paths=PackedStringArray("target")]
+script = ExtResource("111_ext")
+target = NodePath("../Ground")
+mesh_names = PackedStringArray("GroundBrick", "GroundCurb", "GroundLawn", "GroundStone", "GroundStreet", "Countryside", "GroundFlowerAmarelo", "GroundFlowerBranco", "GroundFlowerLaranja", "GroundFlowerLeaf", "GroundFlowerLilas", "GroundFlowerRosa", "GroundFlowerVermelho")
+
+[node name="GrassTuftShadowless" type="Node3D" parent="." node_paths=PackedStringArray("target")]
+script = ExtResource("111_ext")
+target = NodePath("../Trees")
+mesh_names = PackedStringArray("Grass_Common_Short")
+
 [node name="Player" parent="." instance=ExtResource("141_ext")]
 position = Vector3(-38.400, 0.000, -13.000)
 rotation = Vector3(0.000, -1.571, 0.000)

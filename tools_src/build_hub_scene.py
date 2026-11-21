@@ -2248,9 +2248,26 @@ def build_hub_scene() -> str:
     add_mula(scene)
     add_carriages(scene)
     add_distance_fades(scene)
+    add_shadowless_scenery(scene)
     add_player_and_cameras(scene)
 
     return scene.render()
+
+
+# Chão que não faz sombra que se veja: piso, rua, gramado, meio-fio, flores e tufos de grama. A sebe continua fazendo.
+FLAT_GROUND_MESHES = ("GroundBrick", "GroundCurb", "GroundLawn", "GroundStone", "GroundStreet", "Countryside", "GroundFlowerAmarelo", "GroundFlowerBranco", "GroundFlowerLaranja", "GroundFlowerLeaf", "GroundFlowerLilas", "GroundFlowerRosa", "GroundFlowerVermelho")
+SHADOWLESS_SCENERY = {  # nó -> (alvo, nomes das malhas): o passe de sombra do sol pula essas malhas
+    "FlatGroundShadowless": ("Ground", FLAT_GROUND_MESHES),
+    "GrassTuftShadowless": ("Trees", ("Grass_Common_Short",)),
+}
+
+
+def add_shadowless_scenery(scene: SceneWriter) -> None:
+    script = scene.external_id("Script", "res://features/hub/shadowless_group.gd")
+
+    for name, (target, mesh_names) in SHADOWLESS_SCENERY.items():
+        names_text = ", ".join(f'"{mesh_name}"' for mesh_name in mesh_names)
+        scene.add_node(name, ".", "Node3D", properties={"script": f'ExtResource("{script}")', "target": f'NodePath("../{target}")', "mesh_names": f"PackedStringArray({names_text})"})
 
 
 DISTANCE_FADES = {  # nó -> (grupo da cena, prefixos dos filhos, alcance em m): peças pequenas somem de longe com fade
