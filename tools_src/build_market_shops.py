@@ -30,7 +30,7 @@ from orphanage_wing_common import CORRIDOR  # noqa: E402
 from build_hub_scene import CASARAO_UPPER_FLOOR, SHOP_LOTS, shop_lots, town_lots  # noqa: E402
 from build_town_houses import BRICK, STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
 
-PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground", "shop_props_convent", "shop_props_tavern", "shop_props_alchemy")
+PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground", "shop_props_convent", "shop_props_tavern", "shop_props_alchemy", "shop_props_general")
 PLAN_FOLDER = ""  # --plan=<pasta>: grava a planta (pegadas dos móveis) de cada salão mobiliado
 CEILING_SLAB = 0.4
 PIER = 0.6  # parede cheia entre vãos e nos cantos da fachada
@@ -145,7 +145,8 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
         vaults=dict(spring=2.7, columns=(-3.0, 3.0), rib_pitch=3.9, finish="creme", ribs="tijolo"),
         chimney=dict(u=-5.8, d=19.0, extra=1.2, pots=1),
     ),
-    "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=("B5533F", "F4EFE6"), door=(0.0, 2.4, 2.9, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
+    # armazém e padaria: duas lojas atrás de uma frente de loja de madeira pintada, cômodos reais (tools_src/general_shell.py)
+    "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=None, door=(-3.6, 1.6, 2.7, "flat"), features=(), quoins=True, cornice=True, chimney=dict(u=5.0, d=18.4, extra=1.4, pots=2), light="FFD9A0", shell="general_shell"),
     "magic": dict(  # gabinete de curiosidades (referências em ascendancy-refs/lojas/magic): salão sob abóbada azul de estrelas, paredes de armários de curiosidades, santuário e biblioteca no fundo
         archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=None,
         door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF",

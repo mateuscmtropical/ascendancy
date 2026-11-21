@@ -2318,6 +2318,16 @@ HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (x = u, y
         "Study": ((-1.8, 1.6, -14.8), (-6.5, 1.3, -18.5)),
         "Facade": ((-3.0, 1.6, 9.0), (0.0, 4.6, 0.0)),
     },
+    "general": {  # cômodos do armazém e da padaria (tools_src/general_layout.py)
+        "Store": ((0.5, 1.6, -1.2), (-7.0, 1.4, -9.0)),
+        "Counter": ((-4.2, 1.6, -2.6), (-8.5, 1.5, -7.0)),
+        "Stove": ((-5.8, 1.6, -11.6), (-1.5, 1.2, -6.0)),
+        "Storeroom": ((-1.0, 1.6, -13.4), (-7.5, 1.2, -18.5)),
+        "Bakery": ((7.9, 1.6, -1.0), (3.0, 1.4, -6.8)),
+        "Bakehouse": ((2.2, 1.6, -8.0), (6.0, 1.4, -18.5)),
+        "Oven": ((3.2, 1.6, -13.8), (5.0, 1.4, -19.0)),
+        "Facade": ((2.0, 1.6, 9.0), (0.0, 3.4, 0.0)),
+    },
     "tavern": {  # cômodos da taverna (tools_src/tavern_layout.py)
         "Taproom": ((-3.0, 1.6, -0.9), (-7.5, 1.3, -8.0)),
         "Bar": ((-6.4, 1.6, -3.0), (-4.6, 1.3, -12.0)),

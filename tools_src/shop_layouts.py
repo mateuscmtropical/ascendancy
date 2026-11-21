@@ -16,6 +16,7 @@ import orphanage_wing_reading
 import orphanage_wing_school
 import orphanage_wing_seminary
 import alchemy_layout
+import general_layout
 import tavern_layout
 
 
@@ -486,70 +487,6 @@ def furnish_tailor(f) -> None:
     f.put("rug", -6.1, 15.4, 90.0, variant="gold")
 
 
-def furnish_general(f) -> None:
-    """General store and bakery (17 m): the produce market by the door, the till counter with the pastry case under
-    shelves of jars and bottles, grocery and hardware shelves down the blind left wall and floor-shelf aisles in
-    the middle, a cafe nook on a raised dais behind a timber screen by the right windows and, behind an arched
-    stone partition in the back right corner, the bakery with its stone oven, dough table, bread racks and flour."""
-    f.on_wall("back", "stone_oven", 5.9)
-    f.put("hanging_lantern", 6.0, 15.0)
-    f.put("hanging_lantern", -1.0, 5.0)
-    f.put("bunting_a", 0.0, 7.6)
-    f.put("bunting_a", 0.0, 12.0)
-    f.put("doorway_lintel_a", 3.5, 15.3, 90.0, width=2.0, height=f.ceiling)
-
-    for along in [1.4 + 2.0 * index for index in range(9)]:
-        f.on_wall("left", "wainscot_a", along, tint="EBD9B8")
-        f.on_wall("right", "wainscot_a", along, tint="EBD9B8")
-
-    f.wall("back", ["wainscot_a"] * 8, start=f.left, gap=0.0)
-
-    for along in (13.3, 17.3):
-        f.put("wainscot_a", 3.28, along, -90.0)
-
-    # market hall and counter
-    f.put("rug", 0.0, 5.2, variant="gold")
-    f.put("display_table", 0.0, 5.6, variant="fruit")
-    f.put("display_table", 0.0, 9.7, variant="pottery")
-    f.put("display_table", -3.6, 3.6, variant="pottery")
-    f.put("display_table", 3.6, 3.6, variant="bread")
-    f.put("rug", -3.6, 3.6, variant="gold")
-    f.put("rug", 3.6, 3.6, variant="red")
-    f.put("rug", 0.0, 9.7, variant="red")
-    f.put("counter_till", -1.0, 14.2)
-    f.put("pastry_case", 1.5, 14.2)
-    f.put("cake_stand", 2.4, 15.6)
-    f.put("stool_round", -0.2, 16.0)
-    f.put("ceiling_beam_hooks", -1.0, 15.6, variant="sausages")
-    window_wall(f, "back", [[("wall_shelf", {"variant": "jars"})], [("wall_shelf", {"variant": "bottles"}), ("wall_shelf", {"variant": "boxes"})]], [("crate_open", {"variant": "apples"})])
-    f.put("chest_gold", -5.6, 16.8)
-    f.put("blanket_pile", -3.9, 17.6)
-    side_wall(f, "left", [("wall_shelf", {"variant": "jars"}), "sack_pile", "tool_rack", "crate_stack", "backpack_wall", "barrel_group", ("wall_shelf", {"variant": "boxes"}), "step_ladder"], ["sack_pile", ("crate_open", {"variant": "apples"}), "crate_stack", ("wicker_basket", {"variant": "fruit"}), "barrel_group", ("crate_open", {"variant": "roots"}), ("plant_pot", {"variant": "bush"})], start=0.8)
-    window_wall(f, "right", [[("wall_shelf", {"variant": "bottles"})], [("wall_shelf", {"variant": "books"})], []], [("crate_open", {"variant": "ingots"}), "barrel_group", ("wicker_basket", {"variant": "wool"}), None])
-    f.wall("front", [("crate_open", {"variant": "apples"}), ("wicker_basket", {"variant": "fruit"}), ("crate_open", {"variant": "roots"}), ("wicker_basket", {"variant": "bread"}), ("plant_pot", {"variant": "bush"})], start=f.left + 1.2)
-    f.wall("front", [("plant_pot", {"variant": "bush"}), "barrel_group", ("crate_open", {"variant": "cloth"}), ("wicker_basket", {"variant": "wool"})], start=f.door_u + 2.0)
-    shelf_island(f, -5.7, 5.0, ("jars", "bottles"))
-    shelf_island(f, -5.7, 9.7, ("tools", "boxes"))
-    f.put("barrel_group", -5.7, 12.6)
-    f.put("cat_sleeping", 1.0, 12.4)
-    f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 11.4), 3, 2)
-    f.grid("hanging_goods", (-5.7, 5.7), (7.35, 7.35), 2, 1)
-
-    # cafe nook on a dais behind a screen
-    f.put("dais_a", 5.5, 8.4, width=3.0, depth=2.4)
-    f.put("cafe_table_set", 5.5, 8.5, 0.0, z=0.35)
-    f.put("timber_screen_a", 3.8, 8.4, 90.0, variant="lattice")
-    f.put("plant_pot", 7.3, 6.4, variant="fern")
-    shelf_island(f, 5.7, 4.6, ("bread", "jars"))
-
-    # bakery behind the partition
-    f.put("dough_table", 6.4, 14.0)
-    f.on_wall("back", "bread_rack", 7.7)
-    f.put("flour_sacks", 4.3, 16.9)
-    f.on_wall("right", "jam_shelf", 13.4)
-    f.put("barrel_group", 7.8, 16.6)
-
-
 WING_MODULES = (orphanage_vestibule, orphanage_wing_library, orphanage_wing_reading, orphanage_wing_school, orphanage_wing_seminary)  # orphanage wings: PLAN, NEW_WALL_FINISHES, furnish_<hall>
 PLANS = {
     "vestibule": orphanage_vestibule.PLAN,
@@ -576,7 +513,7 @@ PLANS = {
     ),
     "alchemy": alchemy_layout.PLAN,
     "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),
-    "general": dict(keeper=(-1.0, 15.6), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_general),
+    "general": general_layout.PLAN,
     "library": orphanage_wing_library.PLAN,
 }
 FILL = {  # prédio -> ilhas soltas que enchem o chão livre dos dois lados do corredor da porta (fill_floor)
