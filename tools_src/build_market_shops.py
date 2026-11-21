@@ -146,7 +146,13 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
         chimney=dict(u=-5.8, d=19.0, extra=1.2, pots=1),
     ),
     "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=("B5533F", "F4EFE6"), door=(0.0, 2.4, 2.9, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
-    "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
+    "magic": dict(  # gabinete de curiosidades (referências em ascendancy-refs/lojas/magic): salão sob abóbada azul de estrelas, paredes de armários de curiosidades, santuário e biblioteca no fundo
+        archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=None,
+        door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF",
+        facade=dict(window=(1.0, 2.6, "round"), windows=((-6.6, 1.4), (-3.6, 1.4), (3.6, 1.4), (6.6, 1.4))),
+        window_kind="window", shutters=False, casement_grid=(3, 5), back_window=(1.2, 2.2),
+        vaults=dict(spring=3.9, columns=(), rib_pitch=3.6, finish=("plaster", "2E3A6E"), ribs=("paint", "C9A04A"), stars=160),
+    ),
     # botica-alquimista: casa burguesa de cantaria com Erker, Offizin abobadada e cômodos reais (tools_src/alchemy_shell.py)
     "alchemy": dict(archetype="sobrado", wall="cal", roof="ardosia", accent="verde", storeys=(4.6, 3.2), roof_shape=("gable_parallel", dict(pitch=42.0, eave_front=0.5, eave_back=0.4)), floor="stone", awning=None, door=(0.0, 1.9, 2.75, "round"), quoins=True, cornice=True, features=(), chimney=dict(u=8.0, d=13.6, extra=1.4, pots=3), light="FFD9A0", shell="alchemy_shell"),
     "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
@@ -830,8 +836,8 @@ def build_vaults(b: Builder, room: Room) -> None:
     an arcade of segmental arches (finish `ribs`). The camera stops under the springing."""
     options = room.spec["vaults"]
     house = room.house
-    shell_material, shell_hex = town.WALL_FINISHES[options["finish"]]
-    rib_material, rib_hex = town.WALL_FINISHES[options["ribs"]]
+    shell_material, shell_hex = finish_of(options["finish"])
+    rib_material, rib_hex = finish_of(options["ribs"])
     shell_tint, rib_tint = srgb(shell_hex), srgb(rib_hex)
     spring, pier = options["spring"], options.get("pier", 0.6)
     rise = room.storey - 0.05 - spring
@@ -865,6 +871,32 @@ def build_vaults(b: Builder, room: Room) -> None:
         b.side_prism(arch + [(d_to, room.storey), (d_from, room.storey)], u - pier / 2.0 + 0.05, u + pier / 2.0 - 0.05, rib_material, rib_tint)
 
     b.collider((room.left, room.front, spring + 0.2), (room.right, room.back, room.storey))  # o braço da câmera para sob o arranque das abóbadas
+
+    scatter_vault_stars(b, room, aisles, spring, rise, options.get("stars", 0))
+
+
+def finish_of(finish) -> tuple:
+    """(material, hex) of a finish given by name (town.WALL_FINISHES) or directly as a (material, hex) pair."""
+    return finish if isinstance(finish, tuple) else town.WALL_FINISHES[finish]
+
+
+def vault_height(u_from: float, u_to: float, spring: float, rise: float, u: float) -> float:
+    """Height of the intrados of the segmental vault over u_from..u_to (see segment_arc) at u."""
+    half = (u_to - u_from) / 2.0
+    radius = (half * half + rise * rise) / (2.0 * rise)
+
+    return spring + rise - radius + math.sqrt(radius * radius - (u - (u_from + u_to) / 2.0) ** 2)
+
+
+def scatter_vault_stars(b: Builder, room: Room, aisles: list, spring: float, rise: float, count: int) -> None:
+    """Painted star field (spec vaults stars): small glowing four-point stars just under the vault surface."""
+    generator = random.Random(town.hash_seed(room.shop_type))
+    spots = [(generator.choice(aisles), generator.uniform(room.front + 0.4, room.back - 0.4), generator.uniform(0.04, 0.09)) for _ in range(count)]
+
+    for (u_from, u_to), d, size in spots:
+        u = generator.uniform(u_from + 0.5, u_to - 0.5)
+        z = vault_height(u_from, u_to, spring, rise, u) - 0.02
+        b.hull([(u + size, d, z), (u - size, d, z), (u, d + size, z), (u, d - size, z), (u, d, z - 0.012)], "glow_warm", srgb("FFFFFF"))
 
 
 def build_lean_to(b: Builder, room: Room) -> None:

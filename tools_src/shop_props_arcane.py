@@ -2699,7 +2699,164 @@ def hearth_ring(b: Builder, frame: Matrix, **options) -> None:
         rod(b, frame, (1.0 * math.cos(angle), 1.0 * math.sin(angle), 0.145), (1.33 * math.cos(angle), 1.33 * math.sin(angle), 0.145), 0.012, "paint", "8E8AA0", depth=0.004)
 
 
+# ---------- cabinet of curiosities (Wunderkammer) ----------
+
+CURIO_WOOD = "6B4A3A"
+
+
+def _curio_skull(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    ball(b, frame, (x, 0.0, z + 0.1), 0.085, "paint", BONE, scale=(0.85, 1.0, 0.9))
+    block(b, frame, (x, -0.04, z + 0.03), (0.1, 0.08, 0.06), "paint", BONE)
+
+    for side in (-1, 1):
+        ball(b, frame, (x + side * 0.032, -0.07, z + 0.1), 0.022, "paint", "3A3152")
+
+
+def _curio_jar(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    flask(b, frame, (x, 0.0, z), 0.08, 0.26, "glass", "CFE9E0", shape="tall", cork=True)
+    ball(b, frame, (x, 0.0, z + 0.1), 0.045, "paint", generator.choice(("C9A36B", "8FA86B", "D99A84")), scale=(1.0, 1.0, 1.6))
+
+
+def _curio_crystals(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    tone = generator.choice(("glow_cyan", "glow_pink", "glow_green"))
+
+    for index in range(3):
+        crystal(b, frame, (x - 0.06 + index * 0.06, 0.0, z), 0.03, generator.uniform(0.12, 0.22), tone, tilt=(generator.uniform(-15.0, 15.0), generator.uniform(-20.0, 20.0)))
+
+
+def _curio_books(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    book_row(b, frame, x - 0.26, x + 0.26, 0.0, z, 0.2, 0.3, generator)
+
+
+def _curio_coral(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    cyl(b, frame, (x, 0.0, z), 0.06, 0.04, "wood", DARK_WOOD, sides=6)
+
+    for index in range(5):
+        angle = math.radians(index * 72.0 + generator.uniform(-20.0, 20.0))
+        rod(b, frame, (x, 0.0, z + 0.04), (x + 0.1 * math.cos(angle), 0.05 * math.sin(angle), z + generator.uniform(0.18, 0.3)), 0.022, "paint", "E0604A")
+
+
+def _curio_shell(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    spin(b, at(frame, (x, 0.0, z + 0.07), 90.0, "Y"), [(0.0, -0.12), (0.07, -0.06), (0.08, 0.02), (0.04, 0.1), (0.0, 0.13)], "paint", "F2D9C0", sides=7)
+
+
+def _curio_horn(b: Builder, frame: Matrix, x: float, z: float, generator: random.Random) -> None:
+    points = [(x - 0.2, 0.0, z + 0.03), (x - 0.05, 0.0, z + 0.08), (x + 0.1, 0.0, z + 0.16), (x + 0.2, 0.0, z + 0.3)]
+
+    for (start, end), radius in zip(zip(points, points[1:]), (0.04, 0.03, 0.018)):
+        rod(b, frame, start, end, radius * 2.0, "paint", "E2CFA6")
+
+
+CURIOS = (_curio_skull, _curio_jar, _curio_crystals, _curio_books, _curio_coral, _curio_shell, _curio_horn)
+
+
+def curiosity_cabinet(b: Builder, frame: Matrix, **options) -> None:
+    """Wall-high curiosity shelving 2.0 x 0.5 x 3.4 as in the old Wunderkammer engravings: a dark carcass of
+    three bays and five open shelves crammed with skulls, specimen jars, crystals, books, coral, shells and horns
+    over a base of drawers, a cornice on top."""
+    generator = rng(options)
+    shelves = (1.0, 1.5, 2.0, 2.5, 2.95)
+    bays = (-0.62, 0.0, 0.62)
+    slots = list(itertools.product(shelves, bays))
+
+    for x in (-0.98, -0.31, 0.31, 0.98):
+        block(b, frame, (x, 0.0, 1.7), (0.05, 0.46, 3.4), "wood", CURIO_WOOD)
+
+    block(b, frame, (0.0, 0.2, 1.7), (2.0, 0.04, 3.4), "wood", "4F3A2E")
+    block(b, frame, (0.0, 0.0, 0.45), (2.0, 0.48, 0.9), "wood", CURIO_WOOD)
+    block(b, frame, (0.0, -0.02, 3.42), (2.12, 0.56, 0.1), "wood_light", WOOD["mel"])
+
+    for x, z in itertools.product((-0.62, 0.0, 0.62), (0.25, 0.65)):
+        block(b, frame, (x, -0.245, z), (0.52, 0.02, 0.3), "wood_light", WOOD["mel"])
+        ball(b, frame, (x, -0.265, z), 0.02, "metal", BRASS, segments=6)
+
+    for z in shelves:
+        block(b, frame, (0.0, 0.0, z - 0.02), (1.96, 0.44, 0.04), "wood", CURIO_WOOD)
+
+    for z, x in slots:
+        CURIOS[generator.randrange(len(CURIOS))](b, frame, x, z, generator)
+
+
+def vitrine_case(b: Builder, frame: Matrix, **options) -> None:
+    """Kunstkammer table case 1.2 x 0.7: turned oak legs, a velvet bed under a glass box with brass edges, and on
+    it a crystal cluster, a small skull and a gem on a cushion."""
+    generator = rng(options)
+    top = 0.86
+    glass_top = top + 0.6
+
+    for x, y in itertools.product((-0.52, 0.52), (-0.28, 0.28)):
+        spin(b, frame, [(0.04, 0.0), (0.05, 0.3), (0.035, 0.55), (0.045, top - 0.08)], "wood", CURIO_WOOD, sides=6, base=(x, y, 0.0))
+
+    block(b, frame, (0.0, 0.0, top - 0.05), (1.2, 0.7, 0.1), "wood", CURIO_WOOD)
+    block(b, frame, (0.0, 0.0, top + 0.01), (1.12, 0.62, 0.02), "paint", options.get("velvet", NAVY))
+    box(b, frame, (-0.56, -0.31, top), (0.56, 0.31, glass_top), "glass", "DCEFF2")
+
+    for x, y in itertools.product((-0.56, 0.56), (-0.31, 0.31)):
+        rod(b, frame, (x, y, top), (x, y, glass_top), 0.02, "metal", BRASS)
+
+    for y in (-0.31, 0.31):
+        rod(b, frame, (-0.56, y, glass_top), (0.56, y, glass_top), 0.02, "metal", BRASS)
+
+    _curio_crystals(b, frame, -0.3, top + 0.02, generator)
+    _curio_skull(b, frame, 0.05, top + 0.02, generator)
+    block(b, frame, (0.33, 0.0, top + 0.05), (0.16, 0.16, 0.06), "paint", WINE)
+    gem(b, frame, (0.33, 0.0, top + 0.12), 0.04, generator.choice(("glow_cyan", "glow_pink", "glow_amber")))
+
+
+def armillary_sphere(b: Builder, frame: Matrix, **options) -> None:
+    """Great gilded armillary sphere 1.4 m across on a carved stone pedestal: horizon ring on four claws,
+    meridian, equator, tilted ecliptic band and the two colures around a small blue earth on its axis."""
+    centre = (0.0, 0.0, 1.55)
+    radius = 0.62
+    tilted = at(frame, centre, 23.5, "Y")
+
+    spin(b, frame, [(0.5, 0.0), (0.5, 0.12), (0.36, 0.2), (0.24, 0.3), (0.2, 0.62), (0.28, 0.7), (0.12, 0.82)], "paint", MARBLE, sides=10)
+
+    for leg in range(4):
+        angle = math.radians(45.0 + leg * 90.0)
+        rod(b, frame, (0.1 * math.cos(angle), 0.1 * math.sin(angle), 0.8), ((radius + 0.06) * math.cos(angle), (radius + 0.06) * math.sin(angle), centre[2]), 0.05, "metal", GOLD)
+
+    hoop(b, frame, centre, radius + 0.06, 0.035, "metal", GOLD, sides=24)
+    hoop(b, frame, centre, radius, 0.022, "metal", BRASS, sides=24, axis="X")
+    hoop(b, tilted, (0.0, 0.0, 0.0), radius - 0.03, 0.02, "metal", GOLD, sides=24)
+    hoop(b, tilted, (0.0, 0.0, 0.0), radius - 0.03, 0.02, "metal", GOLD, sides=24, axis="Y")
+    hoop(b, at(tilted, (0.0, 0.0, 0.0), 23.5, "X"), (0.0, 0.0, 0.0), radius - 0.05, 0.05, "metal", BRASS, sides=24, tube_sides=4)
+    rod(b, tilted, (0.0, 0.0, -radius - 0.08), (0.0, 0.0, radius + 0.08), 0.03, "metal", GOLD)
+    ball(b, tilted, (0.0, 0.0, 0.0), 0.16, "paint", "3E6AB0", segments=10)
+    gem(b, tilted, (0.0, 0.0, radius + 0.12), 0.05, "glow_amber")
+
+
+def hanging_crocodile(b: Builder, frame: Matrix, **options) -> None:
+    """Stuffed crocodile hung under the ceiling on two chains (z = 0 at the mount), belly down, as in the
+    curiosity cabinets' ceilings."""
+    hide, belly = "5E6B3A", "B8B07A"
+    body_z = -0.85
+    segments = [(-1.45, 0.05, 0.04), (-1.1, 0.09, 0.07), (-0.7, 0.13, 0.1), (-0.3, 0.2, 0.14), (0.1, 0.24, 0.16), (0.5, 0.22, 0.15), (0.85, 0.14, 0.1), (1.15, 0.09, 0.07), (1.45, 0.05, 0.04)]
+
+    for (x_from, width_from, height_from), (x_to, width_to, height_to) in zip(segments, segments[1:]):
+        points = [(x, side * width, body_z + vertical * height) for x, width, height in ((x_from, width_from, height_from), (x_to, width_to, height_to)) for side, vertical in itertools.product((-1, 1), (-1, 1))]
+        b.hull(points, "paint", srgb(hide), frame=frame)
+
+    block(b, frame, (0.1, 0.0, body_z - 0.14), (1.2, 0.36, 0.04), "paint", belly)
+
+    for x in (-0.6, -0.2, 0.2, 0.6, 0.9):
+        gem(b, frame, (x, 0.0, body_z + 0.17), 0.04, "paint", "4A5530", scale=(1.0, 0.6, 1.0))
+
+    for x, side in itertools.product((-0.15, 0.55), (-1, 1)):
+        rod(b, frame, (x, side * 0.2, body_z - 0.04), (x + 0.12, side * 0.38, body_z - 0.16), 0.06, "paint", hide)
+
+    for side in (-1, 1):
+        ball(b, frame, (1.3, side * 0.04, body_z + 0.06), 0.018, "glow_amber")
+
+    for x in (-0.6, 0.6):
+        rod(b, frame, (x, 0.0, 0.0), (x, 0.0, body_z + 0.1), 0.015, "metal", DARK_IRON)
+
+
 PROPS = {
+    "curiosity_cabinet": {"build": curiosity_cabinet, "size": (2.12, 0.56, 3.47), "solid": True, "clearance": 1.0},
+    "vitrine_case": {"build": vitrine_case, "size": (1.2, 0.7, 1.47), "solid": True, "clearance": 0.8},
+    "armillary_sphere": {"build": armillary_sphere, "size": (1.4, 1.4, 2.3), "solid": True},
+    "hanging_crocodile": {"build": hanging_crocodile, "size": (3.0, 0.8, 1.05), "solid": False, "hang": True},
     "crystal_ball_pedestal": {"build": crystal_ball_pedestal, "size": (0.56, 0.57, 1.49), "solid": True, "light": ((0.0, 0.0, 1.32), "8FD8FF", 1.0, 4.0)},
     "staff_rack": {"build": staff_rack, "size": (1.85, 0.5, 1.96), "solid": True},
     "wand_case": {"build": wand_case, "size": (1.24, 0.59, 0.95), "solid": True},
