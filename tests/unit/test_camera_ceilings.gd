@@ -25,6 +25,10 @@ const ALCHEMY_SCENE: PackedScene = preload("res://art/town/shops/shop_alchemy.gl
 ## parede, ainda está abaixo de 3,7 m (o forro plano e o colisor dele ficam acima, a 4,15 m).
 const ALCHEMY_SPOT: Vector3 = Vector3(1.0, 0.3, -1.6)
 const ALCHEMY_VAULT_UNDERSIDE: float = 3.7
+const GENERAL_SCENE: PackedScene = preload("res://art/town/shops/shop_general.gltf")
+## Armazém na origem, no meio da loja: o forro de tábuas tem a face de baixo a 3,97 m.
+const GENERAL_SPOT: Vector3 = Vector3(-3.0, 0.3, -5.0)
+const GENERAL_BOARDS_UNDERSIDE: float = 3.97
 
 
 func test_camera_stays_under_the_catacomb_ceiling() -> void:
@@ -49,6 +53,14 @@ func test_camera_follows_the_offizin_vault() -> void:
 	var camera: Camera3D = await _look_down_in(ALCHEMY_SCENE, Transform3D.IDENTITY, ALCHEMY_SPOT)
 
 	assert_lt(camera.global_position.y, ALCHEMY_VAULT_UNDERSIDE, "camera under the Offizin vault")
+
+
+func test_camera_stays_under_the_store_boards() -> void:
+	var camera: Camera3D = await _look_down_in(GENERAL_SCENE, Transform3D.IDENTITY, GENERAL_SPOT)
+
+	assert_lt(
+		camera.global_position.y, GENERAL_BOARDS_UNDERSIDE, "camera under the boarded ceiling"
+	)
 
 
 func _look_down_in(room_scene: PackedScene, room_transform: Transform3D, spot: Vector3) -> Camera3D:
