@@ -635,6 +635,42 @@ rotation = Vector3(-1.567, 1.571, 0.000)
 fov = 75.0
 far = 400.0
 
+[node name="ArmorHall" type="Camera3D" parent="."]
+position = Vector3(-52.000, 1.600, -70.500)
+rotation = Vector3(-0.011, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorAisleLeft" type="Camera3D" parent="."]
+position = Vector3(-50.600, 1.600, -72.400)
+rotation = Vector3(-0.020, 1.262, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorAisleRight" type="Camera3D" parent="."]
+position = Vector3(-53.400, 1.600, -72.400)
+rotation = Vector3(-0.020, -1.262, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorForge" type="Camera3D" parent="."]
+position = Vector3(-55.600, 1.600, -81.600)
+rotation = Vector3(-0.059, 0.331, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorWorkshop" type="Camera3D" parent="."]
+position = Vector3(-52.600, 1.600, -81.400)
+rotation = Vector3(-0.047, 0.761, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="ArmorStore" type="Camera3D" parent="."]
+position = Vector3(-48.000, 1.600, -81.600)
+rotation = Vector3(-0.059, -0.397, 0.000)
+fov = 75.0
+far = 400.0
+
 [node name="TavernTaproom" type="Camera3D" parent="."]
 position = Vector3(13.000, 1.600, -69.900)
 rotation = Vector3(-0.036, 0.565, 0.000)

@@ -1807,7 +1807,74 @@ def wagon_wheel_lean(b: Builder, frame: Matrix, **options) -> None:
     b.cylinder((0.0, -0.12, 0.0), 0.11, 0.24, 10, "wood", srgb(WOOD["escura"]), frame=lean, axis="Y")
 
 
+def cuirass_wall(b: Builder, frame: Matrix, **options) -> None:
+    """Arsenal wall trophy 2.4 x 2.6: an oak board with a moulded rim carrying three rows of breastplates on pegs
+    (four, three, four) and a row of sallets along the top, as on the walls of an old armoury hall."""
+    rows = ((0.55, (-0.9, -0.3, 0.3, 0.9)), (1.15, (-0.6, 0.0, 0.6)), (1.75, (-0.9, -0.3, 0.3, 0.9)))
+    tones = (STEEL, STEEL_BRIGHT, "C9D6E8", STEEL)
+    plates = [(x, z, tones[index % len(tones)]) for index, (z, x) in enumerate((z, x) for z, xs in rows for x in xs)]
+
+    plank(b, frame, (-1.2, 0.08, 0.2), (1.2, 0.12, 2.6), WOOD["media"])
+    plank(b, frame, (-1.24, 0.04, 0.16), (1.24, 0.1, 0.22), WOOD["mel"], True)
+    plank(b, frame, (-1.24, 0.04, 2.56), (1.24, 0.1, 2.62), WOOD["mel"], True)
+
+    for x, z, tone in plates:
+        b.cylinder((x, 0.06, z + 0.36), 0.015, 0.06, 6, "wood", srgb(WOOD["escura"]), frame=frame, axis="Y")
+        lathe(b, [(0.14, 0.0), (0.16, 0.12), (0.17, 0.24), (0.14, 0.33), (0.06, 0.38)], 10, "metal", tone, place(frame, (x, 0.02, z), scale=(1.0, 0.35, 1.0)))
+        box(b, frame, (x - 0.008, -0.045, z + 0.06), (x + 0.008, -0.03, z + 0.34), "metal", GOLD)
+
+    for x in (-0.95, -0.32, 0.32, 0.95):
+        helmet(b, place(frame, (x, -0.02, 2.2)), "sallet", STEEL_BRIGHT, BRASS, CLOTH_RED)
+
+
+def helmet_rack_tall(b: Builder, frame: Matrix, **options) -> None:
+    """Open oak rack 2.0 x 0.5 x 2.4 with four rails of turned pegs, a helmet on every peg (sixteen, mixed styles):
+    the long helmet racks of an armoury."""
+    styles = ("sallet", "dome", "great", "dome", "sallet", "great", "dome", "leather")
+    shells = (STEEL, STEEL_BRIGHT, "C9D6E8", BRONZE, STEEL, STEEL_BRIGHT, STEEL, LEATHER)
+    rails = (0.45, 0.95, 1.45, 1.95)
+    pegs = list(itertools.product(rails, (-0.72, -0.24, 0.24, 0.72)))
+
+    for x in (-0.98, 0.94):
+        plank(b, frame, (x, -0.06, 0.0), (x + 0.04, 0.06, 2.4))
+        plank(b, frame, (x - 0.04, -0.25, 0.0), (x + 0.08, 0.25, 0.06), WOOD["escura"])
+
+    plank(b, frame, (-1.0, -0.05, 2.34), (1.0, 0.05, 2.42), WOOD["mel"], True)
+
+    for z in rails:
+        plank(b, frame, (-0.94, -0.03, z - 0.05), (0.94, 0.03, z), WOOD["mel"], True)
+
+    for index, (z, x) in enumerate(pegs):
+        b.cylinder((x, 0.0, z), 0.025, 0.08, 6, "wood", srgb(WOOD["escura"]), frame=frame)
+        helmet(b, place(frame, (x, 0.0, z + 0.06), (0.0, 0.0, (index % 3 - 1) * 8.0)), styles[index % len(styles)], shells[(index * 3) % len(shells)], GOLD if index % 2 else BRASS, (CLOTH_RED, CLOTH_BLUE)[index % 2])
+
+
+def armour_stake_stump(b: Builder, frame: Matrix, **options) -> None:
+    """Armourer's stake block: an oak stump with three iron stakes set in it (a round-headed bick for helmet
+    bowls with a half-raised skull on it, a T-shaped horn stake and a flat planishing stake) and a raising hammer."""
+    b.cylinder((0.0, 0.0, 0.0), 0.3, 0.62, 10, "wood", srgb(WOOD["media"]), frame=frame, uv=LIGHT_GRAIN)
+    b.cylinder((0.0, 0.0, 0.62), 0.28, 0.008, 10, "paint", srgb("D9A770"), frame=frame)
+
+    for z in (0.08, 0.5):
+        b.cylinder((0.0, 0.0, z), 0.308, 0.045, 10, "metal", srgb(IRON_DARK), frame=frame)
+
+    b.cylinder((-0.12, -0.06, 0.62), 0.025, 0.28, 6, "metal", srgb(IRON_DARK), frame=frame)
+    b.sphere((-0.12, -0.06, 0.92), 0.085, "metal", srgb(STEEL_DARK), frame=frame, segments=8)
+    lathe(b, [(0.12, 0.0), (0.12, 0.05), (0.09, 0.12), (0.0, 0.14)], 8, "metal", STEEL_BRIGHT, place(frame, (-0.12, -0.06, 0.93)))
+
+    b.cylinder((0.12, -0.02, 0.62), 0.022, 0.24, 6, "metal", srgb(IRON_DARK), frame=frame)
+    b.cylinder((0.0, -0.02, 0.88), 0.03, 0.34, 6, "metal", srgb(STEEL_DARK), top_radius=0.012, frame=place(frame, (-0.05, 0.0, 0.0)), axis="X")
+
+    b.cylinder((0.02, 0.15, 0.62), 0.02, 0.18, 6, "metal", srgb(IRON_DARK), frame=frame)
+    box(b, frame, (-0.06, 0.1, 0.8), (0.1, 0.2, 0.84), "metal", STEEL_DARK)
+
+    smith_hammer(b, place(frame, (0.16, 0.12, 0.64), (0.0, 90.0, -30.0)), 0.32)
+
+
 PROPS = {
+    "cuirass_wall": {"build": cuirass_wall, "size": (2.48, 0.2, 2.62), "solid": False},
+    "helmet_rack_tall": {"build": helmet_rack_tall, "size": (2.0, 0.5, 2.42), "solid": True},
+    "armour_stake_stump": {"build": armour_stake_stump, "size": (0.62, 0.62, 1.07), "solid": True},
     "iron_stock_rack": {"build": iron_stock_rack, "size": (1.7, 0.6, 2.3), "solid": True},
     "horseshoe_board": {"build": horseshoe_board, "size": (1.6, 0.12, 1.92), "solid": False},
     "wagon_wheel_lean": {"build": wagon_wheel_lean, "size": (1.4, 0.45, 1.3), "solid": True},
