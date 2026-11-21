@@ -6,6 +6,7 @@ extends Node
 ## teleportando, acertando a hora do céu e seguindo seus pontos pelo tempo fixo "seconds"; a
 ## edição (tools_src/cut_doors_trailer.py) corta pelos mesmos tempos. Gravar com
 ## env RECORD_FPS=60 bash tools_src/record.sh tests/promo/doors.tscn <saida.avi> [--clips=a,b].
+## Grava com os gráficos no máximo do menu (só nesta cena, nada é salvo nas configurações).
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const CLIPS_ARGUMENT: String = "--clips="
@@ -21,6 +22,14 @@ const PITCH_RATE: float = 1.6
 const DEFAULT_PITCH: float = -0.18
 const KEY_TAP_SECONDS: float = 0.1
 const PROMPT_NODE_NAME: String = "Prompt"
+const RECORDING_QUALITY: Dictionary[GameSettings.Setting, int] = {
+	GameSettings.Setting.MSAA: 3,
+	GameSettings.Setting.SCREEN_SPACE_AA: 2,
+	GameSettings.Setting.SHADOWS: 3,
+	GameSettings.Setting.AMBIENT_OCCLUSION: 1,
+	GameSettings.Setting.INDIRECT_LIGHT: 1,
+	GameSettings.Setting.GLOW: 1,
+}
 
 @export var hub: Hub
 
@@ -36,6 +45,9 @@ var _watched: Node3D
 var _next_event: int = 0
 var _held_keys: Dictionary[StringName, float] = {}
 var _prompts: Array[Node] = []
+## Rumo da câmera quando ela chegou: o olhar em volta ("sweep") balança em torno dele.
+var _sweep_center: float = 0.0
+var _sweep_started_at: float = -1.0
 
 
 func _ready() -> void:
@@ -54,6 +66,9 @@ func _ready() -> void:
 
 	while NavigationServer3D.map_get_iteration_id(_player.get_world_3d().navigation_map) == 0:
 		await get_tree().physics_frame
+
+	for setting in RECORDING_QUALITY:
+		GameSettings.choose(setting, RECORDING_QUALITY[setting])
 
 	for clip in DoorsRoute.CLIPS:
 		if wanted.is_empty() or clip["name"] in wanted:
@@ -110,6 +125,7 @@ func _start_clip(index: int) -> void:
 	_clip_elapsed = 0.0
 	_waypoint = 0
 	_next_event = 0
+	_sweep_started_at = -1.0
 	print("CLIP %s %.2f s" % [clip["name"], clip["seconds"]])
 
 	hub.set_time_of_day(clip["time"])
@@ -213,9 +229,10 @@ func _press_move(input_vector: Vector2) -> void:
 			Input.action_release(MOVE_ACTIONS[index])
 
 
-## Mouse de quem joga: andando, a câmera vai para trás dela (mais "side" graus); parada, gira
-## em volta dela a "orbit" graus por segundo; o olhar sobe ou desce até "pitch" (ou
-## "pitch_hold" depois que ela chega).
+## Mouse de quem joga: andando, a câmera vai para trás dela (mais "side" graus), vendo o que ela
+## vê; quando chega, "sweep" (graus para cada lado, segundos de um lado ao outro) passeia o olhar
+## pelo lugar como quem contempla, ou "orbit" gira em volta dela em graus por segundo; o olhar
+## sobe ou desce até "pitch" (ou "pitch_hold" depois que ela chega).
 func _turn_camera(clip: Dictionary, delta: float) -> void:
 	var flat_velocity: Vector3 = Vector3(_player.velocity.x, 0.0, _player.velocity.z)
 	var is_moving: bool = flat_velocity.length() > MOVING_SPEED
@@ -230,7 +247,9 @@ func _turn_camera(clip: Dictionary, delta: float) -> void:
 		(target_pitch - _camera_pitch.rotation.x) * minf(1.0, pitch_rate * delta)
 	)
 
-	if (has_arrived or not is_moving and _clip_elapsed > 1.5) and clip.has("hold_yaw"):
+	if has_arrived and clip.has("sweep"):
+		yaw_step = _sweep_step(clip["sweep"], yaw_now, delta)
+	elif (has_arrived or not is_moving and _clip_elapsed > 1.5) and clip.has("hold_yaw"):
 		var hold_yaw: float = deg_to_rad(clip["hold_yaw"])
 
 		yaw_step = angle_difference(yaw_now, hold_yaw) * minf(1.0, CAMERA_FOLLOW_RATE * delta)
@@ -249,6 +268,20 @@ func _turn_camera(clip: Dictionary, delta: float) -> void:
 		yaw_step = angle_difference(yaw_now, heading_yaw) * minf(1.0, CAMERA_FOLLOW_RATE * delta)
 
 	_camera_yaw.rotate_by_mouse(Vector2(-yaw_step, -pitch_step) / PlayerCamera.MOUSE_SENSITIVITY)
+
+
+func _sweep_step(sweep: Vector2, yaw_now: float, delta: float) -> float:
+	var phase: float
+	var target_yaw: float
+
+	if _sweep_started_at < 0.0:
+		_sweep_started_at = _clip_elapsed
+		_sweep_center = yaw_now
+
+	phase = (_clip_elapsed - _sweep_started_at) / sweep.y * PI
+	target_yaw = _sweep_center + deg_to_rad(sweep.x) * sin(phase)
+
+	return angle_difference(yaw_now, target_yaw) * minf(1.0, CAMERA_FOLLOW_RATE * delta)
 
 
 ## Teclas do roteiro ("events": {"at", "press", "hold"}) entram como eventos de verdade, então

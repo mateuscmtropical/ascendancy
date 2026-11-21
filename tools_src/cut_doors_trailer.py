@@ -2,8 +2,8 @@
 
 The heroine is played for real (tests/promo/doors_director.gd); this script picks a stretch of each clip, joins the
 shop entrances with a double-door wipe (ffmpeg xfade vertopen), builds the eight-shop mosaic whose last tile is the
-guild, puts the English captions and the end title in IM FELL English (SIL OFL, kept outside the repo), cuts the
-Google Flow Music score on its bars (75 BPM, bar = 3.2 s) and encodes one 1080p60 file sized to the target.
+guild, puts the English captions and the end title in IM FELL English (SIL OFL), cuts the
+Google Flow Music score on its bars (75 BPM, bar = 3.2 s) and encodes two 1080p60 files: <output>_full.mp4 at full quality and <output> sized to the target.
 
 Usage: python tools_src/cut_doors_trailer.py <score.wav> <fonts dir> <work dir> <output.mp4> <MB> <capture.avi>=<clip,clip...> ...
 Each capture is a recording of tests/promo/doors.tscn with --clips= set to the clips listed after its "=", in that order.
@@ -28,16 +28,16 @@ SHOTS = (
     ("smith", 0.4, 3.2, "The Smithy", "door"),
     ("armor", 0.4, 3.2, "The Armoury", "door"),
     ("magic", 0.6, 3.2, "The Cabinet of Curiosities", "door"),
-    ("tavern", 4.4, 3.2, "The Tavern", "door"),
+    ("tavern", 4.0, 3.2, "The Tavern", "door"),
     ("alchemy", 0.4, 3.2, "The Apothecary", "door"),
     ("general", 0.4, 3.2, "General Store & Bakery", "cut"),
     ("square", 1.0, 3.2, "The Square", "cut"),
     ("orphanage", 2.4, 3.2, "The Orphanage", "cut"),
     ("saci", 4.6, 3.2, "The Saci", "cut"),
     ("fight", 0.3, 3.2 + 1.0 / FPS, None, "fade"),
-    ("cathedral", 1.2, 3.2, "The Cathedral", "cut"),
-    ("crypt", 3.2, 2.3, "The Crypt", "cut"),
-    ("crypt", 5.95, 4.1, None, "cut"),  # salta o instante em que a lente raspa a boca da escada
+    ("cathedral", 1.2, 4.8, "The Cathedral", "cut"),
+    ("crypt", 2.1, 3.2, "The Crypt", "cut"),
+    ("crypt", 7.78, 1.6, None, "cut"),  # salta a descida, em que a lente raspa a boca da escada e só vê parede
     ("stars", 4.0, 2.4, "The Night Sky", "fade"),
     ("mula", 2.4, 9.6, "The Headless Mule", "cut"),
     ("mosaic", 0.0, 8.8, None, "door"),
@@ -89,11 +89,10 @@ def caption_filter(caption: str, duration: float, fonts: Path, work: Path, index
 
 
 def title_filter(fonts: Path, start: float) -> str:
-    """End title and line, fading in over the last shot."""
+    """End title alone (no tagline under it), fading in over the last shot."""
     fade = f"if(lt(t\\,{start})\\,0\\,min(1\\,(t-{start})/1.2))"
-    title = f"drawtext=fontfile='IMFellEnglishSC.ttf':text='Ascendancy':fontsize=170:fontcolor=white:alpha={fade}:shadowcolor=black@0.7:shadowx=3:shadowy=3:x=(w-text_w)/2:y=h/2-150"
-    line = f"drawtext=fontfile='IMFellEnglish-Regular.ttf':text='Every door opens somewhere.':fontsize=56:fontcolor=white:alpha={fade}:shadowcolor=black@0.7:shadowx=2:shadowy=2:x=(w-text_w)/2:y=h/2+60"
-    return f"{title},{line}"
+    title = f"drawtext=fontfile='IMFellEnglishSC.ttf':text='Ascendancy':fontsize=170:fontcolor=white:alpha={fade}:shadowcolor=black@0.7:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h-text_h)/2-40"
+    return title
 
 
 def render_shot(index: int, shot: tuple, sources: dict, fonts: Path, work: Path) -> Path:
@@ -112,7 +111,7 @@ def render_shot(index: int, shot: tuple, sources: dict, fonts: Path, work: Path)
         filters.append(title_filter(fonts, TITLE_AT))
         filters.append(f"fade=t=out:st={length - 2.0:.2f}:d=2.0")
 
-    run(["ffmpeg", "-v", "error", "-y", "-ss", f"{clip_start + offset:.3f}", "-t", f"{length:.3f}", "-i", capture, "-vf", ",".join(filters), "-r", FPS, "-an", "-c:v", "libx264", "-crf", "12", "-preset", "fast", "-pix_fmt", "yuv420p", output.name])
+    run(["ffmpeg", "-v", "error", "-y", "-ss", f"{clip_start + offset:.3f}", "-t", f"{length:.3f}", "-i", capture, "-vf", ",".join(filters), "-r", FPS, "-an", "-c:v", "libx264", "-crf", "8", "-preset", "fast", "-pix_fmt", "yuv420p", output.name])
     return output
 
 
@@ -132,7 +131,7 @@ def render_mosaic(index: int, shot: tuple, sources: dict, fonts: Path, work: Pat
         filters.append(f"[{tile}:v]{GRADE},crop=ih*{tile_width}/{tile_height}:ih,scale={tile_width - 6}:{tile_height - 6},fps={FPS},format=yuva420p,fade=t=in:st={appear:.2f}:d=0.3:alpha=1[tile{tile}]")
         filters.append(f"[base{tile}][tile{tile}]overlay={x + 3}:{y + 3}:enable='gte(t,{appear:.2f})'[base{tile + 1}]")
 
-    run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(filters), "-map", f"[base{len(MOSAIC_TILES)}]", "-t", f"{length:.3f}", "-r", FPS, "-c:v", "libx264", "-crf", "12", "-preset", "fast", "-pix_fmt", "yuv420p", output.name])
+    run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(filters), "-map", f"[base{len(MOSAIC_TILES)}]", "-t", f"{length:.3f}", "-r", FPS, "-c:v", "libx264", "-crf", "8", "-preset", "fast", "-pix_fmt", "yuv420p", output.name])
     return output
 
 
@@ -154,7 +153,7 @@ def join_shots(shot_files: list[Path], work: Path) -> Path:
         filters.append(f"[{previous}][{index + 1}:v]xfade=transition={transition}:duration={duration:.4f}:offset={offset:.4f}[{label}]")
         previous = label
 
-    run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(filters), "-map", f"[{previous}]", "-c:v", "libx264", "-crf", "12", "-preset", "fast", "-pix_fmt", "yuv420p", output.name])
+    run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(filters), "-map", f"[{previous}]", "-c:v", "libx264", "-crf", "8", "-preset", "fast", "-pix_fmt", "yuv420p", output.name])
     return output
 
 
@@ -178,6 +177,11 @@ def cut_score(score: Path, work: Path) -> Path:
     filters.append(f"[{previous}]afade=t=out:st={total - 3.0:.2f}:d=3.0,alimiter=limit=0.89[out]")
     run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(filters), "-map", "[out]", output.name])
     return output
+
+
+def encode_full(picture: Path, music: Path, output: Path) -> None:
+    """Full-quality master next to the compressed file: near-transparent H.264 (CRF 12), no size cap."""
+    run(["ffmpeg", "-v", "error", "-y", "-i", picture.name, "-i", music.name, "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "320k", "-shortest", "-movflags", "+faststart", output])
 
 
 def encode(picture: Path, music: Path, output: Path, megabytes: float, work: Path) -> None:
@@ -204,7 +208,11 @@ def main() -> None:
         shutil.copy(font_file, work / font_file.name)
 
     shot_files = [renderers.get(shot[0], render_shot)(index, shot, sources, fonts, work) for index, shot in enumerate(SHOTS)]
-    encode(join_shots(shot_files, work), cut_score(score, work), output, megabytes, work)
+    picture = join_shots(shot_files, work)
+    music = cut_score(score, work)
+
+    encode_full(picture, music, output.with_name(f"{output.stem}_full{output.suffix}"))
+    encode(picture, music, output, megabytes, work)
 
 
 if __name__ == "__main__":
