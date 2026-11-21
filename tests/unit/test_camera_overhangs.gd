@@ -11,6 +11,7 @@ const TOWERS_SCENE: PackedScene = preload("res://art/town/cathedral_towers.gltf"
 const TAVERN_SCENE: PackedScene = preload("res://art/town/shops/shop_tavern.gltf")
 const ALCHEMY_SCENE: PackedScene = preload("res://art/town/shops/shop_alchemy.gltf")
 const GENERAL_SCENE: PackedScene = preload("res://art/town/shops/shop_general.gltf")
+const GUILD_SCENE: PackedScene = preload("res://art/town/shops/shop_guild.gltf")
 const IMPORT_SCRIPT: GDScript = preload("res://features/audio/tag_ground_surfaces.gd")
 const LOOK_DOWN: Vector2 = Vector2(0.0, 2000.0)
 const CAMERA_STOP_PREFIX: String = "CameraStop"
@@ -76,7 +77,8 @@ func test_camera_stops_sit_on_a_layer_only_the_camera_arm_sees() -> void:
 			TOWERS_SCENE,
 			TAVERN_SCENE,
 			ALCHEMY_SCENE,
-			GENERAL_SCENE
+			GENERAL_SCENE,
+			GUILD_SCENE
 		]
 	)
 

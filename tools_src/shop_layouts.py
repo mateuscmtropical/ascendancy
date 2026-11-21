@@ -17,6 +17,7 @@ import orphanage_wing_school
 import orphanage_wing_seminary
 import alchemy_layout
 import general_layout
+import guild_layout
 import tavern_layout
 
 
@@ -31,78 +32,6 @@ def furnish_generic(f) -> None:
     f.wall("right", ["wall_shelf", "sack_pile", "wall_shelf", "crate_stack", "wall_shelf"], start=f.front + 2.0, gap=0.8)
     f.grid("display_table", (f.left + 4.5, f.right - 4.5), (f.front + 5.0, f.back - 6.5), 2, 2)
     f.grid("wheel_chandelier", (f.left + 5.0, f.right - 5.0), (f.front + 5.0, f.back - 5.0), 2, 2)
-
-
-def furnish_guild(f) -> None:
-    """Adventurers' guild (24 m, 7 m tall): the nave from the portal to the three-wicket counter under the world map,
-    the registry crystal on a carpeted dais, a panelled hall with banners and trophies, a hearth lounge on the left
-    cut off by timber screens, the quest board wall on the right, and the guild bank in the back right corner behind
-    a stone partition with an arched doorway (teller counter, deposit boxes, vault door, coin table)."""
-    f.put("guild_hearth_a", -10.9, 9.65, 90.0)
-    f.put("wall_lantern", -6.2, 4.0)
-    f.on_wall("right", "wall_lantern", 8.6)
-    f.put("doorway_lintel_a", 6.2, 13.2, 90.0, width=2.0, height=4.6)
-
-    for along in [1.4 + 2.0 * index for index in range(9)]:
-        f.on_wall("left", "wainscot_a", along)
-        f.on_wall("right", "wainscot_a", along)
-
-    f.wall("back", ["wainscot_a"] * 12, start=f.left, gap=0.0)
-
-    for along in (15.3, 17.3):  # o vão da porta em arco vai de 12.0 a 14.2: lambri só na parede
-        f.put("wainscot_a", 6.03, along, -90.0)
-
-    # nave
-    f.put("rug", 0.0, 6.2, variant="red")
-    f.put("rug", 0.0, 8.2, variant="red")
-    f.put("dais_a", 0.0, 11.2, width=3.6, depth=2.4)
-    f.put("registry_crystal", 0.0, 11.4, 0.0, z=0.35)
-    f.put("dragon_skull_hanging", 0.0, 8.0)
-    f.put("guild_counter", 0.0, 15.7)
-    f.on_wall("back", "world_map_wall", 0.0)
-    f.on_wall("back", "guild_banner", -3.4)
-    f.on_wall("back", "guild_banner", 3.4)
-    f.on_wall("back", "monster_trophy", -5.6, variant="horns")
-    f.on_wall("back", "trophy_case", -8.0)
-    f.on_wall("back", "rank_board", 5.4)
-    f.on_wall("back", "plant_pot", -10.6, variant="bush")
-    f.on_wall("front", "armor_stand_a", -3.4, variant="knight_gold")
-    f.on_wall("front", "armor_stand_a", 3.4, variant="plate")
-    f.on_wall("front", "plant_pot", -10.8, variant="bush")
-    f.on_wall("front", "plant_pot", 10.8, variant="bush")
-    f.put("group_table", -2.6, 5.2)
-    f.put("group_table", 3.0, 5.2)
-
-    # quest wall on the right
-    f.on_wall("right", "notice_board", 3.6)
-    f.on_wall("right", "quest_board", 6.6)
-    f.on_wall("right", "wanted_posters", 9.6)
-    f.put("bench_long", 9.2, 8.6, 90.0)
-    f.put("bench_long", 9.2, 4.4, 90.0)
-    f.put("group_table", 7.2, 8.4, 90.0)
-
-    # bank
-    f.put("teller_counter", 8.9, 15.3, -90.0)
-    f.on_wall("back", "vault_door", 9.6)
-    f.on_wall("right", "deposit_boxes", 14.6)
-    f.put("money_sacks", 10.7, 13.2)
-    f.put("coin_table", 10.4, 17.4, 90.0)
-    f.put("chest_gold", 11.1, 16.2, 90.0)
-    f.put("rug", 7.4, 15.0, 90.0, variant="gold")
-
-    # hearth lounge on the left behind timber screens
-    f.put("timber_screen_a", -6.2, 6.6, 90.0, variant="lattice")
-    f.put("timber_screen_a", -6.2, 12.8, 90.0, variant="lattice")
-    f.put("armchair", -8.2, 7.4, -60.0)
-    f.put("armchair", -8.2, 11.8, -120.0)
-    f.put("rug", -8.4, 9.65, 90.0, variant="gold")
-    f.on_wall("left", "monster_trophy", 5.6, variant="claw")
-    f.on_wall("left", "monster_trophy", 13.6, variant="skull")
-    f.on_wall("left", "weapon_rental_rack", 16.6)
-    f.put("group_table", -7.4, 15.4)
-    f.put("crate_stack", -10.3, 3.6)
-    f.put("barrel_group", -9.4, 17.8)
-    f.grid("wheel_chandelier", (-7.2, 7.2), (4.5, 13.5), 2, 2)
 
 
 def furnish_smith(f) -> None:
@@ -506,7 +435,7 @@ PLANS = {
     "reading": orphanage_wing_reading.PLAN,
     "school": orphanage_wing_school.PLAN,
     "seminary": orphanage_wing_seminary.PLAN,
-    "guild": dict(keeper=(0.0, 17.3), partitions=(("d", 12.0, 6.2, 11.55), ("u", 6.2, 14.2, 19.1)), furnish=furnish_guild),
+    "guild": guild_layout.PLAN,
     "smith": dict(
         keeper=(-7.4, 9.4), posts=(),
         partitions=(("u", -3.4, 0.3, 19.1, dict(doors=[dict(at=4.6, width=1.6, height=2.6), dict(at=15.2, width=1.8, height=2.6)])), ("d", 11.2, -11.55, -3.55)),
