@@ -18,13 +18,13 @@ fov = 75.0
 far = 400.0
 
 [node name="SmithDoor" type="Camera3D" parent="."]
-position = Vector3(-92.000, 1.600, -65.000)
+position = Vector3(-94.400, 1.600, -65.000)
 rotation = Vector3(0.014, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="SmithInside" type="Camera3D" parent="."]
-position = Vector3(-92.000, 1.600, -70.200)
+position = Vector3(-94.400, 1.600, -70.200)
 rotation = Vector3(-0.019, -0.000, 0.000)
 fov = 75.0
 far = 400.0
@@ -632,6 +632,60 @@ far = 400.0
 [node name="SeminaryTop" type="Camera3D" parent="."]
 position = Vector3(-84.500, 35.600, 30.000)
 rotation = Vector3(-1.567, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernTaproom" type="Camera3D" parent="."]
+position = Vector3(13.000, 1.600, -69.900)
+rotation = Vector3(-0.036, 0.565, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernBar" type="Camera3D" parent="."]
+position = Vector3(9.600, 1.600, -72.000)
+rotation = Vector3(-0.033, -0.197, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernInglenook" type="Camera3D" parent="."]
+position = Vector3(12.700, 1.600, -74.500)
+rotation = Vector3(-0.038, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernStube" type="Camera3D" parent="."]
+position = Vector3(20.400, 1.600, -76.800)
+rotation = Vector3(-0.076, -2.667, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernStubeStove" type="Camera3D" parent="."]
+position = Vector3(23.800, 1.600, -72.400)
+rotation = Vector3(-0.063, 0.852, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernKitchen" type="Camera3D" parent="."]
+position = Vector3(13.000, 1.600, -82.200)
+rotation = Vector3(-0.057, 0.704, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernMusic" type="Camera3D" parent="."]
+position = Vector3(19.000, 1.600, -78.000)
+rotation = Vector3(-0.041, -0.418, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernStore" type="Camera3D" parent="."]
+position = Vector3(16.000, 1.600, -82.100)
+rotation = Vector3(-0.068, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernHall" type="Camera3D" parent="."]
+position = Vector3(16.000, 1.600, -80.800)
+rotation = Vector3(-0.008, -3.142, 0.000)
 fov = 75.0
 far = 400.0
 

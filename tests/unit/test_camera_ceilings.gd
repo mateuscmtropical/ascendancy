@@ -16,6 +16,10 @@ const CATACOMB_CEILING: float = -2.35
 ## baixo a 4,03 m.
 const SMITH_SPOT: Vector3 = Vector3(0.0, 0.3, -9.0)
 const SMITH_BEAM_UNDERSIDE: float = 4.03
+const TAVERN_SCENE: PackedScene = preload("res://art/town/shops/shop_tavern.gltf")
+## Taverna na origem, no salão diante do balcão: forro baixo a 3,6 m, viga-mestra descendo 0,32 m.
+const TAVERN_SPOT: Vector3 = Vector3(-5.5, 0.3, -9.0)
+const TAVERN_BEAM_UNDERSIDE: float = 3.28
 
 
 func test_camera_stays_under_the_catacomb_ceiling() -> void:
@@ -28,6 +32,12 @@ func test_camera_stays_under_the_shop_beams() -> void:
 	var camera: Camera3D = await _look_down_in(SMITH_SCENE, Transform3D.IDENTITY, SMITH_SPOT)
 
 	assert_lt(camera.global_position.y, SMITH_BEAM_UNDERSIDE, "camera under the ceiling beams")
+
+
+func test_camera_stays_under_the_tavern_beams() -> void:
+	var camera: Camera3D = await _look_down_in(TAVERN_SCENE, Transform3D.IDENTITY, TAVERN_SPOT)
+
+	assert_lt(camera.global_position.y, TAVERN_BEAM_UNDERSIDE, "camera under the taproom beams")
 
 
 func _look_down_in(room_scene: PackedScene, room_transform: Transform3D, spot: Vector3) -> Camera3D:

@@ -2307,6 +2307,17 @@ SHOP_SHOT_VIEWS = {  # sufixo -> (olho, alvo) em coordenadas do lote: x ao longo
     "Top": ((0.0, 30.0, -9.5), (0.0, 0.0, -9.6)),
 }
 HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (x = u, y = altura sobre o piso, z = -d); o vestíbulo tem dois andares
+    "tavern": {  # cômodos da taverna (tools_src/tavern_layout.py)
+        "Taproom": ((-3.0, 1.6, -0.9), (-7.5, 1.3, -8.0)),
+        "Bar": ((-6.4, 1.6, -3.0), (-4.6, 1.3, -12.0)),
+        "Inglenook": ((-3.3, 1.6, -5.5), (-8.5, 1.4, -5.5)),
+        "Stube": ((4.4, 1.6, -7.8), (8.0, 1.0, -0.8)),
+        "StubeStove": ((7.8, 1.6, -3.4), (3.0, 1.2, -7.6)),
+        "Kitchen": ((-3.0, 1.6, -13.2), (-7.5, 1.2, -18.5)),
+        "Music": ((3.0, 1.6, -9.0), (7.0, 1.2, -18.0)),
+        "Store": ((0.0, 1.6, -13.1), (0.0, 1.2, -19.0)),
+        "Hall": ((0.0, 1.6, -11.8), (0.0, 1.5, 0.0)),
+    },
     "vestibule": {
         "Entrance": ((0.0, 1.6, -1.2), (0.0, 1.8, -15.0)),
         "EntranceSide": ((3.5, 1.6, -9.5), (-4.0, 1.3, -1.5)),
