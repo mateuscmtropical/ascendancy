@@ -707,6 +707,36 @@ rotation = Vector3(-0.028, -0.785, 0.000)
 fov = 75.0
 far = 400.0
 
+[node name="TailorPortico" type="Camera3D" parent="."]
+position = Vector3(-24.000, 1.600, -67.400)
+rotation = Vector3(0.029, -1.542, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorShop" type="Camera3D" parent="."]
+position = Vector3(-16.000, 1.600, -70.200)
+rotation = Vector3(-0.010, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorCounters" type="Camera3D" parent="."]
+position = Vector3(-13.000, 1.600, -78.600)
+rotation = Vector3(-0.017, 2.272, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorWorkroom" type="Camera3D" parent="."]
+position = Vector3(-14.400, 1.600, -81.200)
+rotation = Vector3(-0.064, 0.953, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TailorFitting" type="Camera3D" parent="."]
+position = Vector3(-12.700, 1.600, -81.400)
+rotation = Vector3(-0.056, -0.576, 0.000)
+fov = 75.0
+far = 400.0
+
 [node name="TavernTaproom" type="Camera3D" parent="."]
 position = Vector3(13.000, 1.600, -69.900)
 rotation = Vector3(-0.036, 0.565, 0.000)

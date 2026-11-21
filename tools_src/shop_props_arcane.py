@@ -2852,7 +2852,90 @@ def hanging_crocodile(b: Builder, frame: Matrix, **options) -> None:
         rod(b, frame, (x, 0.0, 0.0), (x, 0.0, body_z + 0.1), 0.015, "metal", DARK_IRON)
 
 
+# ---------- draper and tailor ----------
+
+def haberdashery_drawers(b: Builder, frame: Matrix, **options) -> None:
+    """Haberdasher's wall cabinet 2.0 x 0.55 x 2.4: a base of small glass-fronted drawers (buttons, ribbons, thread
+    in every colour behind the glass), a counter-height ledge, and open pigeonholes of spools and folded lace above."""
+    generator = rng(options)
+    columns, rows = 6, 5
+    drawer_width, drawer_height = 1.9 / columns, 1.0 / rows
+    drawers = list(itertools.product(range(columns), range(rows)))
+    holes = list(itertools.product(range(4), range(3)))
+
+    block(b, frame, (0.0, 0.0, 0.55), (2.0, 0.55, 1.1), "wood", DARK_WOOD)
+    block(b, frame, (0.0, 0.12, 1.75), (2.0, 0.3, 1.3), "wood", DARK_WOOD)
+    block(b, frame, (0.0, -0.04, 1.13), (2.06, 0.62, 0.05), "wood_light", WOOD["mel"])
+    block(b, frame, (0.0, 0.1, 2.43), (2.06, 0.36, 0.07), "wood_light", WOOD["mel"])
+
+    for column, row in drawers:
+        x = -0.95 + drawer_width * (column + 0.5)
+        z = 0.06 + drawer_height * (row + 0.5)
+        block(b, frame, (x, -0.28, z), (drawer_width - 0.03, 0.02, drawer_height - 0.03), "paint", generator.choice(GOODS_PALETTE))
+        block(b, frame, (x, -0.292, z), (drawer_width - 0.05, 0.006, drawer_height - 0.06), "glass", "DCEFF2")
+        ball(b, frame, (x, -0.3, z - drawer_height * 0.3), 0.012, "metal", BRASS, segments=6)
+
+    for column, row in holes:
+        x = -0.72 + column * 0.48
+        z = 1.22 + row * 0.4
+        block(b, frame, (x, -0.02, z + 0.17), (0.44, 0.26, 0.02), "wood", DARK_WOOD)
+
+        for spool in range(3):
+            cyl(b, frame, (x - 0.12 + spool * 0.12, -0.04, z), 0.045, 0.12, "paint", generator.choice(GOODS_PALETTE), sides=6)
+
+
+def pressing_stove(b: Builder, frame: Matrix, **options) -> None:
+    """Tailor's pressing stove: a squat cast-iron stove with a pipe to the wall and four flat irons heating on its
+    shelf, a pressing board on trestles beside it with a folded coat and a goose iron."""
+    cyl(b, frame, (-0.45, 0.0, 0.0), 0.3, 0.75, "metal", DARK_IRON, sides=10)
+    cyl(b, frame, (-0.45, 0.0, 0.75), 0.34, 0.06, "metal", DARK_IRON, sides=10)
+    block(b, frame, (-0.45, -0.31, 0.3), (0.2, 0.02, 0.16), "glow_ember")
+    rod(b, frame, (-0.45, 0.05, 0.81), (-0.45, 0.05, 2.1), 0.12, "metal", DARK_IRON)
+    rod(b, frame, (-0.45, 0.05, 2.1), (-0.45, 0.28, 2.3), 0.12, "metal", DARK_IRON)
+
+    for index in range(4):
+        angle = math.radians(index * 90.0 + 45.0)
+        hull_points = [(-0.45 + 0.2 * math.cos(angle) + dx, 0.2 * math.sin(angle) + dy, 0.81 + dz) for dx, dy, dz in itertools.product((-0.06, 0.06), (-0.035, 0.035), (0.0, 0.05))]
+        b.hull(hull_points + [(-0.45 + 0.2 * math.cos(angle) + 0.09, 0.2 * math.sin(angle), 0.82)], "metal", srgb(DARK_IRON), frame=frame)
+
+    for x in (0.2, 0.9):
+        rod(b, frame, (x, -0.15, 0.0), (x, 0.15, 0.85), 0.04, "wood", DARK_WOOD)
+        rod(b, frame, (x, 0.15, 0.0), (x, -0.15, 0.85), 0.04, "wood", DARK_WOOD)
+
+    block(b, frame, (0.55, 0.0, 0.88), (0.95, 0.36, 0.05), "wood_light", WOOD["mel"])
+    block(b, frame, (0.48, 0.0, 0.93), (0.5, 0.3, 0.05), "paint", options.get("tint", "2B3C6E"))
+    block(b, frame, (0.85, 0.02, 0.95), (0.18, 0.08, 0.08), "metal", DARK_IRON)
+
+
+def cloth_bolt_table(b: Builder, frame: Matrix, **options) -> None:
+    """Draper's sale table 1.8 x 0.9: bolts of cloth stacked flat in two piles and one unrolled length draped over
+    the front edge, a measuring yardstick and shears on top."""
+    generator = rng(options)
+    top = 0.8
+
+    for x, y in itertools.product((-0.82, 0.82), (-0.38, 0.38)):
+        block(b, frame, (x, y, top / 2.0), (0.06, 0.06, top), "wood", DARK_WOOD)
+
+    block(b, frame, (0.0, 0.0, top - 0.03), (1.8, 0.9, 0.06), "wood_light", WOOD["mel"])
+    block(b, frame, (0.0, 0.0, 0.18), (1.66, 0.76, 0.03), "wood", DARK_WOOD)
+
+    for pile_x, level in itertools.product((-0.45, 0.4), range(4)):
+        width = 0.62 - level * 0.03
+        block(b, frame, (pile_x, 0.05, top + 0.06 + level * 0.11), (width, 0.5, 0.1), "paint", generator.choice(GOODS_PALETTE))
+
+    cloth = generator.choice(GOODS_PALETTE)
+    block(b, frame, (0.0, -0.2, top + 0.01), (0.5, 0.5, 0.02), "paint", cloth)
+    block(b, frame, (0.0, -0.46, top - 0.3), (0.5, 0.02, 0.6), "paint", cloth)
+    block(b, frame, (0.0, 0.38, top + 0.015), (1.6, 0.04, 0.01), "wood_light", WOOD["mel"])
+
+    for side in (-1, 1):
+        rod(b, frame, (0.55, -0.3, top + 0.02), (0.75, -0.3 + side * 0.05, top + 0.02), 0.012, "metal", SILVER)
+
+
 PROPS = {
+    "haberdashery_drawers": {"build": haberdashery_drawers, "size": (2.06, 0.62, 2.47), "solid": True, "clearance": 0.8},
+    "pressing_stove": {"build": pressing_stove, "size": (2.0, 0.7, 2.35), "solid": True},
+    "cloth_bolt_table": {"build": cloth_bolt_table, "size": (1.8, 0.94, 1.3), "solid": True, "clearance": 0.8},
     "curiosity_cabinet": {"build": curiosity_cabinet, "size": (2.12, 0.56, 3.47), "solid": True, "clearance": 1.0},
     "vitrine_case": {"build": vitrine_case, "size": (1.2, 0.7, 1.47), "solid": True, "clearance": 0.8},
     "armillary_sphere": {"build": armillary_sphere, "size": (1.4, 1.4, 2.3), "solid": True},

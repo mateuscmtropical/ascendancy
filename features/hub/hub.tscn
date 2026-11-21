@@ -1567,7 +1567,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light4" type="OmniLight3D" parent="Shops/Shop03Tailor"]
-position = Vector3(-6.200, 3.050, -15.300)
+position = Vector3(0.000, 3.050, -2.600)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.0
 omni_range = 5.0
@@ -1576,7 +1576,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light5" type="OmniLight3D" parent="Shops/Shop03Tailor"]
-position = Vector3(5.700, 3.050, -15.000)
+position = Vector3(0.000, 3.050, -7.000)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.0
 omni_range = 5.0
@@ -1585,7 +1585,7 @@ distance_fade_begin = 30.0
 distance_fade_length = 10.0
 
 [node name="Light6" type="OmniLight3D" parent="Shops/Shop03Tailor"]
-position = Vector3(0.000, 3.050, -5.000)
+position = Vector3(-6.100, 3.050, -5.200)
 light_color = Color(1.000, 0.702, 0.278, 1)
 light_energy = 1.0
 omni_range = 5.0
@@ -7052,8 +7052,8 @@ animation_offset_seconds = 0.0
 [node name="Shopkeeper03" parent="Townsfolk" instance=ExtResource("117_ext")]
 body_scene = ExtResource("116_ext")
 hair_color = Color(0.620, 0.600, 0.580, 1)
-position = Vector3(-16.000, 0.000, -84.600)
-rotation = Vector3(0.000, 0.000, 0.000)
+position = Vector3(-8.700, 0.000, -74.600)
+rotation = Vector3(0.000, -0.836, 0.000)
 activity = 1
 idle_animation = &"ual1/Idle"
 animation_offset_seconds = 0.0
