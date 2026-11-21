@@ -354,13 +354,13 @@ fov = 75.0
 far = 400.0
 
 [node name="GuildDoor" type="Camera3D" parent="."]
-position = Vector3(87.000, 1.600, -65.000)
+position = Vector3(83.800, 1.600, -65.000)
 rotation = Vector3(0.014, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="GuildInside" type="Camera3D" parent="."]
-position = Vector3(87.000, 1.600, -70.200)
+position = Vector3(83.800, 1.600, -70.200)
 rotation = Vector3(-0.019, -0.000, 0.000)
 fov = 75.0
 far = 400.0
@@ -890,6 +890,78 @@ far = 400.0
 [node name="GeneralFacade" type="Camera3D" parent="."]
 position = Vector3(54.000, 1.600, -60.000)
 rotation = Vector3(0.193, 0.219, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildHall" type="Camera3D" parent="."]
+position = Vector3(83.800, 1.600, -70.000)
+rotation = Vector3(0.000, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildCounter" type="Camera3D" parent="."]
+position = Vector3(86.500, 1.600, -77.000)
+rotation = Vector3(0.038, 0.540, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildGallery" type="Camera3D" parent="."]
+position = Vector3(86.000, 1.600, -74.000)
+rotation = Vector3(0.281, 0.552, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildHearth" type="Camera3D" parent="."]
+position = Vector3(83.000, 1.600, -78.500)
+rotation = Vector3(-0.013, 1.988, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildQuests" type="Camera3D" parent="."]
+position = Vector3(82.500, 1.600, -73.000)
+rotation = Vector3(0.000, -1.363, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildCeiling" type="Camera3D" parent="."]
+position = Vector3(83.800, 1.600, -71.000)
+rotation = Vector3(0.733, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildBank" type="Camera3D" parent="."]
+position = Vector3(95.600, 1.600, -69.800)
+rotation = Vector3(-0.024, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildTellers" type="Camera3D" parent="."]
+position = Vector3(93.000, 1.600, -71.000)
+rotation = Vector3(-0.030, -0.733, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildStrongroom" type="Camera3D" parent="."]
+position = Vector3(96.800, 1.600, -81.600)
+rotation = Vector3(-0.061, 0.185, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildOffice" type="Camera3D" parent="."]
+position = Vector3(84.000, 1.600, -83.000)
+rotation = Vector3(-0.053, 0.927, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildTrophies" type="Camera3D" parent="."]
+position = Vector3(91.500, 1.600, -83.000)
+rotation = Vector3(-0.059, 0.733, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="GuildFacade" type="Camera3D" parent="."]
+position = Vector3(78.000, 1.600, -59.500)
+rotation = Vector3(0.241, -0.635, 0.000)
 fov = 75.0
 far = 400.0
 

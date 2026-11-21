@@ -29,6 +29,10 @@ const GENERAL_SCENE: PackedScene = preload("res://art/town/shops/shop_general.gl
 ## Armazém na origem, no meio da loja: o forro de tábuas tem a face de baixo a 3,97 m.
 const GENERAL_SPOT: Vector3 = Vector3(-3.0, 0.3, -5.0)
 const GENERAL_BOARDS_UNDERSIDE: float = 3.97
+const GUILD_SCENE: PackedScene = preload("res://art/town/shops/shop_guild.gltf")
+## Guilda na origem, embaixo da galeria do salão: a face de baixo do assoalho dela fica a 3,6 m.
+const GUILD_SPOT: Vector3 = Vector3(4.2, 0.3, -12.4)
+const GUILD_GALLERY_UNDERSIDE: float = 3.6
 
 
 func test_camera_stays_under_the_catacomb_ceiling() -> void:
@@ -61,6 +65,12 @@ func test_camera_stays_under_the_store_boards() -> void:
 	assert_lt(
 		camera.global_position.y, GENERAL_BOARDS_UNDERSIDE, "camera under the boarded ceiling"
 	)
+
+
+func test_camera_stays_under_the_guild_gallery() -> void:
+	var camera: Camera3D = await _look_down_in(GUILD_SCENE, Transform3D.IDENTITY, GUILD_SPOT)
+
+	assert_lt(camera.global_position.y, GUILD_GALLERY_UNDERSIDE, "camera under the gallery")
 
 
 func _look_down_in(room_scene: PackedScene, room_transform: Transform3D, spot: Vector3) -> Camera3D:
