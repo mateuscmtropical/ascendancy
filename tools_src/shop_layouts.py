@@ -15,6 +15,7 @@ import orphanage_wing_library
 import orphanage_wing_reading
 import orphanage_wing_school
 import orphanage_wing_seminary
+import tavern_layout
 
 
 def furnish_generic(f) -> None:
@@ -278,68 +279,6 @@ def back_room_b(f, u_from: float, slots_across: int, slots_deep: int, door_on: s
         f.put("screen_post", run_to + SCREEN_HALF_B, front_d)
 
     return {"u_from": run_from, "u_to": run_to, "d_from": front_d + SCREEN_HALF_B}
-
-
-def furnish_tavern(f) -> None:
-    """Tavern and inn (18 m): inn reception and coat pegs by the door on the left, an inglenook (hearth with a
-    hooded breast, settles, spit and rug) on the left wall, a partitioned kitchen behind the bar with its own door,
-    an L bar with kegs and bottles in the back right, wall booths and a stage with bunting on the right wall, long
-    tables and round tables down the middle, the stair to the rooms in the back left."""
-    f.on_wall("left", "fireplace_tall", 9.65)
-    f.on_wall("left", "mounted_head", 9.65, z=0.7)
-    f.grid("wheel_chandelier", (-4.6, 4.6), (5.0, 11.6), 2, 2)
-
-    f.put("bar_counter_l", 4.6, 15.9)
-    f.on_wall("back", "bottle_shelf", 5.4)
-    f.on_wall("back", "keg_rack", 1.6)
-    f.grid("bar_stool", (2.4, 6.6), (14.2, 14.2), 4, 1)
-    f.put("mug_rail", 4.6, 15.9)
-    f.put("ceiling_beam_hooks", 4.6, 14.1, variant="sausages")
-
-    back_room_b(f, -6.69, 3, 2, door_on="right", door_slot=0, variant="lattice")
-    f.on_wall("back", "stone_oven", -5.0)
-    f.on_wall("back", "kitchen_stove", -2.4)
-    f.put("dough_table", -3.6, 16.6)
-    f.put("flour_sacks", -1.3, 17.4)
-    f.put("barrel_group", -5.7, 16.3, 90.0)
-    f.put("hanging_pots", -3.6, 17.6)
-    f.put("garlic_strings", -5.6, 17.8)
-    f.put("ceiling_beam_hooks", -3.6, 15.7, variant="herbs")
-
-    f.on_wall("left", "coat_rack_wall", 1.5)
-    f.on_wall("left", "luggage_pile", 3.4)
-    f.on_wall("left", "reception_desk", 5.5)
-    f.put("stairs_straight", -7.75, 15.6)
-
-    f.put("rug_ornate", -6.1, 9.7, 90.0, variant="red")
-    f.put("spit_roast", -6.6, 9.7, 90.0)
-    f.put("settle_bench", -6.1, 7.9, 180.0)
-    f.put("settle_bench", -6.1, 11.5, 0.0)
-    f.put("armchair", -4.2, 9.7, -90.0)
-    f.put("plant_pot", -4.2, 7.6, variant="fern")
-
-    f.on_wall("right", "menu_board", 1.4)
-    f.on_wall("right", "wainscot", 1.35)
-    f.on_wall("right", "tavern_booth", 3.6)
-    f.on_wall("right", "tavern_booth", 6.0)
-    f.put("stage", 6.9, 9.7, -90.0)
-    f.on_wall("right", "wall_banner", 8.0)
-    f.on_wall("right", "wall_banner", 11.4)
-    f.on_wall("right", "tavern_booth", 12.55)
-    f.on_wall("right", "dart_board", 14.3)
-    f.put("bunting", 6.9, 9.7, 90.0)
-    f.grid("hanging_lantern", (7.4, 7.4), (3.6, 12.55), 1, 3)
-
-    f.put("rug_runner", 0.0, 7.6, variant="red")
-    f.put("tavern_table_set", 0.0, 5.6)
-    f.put("tavern_table_set", 0.0, 9.6)
-    f.put("tavern_table_set", 4.6, 6.2, 90.0)
-    f.put("round_table_set", -4.6, 4.0)
-    f.put("round_table_set", 4.6, 11.4)
-    f.put("round_table_set", -4.4, 13.2)
-    f.put("barrel_table", 0.4, 13.2)
-    f.put("barrel_table", -1.4, 14.0)
-    f.put("plant_pot", 1.7, 3.6, variant="fern")
 
 
 def side_wall(f, side: str, tall: list, low: list, start: float = None, gap: float = 0.35) -> None:
@@ -622,7 +561,7 @@ PLANS = {
         furnish=furnish_smith,
     ),
     "armor": dict(keeper=(0.0, 16.2), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_armor),
-    "tavern": dict(keeper=(5.0, 17.6), furnish=furnish_tavern),
+    "tavern": tavern_layout.PLAN,
     "magic": dict(keeper=(0.0, 15.6), furnish=furnish_magic),
     "alchemy": dict(keeper=(0.0, 15.6), furnish=furnish_alchemy),
     "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),

@@ -30,7 +30,7 @@ from orphanage_wing_common import CORRIDOR  # noqa: E402
 from build_hub_scene import CASARAO_UPPER_FLOOR, SHOP_LOTS, shop_lots, town_lots  # noqa: E402
 from build_town_houses import BRICK, STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
 
-PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground", "shop_props_convent")
+PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground", "shop_props_convent", "shop_props_tavern")
 PLAN_FOLDER = ""  # --plan=<pasta>: grava a planta (pegadas dos móveis) de cada salão mobiliado
 CEILING_SLAB = 0.4
 PIER = 0.6  # parede cheia entre vãos e nos cantos da fachada
@@ -132,7 +132,7 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
         lean_to=(6.2, 11.6, 2.3, 3.9, 3.0),
     ),
     "guild": dict(archetype="palacete", wall="clara", roof="ardosia", accent="vinho", storeys=(7.4, 3.4), roof_shape=("hip", dict(pitch=24.0, eave_front=0.9, eave_back=0.5)), floor="stone", awning=("7A2F3A", "D9A441"), door=(0.0, 3.2, 4.2, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFD9A0"),
-    "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(5.0, 3.0), roof_shape=("gable_parallel", dict(pitch=38.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("7A2F3A", "F2E6CF"), door=(0.0, 2.6, 3.0, "pointed"), features=("half_timber",), jetty=0.35, chimney=dict(u=-7.4, d=9.7, extra=1.2, pots=2), light="FFC27A"),
+    "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(4.0, 3.2), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=None, door=(0.0, 1.8, 2.6, "pointed"), side_window=(1.1, 0.95, 1.7, "flat"), features=("half_timber",), jetty=0.4, chimney=dict(u=-7.6, d=5.5, extra=1.2, pots=2), light="FFC27A", shell="tavern_shell"),  # casa de cômodos: tavern_shell.py, planta em tavern_layout.py
     "armor": dict(archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=("7A2F3A", "D8DCE4"), door=(0.0, 2.4, 3.0, "round"), features=("stone_bands",), light="FFD9A0"),
     "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=("B5533F", "F4EFE6"), door=(0.0, 2.4, 2.9, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
     "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
