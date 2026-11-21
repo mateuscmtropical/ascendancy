@@ -43,12 +43,14 @@ rotation = Vector3(-0.22, 0, 0)
 
 [node name="ShoulderArm" type="SpringArm3D" parent="CameraYaw/CameraPitch"]
 rotation = Vector3(0, 1.5707964, 0)
+collision_mask = 9
 shape = SubResource("camera_probe")
 spring_length = 0.35
 margin = 0.05
 
 [node name="SpringArm3D" type="SpringArm3D" parent="CameraYaw/CameraPitch/ShoulderArm"]
 rotation = Vector3(0, -1.5707964, 0)
+collision_mask = 9
 shape = SubResource("camera_probe")
 spring_length = 4.2
 margin = 0.05

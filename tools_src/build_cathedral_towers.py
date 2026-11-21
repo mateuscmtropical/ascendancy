@@ -159,6 +159,10 @@ def build_flight(frame: TowerFrame, index: int, flight: tuple, materials: dict) 
     slope_normal = Vector((0, 0, 1)) - (ramp_end - ramp_start).normalized() * (ramp_end - ramp_start).normalized().z
     ramp = beam(f"{name}Ramp{frame.tag}-colonly", ramp_start - slope_normal.normalized() * 0.05, ramp_end - slope_normal.normalized() * 0.05, BAND - 0.02, 0.1, None)
     ramp.name = f"{name}Ramp{frame.tag}-colonly"
+    # Só a câmera enxerga (camada "camera", ver tag_ground_surfaces.gd): por baixo o lance desce até a face das pernas.
+    stop_lift = Vector((0, 0, rise / 2.0))
+    stop_start, stop_end = frame.point(*plan(-0.05, 0.0), bottom - 0.12) + stop_lift, frame.point(*plan(RUN + 0.05, 0.0), top - 0.12) + stop_lift
+    beam(f"CameraStop{name}{frame.tag}-colonly", stop_start, stop_end, BAND, 0.26 + rise, None).name = f"CameraStop{name}{frame.tag}-colonly"
     landing_low, landing_high = plan(RUN - TREAD, -BAND / 2.0), plan(RUN + BAND, BAND / 2.0)
     frame.span(f"{name}Landing-colonly", (min(landing_low[0], landing_high[0]), min(landing_low[1], landing_high[1]), top - 0.1), (max(landing_low[0], landing_high[0]), max(landing_low[1], landing_high[1]), top), None)
 
@@ -174,6 +178,7 @@ def build_shaft(frame: TowerFrame, materials: dict) -> None:
 
     for corner_u, corner_v in [(-WELL, -WELL), (-WELL, WELL), (WELL, -WELL), (WELL, WELL)]:
         frame.span(f"Newel{corner_u:+.1f}{corner_v:+.1f}", (corner_u - 0.07, corner_v - 0.07, BASE), (corner_u + 0.07, corner_v + 0.07, floor_top + 1.0), materials["timber_dark"])
+        frame.span(f"CameraStopNewel{corner_u:+.1f}{corner_v:+.1f}-colonly", (corner_u - 0.07, corner_v - 0.07, BASE), (corner_u + 0.07, corner_v + 0.07, floor_top + 1.0), None)
 
     frame.span("WellGuardInner-colonly", (-WELL - 0.03, -WELL, BASE), (-WELL + 0.02, WELL, floor_top - 0.15), None)
     frame.span("WellGuardOuter-colonly", (WELL - 0.02, -WELL, BASE), (WELL + 0.03, WELL, floor_top - 0.15), None)
@@ -364,7 +369,6 @@ def build_attic(materials: dict) -> list:
         make_span(f"{name}Tie", (-eave_inner, truss_y - 0.11, ATTIC_FLOOR), (eave_inner, truss_y + 0.11, tie_top), materials["timber_dark"])
         make_span(f"{name}Tie-colonly", (-eave_inner, truss_y - 0.11, ATTIC_FLOOR), (eave_inner, truss_y + 0.11, tie_top), None)
         make_span(f"{name}Straining", (-QUEEN_POST_X, truss_y - 0.1, queen_top - 0.2), (QUEEN_POST_X, truss_y + 0.1, queen_top), materials["timber_dark"])
-
         for side_sign in (-1, 1):
             rafter_foot = Vector((side_sign * (eave_inner - 0.1), truss_y, roof_underside_height(eave_inner - 0.1) - 0.1))
             rafter_head = Vector((side_sign * 0.12, truss_y, roof_underside_height(0.12) - 0.1))

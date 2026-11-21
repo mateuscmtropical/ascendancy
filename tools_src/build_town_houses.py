@@ -260,6 +260,9 @@ class Opening:
         return [(self.u - half, self.bottom - expand), (self.u + half, self.bottom - expand)] + arc
 
 
+CAMERA_STOP = "CameraStop"  # prefixo dos colisores que só a câmera enxerga (o import os põe na camada "camera")
+
+
 class Builder:
     """Collects the pieces of one building; finish() maps UVs, paints vertex colours and joins them."""
 
@@ -377,6 +380,14 @@ class Builder:
         collider_bmesh.to_mesh(mesh_data)
         collider_bmesh.free()
         bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{name}{self.count}-colonly", mesh_data))
+
+    def camera_stop(self, piece) -> None:
+        """Camera-only copy of a visible piece hanging over a walkway (eave, balcony, awning, arch): the camera arm
+        stops under it, while the player, the NPCs and the navmesh ignore it (see features/audio/tag_ground_surfaces.gd)."""
+        self.count += 1
+        mesh_data = piece.data.copy()
+        mesh_data.materials.clear()
+        bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{CAMERA_STOP}{self.count}-colonly", mesh_data))
 
     def light(self, position: tuple, color: str, energy: float, light_range: float = 7.0, frame: Matrix = None, group: str = "") -> None:
         """group: Godot group of the light node (day_lights lamps are on by day only, see features/sky/day_night_cycle.gd)."""
@@ -810,7 +821,8 @@ def gable_parallel_roof(b: Builder, house: House, pitch: float, eave_front: floa
     rise = (back - front) / 2.0 * math.tan(math.radians(pitch))
     base = house.top - 0.12
 
-    b.side_prism([(front, base), (back, base), ((front + back) / 2.0, base + rise)], -house.limit, house.limit, house.roof_material, house.roof_tint)
+    roof = b.side_prism([(front, base), (back, base), ((front + back) / 2.0, base + rise)], -house.limit, house.limit, house.roof_material, house.roof_tint)
+    b.camera_stop(roof)
 
     return base + rise
 
@@ -825,7 +837,8 @@ def hip_roof(b: Builder, house: House, pitch: float, eave_front: float = 0.4, ea
     middle = (front + back) / 2.0
     corners = [(side_sign * house.limit, edge, base) for side_sign, edge in itertools.product((-1, 1), (front, back))]
 
-    b.hull(corners + [(-ridge_half, middle, base + rise), (ridge_half, middle, base + rise)], house.roof_material, house.roof_tint)
+    roof = b.hull(corners + [(-ridge_half, middle, base + rise), (ridge_half, middle, base + rise)], house.roof_material, house.roof_tint)
+    b.camera_stop(roof)
 
     return base + rise
 
@@ -837,7 +850,8 @@ def gable_street_roof(b: Builder, house: House, pitch: float, eave_back: float =
     base = house.top - 0.12
     front = house.setback + 0.25
 
-    b.prism([(-house.limit, base), (house.limit, base), (0.0, base + rise)], front, house.depth + eave_back, house.roof_material, house.roof_tint)
+    roof = b.prism([(-house.limit, base), (house.limit, base), (0.0, base + rise)], front, house.depth + eave_back, house.roof_material, house.roof_tint)
+    b.camera_stop(roof)
     GABLE_WALLS[gable](b, house, base, rise)
 
     return base + rise
@@ -930,7 +944,8 @@ def flat_parapet_roof(b: Builder, house: House, pitch: float, steps: int = 3) ->
     step_height = 0.45
     step_widths = [house.half * (1.0 - 0.28 * step) for step in range(steps)]
 
-    b.box((-house.half, front, house.top), (house.half, house.depth, slab_top), "trim", house.trim_tint)
+    slab = b.box((-house.half, front, house.top), (house.half, house.depth, slab_top), "trim", house.trim_tint)
+    b.camera_stop(slab)
     b.box((-house.half, house.depth - 0.25, slab_top), (house.half, house.depth, slab_top + 0.6), house.wall_material, house.wall_tint)
 
     for step, step_half in enumerate(step_widths):
@@ -948,7 +963,8 @@ def pavilion_roof(b: Builder, house: House, pitch: float) -> float:
     corners = [(side_sign * house.limit, edge, base) for side_sign, edge in itertools.product((-1, 1), (front, house.depth + 0.1))]
     apex = (0.0, (front + house.depth + 0.1) / 2.0, base + rise)
 
-    b.hull(corners + [apex], house.roof_material, house.roof_tint)
+    roof = b.hull(corners + [apex], house.roof_material, house.roof_tint)
+    b.camera_stop(roof)
     b.cylinder(apex, 0.03, 1.2, 6, "metal", house.iron_tint)
     b.box((apex[0] - 0.25, apex[1] - 0.01, apex[2] + 0.9), (apex[0] + 0.25, apex[1] + 0.01, apex[2] + 1.05), "metal", house.iron_tint)
 
@@ -973,6 +989,7 @@ def iron_balcony(b: Builder, house: House, storey: int = 1) -> None:
     posts = int(2.0 * house.half / 0.14)
 
     b.box((-house.half + 0.1, front - 0.75, z - 0.12), (house.half - 0.1, front, z), "trim", house.trim_tint)
+    b.collider((-house.half + 0.1, front - 0.75, z - 0.12), (house.half - 0.1, front, z + 1.0), name=CAMERA_STOP)
     b.box((-house.half + 0.1, front - 0.75, z + 0.95), (house.half - 0.1, front - 0.7, z + 1.0), "metal", house.iron_tint)
 
     for post in range(posts + 1):
@@ -994,7 +1011,8 @@ def wavy_parapet(b: Builder, house: House) -> None:
     samples = 12
     curve = [(-house.half + 2.0 * house.half * step / samples, house.top + 0.5 + 0.35 * math.sin(math.pi * step / samples) ** 2) for step in range(samples + 1)]
 
-    b.prism([(house.half, house.top), (-house.half, house.top)] + curve, front - 0.05, front + 0.25, house.wall_material, house.wall_tint)
+    parapet = b.prism([(house.half, house.top), (-house.half, house.top)] + curve, front - 0.05, front + 0.25, house.wall_material, house.wall_tint)
+    b.camera_stop(parapet)
     b.cylinder((0.0, front + 0.1, house.top + 0.85), 0.07, 0.15, 8, "trim", house.trim_tint)
     b.sphere((0.0, front + 0.1, house.top + 1.08), 0.12, "trim", house.trim_tint, scale=(1.0, 1.0, 1.4))
 
@@ -1104,6 +1122,7 @@ def wooden_balcony(b: Builder, house: House) -> None:
     honey = srgb(WOOD["mel"])
 
     b.box((-house.half, front - 1.0, z - 0.15), (house.half, front, z), "wood", honey, uv=("band", *WOOD_LIGHT_BAND, 1.5))
+    b.collider((-house.half, front - 1.0, z - 0.15), (house.half, front, z + 1.05), name=CAMERA_STOP)
     b.box((-house.half, front - 1.0, z + 0.95), (house.half, front - 0.92, z + 1.05), "wood", honey, uv=("band", *WOOD_LIGHT_BAND, 1.5))
 
     for board in range(boards):
@@ -1146,7 +1165,8 @@ def deco_fins(b: Builder, house: House) -> None:
 
 def marquee(b: Builder, house: House) -> None:
     """Straight canopy over the shop window (art deco) and a granite base."""
-    b.box((-house.half, house.setback - 1.1, 3.0), (house.half, house.setback, 3.15), "trim", WHITE)
+    canopy = b.box((-house.half, house.setback - 1.1, 3.0), (house.half, house.setback, 3.15), "trim", WHITE)
+    b.camera_stop(canopy)
     draw_base_band(b, house, 0.5, "stone", srgb(STONE["cinza"]))
 
 
@@ -1173,7 +1193,8 @@ def front_garden(b: Builder, house: House) -> None:
 
 def stone_porch(b: Builder, house: House) -> None:
     b.box((-0.9, house.setback - 1.0, 0.0), (0.9, house.setback, 0.12), "stone", srgb(STONE["dourada"]))
-    b.prism([(-1.0, 2.5), (1.0, 2.5), (0.0, 3.3)], house.setback - 1.0, house.setback, house.roof_material, house.roof_tint)
+    porch_roof = b.prism([(-1.0, 2.5), (1.0, 2.5), (0.0, 3.3)], house.setback - 1.0, house.setback, house.roof_material, house.roof_tint)
+    b.camera_stop(porch_roof)
 
     for side_sign in (-1, 1):
         b.box((side_sign * 0.85 - 0.08, house.setback - 0.95, 0.0), (side_sign * 0.85 + 0.08, house.setback - 0.8, 2.5), "stone", srgb(STONE["dourada"]))
@@ -1238,7 +1259,8 @@ def arcade(b: Builder, house: House) -> None:
         u = -house.half + pier + index * (span + pier) + span / 2.0
         arch_band = Opening(u, span, 0.0, spring + span / 2.0, "round")
         crown = [(arch_u, z) for arch_u, z in arch_band.arc()]
-        b.prism([(u + span / 2.0, house.storeys[0]), (u + span / 2.0, spring)] + crown[1:-1] + [(u - span / 2.0, spring), (u - span / 2.0, house.storeys[0])], house.setback, house.setback + 0.5, house.wall_material, house.wall_tint)
+        arch_wall = b.prism([(u + span / 2.0, house.storeys[0]), (u + span / 2.0, spring)] + crown[1:-1] + [(u - span / 2.0, spring), (u - span / 2.0, house.storeys[0])], house.setback, house.setback + 0.5, house.wall_material, house.wall_tint)
+        b.camera_stop(arch_wall)
 
     b.box((-house.half, house.setback + depth, 0.0), (house.half, house.setback + depth + 0.02, 0.02), "stone", srgb(STONE["media"]))
     b.cylinder((0.0, house.setback + 1.0, house.storeys[0] - 0.8), 0.12, 0.35, 6, "glow_amber")
