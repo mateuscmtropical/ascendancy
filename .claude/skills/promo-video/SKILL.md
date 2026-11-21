@@ -21,6 +21,7 @@ Regra do dono: **cada vídeo é novo em história, estilo, música E técnica.**
 | épico | — | — | orquestral épico (`compose_epic_music.py`) — o dono NÃO gostou do estilo |
 | trailer de marketing (`marketing_shots.gd`, `marketing_timeline.py`, `cut_marketing_trailer.py`) | lenda da mula em cold open, cidade, noite, luta | clipes 60 fps + edição ffmpeg no beat, cartelas Cinzel, grade por ato, letterbox, câmera lenta | `compose_marketing_music.py` |
 | "Uma noite em Ascendancy" v1/v2 (`night_take_director.gd`, `night_take_route.gd`) | heroína da praça à cripta e de volta, dia virando noite | plano-sequência sem corte; v2 com câmera em órbita, lanterna | `compose_night_take_music.py` |
+| "Every door opens somewhere" (`doors_director.gd`, `doors_route.gd`, `cut_doors_trailer.py`) | heroína jogada de verdade entrando em cada loja, depois casarão, Saci, catedral, cripta, céu, Mula; mosaico das 8 lojas e guilda por último | gameplay real (PlayerController/PlayerCamera do jogo com teclas injetadas, navmesh), cortes de porta dupla (xfade vertopen), mosaico 4x2, legendas e título em IM FELL English | Google Flow Music ("Cozy Town Trailer", 75 BPM) cortada nos compassos |
 
 Acrescente uma linha aqui a cada vídeo entregue.
 
