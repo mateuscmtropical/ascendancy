@@ -671,6 +671,42 @@ rotation = Vector3(-0.059, -0.397, 0.000)
 fov = 75.0
 far = 400.0
 
+[node name="MagicHall" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -70.500)
+rotation = Vector3(0.019, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicVault" type="Camera3D" parent="."]
+position = Vector3(-34.000, 1.600, -70.800)
+rotation = Vector3(0.526, -0.000, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicWallLeft" type="Camera3D" parent="."]
+position = Vector3(-31.600, 1.600, -75.500)
+rotation = Vector3(0.038, 1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicWallRight" type="Camera3D" parent="."]
+position = Vector3(-36.400, 1.600, -75.500)
+rotation = Vector3(0.038, -1.571, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicSanctum" type="Camera3D" parent="."]
+position = Vector3(-34.800, 1.600, -82.600)
+rotation = Vector3(-0.084, 0.815, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="MagicLibrary" type="Camera3D" parent="."]
+position = Vector3(-32.600, 1.600, -82.500)
+rotation = Vector3(-0.028, -0.785, 0.000)
+fov = 75.0
+far = 400.0
+
 [node name="TavernTaproom" type="Camera3D" parent="."]
 position = Vector3(13.000, 1.600, -69.900)
 rotation = Vector3(-0.036, 0.565, 0.000)

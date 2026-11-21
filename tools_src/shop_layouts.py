@@ -334,56 +334,87 @@ def shelf_island(f, u: float, d: float, variants: tuple) -> None:
     f.put("floor_shelf", u + SHELF_PAIR_OFFSET, d, 90.0, variant=variants[1])
 
 
+MAGIC_CROWN = 5.55  # fecho da abóbada azul da loja de magia (spec vaults): lustres e o crocodilo penduram dele
+
+
 def furnish_magic(f) -> None:
-    """Magic shop: a three-step dais with a summoning circle under floating books in the middle of the nave, a
-    wizards' library on the left (two-tier gallery with a spiral stair, an orrery and floating candles), staff racks,
-    wand cases and bookcases on the right, wands and crystal balls in the windows, a glass counter, and the
-    enchanter's sanctum (partitioned off, arched doorway, enchanting table between rune pillars) at the back right."""
-    f.put("summoning_dais", 0.0, 9.7)
-    f.put("floating_books", 0.0, 9.7)
-    f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 12.4), 2, 2)
-    f.put("rug_ornate", 0.0, 4.6, variant="blue")
-    f.put("crystal_ball_pedestal", 0.0, 5.4)
-    f.put("counter_glass", 0.0, 14.2)
-    f.put("price_board", 1.9, 14.2)
-    f.put("stool_round", 0.9, 16.0)
+    """Magic shop as a cabinet of curiosities (references: Museum Wormianum and Kunstkammer engravings and
+    reconstructions, monastery library halls, globe and instrument galleries). Under a blue star vault with gilded
+    ribs the side walls are lined bay by bay with floor-to-vault curiosity shelving and bookcases, a stuffed
+    crocodile and a planet mobile hang from the vault, the great armillary sphere stands in the middle on a rug
+    between four glass table cases and two celestial globes, and the glass counter closes the hall under the star
+    tapestry. Behind the cross wall: the enchanter's sanctum (summoning dais, rune pillars, enchanting table) on
+    the left and the library (bookcases on the back wall, reading table, orrery, ladder, scroll racks) on the right."""
+    # paredes do salão: um móvel por vão entre as cintas da abóbada
+    for along, name in ((1.8, "curiosity_cabinet"), (5.0, "curiosity_cabinet"), (8.13, "tall_bookcase"), (11.25, "curiosity_cabinet")):
+        f.on_wall("left", name, along, seed=int(along * 10))
 
-    f.put("gallery_stair", f.left + 1.2, 1.5, -70.0)
-    f.on_wall("left", "book_gallery", 4.8, open_end=-1)
-    f.on_wall("left", "book_gallery", 8.96)
-    f.on_wall("left", "tall_bookcase", 12.2)
-    f.on_wall("left", "staff_rack", 14.4)
-    f.put("orrery", -4.9, 8.2)
-    f.put("floating_candles", -4.9, 4.6)
-    f.put("floating_candles", -4.9, 12.6)
-    f.put("celestial_globe", -5.6, 5.6)
-    f.put("giant_hourglass", -5.7, 12.0)
+    for along, name in ((1.8, "curiosity_cabinet"), (5.0, "tall_bookcase"), (8.13, "curiosity_cabinet"), (11.25, "curiosity_cabinet")):
+        f.on_wall("right", name, along, seed=int(along * 10) + 1)
 
-    f.on_wall("back", "tall_bookcase", -7.0)
-    f.on_wall("back", "wand_case", -2.4)
-    f.on_wall("back", "star_tapestry", 0.0)
-    f.on_wall("back", "mage_hat_stand", 1.2)
-    f.put("lectern", -5.2, 16.6)
-    f.put("chest_gold", -3.2, 17.6)
-    f.put("rug_ornate", -5.2, 16.2, 90.0, variant="plum")
+    # meio do salão
+    f.put("rug_ornate", 0.0, 6.5, 90.0, variant="blue")
+    f.put("armillary_sphere", 0.0, 6.5)
 
-    back_room_b(f, f.right - 6.0 - SCREEN_HALF_B, 3, 2, door_on="front", door_slot=1, variant="glazed", doorway="arch", has_right=False)
-    f.put("rug_ornate", 5.55, 17.2, variant="blue")
-    f.put("enchant_table", 5.55, 17.2)
-    f.put("rune_pillar", 3.5, 18.2)
-    f.put("rune_pillar", 7.6, 16.0)
-    f.put("giant_hourglass", 7.5, 18.3)
-    f.on_wall("back", "tall_bookcase", 7.4)
-    f.on_wall("back", "staff_rack", 3.7)
+    for u, d in ((-3.4, 3.6), (3.4, 3.6), (-3.4, 9.4), (3.4, 9.4)):
+        f.put("vitrine_case", u, d, 90.0, seed=int(10 * (u + d)))
 
-    f.wall("right", ["wand_case", "staff_rack", "tall_bookcase", "mage_hat_stand", "wand_case", "scroll_rack", ("wall_shelf", {"variant": "potions"})], start=f.front + 1.6, gap=0.3)
-    f.put("astrolabe", 5.9, 4.4)
-    f.put("mana_crystal_crate", 5.9, 6.4)
-    f.put("crystal_ball_pedestal", 5.9, 8.2)
+    f.put("celestial_globe", -5.6, 6.5)
+    f.put("skeleton_stand", -7.4, 9.7, 70.0)
+    f.put("monster_trophy", -6.2, 12.6, 0.0, variant="horns")
+    f.put("monster_trophy", 6.2, 12.6, 0.0, variant="skull")
+    f.put("celestial_globe", 5.6, 6.5, tint="4A2E7A")
+    f.put("counter_glass", 0.0, 11.1)
+    f.put("world_map_wall", 0.0, 12.58, 0.0, z=2.3)
+    f.put("wand_case", -1.8, 12.35, 0.0)
+    f.put("mage_hat_stand", 2.4, 12.2, 0.0)
 
-    f.wall("front", ["wand_case", ("glowing_jar", {"variant": "green"}), "crystal_ball_pedestal"], start=f.left + 3.4)
-    f.wall("front", [("glowing_jar", {"variant": "pink"}), "wand_case", "crystal_ball_pedestal", ("glowing_jar", {"variant": "cyan"}), "wand_case"], start=f.door_u + 2.0)
-    f.grid("hanging_lantern", (-1.8, 1.8), (2.0, 2.0), 2, 1)
+    f.put("staff_rack", -5.8, 3.4, 90.0)
+    f.put("scroll_rack", 5.8, 3.4, -90.0)
+    f.put("mana_crystal_crate", -5.8, 9.6)
+    f.put("wand_case", 5.8, 9.6, -90.0)
+
+    # vitrine da rua, sob as janelas
+    for u, name in ((-5.1, "crystal_ball_pedestal"), (5.1, "crystal_ball_pedestal"), (-2.0, "giant_hourglass"), (2.0, "astrolabe")):
+        f.put(name, u, 0.8)
+
+    # o que pende da abóbada
+    f.put("hanging_crocodile", 0.0, 3.4, z=MAGIC_CROWN)
+    f.put("planet_mobile", 0.0, 9.0, z=MAGIC_CROWN)
+
+    for u, d in ((-4.6, 3.4), (4.6, 3.4), (-4.6, 9.6), (4.6, 9.6)):
+        f.put("floating_candles", u, d, z=MAGIC_CROWN - 0.6)
+
+    # santuário do encantador (fundo à esquerda)
+    f.put("summoning_dais", -4.0, 16.4)
+    f.put("floating_books", -4.0, 16.4, z=MAGIC_CROWN - 0.4)
+    f.put("rune_pillar", -7.6, 14.0)
+    f.put("rune_pillar", -7.6, 18.5)
+    f.put("rune_pillar", -0.4, 18.5)
+    f.put("enchant_table", -0.9, 14.4, -90.0)
+    f.on_wall("back", "star_tapestry", -4.0)
+    f.put("lectern", -7.4, 16.3, 90.0)
+    f.put("candle_stand", -2.4, 18.6)
+    f.put("candle_stand", -5.6, 18.6)
+    f.put("scroll_rack", 0.25, 16.6, -90.0)
+    f.put("glowing_jar", -7.9, 15.0, variant="cyan")
+    f.on_wall("left", "star_tapestry", 16.3)
+
+    # biblioteca (fundo à direita)
+    for along in (1.9, 7.2):
+        f.on_wall("back", "tall_bookcase", along, seed=int(along * 10))
+
+    f.put("reading_table", 4.4, 15.4, 0.0)
+    f.put("study_chair", 3.8, 14.6, 180.0)
+    f.put("study_chair", 5.0, 16.2, 0.0)
+    f.put("orrery", 7.0, 14.3)
+    f.put("tall_bookcase_slim", 0.95, 16.9, 90.0)
+    f.put("book_cart", 2.4, 17.6, 0.0)
+    f.put("globe_stand", 2.2, 14.0)
+    f.put("rolling_ladder", 7.8, 18.1, -90.0)
+    f.on_wall("right", "scroll_rack", 14.0)
+    f.on_wall("right", "card_catalog", 16.2)
+    f.put("floating_candles", 4.4, 15.4, z=MAGIC_CROWN - 0.6)
 
 
 def furnish_tailor(f) -> None:
@@ -538,7 +569,11 @@ PLANS = {
         furnish=furnish_armor,
     ),
     "tavern": tavern_layout.PLAN,
-    "magic": dict(keeper=(0.0, 15.6), furnish=furnish_magic),
+    "magic": dict(
+        keeper=(0.0, 11.9), posts=(),
+        partitions=(("d", 12.83, -8.55, 8.55, dict(doors=[dict(at=-4.0, width=1.8, height=2.8), dict(at=4.6, width=1.6, height=2.6)])), ("u", 0.6, 12.98, 19.1)),
+        furnish=furnish_magic,
+    ),
     "alchemy": alchemy_layout.PLAN,
     "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),
     "general": dict(keeper=(-1.0, 15.6), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_general),
