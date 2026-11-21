@@ -12,9 +12,10 @@ const CRYPT_TRANSFORM: Transform3D = Transform3D(
 )
 const CATACOMB_SPOT: Vector3 = Vector3(-7.5, -4.6, -3.5)
 const CATACOMB_CEILING: float = -2.35
-## Ferreiro na origem: forro a 4,8 m e as vigas descendo 0,42 m.
+## Ferreiro na origem: a oficina tem o telhado à vista; o tirante das tesouras tem a face de
+## baixo a 4,03 m.
 const SMITH_SPOT: Vector3 = Vector3(0.0, 0.3, -9.0)
-const SMITH_BEAM_UNDERSIDE: float = 4.38
+const SMITH_BEAM_UNDERSIDE: float = 4.03
 
 
 func test_camera_stays_under_the_catacomb_ceiling() -> void:

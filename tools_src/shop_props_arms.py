@@ -1742,7 +1742,75 @@ def armor_stand_row_a(b: Builder, frame: Matrix, **options) -> None:
 # @@NEW
 
 
+def iron_stock_rack(b: Builder, frame: Matrix, **options) -> None:
+    """Rack of iron stock: two trestles with three rails and round and square bars of every length leaning in it."""
+    generator = random.Random(options.get("seed", 3))
+    wood = WOOD["escura"]
+
+    for x in (-0.75, 0.75):
+        plank(b, frame, (x - 0.05, 0.1, 0.0), (x + 0.05, 0.2, 1.9), wood)
+        plank(b, frame, (x - 0.05, -0.28, 0.0), (x + 0.05, -0.18, 0.25), wood)
+        b.beam((x, -0.23, 0.22), (x, 0.15, 1.6), 0.08, 0.08, "wood", srgb(wood), frame=frame)
+
+    for z in (0.5, 1.15, 1.75):
+        plank(b, frame, (-0.85, 0.1, z - 0.04), (0.85, 0.2, z + 0.04), WOOD["media"])
+
+    for index in range(22):
+        x = -0.68 + 1.36 * index / 21 + generator.uniform(-0.02, 0.02)
+        top = generator.uniform(1.2, 2.3)
+        foot = generator.uniform(-0.25, -0.12)
+        thickness = generator.choice((0.022, 0.03, 0.04))
+        tint = generator.choice((IRON_DARK, "5A5466", "6E6878", "3E3A48"))
+        b.beam((x, foot, 0.02), (x + generator.uniform(-0.03, 0.03), 0.12, top), thickness, thickness, "metal", srgb(tint), frame=frame)
+
+
+def horseshoe(b: Builder, frame: Matrix, center: tuple, size: float, tint: str) -> None:
+    """One horseshoe hung by its toe on a nail, opening down."""
+    x, z = center
+    steel = srgb(tint)
+
+    b.beam((x - size, -0.03, z - size * 1.1), (x - size * 0.75, -0.03, z + size * 0.55), 0.025, size * 0.45, "metal", steel, frame=frame)
+    b.beam((x + size, -0.03, z - size * 1.1), (x + size * 0.75, -0.03, z + size * 0.55), 0.025, size * 0.45, "metal", steel, frame=frame)
+    b.beam((x - size * 0.8, -0.03, z + size * 0.5), (x + size * 0.8, -0.03, z + size * 0.5), 0.025, size * 0.45, "metal", steel, frame=frame)
+    box(b, frame, (x - 0.008, -0.06, z + size * 0.72), (x + 0.008, 0.0, z + size * 0.78), "metal", IRON_DARK)
+
+
+def horseshoe_board(b: Builder, frame: Matrix, **options) -> None:
+    """Farrier's board on the wall: rows of new horseshoes on nails by size, a rasp and pincers hung at the end."""
+    generator = random.Random(options.get("seed", 5))
+    spots = list(itertools.product(range(4), range(7)))
+
+    plank(b, frame, (-0.75, 0.0, 0.6), (0.75, 0.06, 1.85), WOOD["media"])
+    plank(b, frame, (-0.8, -0.02, 1.85), (0.8, 0.08, 1.92), WOOD["escura"])
+
+    for row, column in spots:
+        size = 0.06 + 0.012 * (3 - row)
+        horseshoe(b, frame, (-0.6 + column * 0.17, 0.78 + row * 0.3), size, generator.choice((STEEL_DARK, IRON_DARK, "6E6878")))
+
+    tongs(b, place(frame, (0.66, -0.06, 1.2), (0.0, 0.0, 0.0)), 0.45)
+
+
+def wagon_wheel_lean(b: Builder, frame: Matrix, **options) -> None:
+    """A spoked cart wheel waiting for its new iron tyre, leaning on the wall."""
+    radius = options.get("radius", 0.62)
+    lean = place(frame, (0.0, -0.12, radius + 0.02), (0.0, -12.0, 0.0))
+    rim = [(radius * math.cos(2.0 * math.pi * index / 14), radius * math.sin(2.0 * math.pi * index / 14)) for index in range(15)]
+    wood = srgb(WOOD["media"])
+
+    for (x_from, z_from), (x_to, z_to) in zip(rim, rim[1:]):
+        b.beam((x_from, 0.0, z_from), (x_to, 0.0, z_to), 0.07, 0.08, "wood", wood, frame=lean)
+
+    for index in range(12):
+        angle = 2.0 * math.pi * index / 12
+        b.beam((0.0, 0.0, 0.0), (radius * 0.95 * math.cos(angle), 0.0, radius * 0.95 * math.sin(angle)), 0.035, 0.04, "wood", wood, frame=lean)
+
+    b.cylinder((0.0, -0.12, 0.0), 0.11, 0.24, 10, "wood", srgb(WOOD["escura"]), frame=lean, axis="Y")
+
+
 PROPS = {
+    "iron_stock_rack": {"build": iron_stock_rack, "size": (1.7, 0.6, 2.3), "solid": True},
+    "horseshoe_board": {"build": horseshoe_board, "size": (1.6, 0.12, 1.92), "solid": False},
+    "wagon_wheel_lean": {"build": wagon_wheel_lean, "size": (1.4, 0.45, 1.3), "solid": True},
     "forge": {"build": forge, "size": (2.0, 1.7, 4.5), "solid": True, "clearance": 1.5, "light": ((0.0, -0.25, 1.3), "FF8A3A", 3.0, 7.0)},
     "bellows": {"build": bellows, "size": (1.2, 0.5, 0.5), "solid": True},
     "anvil_block": {"build": anvil_block, "size": (0.8, 0.6, 0.95), "solid": True},

@@ -1,7 +1,7 @@
 extends GutTest
 
 const HOUSE_MODEL: PackedScene = preload("res://art/town/houses/sobrado_w10_0.gltf")
-const SHOP_MODEL: PackedScene = preload("res://art/town/shops/shop_smith.gltf")
+const SHOP_MODEL: PackedScene = preload("res://art/town/shops/shop_library.gltf")
 const SHOP_INTERIOR_MODEL: PackedScene = preload("res://art/town/shops/shop_magic_interior.gltf")
 const FURNITURE_GLASS_NAME: String = "M_TownVitrine"
 

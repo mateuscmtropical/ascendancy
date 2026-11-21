@@ -103,72 +103,83 @@ def furnish_guild(f) -> None:
 
 
 def furnish_smith(f) -> None:
-    """Blacksmith (24 m): the sales hall on the left (panelled walls, a showpiece plinth on a rug by the lane, weapons
-    on every wall, a barred stock alcove behind the counter) and the forge yard on the right behind a stone partition
-    with an arched doorway: hearth on slate flags at the back wall, anvils, quench barrel, grindstone, a workbench with
-    a vise and tool racks hanging from the beams; the yard is open to the street."""
-    f.on_wall("back", "forge", 8.2)
-    f.put("forge_floor_a", 7.4, 16.9)
-    f.put("hanging_lantern", -5.0, 5.0)
-    f.put("hanging_lantern", -5.0, 11.8)
-    f.put("doorway_lintel_a", 3.1, 13.3, 90.0, width=2.0, height=f.ceiling)
+    """Blacksmith after the stone smithies of the references (ascendancy-refs/lojas/smith): the shop room by the street
+    door (counter, weapons on the walls, armour on stands), the workshop under the open roof with two brick forges on
+    the back wall (bellows, an anvil on a stump before each, slack tubs, tongs on the wall), the long vice bench, the
+    iron stock rack and the grindstone, the shoeing corner behind the open bay, and the store room for coal and iron."""
+    # loja (u -11,7..-3,55, d 0,3..11,05)
+    f.put("counter_till", -7.4, 8.2)
+    f.put("rug", -7.4, 4.6, variant="red")
+    f.put("masterwork_plinth_a", -9.9, 4.4)
+    f.put("display_table", -5.3, 3.4, 0.0, variant="daggers")
+    f.put("armor_stand_a", -10.9, 1.2, 30.0, variant="plate")
+    f.put("armor_stand_a", -10.9, 9.9, 140.0, variant="mail")
+    f.put("shield_wall", -9.6, 10.92)
+    f.put("giant_sword", -5.0, 10.95)
+    f.put("sword_wall", -3.75, 2.2, -90.0, seed=2)
+    f.put("axe_mace_rack", -3.85, 8.4, -90.0)
+    f.on_wall("left", "spear_rack", 5.7)
+    f.on_wall("left", "boots_rack", 3.5)
+    f.on_wall("left", "gauntlet_basket", 7.85)
+    f.put("hanging_lantern", -7.4, 3.2)
+    f.put("hanging_lantern", -7.4, 7.4)
 
-    for along in [1.4 + 2.0 * index for index in range(9)]:
-        f.on_wall("left", "wainscot_a", along)
+    # depósito (u -11,7..-3,55, d 11,35..19,7): carvão, ferro, sucata
+    f.on_wall("back", "coal_pile", -9.6)
+    f.on_wall("back", "ingot_crates", -6.4)
+    f.on_wall("left", "iron_stock_rack", 15.0)
+    f.put("barrel_group", -5.0, 12.4)
+    f.put("crate_stack", -10.6, 12.3)
+    f.put("plate_pile", -7.2, 14.6)
+    f.put("hanging_lantern", -7.6, 15.4)
 
-    f.wall("back", ["wainscot_a"] * 7, start=f.left, gap=0.0)
+    # oficina: as duas forjas no fundo, cada uma com fole, bigorna, tina e ferramentas
+    for forge_u in (0.0, 6.2):
+        f.on_wall("back", "forge", forge_u)
+        f.put("bellows", forge_u - 1.6, 18.7, -70.0)
+        f.put("anvil_block", forge_u + 0.2, 16.6, 15.0)
+        f.put("quench_barrel", forge_u + 1.6, 17.4)
+        f.put("hanging_tool_rack_a", forge_u, 15.2)
 
-    for along in (9.5, 15.3, 17.3):
-        f.put("wainscot_a", 2.88, along, -90.0)
+    f.on_wall("back", "tool_wall_rack", 3.1)
+    f.on_wall("back", "tool_wall_rack", 9.4)
+    f.on_wall("back", "coal_pile", -2.2)
+    f.put("anvil_block", 3.2, 12.6, -25.0)
+    f.on_wall("right", "workbench_vise_a", 9.4)
+    f.on_wall("right", "workbench_vise_a", 12.6)
+    f.on_wall("right", "tool_wall_rack", 15.6)
+    f.on_wall("right", "tool_wall_rack", 9.4, z=1.25)
+    f.on_wall("right", "tool_wall_rack", 12.6, z=1.25)
+    f.on_wall("right", "hanging_tool_rack_a", 4.6, z=1.6)
+    f.put("tool_wall_rack", -3.15, 11.6, 90.0, z=1.25)
+    f.put("tool_wall_rack", -3.15, 6.8, 90.0)
+    f.put("tool_wall_rack", -3.15, 17.6, 90.0)
+    f.on_wall("right", "wagon_wheel_lean", 6.6)
+    f.put("iron_stock_rack", -2.85, 8.6, 90.0)
+    f.put("grindstone", 2.6, 8.4, 90.0)
+    f.put("weapon_barrel", 0.6, 11.2)
+    f.put("workbench_vise_a", -2.8, 11.6, 90.0)
+    f.put("tool_wall_rack", -3.15, 2.2, 90.0)
+    f.put("plans_table", 0.4, 6.4, 0.0)
+    f.put("ceiling_beam_hooks", 3.1, 13.6, 90.0)
+    f.put("hanging_lantern", 3.1, 16.0)
+    f.put("hanging_lantern", 3.1, 8.6)
+    f.put("plate_pile", 4.7, 14.2)
+    f.put("barrel_group", -2.3, 18.6)
+    f.put("crate_stack", 11.0, 18.6)
+    f.put("anvil_block", 1.4, 10.4, 40.0)
+    f.put("quench_barrel", 0.2, 9.4)
+    f.put("weapon_barrel", 5.6, 10.6)
 
-    # sales hall: counter, lane, showpiece
-    f.put("counter_till", -5.0, 14.0)
-    f.put("rug", -5.0, 11.4, variant="gold")
-    f.put("rug", -2.4, 5.0, variant="red")
-    f.put("masterwork_plinth_a", -2.4, 5.0)
-    f.wall("back", ["shield_wall", ("sword_wall", {"seed": 2}), "helmet_shelf", "giant_sword"], start=-7.0, gap=0.4)
-    window_wall(f, "left", [[("armor_stand_a", {"variant": "knight_gold"})], [("armor_stand_a", {"variant": "plate"}), ("armor_stand_a", {"variant": "mail"})], [("wall_shelf", {"variant": "helmets"})], ["spear_rack", ("armor_stand_a", {"variant": "leather"})]], ["boots_rack", "crate_stack", "gauntlet_basket", None], gap=0.5)
-    f.put("floor_shelf", -8.4, 10.8, 90.0, variant="tools")
-    f.put("floor_shelf", -1.6, 10.8, 90.0, variant="helmets")
-    f.put("armor_stand_a", -8.9, 3.6, 20.0, variant="plate")
-    f.put("axe_mace_rack", -8.9, 5.6, 90.0)
-    f.put("ingot_crates", 0.8, 3.0)
-    f.put("weapon_barrel", 2.2, 5.8)
-    f.put("blade_shelf", 2.6, 10.6, -90.0)
-    f.put("spear_rack", 2.7, 16.6, -90.0)
-    f.put("plans_table", 1.3, 18.0, -90.0)
-    f.grid("wheel_chandelier", (-8.4, -1.6), (5.0, 12.0), 2, 2)
+    # canto de ferrar atrás do vão aberto
+    f.on_wall("right", "horseshoe_board", 2.6)
+    f.put("ingot_crates", 7.4, 4.2)
+    f.put("coal_pile", 10.6, 4.9, 180.0)
 
-    # stock alcove behind bars in the back left corner
-    f.put("timber_screen_a", -10.5, 17.0, 0.0, variant="bars")
-    f.put("timber_screen_a", -8.5, 17.0, 0.0, variant="bars")
-    f.wall("back", [("wall_shelf", {"variant": "tools"}), ("wall_shelf", {"variant": "boxes"})], start=-11.4, gap=0.1)
-    f.put("crate_stack", -10.3, 17.95, 0.0)
-    f.put("barrel_group", -8.5, 17.95, 0.0)
-    f.put("display_table", -9.8, 7.9, variant="daggers")
-    f.put("display_table", -2.0, 1.8, 0.0, variant="ingots")
-
-    # forge yard
-    f.put("bellows", 6.0, 17.5, -20.0)
-    f.put("anvil_block", 7.0, 15.2, 30.0)
-    f.put("quench_barrel", 9.6, 15.2)
-    f.put("grindstone", 5.2, 11.6, 90.0)
-    f.on_wall("right", "workbench_vise_a", 11.9)
-    f.on_wall("right", "coal_pile", 17.0)
-    f.on_wall("right", "tool_wall_rack", 13.9)
-    f.on_wall("right", "ingot_crates", 8.4)
-    f.put("hanging_tool_rack_a", 7.4, 12.0)
-    f.put("hanging_tool_rack_a", 8.8, 6.0)
-    f.put("barrel_group", 10.4, 4.6)
-    f.put("crate_stack", 10.6, 6.6)
-    f.put("anvil_block", 7.8, 3.4, -20.0)
-    f.put("weapon_barrel", 5.4, 3.2)
-    f.put("ceiling_beam_hooks", 5.0, 8.0, 90.0)
-    f.put("forge_floor_a", 8.0, 7.2)
-    f.put("coal_pile", 5.6, 7.4, 90.0)
-    f.put("plate_pile", 4.8, 4.6)
-    f.put("grindstone", 9.8, 9.6, -90.0)
-
+    # debaixo do telheiro, na calçada: bigorna de ferrar e tina
+    f.put("anvil_block", 7.6, -1.1, 20.0)
+    f.put("quench_barrel", 10.8, -0.9)
+    f.put("wagon_wheel_lean", 5.0, 0.0, 180.0)
 
 def furnish_armor(f) -> None:
     """Armourer (17 m): the showroom behind the shop windows with mannequins on both sides of a red lane, a fitting
@@ -604,7 +615,12 @@ PLANS = {
     "school": orphanage_wing_school.PLAN,
     "seminary": orphanage_wing_seminary.PLAN,
     "guild": dict(keeper=(0.0, 17.3), partitions=(("d", 12.0, 6.2, 11.55), ("u", 6.2, 14.2, 19.1)), furnish=furnish_guild),
-    "smith": dict(keeper=(-5.0, 15.6), posts=((-8.4, 7.0), (-1.6, 7.0), (-8.4, 13.4), (-1.6, 13.4)), partitions=(("u", 3.1, 8.5, 12.3), ("u", 3.1, 14.3, 19.1)), furnish=furnish_smith),
+    "smith": dict(
+        keeper=(-7.4, 9.4), posts=(),
+        partitions=(("u", -3.4, 0.3, 19.7, dict(doors=[dict(at=4.6, width=1.6, height=2.6), dict(at=15.2, width=1.8, height=2.6)])), ("d", 11.2, -11.7, -3.55)),
+        wood_floors=((-11.7, -3.55, 0.3, 11.05),), stone_floors=((-3.25, 11.7, 13.2, 19.7), (6.1, 11.7, 0.3, 5.4)),
+        furnish=furnish_smith,
+    ),
     "armor": dict(keeper=(0.0, 16.2), partitions=(("u", 3.5, 12.3, 14.3), ("u", 3.5, 16.3, 19.1)), furnish=furnish_armor),
     "tavern": dict(keeper=(5.0, 17.6), furnish=furnish_tavern),
     "magic": dict(keeper=(0.0, 15.6), furnish=furnish_magic),
