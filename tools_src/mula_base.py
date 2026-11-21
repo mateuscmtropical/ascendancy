@@ -27,7 +27,7 @@ FORWARD_SHIFT = -0.149  # knees and hocks of the mesh on the knee and hock joint
 NECK_BASE_METRES = Vector((0.0, -0.5, 1.28))
 NECK_MOUTH_METRES = Vector((0.0, -0.78, 1.56))
 NECK_SWELL_START, NECK_SWELL_END = -0.25, 0.0  # metres along the axis where the neck grows into a tree trunk
-NECK_SWELL_SIDEWAYS, NECK_SWELL_DEPTH = 0.5, 0.15
+NECK_SWELL_SIDEWAYS, NECK_SWELL_DEPTH = 0.3, 0.15
 NECK_TOP_SWELL = 0.4  # share of the sideways swell left at the mouth: the trunk tapers
 NECK_RAISE = math.radians(8.0)  # the model carries its neck at 45 degrees, the mula a little higher
 NECK_LENGTHEN = 1.0
@@ -47,6 +47,35 @@ LEG_MUSCLE_REACH = (0.16, 0.3)  # metres from the axis: full swell within the fi
 # Joints of the left legs on the source mesh (metres): where the leg leaves the trunk, knee or hock, hoof.
 FRONT_JOINTS = (Vector((0.107, -0.40, 0.92)), Vector((0.107, -0.44, 0.50)), Vector((0.107, -0.50, 0.03)))
 HIND_JOINTS = (Vector((0.141, 0.45, 0.92)), Vector((0.141, 0.68, 0.55)), Vector((0.141, 0.60, 0.03)))
+# The fore legs take the girth of the hind legs: hind over fore half-width (outer, inner, back, front), measured on the
+# source mesh (muscles included) in 24 steps from the hoof (0) to where the leg leaves the trunk (1), knee at 0.5.
+HIND_GIRTH_ON_FORE = (
+    (1.16, 0.90, 1.35, 0.90),
+    (1.20, 0.93, 1.31, 0.90),
+    (1.23, 0.97, 1.24, 0.90),
+    (1.30, 1.03, 1.25, 0.90),
+    (1.31, 1.04, 1.26, 0.93),
+    (1.27, 1.03, 1.29, 0.97),
+    (1.17, 0.99, 1.29, 1.04),
+    (1.10, 0.95, 1.28, 1.13),
+    (1.07, 0.91, 1.23, 1.29),
+    (1.10, 0.91, 1.12, 1.50),
+    (1.10, 0.91, 1.03, 1.68),
+    (1.28, 0.95, 0.97, 1.78),
+    (1.48, 1.16, 0.99, 1.80),
+    (1.65, 1.40, 1.00, 1.78),
+    (1.61, 1.55, 1.03, 1.69),
+    (1.45, 1.55, 1.09, 1.53),
+    (1.28, 1.55, 1.21, 1.36),
+    (1.15, 1.56, 1.37, 1.24),
+    (1.10, 1.45, 1.51, 1.19),
+    (1.12, 1.28, 1.35, 1.15),
+    (1.09, 1.17, 1.14, 1.06),
+    (1.07, 1.19, 0.91, 0.97),
+    (1.04, 1.41, 0.97, 0.91),
+    (1.04, 1.52, 1.00, 0.92),
+)
+HIND_GIRTH_FADE = (0.75, 0.9)  # share of the fore leg: full hind girth below the first, none above the second (chest)
 GIRDLE_X = 0.035  # the short bone that carries each leg starts this far from the middle plane
 FOOT_LENGTH = 0.2
 
@@ -70,9 +99,42 @@ def muscled(position: Vector) -> Vector:
     return filled
 
 
+def hind_girth_ratios(share: float) -> tuple:
+    """(outer, inner, back, front) girth ratios at a share of the fore leg, between the measured steps."""
+    steps = len(HIND_GIRTH_ON_FORE)
+    place = min(steps - 1.0, max(0.0, share * steps - 0.5))
+    below = int(place)
+    above = min(steps - 1, below + 1)
+
+    return tuple(low + (high - low) * (place - below) for low, high in zip(HIND_GIRTH_ON_FORE[below], HIND_GIRTH_ON_FORE[above]))
+
+
+def with_hind_girth(position: Vector) -> Vector:
+    """A point of a fore leg pushed out from the leg axis to the girth of the hind leg at the same share of the leg."""
+    top, knee, hoof = FRONT_JOINTS
+    side = 1.0 if position.x > 0.0 else -1.0
+
+    if position.y >= 0.0 or not hoof.z < position.z < top.z:
+        return position
+
+    is_lower = position.z < knee.z
+    span = (position.z - hoof.z) / (knee.z - hoof.z) if is_lower else (position.z - knee.z) / (top.z - knee.z)
+    on_axis = hoof.lerp(knee, span) if is_lower else knee.lerp(top, span)
+    share = span * 0.5 if is_lower else 0.5 + span * 0.5
+    away_x, away_y = position.x - on_axis.x * side, position.y - on_axis.y
+    outer, inner, back, front = hind_girth_ratios(share)
+    across = (away_x * away_x + away_y * away_y) ** 0.5
+    near = min(1.0, max(0.0, (LEG_MUSCLE_REACH[1] - across) / (LEG_MUSCLE_REACH[1] - LEG_MUSCLE_REACH[0])))
+    low = min(1.0, max(0.0, (HIND_GIRTH_FADE[1] - share) / (HIND_GIRTH_FADE[1] - HIND_GIRTH_FADE[0])))
+    ratio_x = outer if away_x * side > 0.0 else inner
+    ratio_y = back if away_y > 0.0 else front
+
+    return Vector((position.x + away_x * (ratio_x - 1.0) * near * low, position.y + away_y * (ratio_y - 1.0) * near * low, position.z))
+
+
 def to_pack_units(position: Vector) -> Vector:
     """A point of the source mesh (metres) with its legs muscled and its neck swollen, in pack units."""
-    position = muscled(position)
+    position = with_hind_girth(muscled(position))
     axis = (NECK_MOUTH_METRES - NECK_BASE_METRES).normalized()
     along = (position - NECK_BASE_METRES).dot(axis)
     swell = min(1.0, max(0.0, (along - NECK_SWELL_START) / (NECK_SWELL_END - NECK_SWELL_START))) if position.y < 0.0 else 0.0
