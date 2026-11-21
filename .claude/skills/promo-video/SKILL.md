@@ -21,7 +21,7 @@ Regra do dono: **cada vídeo é novo em história, estilo, música E técnica.**
 | épico | — | — | orquestral épico (`compose_epic_music.py`) — o dono NÃO gostou do estilo |
 | trailer de marketing (`marketing_shots.gd`, `marketing_timeline.py`, `cut_marketing_trailer.py`) | lenda da mula em cold open, cidade, noite, luta | clipes 60 fps + edição ffmpeg no beat, cartelas Cinzel, grade por ato, letterbox, câmera lenta | `compose_marketing_music.py` |
 | "Uma noite em Ascendancy" v1/v2 (`night_take_director.gd`, `night_take_route.gd`) | heroína da praça à cripta e de volta, dia virando noite | plano-sequência sem corte; v2 com câmera em órbita, lanterna | `compose_night_take_music.py` |
-| "Every door opens somewhere" (`doors_director.gd`, `doors_route.gd`, `cut_doors_trailer.py`) | heroína jogada de verdade entrando em cada loja, depois casarão, Saci, catedral, cripta, céu, Mula; mosaico das 8 lojas e guilda por último | gameplay real (PlayerController/PlayerCamera do jogo com teclas injetadas, navmesh), cortes de porta dupla (xfade vertopen), mosaico 4x2, legendas e título em IM FELL English | Google Flow Music ("Cozy Town Trailer", 75 BPM) cortada nos compassos |
+| "Every door opens somewhere" (`doors_director.gd`, `doors_route.gd`, `cut_doors_trailer.py`) | heroína jogada de verdade entrando em cada loja, depois casarão, Saci, catedral, cripta, céu, Mula; mosaico das 8 lojas e guilda por último | gameplay real (PlayerController/PlayerCamera do jogo com teclas injetadas, navmesh), cortes de porta dupla (xfade vertopen), mosaico 4x2, legendas e título em IM FELL English | Google Flow Music ("Cozy Town Trailer", 75 BPM) cortada nos compassos. v2: câmera atrás dela vendo o lugar e olhar em volta ao chegar ("sweep"), gráficos no máximo, título sem frase embaixo, entrega completa + comprimida |
 
 Acrescente uma linha aqui a cada vídeo entregue.
 
@@ -44,7 +44,12 @@ Acrescente uma linha aqui a cada vídeo entregue.
 - Extrair quadros a cada 1–3 s (e a cada 0,2 s nas curvas e passagens estreitas), montar folha e olhar: câmera dentro de parede/laje, heroína tapada, morador na frente da lente, aviso de UI, objeto flutuando.
 - Corrigir e regravar; contar ao dono o que sobrou de defeito.
 
+## Câmera, título e gráficos (pedidos do dono)
+- Mostrando lugares, a câmera vai atrás dela vendo o que ela vê (não de lado nem de frente); dentro, o olhar passeia pelo lugar como quem contempla.
+- Título no fim só com o nome do jogo: nada de frase de efeito embaixo.
+- Gravar com os gráficos no máximo (a cena de gravação não lê o settings.cfg do jogador; o diretor força pelo GameSettings).
+
 ## Entrega
-- Um arquivo `.mp4` em `C:\Users\mateu\Downloads\jogo\`, 1080p, < 98 MB (alvo ~85–90 MB, `-b:v` ~8–9 Mbps, preset slow), nome descritivo.
+- Dois `.mp4` em `C:\Users\mateu\Downloads\jogo\`, 1080p, nome descritivo: um em qualidade total (`<nome>_full.mp4`, CRF ~12, sem limite de tamanho) e um comprimido < 98 MB (alvo ~85–90 MB, `-b:v` ~8–9 Mbps, preset slow).
 - Apagar o .avi bruto e as pastas de conferência depois.
 - Commitar só os scripts do vídeo (diretor, roteiro, música) na branch do vídeo; nunca o shader do céu emprestado.
