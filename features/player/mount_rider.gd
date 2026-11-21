@@ -8,6 +8,7 @@ var is_flying: bool = false
 var stance: PlayerController.Stance = PlayerController.Stance.IDLE
 
 var _turbo_seconds_left: float = 0.0
+var _heading: float = 0.0
 var _last_tap_seconds: Dictionary[StringName, float] = {}
 var _body: PlayerController
 var _model: CharacterModel
@@ -30,25 +31,27 @@ func _init(
 ## Sobe na mula: o corpo vai para o lugar dela e daí em diante guia a mula (ver advance).
 func start(new_mount: MulaSemCabeca) -> void:
 	mount = new_mount
+	mount.has_rider = true
 	is_flying = false
 	stance = PlayerController.Stance.AIRBORNE
 	_camera.lift = RideTuning.CAMERA_LIFT
 	_body.global_position = new_mount.global_position
-	_model.global_rotation.y = new_mount.global_rotation.y
+	_heading = new_mount.global_rotation.y
 
 
 ## Desce pela esquerda da mula, que fica parada onde está.
 func stop() -> void:
-	var side_step: Vector3 = _model.global_basis.x * RideTuning.DISMOUNT_SIDE_OFFSET
+	var side_step: Vector3 = Basis(Vector3.UP, _heading).x * RideTuning.DISMOUNT_SIDE_OFFSET
 
 	mount.is_airborne = false
+	mount.has_rider = false
 	mount.set_turbo(false)
 	mount.play_animation(MulaSemCabeca.IDLE_ANIMATION)
 	mount = null
 	is_flying = false
 	_turbo_seconds_left = 0.0
 	_camera.lift = 0.0
-	_model.position = Vector3.ZERO
+	_model.transform = Transform3D(Basis(Vector3.UP, _heading), Vector3.ZERO)
 	_body.move_and_collide(side_step)
 
 
@@ -66,7 +69,7 @@ func advance(input_vector: Vector2, delta: float) -> void:
 	_burn_turbo(delta)
 
 	if _turbo_seconds_left > 0.0 and move_direction.is_zero_approx():
-		move_direction = _model.global_basis.z
+		move_direction = Basis(Vector3.UP, _heading).z
 
 	new_stance = _choose_ride_stance(move_direction, climb)
 	speed = RideTuning.SPEED_BY_STANCE[new_stance]
@@ -177,15 +180,26 @@ func _move_mount(move_direction: Vector3, climb: float, speed: float, delta: flo
 	_body.move_and_slide()
 
 
+## Senta o cavaleiro no lombo: vai com o assento (que sobe, desce e balança com o passo da mula) e
+## inclina junto com ele, mantendo o rumo. Chamado a cada quadro, porque a mula anima por quadro.
+func seat_rider() -> void:
+	var saddle: Transform3D = mount.get_saddle_transform()
+	var tilt: Vector3 = (mount.global_basis.inverse() * saddle.basis).get_euler()
+	var heading: Basis = Basis(Vector3.UP, mount.global_rotation.y)
+	var seat: Basis = heading * Basis.from_euler(Vector3(tilt.x, 0.0, tilt.z))
+
+	_model.global_transform = Transform3D(
+		seat, saddle.origin + seat * Vector3.DOWN * RideTuning.RIDER_SEAT_HEIGHT
+	)
+
+
 ## A mula vai junto com o corpo e o cavaleiro senta no lombo dela.
 func _carry_mount() -> void:
-	var seat_drop: Vector3 = Vector3.DOWN * RideTuning.RIDER_SEAT_HEIGHT
-
 	mount.global_position = _body.global_position
-	mount.global_rotation.y = _model.global_rotation.y
+	mount.global_rotation.y = _heading
 	mount.is_airborne = is_flying or not _body.is_on_floor()
-	_model.global_position = mount.get_saddle_position() + seat_drop
 	_obstacle.velocity = Vector3(_body.velocity.x, 0.0, _body.velocity.z)
+	seat_rider()
 
 
 func _apply_ride_stance(next_stance: PlayerController.Stance) -> void:
@@ -208,6 +222,4 @@ func _turn_model_toward(direction: Vector3, delta: float) -> void:
 		return
 
 	target_yaw = atan2(direction.x, direction.z)
-	_model.global_rotation.y = lerp_angle(
-		_model.global_rotation.y, target_yaw, RideTuning.TURN_SPEED * delta
-	)
+	_heading = lerp_angle(_heading, target_yaw, RideTuning.TURN_SPEED * delta)

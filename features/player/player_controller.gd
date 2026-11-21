@@ -115,6 +115,9 @@ func _process(_delta: float) -> void:
 	# Câmera colada no pivô (parede atrás, olhar para cima): o corpo só taparia a tela por dentro.
 	_model.visible = _camera_yaw.distance_to_pivot() > HIDE_MODEL_DISTANCE
 
+	if is_riding():
+		_rider.seat_rider()
+
 
 func _physics_process(delta: float) -> void:
 	var input_vector: Vector2 = _read_move_input()
