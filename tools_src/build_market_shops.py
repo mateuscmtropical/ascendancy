@@ -41,6 +41,10 @@ CASEMENT_ROWS = 3
 OPEN_ROOF_THICKNESS = 0.22  # a laje inclinada do telhado oco (build_town_houses.open_gable_parallel_roof)
 STACK_FOOT = 4.35  # a chaminé de tijolo de uma forja sai do alto da coifa (shop_props_arms.forge vai até 4,5 m)
 EARTH_FLOOR = "5E4A3A"  # terra batida de oficina
+VAULT_SAMPLES = 16  # segmentos de cada abóbada de berço (spec vaults)
+RIB_WIDTH = 0.45  # arco transversal (cinta) sob a abóbada
+RIB_DEPTH = 0.14
+ARCADE_RISE = 0.55  # flecha dos arcos da arcada sobre as colunas
 TRUSS_TIE = 0.32  # altura da linha (tirante) das tesouras de um telhado à vista
 COMMON_RAFTER_PITCH = 0.7  # um caibro a cada tanto ao longo do telhado à vista
 DOOR_CLEARANCE = 3.0  # faixa livre atrás da porta
@@ -133,7 +137,14 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     ),
     "guild": dict(archetype="palacete", wall="clara", roof="ardosia", accent="vinho", storeys=(7.4, 3.4), roof_shape=("hip", dict(pitch=24.0, eave_front=0.9, eave_back=0.5)), floor="stone", awning=("7A2F3A", "D9A441"), door=(0.0, 3.2, 4.2, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFD9A0"),
     "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(4.0, 3.2), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=None, door=(0.0, 1.8, 2.6, "pointed"), side_window=(1.1, 0.95, 1.7, "flat"), features=("half_timber",), jetty=0.4, chimney=dict(u=-7.6, d=5.5, extra=1.2, pots=2), light="FFC27A", shell="tavern_shell"),  # casa de cômodos: tavern_shell.py, planta em tavern_layout.py
-    "armor": dict(archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=("7A2F3A", "D8DCE4"), door=(0.0, 2.4, 3.0, "round"), features=("stone_bands",), light="FFD9A0"),
+    "armor": dict(  # arsenal hanseático de tijolo (referências em ascendancy-refs/lojas/armor): salão de abóbadas com as armaduras em fila, oficina de armeiro e depósito no fundo
+        archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=None,
+        door=(0.0, 2.4, 3.2, "pointed"), features=("stone_bands",), light="FFD9A0",
+        facade=dict(window=(1.0, 2.4, "pointed"), windows=((-7.0, 1.1), (-4.9, 1.1), (4.9, 1.1), (7.0, 1.1))),
+        window_kind="window", shutters=False, casement_grid=(2, 4), back_window=(1.0, 1.6),
+        vaults=dict(spring=2.7, columns=(-3.0, 3.0), rib_pitch=3.9, finish="creme", ribs="tijolo"),
+        chimney=dict(u=-5.8, d=19.0, extra=1.2, pots=1),
+    ),
     "general": dict(archetype="sobrado", wall="creme", roof="terracota", accent="verde", storeys=(4.4, 3.2), roof_shape=("hip", dict(pitch=26.0, eave_front=0.6, eave_back=0.5)), floor="wood", awning=("B5533F", "F4EFE6"), door=(0.0, 2.4, 2.9, "segment"), features=("iron_balcony", "finials"), quoins=True, cornice=True, light="FFD9A0"),
     "magic": dict(archetype="torre", wall="lilas", roof="ardosia", accent="azul", storeys=(5.6, 3.0), roof_shape=("gable_street", dict(pitch=42.0, gable="bell")), floor="wood", awning=("4A3A8E", "C9B6D9"), door=(0.0, 2.2, 3.2, "pointed"), light="C9B0FF"),
     "alchemy": dict(archetype="fachwerk", wall="salvia", roof="velha", accent="verde", storeys=(4.6, 2.9), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("2F6B4F", "D9E8B0"), door=(0.0, 2.2, 2.9, "round"), features=("half_timber",), jetty=0.3, chimney=dict(u=-6.0, d=15.0, extra=1.2, pots=2), light="C8F0B0"),
@@ -309,8 +320,9 @@ def dress_casement(b: Builder, room: Room, frame: Matrix, opening: Opening) -> N
     bar_tint = srgb(WOOD["escura"])
     shutter_tint = house.accent
     batten_tint = tuple(channel * 0.8 for channel in house.accent)
-    bar_us = [opening.u - half + opening.width * index / CASEMENT_COLUMNS for index in range(1, CASEMENT_COLUMNS)]
-    bar_zs = [opening.bottom + (opening.spring - opening.bottom) * index / CASEMENT_ROWS for index in range(1, CASEMENT_ROWS)]
+    columns, rows = room.spec.get("casement_grid", (CASEMENT_COLUMNS, CASEMENT_ROWS))
+    bar_us = [opening.u - half + opening.width * index / columns for index in range(1, columns)]
+    bar_zs = [opening.bottom + (opening.spring - opening.bottom) * index / rows for index in range(1, rows)]
 
     town.wall_piece(b, (opening.u - half, 0.0, 0.0), (opening.u + half, WALL, opening.bottom), house.wall_material, house.wall_tint, frame)
     b.prism(opening.outline(), 0.12, 0.14, "glass", frame=frame)
@@ -323,6 +335,9 @@ def dress_casement(b: Builder, room: Room, frame: Matrix, opening: Opening) -> N
 
     for bar_z in bar_zs + [opening.spring]:
         b.box((opening.u - half, 0.1, bar_z - 0.02), (opening.u + half, 0.16, bar_z + 0.02), "paint", bar_tint, frame=frame)
+
+    if not room.spec.get("shutters", True):
+        return
 
     for side_sign in (-1.0, 1.0):
         hinge = opening.u + side_sign * (half + 0.1)
@@ -797,6 +812,60 @@ def build_room_ceiling(b: Builder, room: Room, u_from: float, u_to: float, d_fro
         b.box((u_from, d - 0.08, room.ceiling - 0.2), (u_to, d + 0.08, room.ceiling), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
 
 
+def segment_arc(u_from: float, u_to: float, spring: float, rise: float, samples: int = VAULT_SAMPLES) -> list:
+    """(u, z) points of a segmental arch from u_from to u_to springing at spring and rising by rise in the middle."""
+    half = (u_to - u_from) / 2.0
+    radius = (half * half + rise * rise) / (2.0 * rise)
+    centre_u, centre_z = (u_from + u_to) / 2.0, spring + rise - radius
+    reach = math.asin(half / radius)
+
+    return [(centre_u + radius * math.sin(-reach + 2.0 * reach * step / samples), centre_z + radius * math.cos(-reach + 2.0 * reach * step / samples)) for step in range(samples + 1)]
+
+
+def build_vaults(b: Builder, room: Room) -> None:
+    """Low barrel vaults (spec vaults) instead of the board ceiling, as in a brick arsenal hall: one segmental vault
+    per aisle between the side walls and the pier lines (shell finish `finish`, spandrels filled up to the floor
+    above), transverse ribs every rib_pitch metres on wall pilasters and, on each pier line, square piers carrying
+    an arcade of segmental arches (finish `ribs`). The camera stops under the springing."""
+    options = room.spec["vaults"]
+    house = room.house
+    shell_material, shell_hex = town.WALL_FINISHES[options["finish"]]
+    rib_material, rib_hex = town.WALL_FINISHES[options["ribs"]]
+    shell_tint, rib_tint = srgb(shell_hex), srgb(rib_hex)
+    spring, pier = options["spring"], options.get("pier", 0.6)
+    rise = room.storey - 0.05 - spring
+    lines = sorted(options["columns"])
+    edges = [room.left] + [edge for u in lines for edge in (u - pier / 2.0, u + pier / 2.0)] + [room.right]
+    aisles = list(zip(edges[::2], edges[1::2]))
+    rib_count = int((room.back - room.front) / options["rib_pitch"])
+    rib_ds = [room.front + (room.back - room.front) * (index + 1) / (rib_count + 1) for index in range(rib_count)]
+    bay_edges = list(zip([room.front] + [d + pier / 2.0 for d in rib_ds], [d - pier / 2.0 for d in rib_ds] + [room.back]))
+
+    for u_from, u_to in aisles:
+        intrados = segment_arc(u_from, u_to, spring, rise)
+        b.prism(intrados + [(u_to, room.storey), (u_from, room.storey)], room.front, room.back, shell_material, shell_tint)
+
+    for (u_from, u_to), d in itertools.product(aisles, rib_ds):
+        intrados = segment_arc(u_from, u_to, spring, rise)
+        lowered = [(u, z - RIB_DEPTH) for u, z in reversed(intrados)]
+        b.prism(intrados + lowered, d - RIB_WIDTH / 2.0, d + RIB_WIDTH / 2.0, rib_material, rib_tint)
+
+    for side_u, d in itertools.product((room.left + 0.1, room.right - 0.1), rib_ds):
+        b.box((side_u - 0.12, d - RIB_WIDTH / 2.0, 0.0), (side_u + 0.12, d + RIB_WIDTH / 2.0, spring), rib_material, rib_tint)
+
+    for u, d in itertools.product(lines, rib_ds):
+        b.box((u - pier / 2.0, d - pier / 2.0, 0.0), (u + pier / 2.0, d + pier / 2.0, spring), rib_material, rib_tint)
+        b.box((u - pier / 2.0 - 0.08, d - pier / 2.0 - 0.08, 0.0), (u + pier / 2.0 + 0.08, d + pier / 2.0 + 0.08, 0.35), "stone", srgb(STONE["media"]), uv=("world", 1.2))
+        b.box((u - pier / 2.0 - 0.08, d - pier / 2.0 - 0.08, spring - 0.18), (u + pier / 2.0 + 0.08, d + pier / 2.0 + 0.08, spring), "stone", srgb(STONE["media"]), uv=("world", 1.2))
+        b.collider((u - pier / 2.0, d - pier / 2.0, 0.0), (u + pier / 2.0, d + pier / 2.0, spring))
+
+    for u, (d_from, d_to) in itertools.product(lines, bay_edges):
+        arch = segment_arc(d_from, d_to, spring, ARCADE_RISE)
+        b.side_prism(arch + [(d_to, room.storey), (d_from, room.storey)], u - pier / 2.0 + 0.05, u + pier / 2.0 - 0.05, rib_material, rib_tint)
+
+    b.collider((room.left, room.front, spring + 0.2), (room.right, room.back, room.storey))  # o braço da câmera para sob o arranque das abóbadas
+
+
 def build_lean_to(b: Builder, room: Room) -> None:
     """Pent roof on posts over the pavement before an open bay (spec lean_to: the smith shoes horses under it): a
     wall plate on the facade, rafters, a roof of the house's tiles, a beam on three posts on stone pads with braces;
@@ -808,9 +877,10 @@ def build_lean_to(b: Builder, room: Room) -> None:
     rafter_count = round((u_to - u_from) / 0.8)
     rafter_us = [u_from + (u_to - u_from) * index / rafter_count for index in range(rafter_count + 1)]
 
-    roof = b.side_prism([(0.0, high), (-reach - 0.3, low - 0.17), (-reach - 0.3, low - 0.05), (0.0, high + 0.12)], u_from - 0.4, u_to + 0.4, house.roof_material, house.roof_tint)
+    eave_from, eave_to = max(u_from - 0.4, -house.limit), min(u_to + 0.4, house.limit)  # o beiral não passa do lote
+    roof = b.side_prism([(0.0, high), (-reach - 0.3, low - 0.17), (-reach - 0.3, low - 0.05), (0.0, high + 0.12)], eave_from, eave_to, house.roof_material, house.roof_tint)
     b.camera_stop(roof)
-    b.box((u_from - 0.4, -0.22, high - 0.3), (u_to + 0.4, 0.0, high - 0.02), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+    b.box((eave_from, -0.22, high - 0.3), (eave_to, 0.0, high - 0.02), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
     beam = b.box((u_from - 0.3, -reach - 0.12, low - 0.32), (u_to + 0.3, -reach + 0.12, low - 0.08), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
     b.camera_stop(beam)
 
@@ -842,7 +912,7 @@ def partition_doors(partition: tuple) -> list:
 def partition_piece(room: Room, partition: tuple, span_from: float, span_to: float, z_from: float = 0.0, z_to: float = None) -> tuple:
     """Box (low, high corners, facade coords) of a stretch of an inner wall, from z_from up to the ceiling by default."""
     axis, fixed = partition[0], partition[1]
-    top = room.ceiling if z_to is None else z_to
+    top = (room.storey if "vaults" in room.spec else room.ceiling) if z_to is None else z_to  # sob abóbada a parede sobe até a laje
     boxes = {
         "u": ((fixed - WALL / 2.0, span_from, z_from), (fixed + WALL / 2.0, span_to, top)),
         "d": ((span_from, fixed - WALL / 2.0, z_from), (span_to, fixed + WALL / 2.0, top)),
@@ -1068,6 +1138,8 @@ def build_shell(shop_type: str) -> dict:
 
     if "open_roof" in room.spec:
         build_open_roof(b, room)
+    elif "vaults" in room.spec:
+        build_vaults(b, room)
     else:
         build_ceiling(b, room)
 
