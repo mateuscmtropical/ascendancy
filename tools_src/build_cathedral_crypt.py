@@ -528,7 +528,7 @@ def build_catacomb_shell(b: Builder) -> None:
 
     for name, ((x_from, x_to, y_from, y_to), openings) in CATACOMB_SPACES.items():
         stone_box(b, (x_from, y_from, FLOOR - 0.3), (x_to, y_to, FLOOR), GRAVEL_TINT)
-        stone_box(b, (x_from, y_from, CATACOMB_CEILING), (x_to, y_to, CATACOMB_CEILING + 0.4), ROCK_CEILING_TINT, collide=False)
+        stone_box(b, (x_from, y_from, CATACOMB_CEILING), (x_to, y_to, CATACOMB_CEILING + 0.4), ROCK_CEILING_TINT)  # com colisor: a câmera não sobe por cima das paredes baixas
         # as paredes leste e oeste fecham os cantos, salvo onde o lado vizinho é todo aberto (entra noutra galeria)
         y_span = (y_from - (0.0 if openings.get("south") == "all" else thick), y_to + (0.0 if openings.get("north") == "all" else thick))
         sides = {

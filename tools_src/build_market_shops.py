@@ -565,12 +565,16 @@ def build_plank_ceiling(b: Builder, room: Room) -> None:
 
 
 def build_ceiling(b: Builder, room: Room) -> None:
-    """Board ceiling (its collider stops the camera arm), joists, and a girder over each row of posts."""
+    """Board ceiling (its collider, down to the beams, stops the camera arm), joists, and a girder over each row of posts."""
     house = room.house
     joist_count = int((room.back - room.front) / JOIST_SPACING)
     post_us = sorted({u for u, _ in room.posts} | set(girder_us(room)))
 
-    town.wall_piece(b, (room.left, room.front, room.ceiling), (room.right, room.back, room.storey), "wood", srgb(WOOD["mel"]))
+    beam_depth = 0.42 if post_us else 0.2
+
+    # o colisor do forro desce até a face de baixo das vigas: o braço da câmera para embaixo delas, não dentro
+    b.box((room.left, room.front, room.ceiling), (room.right, room.back, room.storey), "wood", srgb(WOOD["mel"]))
+    b.collider((room.left, room.front, room.ceiling - beam_depth), (room.right, room.back, room.storey))
 
     if room.spec.get("casarao"):
         build_plank_ceiling(b, room)

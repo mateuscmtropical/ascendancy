@@ -284,7 +284,8 @@ def build_gallery(b: Builder, room) -> None:
         board_width = (u_to - u_from) / board_count
         joist_count = int((d_to - d_from) / shops.JOIST_SPACING)
 
-        town.wall_piece(b, (u_from, d_from, room.ceiling), (u_to, d_to, UPPER), "plaster", PLASTER)
+        b.box((u_from, d_from, room.ceiling), (u_to, d_to, UPPER), "plaster", PLASTER)
+        b.collider((u_from, d_from, room.ceiling - 0.2), (u_to, d_to, UPPER))  # até a face de baixo dos barrotes: a câmera para embaixo deles
         b.collider((u_from, d_from, UPPER), (u_to, d_to, UPPER + FLOOR_TOP), name="WoodFloor")
 
         for index in range(board_count):
@@ -308,7 +309,8 @@ def build_top_ceiling(b: Builder, room) -> None:
     beam_us = [room.left + (room.right - room.left) * index / 6.0 for index in range(1, 6)]
     rose = Matrix.Translation((0.0, (WELL_FRONT + room.back) / 2.0, ceiling))
 
-    town.wall_piece(b, (room.left, room.front, ceiling), (room.right, room.back, TOP), "plaster", PLASTER)
+    b.box((room.left, room.front, ceiling), (room.right, room.back, TOP), "plaster", PLASTER)
+    b.collider((room.left, room.front, ceiling - 0.28), (room.right, room.back, TOP))  # até a face de baixo das vigas: a câmera para embaixo delas
 
     for d in beam_ds:
         b.box((room.left, d - 0.14, ceiling - 0.28), (room.right, d + 0.14, ceiling), "plaster", srgb(STONE["clara"]))
