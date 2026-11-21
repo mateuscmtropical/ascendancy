@@ -318,6 +318,7 @@ HAIR_COLORS = {
     "dark": (0.16, 0.12, 0.1),
     "brown": (0.32, 0.21, 0.14),
     "chestnut": (0.46, 0.29, 0.17),
+    "honey": (0.62, 0.42, 0.22),
     "auburn": (0.55, 0.27, 0.15),
     "blond": (0.85, 0.7, 0.45),
     "grey": (0.62, 0.6, 0.58),
@@ -2058,7 +2059,7 @@ COUPLE_SEAT_LIFT = 0.04
 
 
 def add_couple(scene: SceneWriter, bench: tuple) -> None:
-    """Casal sentado conversando no banco do chafariz que fica de frente para quem sai do coreto (tools_src/build_couple.py)."""
+    """Casal sentado conversando no banco do rondel entre o casarão e o chafariz (tools_src/build_couple.py)."""
     (x, z), rotation_y = sitter(bench)
     along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco
     his_seat = (x + along_x * COUPLE_SEAT_SPREAD, z + along_z * COUPLE_SEAT_SPREAD)
@@ -2069,7 +2070,7 @@ def add_couple(scene: SceneWriter, bench: tuple) -> None:
     his["smile_every_seconds"] = "5.0"
     hers["smile_every_seconds"] = "3.5"
     npc(scene, "BenchCoupleHim", "couple_him", "black", his)
-    npc(scene, "BenchCoupleHer", "couple_her", "chestnut", hers)
+    npc(scene, "BenchCoupleHer", "couple_her", "honey", hers)
 
 
 def add_saci(scene: SceneWriter) -> None:
@@ -2114,7 +2115,7 @@ def add_townsfolk(scene: SceneWriter, benches: dict) -> None:
     npc(scene, "TalkerA", "villager_male", "brown", stand(talker_a, facing_yaw(talker_a, talker_b), "ual1/Idle_Talking", 0.0))
     npc(scene, "TalkerB", "villager_female", "blond", stand(talker_b, facing_yaw(talker_b, talker_a), "ual2/Idle_FoldArms", 0.7))
     npc(scene, "SittingWest", "villager_female", "grey", stand(west_bench_seat, west_bench_facing, "ual1/Sitting_Idle", 0.3))
-    add_couple(scene, benches["fountain"][3])
+    add_couple(scene, benches["plazas"][3])
     npc(scene, "SittingEast", "villager_male", "black", stand(east_bench_seat, east_bench_facing, "ual1/Sitting_Talking", 0.0))
     npc(scene, "SittingCathedral", "adventurer_male", "brown", stand(cathedral_bench_seat, cathedral_bench_facing, "ual1/Sitting_Talking", 0.5))
     npc(scene, "Bard", "adventurer_female", "auburn", stand((COREO_POSITION[0], COREO_POSITION[1]), math.pi / 2.0, "ual1/Idle_Talking", 0.2, height=1.2))

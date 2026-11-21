@@ -38,7 +38,16 @@ SLEEVE_CUT_WEIGHT = 0.5  # sleeve vertices carried more than this by the forearm
 FOREARM_KEEP_WEIGHT = 0.3  # bare-skin vertices kept from the base body: a little above where the sleeve ends
 MASK_GROW_PIXELS = 3  # the UV footprint grows this much so the seams take the new colour too
 HAIR_CLEARANCE = 0.012  # metres the lengthened hair keeps off the body
-BEARD_THICKNESS = 0.3
+STUBBLE_TOP = 0.06  # metres below the eyes where the stubble starts on the upper lip and chin column
+STUBBLE_CHEEK_TOP = 0.085  # on the cheeks it starts lower, along the jaw
+STUBBLE_BOTTOM = 0.165  # down to under the jaw
+STUBBLE_CHIN_HALF_WIDTH = 0.028
+STUBBLE_LIPS = (0.072, 0.096)
+STUBBLE_LIPS_HALF_WIDTH = 0.026
+STUBBLE_COLOR = (0.10, 0.085, 0.08)
+STUBBLE_STRENGTH = 0.48
+STUBBLE_FEATHER = 0.012  # share of the texture width over which the stubble fades out at its edges
+FULLNESS_HEIGHTS = (0.45, 1.45)  # metres: thighs to shoulders
 CURL_SCALE = 45.0  # curls of about 1.5 cm on top of his head  # share of its height over the skin the trimmed beard keeps
 # Garment colours (sRGB), applied over the luminance of the original cloth so its folds and seams stay.
 BLACK_SHIRT = (0.075, 0.075, 0.085)
@@ -59,7 +68,7 @@ COUPLE = {
     "couple_him": {
         "outfit": "Male_Peasant",
         "base_body": "Superhero_Male_FullBody",
-        "hair": ["Hair_Buzzed", "Hair_Beard"],
+        "hair": ["Hair_Buzzed"],
         "skin": ("multiply", (0.97, 0.87, 0.77)),
         "garments": {"Body": ("all", BLACK_SHIRT), "Arms": ("all", BLACK_SHIRT), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
         "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS)],
@@ -68,6 +77,7 @@ COUPLE = {
         "outfit": "Female_Peasant",
         "base_body": "Superhero_Female_FullBody",
         "hair": ["Hair_Long"],
+        "fullness": {"Body": 0.06, "Legs": 0.055, "Arms": 0.035, "Skin": 0.035, "Head": 0.014},
         "skin": ("lift", (1.0, 0.95, 0.93)),
         "garments": {"Body": ("vest", LIGHT_DENIM), "Arms": ("all", WHITE_BLOUSE), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
         "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS), ("Body", "vest_panels", LIGHT_DENIM), ("Body", "vest_opening", WHITE_BLOUSE)],
@@ -317,26 +327,88 @@ def curly_top(hair, armature) -> None:
     recompute_normals(hair)
 
 
-def trimmed_beard(beard, head, eyes_z: float) -> None:
-    """Only a thin goatee on the chin and a light moustache stay; cheeks and sideburns go, and what stays hugs the skin."""
-    to_world = beard.matrix_world
-    to_local = to_world.inverted()
-    skin = body_tree([head])
+def stubble(head, eyes_z: float) -> None:
+    """A day's unshaven beard painted on the skin: jaw, chin, lower cheeks and upper lip darkened in a fine grain."""
+    generator = numpy.random.default_rng(7)
 
-    def keep(vertex) -> bool:
-        point = to_world @ vertex.co
-        below_eyes = eyes_z - point.z
-        chin = abs(point.x) < 0.018 and below_eyes > 0.105
-        moustache = abs(point.x) < 0.02 and 0.066 < below_eyes < 0.076
+    def beard_area(points: numpy.ndarray, normal: Vector) -> numpy.ndarray:
+        below_eyes = eyes_z - points[..., 2]
+        side = numpy.abs(points[..., 0])
+        lips = (side < STUBBLE_LIPS_HALF_WIDTH) & (below_eyes > STUBBLE_LIPS[0]) & (below_eyes < STUBBLE_LIPS[1])
+        cheeks_line = numpy.where(side < STUBBLE_CHIN_HALF_WIDTH, STUBBLE_TOP, STUBBLE_CHEEK_TOP)
 
-        return chin or moustache
+        return (below_eyes > cheeks_line) & (below_eyes < STUBBLE_BOTTOM) & ~lips & (normal.y < 0.25)
 
-    delete_vertices(beard, keep)
+    for index, material in enumerate(head.data.materials):
+        image = base_color_image(material)
+        width, height = image.size
+        pixels = image_pixels(image)
+        mask = uv_footprint(head, index, width, height, beard_area)
+        coverage = feathered(mask, max(int(width * STUBBLE_FEATHER), 1))
+        grain = generator.uniform(0.5, 1.0, size=mask.shape)
+        shade = (STUBBLE_STRENGTH * grain * coverage)[..., None]
 
-    for vertex in beard.data.vertices:
-        point = to_world @ vertex.co
-        nearest, normal, _, gap = skin.find_nearest(point)
-        vertex.co = to_local @ (nearest + normal * max(gap * BEARD_THICKNESS, 0.0015))
+        pixels[..., :3] = pixels[..., :3] * (1.0 - shade) + numpy.array(STUBBLE_COLOR) * shade
+        store_pixels(image, pixels)
+        print(f"  stubble: {int(mask.sum())} pixels of {image.name}")
+
+
+def feathered(mask: numpy.ndarray, radius: int) -> numpy.ndarray:
+    """The mask as 0..1 coverage with soft edges: a box blur (two passes, rows then columns) inside the mask only."""
+    coverage = mask.astype(numpy.float32)
+
+    for _ in range(2):
+        padded = numpy.pad(coverage, radius, mode="edge")
+        rows = numpy.cumsum(padded, axis=0)
+        coverage = (rows[2 * radius:] - numpy.vstack([numpy.zeros((1, rows.shape[1])), rows[:-2 * radius - 1]])) / (2 * radius + 1)
+        columns = numpy.cumsum(coverage, axis=1)
+        coverage = (columns[:, 2 * radius:] - numpy.hstack([numpy.zeros((columns.shape[0], 1)), columns[:, :-2 * radius - 1]])) / (2 * radius + 1)
+
+    return coverage * mask
+
+
+def fuller_body(meshes: list, thickness: dict, eyes_z: float) -> None:
+    """A plumper figure: every listed piece pushed out along its smoothed normals (seam twins move together)."""
+    for mesh_object in meshes:
+        amount = thickness[mesh_object.name.split("_")[-1]]  # Head_Skin and Forearms_Skin: "Skin" is the forearms
+        amount = thickness["Head"] if mesh_object.name == HEAD_MESH_NAME else amount
+        to_world = mesh_object.matrix_world
+        to_local = to_world.inverted()
+        normal_to_world = to_world.to_3x3()
+        positions = [to_world @ vertex.co for vertex in mesh_object.data.vertices]
+        normals = {}
+
+        for vertex, point in zip(mesh_object.data.vertices, positions):
+            key = tuple(round(value, 4) for value in point)
+            normals[key] = normals.get(key, Vector()) + normal_to_world @ vertex.normal
+
+        for vertex, point in zip(mesh_object.data.vertices, positions):
+            normal = normals[tuple(round(value, 4) for value in point)].normalized()
+            share = lower_face_share(point, eyes_z) if mesh_object.name == HEAD_MESH_NAME else fullness_at(point.z)
+            vertex.co = to_local @ (point + normal * amount * share)
+
+        recompute_normals(mesh_object)
+
+
+def lower_face_share(point: Vector, eyes_z: float) -> float:
+    """On the head only cheeks, jaw and neck fill out: nothing at the eyes, all of it a hand below them, and the
+    mouth and chin in the middle keep their shape (the lips would swell)."""
+    below_eyes = eyes_z - 0.02 - point.z
+    lower = min(max(below_eyes / 0.07, 0.0), 1.0)
+    beside_mouth = min(max((abs(point.x) - 0.022) / 0.025, 0.0), 1.0)
+    under_jaw = min(max((below_eyes - 0.13) / 0.04, 0.0), 1.0)
+
+    return lower * max(beside_mouth, under_jaw)
+
+
+def fullness_at(height: float) -> float:
+    """Share of the extra thickness at this height: all of it on hips, belly and thighs, less toward knees and shoulders."""
+    low, high = FULLNESS_HEIGHTS
+
+    if height < low or height > high:
+        return 0.35
+
+    return 0.35 + 0.65 * math.sin(math.pi * (height - low) / (high - low))
 
 
 def recompute_normals(mesh_object) -> None:
@@ -439,13 +511,16 @@ def build_partner(name: str) -> Path:
     short_sleeves_and_bare_forearms(recipe["base_body"], armature, head.data.materials[0])
 
     if name == "couple_her":
+        fuller_body([outfit_piece("Body"), outfit_piece("Legs"), outfit_piece("Arms"), bpy.data.objects["Forearms_Skin"], head], recipe["fullness"], eye_height())
         long_wavy_hair(bpy.data.objects["Hair_Long"], armature, [outfit_piece("Body")])
     else:
         curly_top(bpy.data.objects["Hair_Buzzed"], armature)
-        trimmed_beard(bpy.data.objects["Hair_Beard"], head, eye_height())
 
     skin_materials = [material for scene_object in bpy.data.objects if scene_object.type == "MESH" for material in scene_object.data.materials if material and material.name.startswith(("MI_Superhero", "MI_Regular"))]
     recolor_skin(skin_materials, recipe["skin"], prefix)
+
+    if name == "couple_him":
+        stubble(head, eye_height())
     add_face_shapes(head, bpy.data.objects["Eyes"], bpy.data.objects["Eyebrows"])
     downscale_large_textures()
     bpy.ops.export_scene.gltf(filepath=str(output_path), export_format="GLTF_SEPARATE", export_texture_dir="textures", export_animations=False, export_yup=True)
