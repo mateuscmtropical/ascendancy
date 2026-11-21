@@ -39,18 +39,18 @@ FOREARM_KEEP_WEIGHT = 0.3  # bare-skin vertices kept from the base body: a littl
 MASK_GROW_PIXELS = 3  # the UV footprint grows this much so the seams take the new colour too
 HAIR_CLEARANCE = 0.012  # metres the lengthened hair keeps off the body
 BEARD_THICKNESS = 0.3
-CURL_SCALE = 70.0  # curls of about 1.5 cm on top of his head  # share of its height over the skin the trimmed beard keeps
+CURL_SCALE = 45.0  # curls of about 1.5 cm on top of his head  # share of its height over the skin the trimmed beard keeps
 # Garment colours (sRGB), applied over the luminance of the original cloth so its folds and seams stay.
 BLACK_SHIRT = (0.075, 0.075, 0.085)
 DARK_TROUSERS = (0.12, 0.13, 0.16)
 DARK_SHOES = (0.11, 0.095, 0.085)
 WHITE_BLOUSE = (0.93, 0.92, 0.89)
-LIGHT_DENIM = (0.50, 0.62, 0.76)
+LIGHT_DENIM = (0.36, 0.50, 0.70)
 ANKLE_HEIGHT = 0.13  # metres: above this the tall boots are dyed as the trouser leg, so a low shoe is left
-VEST_OPENING_HALF_WIDTH = (0.035, 0.1)  # metres each side of the middle of her chest, at the waist and at the neck,
+VEST_OPENING_HALF_WIDTH = (0.03, 0.07)  # metres each side of the middle of her chest, at the waist and at the neck,
 # where the open vest shows the T-shirt (a V that widens to the collar)
 CLOTH_FOLDS = 0.45  # share of the original cloth's light and shade a dyed garment keeps
-TEE_FOLDS = 0.12  # the plain T-shirt keeps little of it: the corset's lacing underneath must not show
+TEE_FOLDS = 0.03  # the plain T-shirt keeps little of it: the corset's lacing underneath must not show
 VEST_OPENING_RANGE = (1.0, 1.42)  # heights of that opening, from the waist to the neckline
 VEST_MIN_SATURATION = 0.22  # on her body piece, the leather and corset are saturated or dark; the blouse is neither
 VEST_MAX_VALUE = 0.42
@@ -60,7 +60,7 @@ COUPLE = {
         "outfit": "Male_Peasant",
         "base_body": "Superhero_Male_FullBody",
         "hair": ["Hair_Buzzed", "Hair_Beard"],
-        "skin": ("multiply", (0.92, 0.80, 0.70)),
+        "skin": ("multiply", (0.97, 0.87, 0.77)),
         "garments": {"Body": ("all", BLACK_SHIRT), "Arms": ("all", BLACK_SHIRT), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
         "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS)],
     },
@@ -70,7 +70,7 @@ COUPLE = {
         "hair": ["Hair_Long"],
         "skin": ("lift", (1.0, 0.95, 0.93)),
         "garments": {"Body": ("vest", LIGHT_DENIM), "Arms": ("all", WHITE_BLOUSE), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
-        "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS), ("Body", "vest_opening", WHITE_BLOUSE)],
+        "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS), ("Body", "vest_panels", LIGHT_DENIM), ("Body", "vest_opening", WHITE_BLOUSE)],
     },
 }
 
@@ -210,7 +210,15 @@ def vest_opening(points: numpy.ndarray, normal: Vector) -> numpy.ndarray:
     return (numpy.abs(points[..., 0]) < half_width) & (heights > low) & (heights < high) & (normal.y < -0.3)
 
 
-TOUCH_UP_REGIONS = {"boot_shaft": (boot_shaft, CLOTH_FOLDS), "vest_opening": (vest_opening, TEE_FOLDS)}
+def vest_panels(points: numpy.ndarray, normal: Vector) -> numpy.ndarray:
+    """All of the torso from the waist to the neckline but the front opening: the sleeveless denim vest."""
+    low, high = VEST_OPENING_RANGE
+    heights = points[..., 2]
+
+    return (heights > low - 0.02) & (heights < high + 0.02) & ~vest_opening(points, normal)
+
+
+TOUCH_UP_REGIONS = {"boot_shaft": (boot_shaft, CLOTH_FOLDS), "vest_panels": (vest_panels, CLOTH_FOLDS), "vest_opening": (vest_opening, TEE_FOLDS)}
 
 
 def touch_up(touch_ups: list) -> None:
@@ -301,10 +309,10 @@ def curly_top(hair, armature) -> None:
     centre = Vector((pivot.x, sum(point.y for point in positions) / len(positions), pivot.z + 0.09))
 
     for vertex, point in zip(hair.data.vertices, positions):
-        rise = min(max((point.z - (top - 0.075)) / 0.06, 0.0), 1.0)
+        rise = min(max((point.z - (top - 0.085)) / 0.05, 0.0), 1.0)
         curls = 0.5 + 0.5 * noise.noise(point * CURL_SCALE)
         outward = (point - centre).normalized()
-        vertex.co = to_local @ (point + outward * rise * (0.008 + 0.010 * curls) + Vector((0.0, 0.0, rise * 0.006)))
+        vertex.co = to_local @ (point + outward * rise * (0.016 + 0.018 * curls) + Vector((0.0, 0.0, rise * 0.014)))
 
     recompute_normals(hair)
 
@@ -318,8 +326,8 @@ def trimmed_beard(beard, head, eyes_z: float) -> None:
     def keep(vertex) -> bool:
         point = to_world @ vertex.co
         below_eyes = eyes_z - point.z
-        chin = abs(point.x) < 0.03 and below_eyes > 0.095
-        moustache = abs(point.x) < 0.024 and 0.064 < below_eyes < 0.08
+        chin = abs(point.x) < 0.018 and below_eyes > 0.105
+        moustache = abs(point.x) < 0.02 and 0.066 < below_eyes < 0.076
 
         return chin or moustache
 
@@ -366,8 +374,8 @@ def long_wavy_hair(hair, armature, body_meshes: list) -> None:
     for vertex, point in zip(hair.data.vertices, positions):
         depth = max(start - point.z, 0.0)
         reach = depth / (start - bottom)
-        grown = Vector((point.x * (1.0 + 0.18 * reach), point.y, point.z - depth * (stretch - 1.0)))
-        wave = math.sin(depth * stretch * 38.0 + point.x * 25.0) * 0.012 * reach
+        grown = Vector((point.x * (1.0 + 0.32 * reach), point.y, point.z - depth * (stretch - 1.0)))
+        wave = math.sin(depth * stretch * 30.0 + point.x * 25.0) * 0.022 * reach
         grown += Vector((wave * math.copysign(1.0, point.x), wave * 0.5, 0.0))
         nearest, normal, _, gap = tree.find_nearest(grown)
 
@@ -428,8 +436,9 @@ def build_partner(name: str) -> Path:
     recolor_garments(recipe["garments"], prefix)
     touch_up(recipe["touch_ups"])
 
+    short_sleeves_and_bare_forearms(recipe["base_body"], armature, head.data.materials[0])
+
     if name == "couple_her":
-        short_sleeves_and_bare_forearms(recipe["base_body"], armature, head.data.materials[0])
         long_wavy_hair(bpy.data.objects["Hair_Long"], armature, [outfit_piece("Body")])
     else:
         curly_top(bpy.data.objects["Hair_Buzzed"], armature)

@@ -317,6 +317,7 @@ KIT_COLLIDERS = {  # kit model name prefix -> simple solid in model space: ("cyl
 HAIR_COLORS = {
     "dark": (0.16, 0.12, 0.1),
     "brown": (0.32, 0.21, 0.14),
+    "chestnut": (0.46, 0.29, 0.17),
     "auburn": (0.55, 0.27, 0.15),
     "blond": (0.85, 0.7, 0.45),
     "grey": (0.62, 0.6, 0.58),
@@ -2068,7 +2069,7 @@ def add_couple(scene: SceneWriter, bench: tuple) -> None:
     his["smile_every_seconds"] = "5.0"
     hers["smile_every_seconds"] = "3.5"
     npc(scene, "BenchCoupleHim", "couple_him", "black", his)
-    npc(scene, "BenchCoupleHer", "couple_her", "brown", hers)
+    npc(scene, "BenchCoupleHer", "couple_her", "chestnut", hers)
 
 
 def add_saci(scene: SceneWriter) -> None:
