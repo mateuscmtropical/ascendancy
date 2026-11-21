@@ -11,9 +11,9 @@ const TOWERS_SCENE: PackedScene = preload("res://art/town/cathedral_towers.gltf"
 const IMPORT_SCRIPT: GDScript = preload("res://features/audio/tag_ground_surfaces.gd")
 const LOOK_DOWN: Vector2 = Vector2(0.0, 2000.0)
 const CAMERA_STOP_PREFIX: String = "CameraStop"
-## Ferreiro na origem: o toldo da vitrine do meio cobre x -2..2 e sobe até 3,9 m junto da fachada.
-const AWNING_SPOT: Vector3 = Vector3(-1.8, 0.0, 1.0)
-const AWNING_TOP: float = 3.9
+## Ferreiro na origem: o telheiro de ferrar cobre x 6,2..11,6 até 2,3 m da fachada e sobe até 3,9 m junto dela.
+const LEAN_TO_SPOT: Vector3 = Vector3(9.6, 0.0, 1.2)
+const LEAN_TO_TOP: float = 3.9
 ## Coreto na origem: piso a 1,2 m e o frechal (viga em volta do forro) com a face de baixo a 3,93 m.
 const CORETO_SPOT: Vector3 = Vector3(0.0, 1.2, 1.5)
 const CORETO_BEAM_UNDERSIDE: float = 3.93
@@ -30,12 +30,12 @@ const TOWER_NEWEL_FACE: float = 16.23
 const NAVE_FLOOR: float = 1.0
 
 
-func test_camera_stays_under_the_shop_awning() -> void:
+func test_camera_stays_under_the_smith_lean_to() -> void:
 	var camera: Camera3D = await _look_down_in(
-		SMITH_SCENE, Transform3D.IDENTITY, AWNING_SPOT, PI / 2.0, 0.0
+		SMITH_SCENE, Transform3D.IDENTITY, LEAN_TO_SPOT, PI / 2.0, 0.0
 	)
 
-	assert_lt(camera.global_position.y, AWNING_TOP, "camera under the awning")
+	assert_lt(camera.global_position.y, LEAN_TO_TOP, "camera under the lean-to")
 
 
 func test_camera_stays_under_the_coreto_ceiling() -> void:

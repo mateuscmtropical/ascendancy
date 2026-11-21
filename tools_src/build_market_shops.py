@@ -28,7 +28,7 @@ import build_town_houses as town  # noqa: E402
 import shop_layouts  # noqa: E402
 from orphanage_wing_common import CORRIDOR  # noqa: E402
 from build_hub_scene import CASARAO_UPPER_FLOOR, SHOP_LOTS, shop_lots, town_lots  # noqa: E402
-from build_town_houses import STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
+from build_town_houses import BRICK, STONE, WALL, WOOD, WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, House, Opening, srgb  # noqa: E402
 
 PROP_MODULES = ("shop_props_common", "shop_props_arms", "shop_props_food", "shop_props_arcane", "shop_props_manor", "shop_props_orphanage", "shop_props_orphanage_ground", "shop_props_convent")
 PLAN_FOLDER = ""  # --plan=<pasta>: grava a planta (pegadas dos móveis) de cada salão mobiliado
@@ -36,6 +36,13 @@ CEILING_SLAB = 0.4
 PIER = 0.6  # parede cheia entre vãos e nos cantos da fachada
 VITRINE_PITCH = 3.0  # uma vitrine a cada tantos metros de fachada livre
 VITRINE_SILL = 0.7
+CASEMENT_COLUMNS = 3  # vidraças de uma janela pequena de oficina (spec window_kind="window")
+CASEMENT_ROWS = 3
+OPEN_ROOF_THICKNESS = 0.22  # a laje inclinada do telhado oco (build_town_houses.open_gable_parallel_roof)
+STACK_FOOT = 4.35  # a chaminé de tijolo de uma forja sai do alto da coifa (shop_props_arms.forge vai até 4,5 m)
+EARTH_FLOOR = "5E4A3A"  # terra batida de oficina
+TRUSS_TIE = 0.32  # altura da linha (tirante) das tesouras de um telhado à vista
+COMMON_RAFTER_PITCH = 0.7  # um caibro a cada tanto ao longo do telhado à vista
 DOOR_CLEARANCE = 3.0  # faixa livre atrás da porta
 BOARD_WIDTH = 0.6
 JOIST_SPACING = 1.6
@@ -116,7 +123,14 @@ CASARAO_UPPER = dict(CASARAO_WING, storeys=CASARAO_STOREYS[1:], sill=0.12, vitri
 WING_FIXTURE_LIGHT = dict(share=0.7, energy=0.8, limit=40, night_only=True)  # the rooms of a wing light only at night, about 8 real lamps a room
 WING_NIGHT_AMBIENT = 0.08  # ambient of a wing hall at night (the shared interior level is for the big halls)
 SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como ARCHETYPE_SPECS; awning = (cor, cor)
-    "smith": dict(archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(5.2,), roof_shape=("gable_parallel", dict(pitch=30.0, eave_front=0.5, eave_back=0.4)), features=("dormers",), floor="stone", awning=("B5533F", "F2E6CF"), door=(-5.0, 2.6, 3.2, "segment"), open_bays=((7.4, 7.2),), chimney=dict(u=8.2, d=18.3, extra=1.5, pots=0, material="stone"), light="FFC890"),
+    "smith": dict(  # ferraria de pedra bruta (referências em ascendancy-refs/lojas/smith): loja na frente, oficina de telhado à vista com duas forjas, depósito, telheiro de ferrar
+        archetype="pedra", wall="cinza", roof="ardosia", accent="oxido", storeys=(4.4,), roof_shape=("open_gable_parallel", dict(pitch=32.0, eave_front=0.5, eave_back=0.4)), floor="earth", awning=None,
+        door=(-7.4, 1.6, 2.7, "segment"), open_bays=((8.7, 5.0),), light="FFC890",
+        facade=dict(window=(1.1, 1.5, "segment"), windows=((-10.2, 1.2), (-4.7, 1.2)), carts=((2.0, 3.4, 3.3, "segment"),)),
+        window_kind="window", side_window=(1.2, 1.3, 1.5, "segment"), back_window=(1.2, 1.3),
+        open_roof=dict(truss_pitch=3.0, ceilings=((-11.7, -3.55, 0.3, 19.7),), chimneys=(dict(u=0.0, extra=0.8), dict(u=6.2, extra=0.8))),
+        lean_to=(6.2, 11.6, 2.3, 3.9, 3.0),
+    ),
     "guild": dict(archetype="palacete", wall="clara", roof="ardosia", accent="vinho", storeys=(7.4, 3.4), roof_shape=("hip", dict(pitch=24.0, eave_front=0.9, eave_back=0.5)), floor="stone", awning=("7A2F3A", "D9A441"), door=(0.0, 3.2, 4.2, "round"), features=("eave_brackets",), quoins=True, cornice=True, light="FFD9A0"),
     "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(5.0, 3.0), roof_shape=("gable_parallel", dict(pitch=38.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=("7A2F3A", "F2E6CF"), door=(0.0, 2.6, 3.0, "pointed"), features=("half_timber",), jetty=0.35, chimney=dict(u=-7.4, d=9.7, extra=1.2, pots=2), light="FFC27A"),
     "armor": dict(archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=("7A2F3A", "D8DCE4"), door=(0.0, 2.4, 3.0, "round"), features=("stone_bands",), light="FFD9A0"),
@@ -287,7 +301,64 @@ def dress_arch(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
     town.open_frame(b, opening, 0.18, -0.06, 0.0, room.house.trim_tint, town.TRIM_SMOOTH_BAND, frame)
 
 
-OPENING_DRESSING = {"door": dress_door, "vitrine": dress_vitrine, "open": dress_open_bay, "inner": dress_inner_door, "balcony": dress_balcony_door, "arch": dress_arch}
+def dress_casement(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
+    """Small window of a workshop: wall under a stone sill, a sash of small panes and two plank shutters folded back
+    flat on the street face."""
+    house = room.house
+    half = opening.width / 2.0
+    bar_tint = srgb(WOOD["escura"])
+    shutter_tint = house.accent
+    batten_tint = tuple(channel * 0.8 for channel in house.accent)
+    bar_us = [opening.u - half + opening.width * index / CASEMENT_COLUMNS for index in range(1, CASEMENT_COLUMNS)]
+    bar_zs = [opening.bottom + (opening.spring - opening.bottom) * index / CASEMENT_ROWS for index in range(1, CASEMENT_ROWS)]
+
+    town.wall_piece(b, (opening.u - half, 0.0, 0.0), (opening.u + half, WALL, opening.bottom), house.wall_material, house.wall_tint, frame)
+    b.prism(opening.outline(), 0.12, 0.14, "glass", frame=frame)
+    b.collider((opening.u - half, 0.08, opening.bottom), (opening.u + half, 0.2, opening.apex), frame)
+    town.open_frame(b, opening, 0.1, -0.05, 0.0, house.trim_tint, town.TRIM_BLOCK_BAND, frame)
+    b.box((opening.u - half - 0.12, -0.14, opening.bottom - 0.1), (opening.u + half + 0.12, WALL + 0.06, opening.bottom), "stone", srgb(STONE["media"]), frame=frame, uv=("world", 1.2))
+
+    for bar_u in bar_us:
+        b.box((bar_u - 0.02, 0.1, opening.bottom), (bar_u + 0.02, 0.16, opening.spring), "paint", bar_tint, frame=frame)
+
+    for bar_z in bar_zs + [opening.spring]:
+        b.box((opening.u - half, 0.1, bar_z - 0.02), (opening.u + half, 0.16, bar_z + 0.02), "paint", bar_tint, frame=frame)
+
+    for side_sign in (-1.0, 1.0):
+        hinge = opening.u + side_sign * (half + 0.1)
+        span = sorted((hinge, hinge + side_sign * half))
+        b.box((span[0], -0.09, opening.bottom), (span[1], -0.05, opening.spring), "wood", shutter_tint, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+        b.box((span[0] + 0.04, -0.11, opening.bottom + 0.15), (span[1] - 0.04, -0.09, opening.bottom + 0.25), "wood", batten_tint, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+        b.box((span[0] + 0.04, -0.11, opening.spring - 0.25), (span[1] - 0.04, -0.09, opening.spring - 0.15), "wood", batten_tint, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+
+
+def dress_cart_door(b: Builder, room: Room, frame: Matrix, opening: Opening) -> None:
+    """Wide plank doors of a workshop (carts and horses go in): a stone threshold, a heavy timber frame and two ledged
+    leaves strapped with iron, folded back flat against the street face."""
+    house = room.house
+    half = opening.width / 2.0
+    leaf_top = opening.spring - 0.04
+    plank_tint = srgb(WOOD["media"])
+    ledge_tint = srgb(WOOD["escura"])
+    iron_tint = house.iron_tint
+    ledge_zs = (0.35, leaf_top / 2.0, leaf_top - 0.4)
+
+    b.box((opening.u - half, -0.3, 0.0), (opening.u + half, WALL, FLOOR_TOP + 0.005), "stone", srgb(STONE["media"]), frame=frame, uv=("world", 1.2))
+    town.open_frame(b, opening, 0.22, -0.1, 0.0, srgb(WOOD["escura"]), WOOD_DARK_BAND, frame)
+
+    for side_sign in (-1.0, 1.0):
+        hinge = opening.u + side_sign * (half + 0.22)
+        span = sorted((hinge, hinge + side_sign * half))
+        b.box((span[0], -0.2, 0.04), (span[1], -0.12, leaf_top), "wood", plank_tint, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+
+        for ledge_z in ledge_zs:
+            b.box((span[0] + 0.06, -0.24, ledge_z - 0.08), (span[1] - 0.06, -0.2, ledge_z + 0.08), "wood", ledge_tint, frame=frame, uv=("band", *WOOD_DARK_BAND, 1.0))
+            b.box((min(span) + (0.0 if side_sign > 0 else half * 0.35), -0.25, ledge_z - 0.03), (max(span) - (half * 0.35 if side_sign > 0 else 0.0), -0.24, ledge_z + 0.03), "metal", iron_tint, frame=frame)
+
+    house.doors.append({"x": round(opening.u - room.half, 3), "width": opening.width, "enterable": True})
+
+
+OPENING_DRESSING = {"door": dress_door, "vitrine": dress_vitrine, "open": dress_open_bay, "inner": dress_inner_door, "balcony": dress_balcony_door, "arch": dress_arch, "window": dress_casement, "cart": dress_cart_door}
 
 
 def pierced_wall(b: Builder, room: Room, frame: Matrix, length: float, openings: list) -> None:
@@ -313,8 +384,24 @@ def evenly(span_from: float, span_to: float, pitch: float) -> list:
     return [(span_from + (span_to - span_from) * (index + 0.5) / count, (span_to - span_from) / count) for index in range(count)]
 
 
+def facade_openings(room: Room, facade: dict) -> list:
+    """Door, open bays, cart doors and small windows of a facade laid out bay by bay (spec "facade") instead of a run
+    of shop windows (wall-local u = facade u + half)."""
+    door_u, door_width, door_height, door_top = room.door
+    sill, height, top = facade["window"]
+    door = Opening(door_u + room.half, door_width, 0.0, door_height, door_top, kind="door")
+    open_bays = [Opening(u + room.half, width, 0.0, min(room.ceiling - 0.5, 3.8), "flat", kind="open") for u, width in room.spec.get("open_bays", ())]
+    carts = [Opening(u + room.half, width, 0.0, cart_height, cart_top, kind="cart") for u, width, cart_height, cart_top in facade.get("carts", ())]
+    windows = [Opening(u + room.half, width, sill, height, top, kind="window") for u, width in facade.get("windows", ())]
+
+    return [door] + open_bays + carts + windows
+
+
 def front_openings(room: Room) -> list:
     """Door, open bays and as many shop windows as fit the free stretches of the facade (wall-local u = facade u + half)."""
+    if "facade" in room.spec:
+        return facade_openings(room, room.spec["facade"])
+
     door_u, door_width, door_height, door_top = room.door
     axis_bay = room.spec.get("axis_bay", door_width)  # casarão: o mesmo ritmo de vãos em todos os salões, com ou sem porta
     vitrine_top = room.spec.get("vitrine_apex", min(room.ceiling - 0.6, 3.4))
@@ -360,7 +447,7 @@ def side_windows(room: Room, length: float) -> list:
     sill = room.ceiling - HIGH_SIDE_WINDOW_DROP if is_tall else SIDE_WINDOW_SILL
     width, sill, height, top = room.spec.get("side_window", (1.5, sill, min(2.2, room.ceiling - 1.8), "segment"))
 
-    return [Opening(u, width, sill, height, top, kind="vitrine") for u, _ in evenly(1.0, length - 1.0, SIDE_WINDOW_PITCH)]
+    return [Opening(u, width, sill, height, top, kind=room.spec.get("window_kind", "vitrine")) for u, _ in evenly(1.0, length - 1.0, SIDE_WINDOW_PITCH)]
 
 
 def back_windows(room: Room) -> list:
@@ -369,11 +456,13 @@ def back_windows(room: Room) -> list:
     high_sill = room.ceiling - 1.9
     chimney = room.spec.get("chimney")
     chimney_us = [chimney["u"]] if chimney and chimney["d"] > room.depth - 2.0 else []
+    chimney_us += [stack["u"] for stack in room.spec.get("open_roof", {}).get("chimneys", ())]
+    width, height = room.spec.get("back_window", (1.6, 1.4))
     offsets = [offset for offset, _ in evenly(BACK_AXIS_PIER, room.half - 1.0, BACK_WINDOW_PITCH)]
     facade_us = sorted([-offset for offset in offsets] + offsets)
     clear_us = [u for u in facade_us if all(abs(u - chimney_u) > 0.8 + CHIMNEY_CLEARANCE for chimney_u in chimney_us)]
 
-    return [Opening(room.half - u, 1.6, high_sill, 1.4, "segment", kind="vitrine") for u in clear_us]
+    return [Opening(room.half - u, width, high_sill, height, "segment", kind=room.spec.get("window_kind", "vitrine")) for u in clear_us]
 
 
 def wall_windows(room: Room) -> dict:
@@ -419,7 +508,7 @@ def dress_street_wall(b: Builder, room: Room, frame: Matrix, length: float, open
     """What makes a street wall read as a facade: stone plinth between the doors, a string course under the upper
     storey, and on tall halls a second tier of arched windows over the shop windows."""
     house = room.house
-    gaps = sorted((opening.u - opening.width / 2.0 - 0.18, opening.u + opening.width / 2.0 + 0.18) for opening in openings if opening.kind != "vitrine")
+    gaps = sorted((opening.u - opening.width / 2.0 - 0.18, opening.u + opening.width / 2.0 + 0.18) for opening in openings if opening.kind not in ("vitrine", "window"))
     plinth_from = [0.0] + [right for _, right in gaps]
     plinth_to = [left for left, _ in gaps] + [length]
     vitrines = [opening for opening in openings if opening.kind == "vitrine"]
@@ -487,8 +576,34 @@ def build_walls(b: Builder, room: Room, openings: dict = None, lift: float = 0.0
 
 # ---------- shell ----------
 
+def build_earth_floor(b: Builder, room: Room) -> None:
+    """Workshop floor: dark beaten earth, worn flagstones where the work is, and plank floors in the rooms of the
+    plan's wood_floors."""
+    b.box((room.left, room.front, 0.0), (room.right, room.back, FLOOR_TOP), "stone", srgb(EARTH_FLOOR), uv=("world", 2.5))
+    b.collider((room.left, room.front, 0.0), (room.right, room.back, FLOOR_TOP), name="Yard")  # passos de terra
+
+    for u_from, u_to, d_from, d_to in room.plan.get("stone_floors", ()):
+        b.box((u_from, d_from, FLOOR_TOP), (u_to, d_to, FLOOR_TOP + STONE_PATCH_LIFT), "stone", srgb(STONE["media"]), uv=("world", 1.2))
+        b.collider((u_from, d_from, FLOOR_TOP), (u_to, d_to, FLOOR_TOP + STONE_PATCH_LIFT), name="StoneFloor")
+
+    for u_from, u_to, d_from, d_to in room.plan.get("wood_floors", ()):
+        board_count = max(1, round((u_to - u_from) / BOARD_WIDTH))
+        board_width = (u_to - u_from) / board_count
+
+        for board_index in range(board_count):
+            board_left = u_from + board_index * board_width
+            shade = 1.0 if board_index % 3 else 0.9
+            b.box((board_left, d_from, FLOOR_TOP), (board_left + board_width, d_to, FLOOR_TOP + STONE_PATCH_LIFT), "wood", tuple(shade * channel for channel in srgb(WOOD["mel"])), uv=("band", *WOOD_LIGHT_BAND, 2.0))
+
+        b.collider((u_from, d_from, FLOOR_TOP), (u_to, d_to, FLOOR_TOP + STONE_PATCH_LIFT), name="WoodFloor")
+
+
 def build_floor(b: Builder, room: Room) -> None:
     """Planked or flagged floor flush with the pavement."""
+    if room.spec["floor"] == "earth":
+        build_earth_floor(b, room)
+        return
+
     if room.spec["floor"] == "stone":
         b.box((room.left, room.front, 0.0), (room.right, room.back, FLOOR_TOP), "stone", srgb(STONE["dourada"]), uv=("world", 1.2))
         return
@@ -592,6 +707,124 @@ def build_ceiling(b: Builder, room: Room) -> None:
 
         for brace_sign in (-1, 1):
             b.beam((u, d + brace_sign * 0.1, room.ceiling - 1.4), (u, d + brace_sign * 1.0, room.ceiling - 0.42), 0.14, 0.14, "wood", house.wood_tint)
+
+
+def roof_underside(room: Room, d: float) -> float:
+    """Height of the underside of an open gable roof (spec open_roof) over the facade distance d."""
+    options = room.spec["roof_shape"][1]
+    house = room.house
+    front, back = house.setback - options["eave_front"], house.depth + options["eave_back"]
+    slope = math.tan(math.radians(options["pitch"]))
+    drop = OPEN_ROOF_THICKNESS / math.cos(math.radians(options["pitch"]))
+
+    return house.top - 0.12 - drop + min(d - front, back - d) * slope
+
+
+def build_truss(b: Builder, room: Room, u: float) -> None:
+    """King-post truss across the hall: tie beam on the wall heads, principal rafters under the roof, a king post to
+    the ridge and two struts."""
+    tint = room.house.wood_tint
+    middle = (room.front + room.back) / 2.0
+    tie_top = room.storey - 0.05
+    tie_bottom = tie_top - TRUSS_TIE
+    ridge = roof_underside(room, middle)
+    feet = (room.front - WALL / 2.0, room.back + WALL / 2.0)
+
+    b.box((u - 0.13, room.front - WALL, tie_bottom), (u + 0.13, room.back + WALL, tie_top), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+    b.box((u - 0.11, middle - 0.11, tie_top), (u + 0.11, middle + 0.11, ridge), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    for foot in feet:
+        rafter_top = (u, middle + (0.12 if foot < middle else -0.12), ridge - 0.12)
+        b.beam((u, foot, roof_underside(room, foot) - 0.12), rafter_top, 0.2, 0.24, "wood", tint)
+        strut_end = (foot + middle) / 2.0
+        b.beam((u, middle + (-0.12 if foot < middle else 0.12), tie_top + 0.35), (u, strut_end, roof_underside(room, strut_end) - 0.2), 0.16, 0.16, "wood", tint)
+
+
+def build_open_roof(b: Builder, room: Room) -> None:
+    """The hall of spec open_roof has no ceiling: trusses every truss_pitch metres, purlins, a ridge beam, common
+    rafters and dark boards under the roof; the rooms in 'ceilings' keep a board ceiling. The camera stops under the
+    tie beams; forge chimneys ('chimneys') climb from the hearth hoods through the roof."""
+    options = room.spec["open_roof"]
+    house = room.house
+    tint = house.wood_tint
+    board_tint = srgb(WOOD["escura"])
+    roof_options = room.spec["roof_shape"][1]
+    front, back = house.setback - roof_options["eave_front"], house.depth + roof_options["eave_back"]
+    middle = (room.front + room.back) / 2.0
+    span = room.right - room.left
+    truss_count = max(2, round(span / options["truss_pitch"]))
+    truss_us = [room.left + span * (index + 0.5) / truss_count for index in range(truss_count)]
+    purlin_ds = [room.front + (middle - room.front) * share for share in (0.35, 0.7)] + [room.back - (room.back - middle) * share for share in (0.35, 0.7)]
+    rafter_count = round(span / COMMON_RAFTER_PITCH)
+    rafter_us = [room.left + span * (index + 0.5) / rafter_count for index in range(rafter_count)]
+    ridge = roof_underside(room, middle)
+    tie_bottom = room.storey - 0.05 - TRUSS_TIE
+
+    for eave in (front, back):
+        b.side_prism([(eave, roof_underside(room, eave) - 0.03), (eave, roof_underside(room, eave)), (middle, ridge), (middle, ridge - 0.03)], room.left, room.right, "wood", board_tint, uv=("band", *WOOD_DARK_BAND, 2.0))
+
+    for u in truss_us:
+        build_truss(b, room, u)
+
+    for d in purlin_ds:
+        b.box((room.left, d - 0.1, roof_underside(room, d) - 0.24), (room.right, d + 0.1, roof_underside(room, d) - 0.02), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    b.box((room.left, middle - 0.12, ridge - 0.26), (room.right, middle + 0.12, ridge), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    for u, foot in itertools.product(rafter_us, (room.front, room.back)):
+        b.beam((u, foot, roof_underside(room, foot) - 0.06), (u, middle, ridge - 0.06), 0.07, 0.1, "wood", board_tint)
+
+    b.collider((room.left, room.front, tie_bottom), (room.right, room.back, room.storey))  # o braço da câmera para sob os tirantes
+
+    for u_from, u_to, d_from, d_to in options.get("ceilings", ()):
+        build_room_ceiling(b, room, u_from, u_to, d_from, d_to)
+
+    for stack in options.get("chimneys", ()):
+        b.box((stack["u"] - 0.42, room.back - 0.73, STACK_FOOT), (stack["u"] + 0.42, room.back - 0.05, ridge + stack["extra"]), "brick", srgb(BRICK["vermelho"]))
+        b.box((stack["u"] - 0.5, room.back - 0.81, ridge + stack["extra"]), (stack["u"] + 0.5, room.back + 0.03, ridge + stack["extra"] + 0.14), "trim", house.trim_tint)
+
+
+def build_room_ceiling(b: Builder, room: Room, u_from: float, u_to: float, d_from: float, d_to: float) -> None:
+    """Board ceiling on joists over one room of an open-roofed hall (its top is a loft floor seen from the workshop)."""
+    joist_count = max(1, int((d_to - d_from) / JOIST_SPACING))
+    tint = room.house.wood_tint
+
+    b.box((u_from, d_from, room.ceiling), (u_to, d_to, room.storey - 0.05 - TRUSS_TIE), "wood", srgb(WOOD["mel"]), uv=("band", *WOOD_DARK_BAND, 2.0))
+    b.collider((u_from, d_from, room.ceiling - 0.2), (u_to, d_to, room.storey - TRUSS_TIE))
+
+    for joist_index in range(joist_count):
+        d = d_from + (d_to - d_from) * (joist_index + 0.5) / joist_count
+        b.box((u_from, d - 0.08, room.ceiling - 0.2), (u_to, d + 0.08, room.ceiling), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+
+def build_lean_to(b: Builder, room: Room) -> None:
+    """Pent roof on posts over the pavement before an open bay (spec lean_to: the smith shoes horses under it): a
+    wall plate on the facade, rafters, a roof of the house's tiles, a beam on three posts on stone pads with braces;
+    the roof and the beam also stop the camera."""
+    u_from, u_to, reach, high, low = room.spec["lean_to"]
+    house = room.house
+    tint = house.wood_tint
+    post_us = (u_from, (u_from + u_to) / 2.0, u_to)
+    rafter_count = round((u_to - u_from) / 0.8)
+    rafter_us = [u_from + (u_to - u_from) * index / rafter_count for index in range(rafter_count + 1)]
+
+    roof = b.side_prism([(0.0, high), (-reach - 0.3, low - 0.17), (-reach - 0.3, low - 0.05), (0.0, high + 0.12)], u_from - 0.4, u_to + 0.4, house.roof_material, house.roof_tint)
+    b.camera_stop(roof)
+    b.box((u_from - 0.4, -0.22, high - 0.3), (u_to + 0.4, 0.0, high - 0.02), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+    beam = b.box((u_from - 0.3, -reach - 0.12, low - 0.32), (u_to + 0.3, -reach + 0.12, low - 0.08), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+    b.camera_stop(beam)
+
+    for u in rafter_us:
+        b.beam((u, 0.0, high - 0.05), (u, -reach - 0.25, low - 0.12), 0.09, 0.12, "wood", tint)
+
+    for u in post_us:
+        b.box((u - 0.13, -reach - 0.13, 0.0), (u + 0.13, -reach + 0.13, low - 0.32), "wood", tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+        b.box((u - 0.22, -reach - 0.22, 0.0), (u + 0.22, -reach + 0.22, 0.25), "stone", srgb(STONE["media"]), uv=("world", 1.2))
+        b.collider((u - 0.15, -reach - 0.15, 0.0), (u + 0.15, -reach + 0.15, low - 0.32))
+
+        for brace_sign in (-1.0, 1.0):
+            if u_from - 0.01 < u + brace_sign * 0.7 < u_to + 0.01:
+                b.beam((u, -reach, low - 1.05), (u + brace_sign * 0.7, -reach, low - 0.3), 0.1, 0.1, "wood", tint)
 
 
 def partition_options(partition: tuple) -> dict:
@@ -832,7 +1065,15 @@ def build_shell(shop_type: str) -> dict:
 
     front = build_walls(b, room)
     build_floor(b, room)
-    build_ceiling(b, room)
+
+    if "open_roof" in room.spec:
+        build_open_roof(b, room)
+    else:
+        build_ceiling(b, room)
+
+    if "lean_to" in room.spec:
+        build_lean_to(b, room)
+
     build_awnings(b, room, front)
 
     if not room.spec.get("casarao"):

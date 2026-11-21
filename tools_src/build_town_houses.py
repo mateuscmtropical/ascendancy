@@ -827,6 +827,24 @@ def gable_parallel_roof(b: Builder, house: House, pitch: float, eave_front: floa
     return base + rise
 
 
+def open_gable_parallel_roof(b: Builder, house: House, pitch: float, eave_front: float = 0.4, eave_back: float = 0.4, thickness: float = 0.22) -> float:
+    """The same gable as gable_parallel_roof built hollow: two sloping slabs and the two gable walls, so a hall with no
+    ceiling (a forge, a barn) sees the underside of its roof. Returns the ridge height."""
+    front, back = house.setback - eave_front, house.depth + eave_back
+    middle = (front + back) / 2.0
+    rise = (back - front) / 2.0 * math.tan(math.radians(pitch))
+    base = house.top - 0.12
+    drop = thickness / math.cos(math.radians(pitch))
+
+    for eave in (front, back):
+        b.side_prism([(eave, base - drop), (eave, base), (middle, base + rise), (middle, base + rise - drop)], -house.limit, house.limit, house.roof_material, house.roof_tint)
+
+    for gable_from in (-house.limit, house.limit - WALL):
+        b.side_prism([(house.setback, house.top - 0.2), (house.depth, house.top - 0.2), (middle, base + rise - drop)], gable_from, gable_from + WALL, house.wall_material, house.wall_tint)
+
+    return base + rise
+
+
 def hip_roof(b: Builder, house: House, pitch: float, eave_front: float = 0.4, eave_back: float = 0.4) -> float:
     """Four slopes; sides end at the lot line (party walls), so only front and back eaves overhang."""
     front, back = house.setback - eave_front, house.depth + eave_back
@@ -973,6 +991,7 @@ def pavilion_roof(b: Builder, house: House, pitch: float) -> float:
 
 ROOF_BUILDERS = {
     "gable_parallel": gable_parallel_roof,
+    "open_gable_parallel": open_gable_parallel_roof,
     "hip": hip_roof,
     "gable_street": gable_street_roof,
     "flat_parapet": flat_parapet_roof,
