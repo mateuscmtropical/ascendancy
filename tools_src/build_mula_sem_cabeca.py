@@ -1014,9 +1014,9 @@ def build_bake_material(mesh_object) -> dict:
     is_ember = math_node(nodes, links, "GREATER_THAN", ember, 0.05)
     hide = mix(nodes, links, is_ember, hide, (0.05, 0.012, 0.006))
 
-    # carne úmida: brilha mais na crista da fibra, fosca no sulco carbonizado
-    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.2, clamp=True)
-    roughness_value.node.inputs[2].default_value = 0.42
+    # couro queimado seco: fosco, só a crista da fibra pega um pouco de luz (úmido parecia verniz)
+    roughness_value = math_node(nodes, links, "MULTIPLY_ADD", ridges, -0.15, clamp=True)
+    roughness_value.node.inputs[2].default_value = 0.8
     combine = nodes.new("ShaderNodeCombineColor")
     links.new(roughness_value, combine.inputs[1])
 
