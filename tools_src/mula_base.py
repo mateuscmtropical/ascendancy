@@ -39,8 +39,7 @@ UNSTRETCH_PASSES = 12
 # Muscle added to the legs, on the source mesh (metres): (is front leg, axis low point, axis high point, share of
 # extra girth at the middle of the span). The skin swells away from the axis, most at mid-span, nothing at the ends.
 LEG_MUSCLES = [
-    (True, Vector((0.107, -0.44, 0.50)), Vector((0.107, -0.40, 0.92)), 1.5),  # forearm, as stout as the gaskin
-    (True, Vector((0.107, -0.50, 0.12)), Vector((0.107, -0.44, 0.50)), 0.7),  # cannon: no longer a stick
+    (True, Vector((0.107, -0.44, 0.50)), Vector((0.107, -0.40, 0.92)), 0.4),  # forearm
     (False, Vector((0.141, 0.68, 0.55)), Vector((0.141, 0.47, 0.90)), 0.4),  # gaskin
     (False, Vector((0.141, 0.47, 0.84)), Vector((0.141, 0.45, 1.22)), 0.16),  # thigh
 ]
