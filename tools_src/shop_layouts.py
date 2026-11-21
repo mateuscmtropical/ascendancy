@@ -419,72 +419,85 @@ def furnish_magic(f) -> None:
 
 
 def furnish_tailor(f) -> None:
-    """Tailor and jeweler (17 m): the cloth hall with a ring of dress forms on a rug, fabric walls, rails and hat
-    shelves, the counter in the middle, a fitting dais with a mirror and panelled screen by the right windows, the
-    cutting table and spinning wheel at the back, and the jeweler's parlour in the back left corner behind a
-    partition with an arched doorway (glass cases, necklace busts, the goldsmith's bench and a safe)."""
-    f.put("hanging_lantern", -6.2, 15.3)
-    f.put("hanging_lantern", 5.7, 15.0)
-    f.put("hanging_lantern", 0.0, 5.0)
-    f.put("hanging_fabrics_a", -4.6, 6.0, 90.0)
-    f.put("hanging_fabrics_a", 4.6, 10.4, 90.0)
-    f.put("bunting_a", 0.0, 3.4)
-    f.put("doorway_lintel_a", -3.6, 15.3, 90.0, width=2.0, height=3.7)
+    """Draper, tailor and jeweller behind a street portico (references: draper's and haberdasher's shops of old
+    engravings and museums, tailors' workrooms with long cutting tables and pressing stoves, milliners' shelves,
+    cheval mirrors). The shop: a long counter down each side with stools for the customers, the wall behind
+    the left one shelved with bolts of cloth, behind the right one the haberdasher's glass drawers, sale tables of
+    folded cloth in the middle and dress forms in the arched windows. Behind the cross wall: the workroom (two
+    cutting tables, pressing stove, forms, rails, spinning wheel) on the left and, on the right, the fitting
+    rooms with the cheval mirror beside the jeweller's cases."""
+    # loja de fazendas: balcão e estantes de peças à esquerda
+    f.wall("left", ["fabric_shelf"] * 4, start=0.9, gap=0.3)
+    f.on_wall("left", "hat_shelf", 10.6)
 
-    for along in [1.4 + 2.0 * index for index in range(9)]:
-        f.on_wall("left", "wainscot_a", along, tint="E6C9A4")
-        f.on_wall("right", "wainscot_a", along, tint="E6C9A4")
+    for along in (3.0, 7.4):
+        f.put("counter_straight", -6.1, along, 90.0)
+        f.put("stool_round", -4.9, along - 0.8)
+        f.put("stool_round", -4.9, along + 0.8)
 
-    f.wall("back", ["wainscot_a"] * 8, start=f.left, gap=0.0)
+    # armarinho à direita
+    for along in (1.45, 5.45, 9.65):
+        f.on_wall("right", "haberdashery_drawers", along, seed=int(along * 10))
 
-    for along in (13.3, 17.3):
-        f.put("wainscot_a", -3.38, along, 90.0)
-        f.put("wainscot_a", -3.82, along, -90.0)
+    f.put("counter_straight", 6.1, 4.2, -90.0)
+    f.put("stool_round", 4.9, 3.4)
+    f.put("stool_round", 4.9, 5.0)
 
-    # cloth hall
-    f.put("rug", 0.0, 9.7, variant="red")
-    f.put("rug", 0.0, 6.2, variant="gold")
-    f.put("dress_form_a", -1.3, 8.6, variant="dress")
-    f.put("dress_form_a", 1.3, 8.6, variant="gown")
-    f.put("dress_form_a", -1.3, 10.8, variant="cloak")
-    f.put("dress_form_a", 1.3, 10.8, variant="dress")
-    f.put("counter_straight", 0.0, 14.2)
-    f.put("stool_round", 0.9, 16.0)
-    f.put("cutting_table", 1.4, 17.7, 0.0)
-    f.put("chair", -0.4, 17.9, 180.0)
-    window_wall(f, "back", [[], ["fabric_shelf", 0.4, "wall_banner", 0.4, "fabric_shelf"], []], [None, "hat_shelf"])
-    f.on_wall("back", "spinning_wheel", 7.4)
-    side_wall(f, "left", ["fabric_shelf", "clothes_rail", ("wall_shelf", {"variant": "shoes"}), "clothes_rail", "hat_shelf"], ["yarn_basket", ("crate_open", {"variant": "cloth"}), ("dress_form_a", {"variant": "gown"}), "yarn_basket", ("crate_open", {"variant": "cloth"})], start=1.6)
-    window_wall(f, "right", [[("crate_open", {"variant": "cloth"}), ("dress_form_a", {"variant": "dress"})], [("dress_form_a", {"variant": "cloak"}), ("plant_pot", {"variant": "flower"})], ["clothes_rail"]], ["yarn_basket", "spinning_wheel", ("crate_open", {"variant": "cloth"}), None])
-    f.wall("front", [("dress_form_a", {"variant": "gown"}), ("crate_open", {"variant": "cloth"}), ("dress_form_a", {"variant": "dress"}), "yarn_basket"], start=f.door_u + 2.0, gap=0.5)
-    f.wall("front", ["necklace_busts", ("plant_pot", {"variant": "flower"}), "necklace_busts"], start=f.left + 1.2)
-    f.put("display_table", -5.7, 8.2, variant="cloth")
-    f.put("display_table", -4.4, 4.4, variant="cloth")
-    f.put("display_table", 4.4, 4.4, variant="cloth")
-    f.put("rug", -4.4, 4.4, variant="gold")
-    f.put("rug", 4.4, 4.4, variant="gold")
-    f.put("bench_long", -2.7, 3.0, 0.0)
-    f.put("plant_pot", 2.5, 3.0, variant="flower")
-    f.put("yarn_basket", -5.7, 10.0)
-    shelf_island(f, 5.7, 5.0, ("cloth", "shoes"))
-    shelf_island(f, 5.7, 9.2, ("cloth", "cloth"))
-    f.grid("wheel_chandelier", (-5.7, 5.7), (5.0, 12.0), 2, 2)
+    # meio: mesas de fazenda e manequins nas janelas
+    f.put("cloth_bolt_table", -2.2, 5.0, 90.0, seed=1)
+    f.put("cloth_bolt_table", 2.2, 5.0, 90.0, seed=2)
+    f.put("cloth_bolt_table", 0.0, 8.6, 0.0, seed=3)
 
-    # fitting dais
-    f.put("dais_a", 5.6, 13.4, 90.0, width=3.0, depth=2.0)
-    f.put("dress_form_a", 5.7, 13.5, 0.0, z=0.35, variant="gown")
-    f.put("standing_mirror", 7.6, 13.4, -90.0)
-    f.put("timber_screen_a", 5.7, 14.9, 0.0, variant="panels")
+    for u, variant in ((-6.88, "gown"), (-3.44, "dress"), (3.44, "cloak"), (6.88, "dress")):
+        f.put("dress_form_a", u, 0.85, 180.0, variant=variant)
 
-    # jeweler's parlour
-    f.on_wall("left", "iron_safe", 18.4)
-    f.on_wall("left", "goldsmith_bench", 16.4)
-    f.on_wall("left", "iron_safe", 13.0)
-    f.put("jewel_case", -5.9, 18.5, 0.0)
-    f.put("jewel_case", -4.9, 17.1, 90.0)
-    f.put("jewel_case", -5.9, 12.8, 0.0)
-    f.put("necklace_busts", -7.6, 14.3, 90.0)
-    f.put("rug", -6.1, 15.4, 90.0, variant="gold")
+    f.put("hanging_fabrics_a", -2.2, 5.0, 90.0)
+    f.put("hanging_fabrics_a", 2.2, 5.0, 90.0)
+    f.put("hanging_fabrics_a", -7.2, 3.0, 90.0)
+    f.put("hanging_fabrics_a", -7.2, 7.4, 90.0)
+    f.put("bunting_a", 0.0, 1.6)
+    f.put("rug", 0.0, 2.6, variant="gold")
+    f.put("dress_form_a", -1.3, 10.4, 0.0, variant="gown")
+    f.put("dress_form_a", 1.3, 10.4, 0.0, variant="cloak")
+    f.put("crate_open", -4.4, 9.8, variant="cloth")
+    f.put("clothes_rail", -2.8, 9.9, 0.0)
+    f.put("clothes_rail", 2.8, 9.9, 0.0)
+    f.put("yarn_basket", 4.4, 6.8)
+    f.put("yarn_basket", -4.6, 1.2)
+    f.put("bench_long", 4.4, 8.6, -90.0)
+    f.put("plant_pot", -1.6, 0.9, variant="flower")
+    f.put("plant_pot", 1.6, 0.9, variant="flower")
+
+    for u, d in ((0.0, 2.6), (0.0, 7.0), (-6.1, 5.2), (6.1, 7.8)):
+        f.put("hanging_lantern", u, d)
+
+    # oficina de corte (fundo à esquerda)
+    f.put("cutting_table", -5.4, 14.0, 0.0, tint="2B3C6E")
+    f.put("cutting_table", -5.4, 17.2, 0.0, tint="8E2F45")
+    f.on_wall("back", "pressing_stove", -1.0)
+    f.put("dress_form_a", -1.2, 13.4, 200.0, variant="cloak")
+    f.put("dress_form_a", 0.4, 13.6, 160.0, variant="gown")
+    f.on_wall("left", "clothes_rail", 13.2)
+    f.on_wall("left", "fabric_shelf", 17.2)
+    f.put("spinning_wheel", 1.6, 17.6, -90.0)
+    f.put("cutting_table", -1.4, 15.8, 90.0, tint="3F8A50")
+    f.put("crate_open", -7.6, 15.6, 90.0, variant="cloth")
+    f.put("yarn_basket", -2.6, 18.6)
+    f.put("chair", -5.4, 15.4, 180.0)
+    f.put("chair", -5.4, 18.5, 180.0)
+
+    for u, d in ((-5.4, 14.0), (-5.4, 17.2), (-0.6, 15.6)):
+        f.put("hanging_lantern", u, d)
+
+    # provadores e joalheiro (fundo à direita)
+    f.put("fitting_booth", 6.36, 18.3, 0.0)
+    f.on_wall("right", "fitting_booth", 18.0)
+    f.put("standing_mirror", 3.1, 17.8, 90.0)
+    f.put("rug", 6.4, 15.4, variant="gold")
+    f.on_wall("right", "jewel_case", 13.85)
+    f.put("necklace_busts", 3.4, 12.4, 0.0)
+    f.put("goldsmith_bench", 4.8, 16.2, 0.0)
+    f.put("hanging_lantern", 5.6, 15.4)
 
 
 WING_MODULES = (orphanage_vestibule, orphanage_wing_library, orphanage_wing_reading, orphanage_wing_school, orphanage_wing_seminary)  # orphanage wings: PLAN, NEW_WALL_FINISHES, furnish_<hall>
@@ -512,7 +525,11 @@ PLANS = {
         furnish=furnish_magic,
     ),
     "alchemy": alchemy_layout.PLAN,
-    "tailor": dict(keeper=(0.0, 15.6), partitions=(("u", -3.6, 12.3, 14.3), ("u", -3.6, 16.3, 19.1)), furnish=furnish_tailor),
+    "tailor": dict(
+        keeper=(7.3, 5.6), posts=(), girder_pitch=2.4,
+        partitions=(("d", 11.4, -8.55, 8.55, dict(doors=[dict(at=-4.3, width=1.8, height=2.6), dict(at=5.2, width=1.4, height=2.5)])), ("u", 2.6, 11.55, 19.1, dict(doors=[dict(at=15.4, width=1.2, height=2.4)]))),
+        furnish=furnish_tailor,
+    ),
     "general": general_layout.PLAN,
     "library": orphanage_wing_library.PLAN,
 }

@@ -156,7 +156,13 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     ),
     # botica-alquimista: casa burguesa de cantaria com Erker, Offizin abobadada e cômodos reais (tools_src/alchemy_shell.py)
     "alchemy": dict(archetype="sobrado", wall="cal", roof="ardosia", accent="verde", storeys=(4.6, 3.2), roof_shape=("gable_parallel", dict(pitch=42.0, eave_front=0.5, eave_back=0.4)), floor="stone", awning=None, door=(0.0, 1.9, 2.75, "round"), quoins=True, cornice=True, features=(), chimney=dict(u=8.0, d=13.6, extra=1.4, pots=3), light="FFD9A0", shell="alchemy_shell"),
-    "tailor": dict(archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=("C0517A", "F4EFE6"), door=(0.0, 2.2, 2.9, "round"), features=("flower_boxes",), light="FFDCC0"),
+    "tailor": dict(  # casa de mercador mediterrânea com pórtico na calçada (referências em ascendancy-refs/lojas/tailor): loja de fazendas com balcões dos dois lados, oficina de corte e provadores no fundo
+        archetype="mediterranea", wall="rosa", roof="clara", accent="vinho", storeys=(4.4, 3.0), roof_shape=("gable_street", dict(pitch=32.0, gable="scroll")), floor="wood", awning=None,
+        door=(0.0, 2.2, 3.0, "round"), features=("flower_boxes",), light="FFDCC0",
+        facade=dict(window=(0.6, 2.6, "round"), windows=((-6.88, 2.0), (-3.44, 2.0), (3.44, 2.0), (6.88, 2.0))),
+        window_kind="window", casement_grid=(3, 4),
+        portico=dict(arches=5, reach=2.4, spring=2.6, top=4.4),
+    ),
     "library": dict(CASARAO_WING, floor="wood", light="FFF3E6", day_light="FFDFA8", inner_doors={"left": INNER_DOOR}, fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),
     "school": dict(CASARAO_WING, floor="wood", light="FFF4E8", day_light="FFE2B0", inner_doors={"right": INNER_DOOR}, fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),
     "reading": dict(CASARAO_UPPER, floor="wood", light="FFFAF4", day_light="FFE2B8", inner_doors={"left": INNER_DOOR}, fixture_light=WING_FIXTURE_LIGHT, night_ambient=WING_NIGHT_AMBIENT),
@@ -900,6 +906,48 @@ def scatter_vault_stars(b: Builder, room: Room, aisles: list, spring: float, ris
         b.hull([(u + size, d, z), (u - size, d, z), (u, d + size, z), (u, d - size, z), (u, d, z - 0.012)], "glow_warm", srgb("FFFFFF"))
 
 
+def build_portico(b: Builder, room: Room) -> None:
+    """Street portico over the pavement (spec portico), as under the arcades of Mediterranean merchant streets: a
+    row of round arches on square piers with stone plinths and imposts, an arch at each end, a vaulted-looking
+    soffit slab (camera stop) and on top a balcony with a balustrade for the upper floor."""
+    options = room.spec["portico"]
+    house = room.house
+    reach, spring, top, pier = options["reach"], options["spring"], options["top"], options.get("pier", 0.5)
+    u_from, u_to = -house.limit + 0.08, house.limit - 0.08  # plintos e cornija não passam do lote
+    bay = (u_to - u_from) / options["arches"]
+    pier_spans = [(max(u_from, u_from + bay * index - pier / 2.0), min(u_to, u_from + bay * index + pier / 2.0)) for index in range(options["arches"] + 1)]
+    openings = list(zip([span[1] for span in pier_spans[:-1]], [span[0] for span in pier_spans[1:]]))
+    front, back = -reach, -reach + pier
+    stone = srgb(STONE["clara"])
+    baluster_us = [u_from + 0.2 + 0.3 * index for index in range(int((u_to - u_from - 0.4) / 0.3) + 1)]
+
+    for o_from, o_to in openings:
+        arch = segment_arc(o_from, o_to, spring, (o_to - o_from) / 2.0)
+        b.prism(arch + [(o_to, top), (o_from, top)], front, back, house.wall_material, house.wall_tint)
+
+    for p_from, p_to in pier_spans:
+        b.box((p_from, front, 0.0), (p_to, back, top), house.wall_material, house.wall_tint)
+        b.box((p_from - 0.06, front - 0.06, 0.0), (p_to + 0.06, back + 0.06, 0.4), "stone", stone, uv=("world", 1.2))
+        b.box((p_from - 0.05, front - 0.05, spring - 0.16), (p_to + 0.05, back + 0.05, spring), "stone", stone, uv=("world", 1.2))
+        b.collider((p_from, front, 0.0), (p_to, back, spring))
+
+    for side_from, side_to in ((u_from, u_from + pier), (u_to - pier, u_to)):
+        side_arch = segment_arc(back, 0.0, spring, -back / 2.0)
+        b.side_prism(side_arch + [(0.0, top), (back, top)], side_from, side_to, house.wall_material, house.wall_tint)
+
+    slab = b.box((u_from, front, top - 0.3), (u_to, 0.0, top), house.wall_material, house.wall_tint)
+    b.camera_stop(slab)
+    b.box((u_from, front - 0.08, top - 0.1), (u_to, front + 0.1, top + 0.06), "stone", stone, uv=("world", 1.2))
+
+    for u in baluster_us:
+        b.cylinder((u, front + 0.12, top + 0.06), 0.05, 0.78, 6, "stone", stone, top_radius=0.04)
+
+    b.box((u_from, front + 0.02, top + 0.84), (u_to, front + 0.24, top + 0.96), "stone", stone, uv=("world", 1.2))
+
+    for side_u in (u_from + 0.1, u_to - 0.1):
+        b.box((side_u - 0.1, front, top + 0.84), (side_u + 0.1, 0.0, top + 0.96), "stone", stone, uv=("world", 1.2))
+
+
 def build_lean_to(b: Builder, room: Room) -> None:
     """Pent roof on posts over the pavement before an open bay (spec lean_to: the smith shoes horses under it): a
     wall plate on the facade, rafters, a roof of the house's tiles, a beam on three posts on stone pads with braces;
@@ -1179,6 +1227,9 @@ def build_shell(shop_type: str) -> dict:
 
     if "lean_to" in room.spec:
         build_lean_to(b, room)
+
+    if "portico" in room.spec:
+        build_portico(b, room)
 
     build_awnings(b, room, front)
 
