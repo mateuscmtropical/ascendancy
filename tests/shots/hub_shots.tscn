@@ -82,6 +82,16 @@ position = Vector3(-47.366, 1.600, 22.438)
 rotation = Vector3(-0.034, 3.749, 0.000)
 fov = 60.0
 
+[node name="BenchSitterWest" type="Camera3D" parent="."]
+position = Vector3(-29.458, 1.250, 4.499)
+rotation = Vector3(-0.207, -1.571, 0.000)
+fov = 60.0
+
+[node name="BenchSitterCathedral" type="Camera3D" parent="."]
+position = Vector3(30.800, 1.250, -13.360)
+rotation = Vector3(-0.236, -0.615, 0.000)
+fov = 60.0
+
 [node name="CoretoClose" type="Camera3D" parent="."]
 position = Vector3(-43.500, 2.000, -16.500)
 rotation = Vector3(0.000, 2.176, 0.000)

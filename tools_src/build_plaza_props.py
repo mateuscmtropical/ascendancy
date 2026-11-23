@@ -1,4 +1,4 @@
-"""Model the plaza props (fountains, lamp post, planter) and export them to art/town/.
+"""Model the plaza props (fountains, lamp post, planter, park bench) and export them to art/town/.
 
 Reuses the geometry helpers and stone textures of build_cathedral.py (run that first: it writes the textures).
 Meshes named "Water" get the water shader in Godot; *-colonly boxes become collision.
@@ -60,6 +60,7 @@ def build_prop_materials() -> dict:
         "palm_trunk": make_plain_material("M_PalmTrunk", (0.3, 0.26, 0.21), 0.0, 0.95),
         "palm_leaf": make_two_sided_material("M_PalmLeaf", (0.07, 0.3, 0.07)),
         "wood": make_plain_material("M_PropWood", (0.2, 0.11, 0.06), 0.0, 0.7),
+        "bench_wood": make_material("M_BenchWood", load_kit_image("T_WoodTrim_BaseColor.png", True), load_kit_image("T_WoodTrim_Normal.png", False)),
     }
 
 
@@ -602,6 +603,100 @@ def build_palm(materials: dict) -> None:
         frond.location = (crown[0], crown[1], trunk_height + 0.75 - 0.12 * tier)
 
 
+BENCH_SLAT_LENGTH = 1.9
+BENCH_END_X = 0.84  # the two cast-iron ends, one near each end of the slats
+BENCH_SEAT_TOP = 0.46  # height the UAL Sitting_* clips sit at
+BENCH_BACK_TILT = math.radians(15.0)  # backrest leaning back from upright
+BENCH_SEAT_SLATS = (-0.30, -0.218, -0.136, -0.054, 0.028)  # y of each seat slat (front is -Y)
+BENCH_BACK_SLATS = (0.14, 0.235, 0.33)  # metres up the backrest line, from the back of the seat
+BENCH_BACK_FOOT = (0.105, 0.50)  # (y, z) where the backrest line starts, just above the back seat slat
+BENCH_BAR_FOOT = (0.135, 0.41)  # (y, z) where the iron back bar leaves the seat rail, behind the backrest slats
+BENCH_IRON = (0.03, 0.036)  # cross-section of the cast-iron bars: across the bench, along the side
+WOOD_GRAIN_BAND = (0.72, 0.96)  # V range of the plank band at the top of the kit's wood-trim atlas
+WOOD_METRES_PER_TILE = 2.0  # the atlas spans 2 m of plank in both directions
+
+
+def make_slat(name: str, center: tuple, width: float, thickness: float, tilt: float, grain_offset: float, material):
+    """One plank across the bench: its UVs follow the grain of the atlas's plank band along its length."""
+    slat_bmesh = bmesh.new()
+    uv_layer = slat_bmesh.loops.layers.uv.new()
+    band_low, band_high = WOOD_GRAIN_BAND
+    across_span = (width + thickness) / WOOD_METRES_PER_TILE  # same texel size across the grain as along it
+    band_start = band_low + (band_high - band_low - across_span) * (grain_offset % 1.0)
+
+    bmesh.ops.create_cube(slat_bmesh, size=1.0)
+    bmesh.ops.scale(slat_bmesh, vec=(BENCH_SLAT_LENGTH, width, thickness), verts=slat_bmesh.verts)
+
+    for face in slat_bmesh.faces:
+        for loop in face.loops:
+            across = (loop.vert.co.y / width + loop.vert.co.z / thickness) * 0.5 + 0.5
+            loop[uv_layer].uv = (loop.vert.co.x / WOOD_METRES_PER_TILE + grain_offset, band_start + across_span * across)
+
+    bmesh.ops.transform(slat_bmesh, matrix=Matrix.Translation(center) @ Matrix.Rotation(tilt, 4, "X"), verts=slat_bmesh.verts)
+    slat = object_from_bmesh(name, slat_bmesh, material)
+    slat["keep_uvs"] = True
+
+    return slat
+
+
+def make_iron_bar(name: str, x: float, start: tuple, end: tuple, material) -> None:
+    """Square cast-iron bar in the side plane x, from (y, z) start to end (lapped a little at both joints)."""
+    width, depth = BENCH_IRON
+    run = Vector((0.0, end[0] - start[0], end[1] - start[1]))
+    bar = make_box(name, (0, 0, 0), (width, run.length + depth, depth), material)
+
+    bar.location = (x, (start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0)
+    bar.rotation_euler.x = math.atan2(run.z, run.y)
+
+
+def back_line(foot: tuple, distance: float) -> tuple:
+    return foot[0] + distance * math.sin(BENCH_BACK_TILT), foot[1] + distance * math.cos(BENCH_BACK_TILT)
+
+
+def build_bench_end(side: str, x: float, material) -> None:
+    """One cast-iron end: front leg up to the armrest, rear leg, seat rail, the back bar that carries the backrest,
+    a curved armrest and a low brace between the legs."""
+    seat_rail_z = BENCH_SEAT_TOP - 0.05
+    back_top = back_line(BENCH_BAR_FOOT, 0.48)
+    arm_back = back_line(BENCH_BAR_FOOT, (0.66 - BENCH_BAR_FOOT[1]) / math.cos(BENCH_BACK_TILT))
+    armrest = [(-0.36, 0.63), (-0.33, 0.66), (-0.2, 0.675), (0.0, 0.67), arm_back]
+    brace = [(-0.30, 0.13), (-0.1, 0.18), (0.08, 0.18), (0.17, 0.12)]
+
+    make_iron_bar(f"FrontLeg{side}", x, (-0.31, 0.0), (-0.33, 0.655), material)
+    make_iron_bar(f"RearLeg{side}", x, (0.2, 0.0), (BENCH_BAR_FOOT[0], seat_rail_z), material)
+    make_iron_bar(f"SeatRail{side}", x, (-0.34, seat_rail_z), (BENCH_BAR_FOOT[0], seat_rail_z), material)
+    make_iron_bar(f"BackBar{side}", x, BENCH_BAR_FOOT, back_top, material)
+
+    for index, (start, end) in enumerate(zip(armrest, armrest[1:])):
+        make_iron_bar(f"Armrest{side}{index}", x, start, end, material)
+
+    for index, (start, end) in enumerate(zip(brace, brace[1:])):
+        make_iron_bar(f"Brace{side}{index}", x, start, end, material)
+
+    for index, foot_y in enumerate((-0.31, 0.2)):
+        make_box(f"Foot{side}{index}", (x, foot_y, 0.012), (0.06, 0.09, 0.024), material)
+
+
+def build_park_bench(materials: dict) -> None:
+    """Praça bench: wooden slats for seat and backrest, held at each end by a cast-iron side frame that joins the
+    seat to the backrest. The front faces -Y (+Z in Godot); a sitter goes 0.15 m in front of the origin."""
+    slat_thickness = 0.035
+
+    for index, slat_y in enumerate(BENCH_SEAT_SLATS):
+        make_slat(f"SeatSlat{index}", (0.0, slat_y, BENCH_SEAT_TOP - slat_thickness / 2.0), 0.07, slat_thickness, 0.0, index * 0.37, materials["bench_wood"])
+
+    for index, distance in enumerate(BENCH_BACK_SLATS):
+        y, z = back_line(BENCH_BACK_FOOT, distance)
+        behind = slat_thickness / 2.0
+        center = (0.0, y + behind * math.cos(BENCH_BACK_TILT), z - behind * math.sin(BENCH_BACK_TILT))
+        make_slat(f"BackSlat{index}", center, 0.085, slat_thickness, math.pi / 2.0 - BENCH_BACK_TILT, 0.2 + index * 0.41, materials["bench_wood"])
+
+    for side, x in (("L", BENCH_END_X), ("R", -BENCH_END_X)):
+        build_bench_end(side, x, materials["metal"])
+
+    make_box("ParkBench-colonly", (0.0, -0.06, 0.27), (BENCH_SLAT_LENGTH, 0.62, 0.54), None)
+
+
 def build_planter(materials: dict) -> None:
     make_octagon_ring("PlanterWall", 1.3, 1.08, 0.5, materials["stone"])
     make_octagon_ring("PlanterRim", 1.36, 1.02, 0.08, materials["trim"]).location.z = 0.5
@@ -617,6 +712,7 @@ PROPS = {
     "coreto": build_coreto,
     "planter": build_planter,
     "palm": build_palm,
+    "park_bench": build_park_bench,
 }
 
 
