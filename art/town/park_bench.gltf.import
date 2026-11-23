@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://4mlte6qsvwcd"
-path="res://.godot/imported/Bench.gltf-05ffcb89dc42da73b7ce5301e0a9e121.scn"
+uid="uid://ck35lii6eqjl6"
+path="res://.godot/imported/park_bench.gltf-a0178c8ccf0fa56f6e6e294654967a98.scn"
 
 [deps]
 
-source_file="res://art/props/Bench.gltf"
-dest_files=["res://.godot/imported/Bench.gltf-05ffcb89dc42da73b7ce5301e0a9e121.scn"]
+source_file="res://art/town/park_bench.gltf"
+dest_files=["res://.godot/imported/park_bench.gltf-a0178c8ccf0fa56f6e6e294654967a98.scn"]
 
 [params]
 
@@ -35,7 +35,7 @@ animation/fps=30
 animation/trimming=false
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
-import_script/path=""
+import_script/path="res://features/audio/tag_ground_surfaces.gd"
 materials/extract=0
 materials/extract_format=0
 materials/extract_path=""

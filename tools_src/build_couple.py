@@ -3,11 +3,11 @@
 Built from the same CC0 Quaternius pieces as the town characters (65-bone rig, UAL clips, face shapes):
 
 - couple_him: the peasant outfit recoloured into a black short-sleeved shirt, dark trousers and dark shoes; the
-  Buzzed hair with a fuller, curly top over the short sides; the beard trimmed down to a thin goatee and moustache;
-  the skin of head and arms tinted a light brown.
+  short SimpleParted hair; a day's stubble painted on the skin, which is tinted a light olive brown.
 - couple_her: the peasant outfit with the blouse kept white, the vest and corset recoloured into a sleeveless
   light-wash denim vest, dark trousers and shoes; the sleeves cut at the elbow over bare forearms taken from the base
-  body; the Long hair grown below the shoulders with waves at the ends, draped over the body; the skin lifted lighter.
+  body; the Long hair grown below the shoulders with waves at the ends, draped over the body; thin eyebrows; the
+  skin lifted lighter.
 
 Each recolour works on a copy of the outfit atlas, inside the UV footprint of the one garment it changes, so the
 browns of vest, belt and boots that share the atlas never bleed into each other. Hair colour is left to the scene
@@ -25,7 +25,7 @@ from pathlib import Path
 import bmesh
 import bpy
 import numpy
-from mathutils import Vector, noise
+from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -44,11 +44,12 @@ STUBBLE_BOTTOM = 0.165  # down to under the jaw
 STUBBLE_CHIN_HALF_WIDTH = 0.028
 STUBBLE_LIPS = (0.072, 0.096)
 STUBBLE_LIPS_HALF_WIDTH = 0.026
-STUBBLE_COLOR = (0.10, 0.085, 0.08)
-STUBBLE_STRENGTH = 0.48
-STUBBLE_FEATHER = 0.012  # share of the texture width over which the stubble fades out at its edges
+STUBBLE_COLOR = (0.06, 0.055, 0.06)
+STUBBLE_STRENGTH = 0.55
+STUBBLE_FEATHER = 0.005  # share of the texture width over which the stubble fades out at its edges
 FULLNESS_HEIGHTS = (0.45, 1.45)  # metres: thighs to shoulders
-CURL_SCALE = 45.0  # curls of about 1.5 cm on top of his head  # share of its height over the skin the trimmed beard keeps
+BROW_THINNING = 0.6  # her eyebrows keep this share of their height: thin, natural brows instead of heavy ones
+OLIVE_GREYING = 0.3  # share of the way an olive skin moves toward its own grey before the tint, so it is not orange
 # Garment colours (sRGB), applied over the luminance of the original cloth so its folds and seams stay.
 BLACK_SHIRT = (0.075, 0.075, 0.085)
 DARK_TROUSERS = (0.12, 0.13, 0.16)
@@ -68,8 +69,8 @@ COUPLE = {
     "couple_him": {
         "outfit": "Male_Peasant",
         "base_body": "Superhero_Male_FullBody",
-        "hair": ["Hair_Buzzed"],
-        "skin": ("multiply", (0.97, 0.87, 0.77)),
+        "hair": ["Hair_SimpleParted"],
+        "skin": ("olive", (0.98, 0.89, 0.8)),
         "garments": {"Body": ("all", BLACK_SHIRT), "Arms": ("all", BLACK_SHIRT), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
         "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS)],
     },
@@ -284,9 +285,17 @@ def recolor_garments(garments: dict, prefix: str) -> None:
         store_pixels(image, pixels)
 
 
+SKIN_TINTS = {  # mode -> how an RGB skin texture takes the tone
+    "multiply": lambda rgb, tone: rgb * tone,
+    "lift": lambda rgb, tone: (rgb + (1.0 - rgb) * 0.28) * tone,
+    "olive": lambda rgb, tone: (rgb + (rgb.mean(axis=-1, keepdims=True) - rgb) * OLIVE_GREYING) * tone,
+}
+
+
 def recolor_skin(materials: list, skin: tuple, prefix: str) -> None:
-    """Tints every skin texture of the character the same way: multiply darkens, lift lightens toward a pale tone."""
+    """Tints every skin texture of the character the same way (SKIN_TINTS)."""
     mode, tone = skin
+    tint = SKIN_TINTS[mode]
     done = {}
 
     for material in dict.fromkeys(materials):  # a material shared by two meshes is tinted once
@@ -294,8 +303,7 @@ def recolor_skin(materials: list, skin: tuple, prefix: str) -> None:
 
         if source.name not in done:
             pixels = image_pixels(source)
-            rgb = pixels[..., :3]
-            pixels[..., :3] = rgb * numpy.array(tone) if mode == "multiply" else (rgb + (1.0 - rgb) * 0.28) * numpy.array(tone)
+            pixels[..., :3] = tint(pixels[..., :3], numpy.array(tone))
             done[source.name] = copy_image(source, f"T_{prefix}_Skin{len(done) + 1}")
             store_pixels(done[source.name], pixels)
 
@@ -303,29 +311,6 @@ def recolor_skin(materials: list, skin: tuple, prefix: str) -> None:
 
 
 # ---------- shapes ----------
-
-def head_frame(armature) -> tuple:
-    head = armature.data.bones["Head"]
-
-    return armature.matrix_world @ head.head_local, armature.matrix_world @ head.tail_local
-
-
-def curly_top(hair, armature) -> None:
-    """Fuller hair on top, the sides kept short (a fade), with small bumps for the curls."""
-    pivot, _ = head_frame(armature)
-    positions = [hair.matrix_world @ vertex.co for vertex in hair.data.vertices]
-    top = max(point.z for point in positions)
-    to_local = hair.matrix_world.inverted()
-    centre = Vector((pivot.x, sum(point.y for point in positions) / len(positions), pivot.z + 0.09))
-
-    for vertex, point in zip(hair.data.vertices, positions):
-        rise = min(max((point.z - (top - 0.085)) / 0.05, 0.0), 1.0)
-        curls = 0.5 + 0.5 * noise.noise(point * CURL_SCALE)
-        outward = (point - centre).normalized()
-        vertex.co = to_local @ (point + outward * rise * (0.016 + 0.018 * curls) + Vector((0.0, 0.0, rise * 0.014)))
-
-    recompute_normals(hair)
-
 
 def stubble(head, eyes_z: float) -> None:
     """A day's unshaven beard painted on the skin: jaw, chin, lower cheeks and upper lip darkened in a fine grain."""
@@ -354,7 +339,8 @@ def stubble(head, eyes_z: float) -> None:
 
 
 def feathered(mask: numpy.ndarray, radius: int) -> numpy.ndarray:
-    """The mask as 0..1 coverage with soft edges: a box blur (two passes, rows then columns) inside the mask only."""
+    """The mask as 0..1 coverage with soft edges that fade out on both sides of its border: a box blur, two passes
+    of rows then columns."""
     coverage = mask.astype(numpy.float32)
 
     for _ in range(2):
@@ -364,7 +350,7 @@ def feathered(mask: numpy.ndarray, radius: int) -> numpy.ndarray:
         columns = numpy.cumsum(coverage, axis=1)
         coverage = (columns[:, 2 * radius:] - numpy.hstack([numpy.zeros((columns.shape[0], 1)), columns[:, :-2 * radius - 1]])) / (2 * radius + 1)
 
-    return coverage * mask
+    return coverage
 
 
 def fuller_body(meshes: list, thickness: dict, eyes_z: float) -> None:
@@ -479,6 +465,19 @@ def short_sleeves_and_bare_forearms(base_body_name: str, armature, skin_material
     delete_objects([scene_object for scene_object in base_objects if scene_object is not forearms])
 
 
+def thinner_brows(eyebrows) -> None:
+    """Each eyebrow squeezed toward its own middle line, so it keeps its arch and length but loses height."""
+    positions = [eyebrows.matrix_world @ vertex.co for vertex in eyebrows.data.vertices]
+    to_local = eyebrows.matrix_world.inverted()
+    middle_by_side = {side: numpy.mean([point.z for point in positions if (point.x > 0.0) == side]) for side in (True, False)}
+
+    for vertex, point in zip(eyebrows.data.vertices, positions):
+        middle = middle_by_side[point.x > 0.0]
+        vertex.co = to_local @ Vector((point.x, point.y, middle + (point.z - middle) * BROW_THINNING))
+
+    recompute_normals(eyebrows)
+
+
 def eye_height() -> float:
     eyes = bpy.data.objects["Eyes"]
 
@@ -513,8 +512,7 @@ def build_partner(name: str) -> Path:
     if name == "couple_her":
         fuller_body([outfit_piece("Body"), outfit_piece("Legs"), outfit_piece("Arms"), bpy.data.objects["Forearms_Skin"], head], recipe["fullness"], eye_height())
         long_wavy_hair(bpy.data.objects["Hair_Long"], armature, [outfit_piece("Body")])
-    else:
-        curly_top(bpy.data.objects["Hair_Buzzed"], armature)
+        thinner_brows(bpy.data.objects["Eyebrows"])
 
     skin_materials = [material for scene_object in bpy.data.objects if scene_object.type == "MESH" for material in scene_object.data.materials if material and material.name.startswith(("MI_Superhero", "MI_Regular"))]
     recolor_skin(skin_materials, recipe["skin"], prefix)

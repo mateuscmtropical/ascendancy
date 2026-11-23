@@ -27,6 +27,8 @@ const SMILE_HOLD_SECONDS: float = 2.4
 @export var animation_offset_seconds: float = 0.0
 ## Conversando: o rosto abre um sorriso a cada tantos segundos (0 = nunca).
 @export var smile_every_seconds: float = 0.0
+## Expressão para onde o rosto volta sozinho (o casal do banco descansa sorrindo).
+@export var resting_mood: FaceAnimator.Mood = FaceAnimator.Mood.NEUTRAL
 
 var _model: CharacterModel
 var _patrol_state: PatrolState = PatrolState.WALKING
@@ -54,6 +56,7 @@ func _ready() -> void:
 	_model.uses_distance_detail = true
 	_model.scale = Vector3.ONE * body_scale
 	add_child(_model)
+	_model.rest_expression(resting_mood)
 	_stop_animating_off_screen()
 
 	if smile_every_seconds > 0.0:

@@ -3,7 +3,8 @@
 The CC0 animation libraries bring a jab and a cross but no kicks. Each clip here is a short table of key poses
 written in body terms (where the hips, hands and feet are, how the trunk turns and leans); every channel is
 interpolated with its own spline, limbs are solved with two-bone IK and the result is baked to bone keys.
-All clips start and end in the guard of the library's Punch_Jab, so they chain with it without a pop.
+All clips start and end in the guard of the library's Punch_Jab, so they chain with it without a pop; the seated
+clips of the couple on the plaza bench (SEATED_CLIPS) start from the library's Sitting_Idle instead.
 
 Usage:
   blender -b --factory-startup -P tools_src/build_combat_animations.py
@@ -20,6 +21,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 RIG_SOURCE = PROJECT_DIR / "art" / "characters" / "adventurer_male.gltf"
 GUARD_SOURCE = PROJECT_DIR / "art" / "animations" / "ual1.glb"
 GUARD_ACTION = "Punch_Jab"
+SEATED_ACTION = "Sitting_Idle_Loop"  # base of the seated clips, so they keep the library's seat height and legs
 OUTPUT_PATH = PROJECT_DIR / "art" / "animations" / "combat.glb"
 FRAMES_PER_SECOND = 60
 SPINE = ("spine_01", "spine_02", "spine_03")
@@ -343,6 +345,30 @@ LOOP_CLIPS = {
     ]),
 }
 
+# The couple on the plaza bench (tools_src/build_hub_scene.py, add_couple): she sits on his left, hip to hip.
+# Offsets from the library's Sitting_Idle; in his frame her far shoulder is about (0.55, 0.26, 0.98).
+# He: the left arm goes behind her neck, elbow up and back over the backrest, the hand on her far shoulder; the right
+# hand rests on his thigh; trunk and head lean a little toward her.
+EMBRACE_BASE = {
+    "chest": V(6.0, 0.0, 5.0), "head": V(8.0, 0.0, 12.0),
+    "hand_l": V(0.311, 0.146, 0.322), "elbow_l": V(0.0, 1.0, 0.35), "fist_l": V(0.0, 0.0, 0.0),
+    "hand_r": V(0.02, -0.06, -0.02),
+}
+# She: leans into him with her head against his, her right hand on his knee, the left one in her lap.
+LEAN_BASE = {
+    "chest": V(-6.0, 0.0, -12.0), "head": V(-8.0, 4.0, -16.0),
+    "hand_r": V(-0.07, -0.13, -0.04), "elbow_r": V(-0.5, 0.7, -0.4),
+    "hand_l": V(-0.1, -0.02, 0.0),
+}
+SEATED_CLIPS = {
+    "Couple_Embrace_Loop": (4.0, EMBRACE_BASE, [
+        (2.0, {"chest": V(0.0, 1.5, 0.0), "head": V(0.0, 1.0, 1.0), "hand_l": V(0.0, 0.0, -0.008)}),
+    ]),
+    "Couple_Lean_Loop": (4.0, LEAN_BASE, [
+        (2.0, {"chest": V(0.0, 1.5, 0.0), "head": V(0.0, 0.0, -1.0)}),
+    ]),
+}
+
 
 def local_matrix(bone, matrix_of) -> Matrix:
     return matrix_of(bone.parent).inverted() @ matrix_of(bone) if bone.parent else matrix_of(bone)
@@ -368,7 +394,8 @@ def copy_library_pose(armature, library) -> None:
     bpy.context.view_layer.update()
 
 
-def load_rig() -> Rig:
+def load_rigs(base_actions: tuple) -> dict:
+    """One Rig per base pose of the library (its first frame), all on the same character armature."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(RIG_SOURCE))
 
@@ -378,19 +405,21 @@ def load_rig() -> Rig:
     bpy.ops.import_scene.gltf(filepath=str(GUARD_SOURCE))
 
     library = next(scene_object for scene_object in set(bpy.data.objects) - rig_objects if scene_object.type == "ARMATURE")
-    guard_action = bpy.data.actions[GUARD_ACTION]
+    rigs = {}
 
     library.animation_data_create()
-    library.animation_data.action = guard_action
 
-    if library.animation_data.action_slot is None and guard_action.slots:
-        library.animation_data.action_slot = guard_action.slots[0]
+    for action_name in base_actions:
+        action = bpy.data.actions[action_name]
+        library.animation_data.action = action
 
-    bpy.context.scene.frame_set(int(guard_action.frame_range[0]))
-    bpy.context.view_layer.update()
-    copy_library_pose(armature, library)
+        if action.slots:
+            library.animation_data.action_slot = action.slots[0]
 
-    rig = Rig(armature)
+        bpy.context.scene.frame_set(int(action.frame_range[0]))
+        bpy.context.view_layer.update()
+        copy_library_pose(armature, library)
+        rigs[action_name] = Rig(armature)
 
     for scene_object in set(bpy.data.objects) - rig_objects:
         bpy.data.objects.remove(scene_object, do_unlink=True)
@@ -398,7 +427,7 @@ def load_rig() -> Rig:
     for action in list(bpy.data.actions):
         bpy.data.actions.remove(action)
 
-    return rig
+    return rigs
 
 
 def export_clips(armature) -> None:
@@ -413,7 +442,8 @@ def export_clips(armature) -> None:
 
 
 if __name__ == "__main__":
-    combat_rig = load_rig()
+    base_rigs = load_rigs((GUARD_ACTION, SEATED_ACTION))
+    combat_rig = base_rigs[GUARD_ACTION]
 
     bpy.context.scene.render.fps = FRAMES_PER_SECOND
 
@@ -422,6 +452,9 @@ if __name__ == "__main__":
 
     for clip_name, (clip_seconds, clip_base, clip_poses) in LOOP_CLIPS.items():
         bake_clip(combat_rig, clip_name, clip_seconds, clip_poses, clip_base)
+
+    for clip_name, (clip_seconds, clip_base, clip_poses) in SEATED_CLIPS.items():
+        bake_clip(base_rigs[SEATED_ACTION], clip_name, clip_seconds, clip_poses, clip_base)
 
     export_clips(combat_rig.armature)
     print(f"BUILT {OUTPUT_PATH}")

@@ -22,7 +22,7 @@ MODELS = {
     VENDOR_DIR / "props" / "Exports" / "glTF": (
         PROJECT_DIR / "art" / "props",
         [
-            "Bench", "Stall_Empty", "Stall_Cart_Empty", "Barrel", "Barrel_Apples", "Crate_Wooden",
+            "Stall_Empty", "Stall_Cart_Empty", "Barrel", "Barrel_Apples", "Crate_Wooden",
             "FarmCrate_Apple", "FarmCrate_Carrot", "Bucket_Wooden_1", "Banner_1", "Banner_2", "Table_Large", "Stool",
         ],
     ),

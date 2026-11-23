@@ -306,7 +306,6 @@ KIT_COLLIDERS = {  # kit model name prefix -> simple solid in model space: ("cyl
     "Bush_Common": ("cylinder", 0.8, 1.2),
     "Flower_3_Group": ("cylinder", 0.5, 1.6),
     "Flower_4_Group": ("cylinder", 0.5, 1.6),
-    "Bench": ("box", (2.78, 0.54, 0.53), (0.0, 0.27, 0.0)),
     "Stall_Empty": ("box", (1.84, 2.62, 0.93), (0.0, 1.31, 0.0)),
     "Stall_Cart_Empty": ("box", (3.02, 2.63, 1.06), (-0.6, 1.31, 0.0)),
     "Barrel": ("cylinder", 0.35, 0.9),
@@ -1681,7 +1680,7 @@ def add_square_props(scene: SceneWriter) -> dict:
     place(scene, "RoundaboutFountain", "SquareProps", "res://features/hub/props/fountain_small.tscn", (ROUNDABOUT[0], 0, ROUNDABOUT[1]))
 
     for index, ((x, z), rotation_y) in enumerate(all_benches):
-        place(scene, f"Bench{index:02d}", "SquareProps", "res://art/props/Bench.gltf", grounded(x, z), rotation_y)
+        place(scene, f"Bench{index:02d}", "SquareProps", "res://art/town/park_bench.gltf", grounded(x, z), rotation_y)
 
     for index, (x, z) in enumerate(forecourt_planters):
         place(scene, f"Planter{index:02d}", "SquareProps", "res://art/town/planter.gltf", (x, 0, z))
@@ -2045,30 +2044,33 @@ def stand(position: tuple, facing: float, animation: str, offset: float, height:
     }
 
 
+# Os clipes Sitting_* da UAL põem o quadril 0,33 m atrás da origem do personagem: com a origem 0,34 m à frente do
+# meio do banco (tools_src/build_plaza_props.py, build_park_bench) o quadril cai no meio do assento, as costas no encosto.
+SITTER_FORWARD = 0.34
+
+
 def sitter(bench: tuple) -> tuple:
     (x, z), rotation_y = bench
 
-    return (x + 0.15 * math.sin(rotation_y), z + 0.15 * math.cos(rotation_y)), rotation_y
+    return (x + SITTER_FORWARD * math.sin(rotation_y), z + SITTER_FORWARD * math.cos(rotation_y)), rotation_y
 
 
-COUPLE_SEAT_SPREAD = 0.34  # metros do meio do banco até cada um dos dois
-COUPLE_TURN = math.radians(26.0)  # cada um vira para o outro, como quem conversa
-# Os clipes Sitting_* da UAL sentam num assento de ~0,46 m e o tampo do banco fica a 0,53 m: sem erguer, as coxas
-# afundam ~6 cm na madeira. 4 cm divide a diferença (o pé fica quase no chão, a coxa quase no tampo).
-COUPLE_SEAT_LIFT = 0.04
+COUPLE_SEAT_SPREAD = 0.22  # metros do meio do banco até cada um: quadril com quadril, ombro com ombro
+COUPLE_TURN = math.radians(6.0)  # cada um vira um pouco para o outro
 
 
 def add_couple(scene: SceneWriter, bench: tuple) -> None:
-    """Casal sentado conversando no banco do rondel entre o casarão e o chafariz (tools_src/build_couple.py)."""
+    """Casal sentado abraçado no banco do rondel entre o casarão e o chafariz (tools_src/build_couple.py): ela à
+    esquerda dele, ele com o braço esquerdo em volta dos ombros dela, ela encostada nele (combat/Couple_*)."""
     (x, z), rotation_y = sitter(bench)
-    along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco
-    his_seat = (x + along_x * COUPLE_SEAT_SPREAD, z + along_z * COUPLE_SEAT_SPREAD)
-    her_seat = (x - along_x * COUPLE_SEAT_SPREAD, z - along_z * COUPLE_SEAT_SPREAD)
-    his = stand(his_seat, rotation_y - COUPLE_TURN, "ual1/Sitting_Talking", 0.0, height=ground_height(his_seat) + COUPLE_SEAT_LIFT)
-    hers = stand(her_seat, rotation_y + COUPLE_TURN, "ual1/Sitting_Idle", 1.3, height=ground_height(her_seat) + COUPLE_SEAT_LIFT)
+    along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco, para a esquerda de quem senta
+    his_seat = (x - along_x * COUPLE_SEAT_SPREAD, z - along_z * COUPLE_SEAT_SPREAD)
+    her_seat = (x + along_x * COUPLE_SEAT_SPREAD, z + along_z * COUPLE_SEAT_SPREAD)
+    his = stand(his_seat, rotation_y + COUPLE_TURN, "combat/Couple_Embrace", 0.0)
+    hers = stand(her_seat, rotation_y - COUPLE_TURN, "combat/Couple_Lean", 0.0)
 
-    his["smile_every_seconds"] = "5.0"
-    hers["smile_every_seconds"] = "3.5"
+    his["resting_mood"] = "1"  # FaceAnimator.Mood.HAPPY: os dois descansam sorrindo
+    hers["resting_mood"] = "1"
     npc(scene, "BenchCoupleHim", "couple_him", "black", his)
     npc(scene, "BenchCoupleHer", "couple_her", "honey", hers)
 
