@@ -11,6 +11,7 @@ const LOOK_LEFT: StringName = &"look_left"
 const LOOK_RIGHT: StringName = &"look_right"
 const LOOK_UP: StringName = &"look_up"
 const LOOK_DOWN: StringName = &"look_down"
+const MOUTH_OPEN: StringName = &"mouth_open"
 const EXPRESSION_SHAPES: Array[StringName] = [
 	&"squint",
 	&"eyes_wide",
@@ -45,9 +46,14 @@ const GAZE_REACH: Vector2 = Vector2(0.5, 0.3)
 ## Metade das vezes o olhar volta para a frente em vez de ir para outro canto.
 const GAZE_HOME_CHANCE: float = 0.5
 const GAZE_SPEED: float = 22.0
+## Falando, a boca abre e fecha em sílabas de duração e abertura sorteadas, com pausas.
+const SYLLABLE_SECONDS_RANGE: Vector2 = Vector2(0.11, 0.24)
+const SYLLABLE_OPEN_RANGE: Vector2 = Vector2(0.15, 0.5)
+const SPEECH_PAUSE_CHANCE: float = 0.15
 
 ## Expressão de descanso: para onde o rosto volta quando uma expressão passageira acaba.
 var resting_expression: Mood = Mood.NEUTRAL
+var is_talking: bool = false
 
 var _shape_meshes: Array[MeshInstance3D] = []
 var _shape_indices: PackedInt32Array = PackedInt32Array()
@@ -62,6 +68,9 @@ var _blink_pause_seconds: float = 0.0
 var _gaze: Vector2 = Vector2.ZERO
 var _gaze_target: Vector2 = Vector2.ZERO
 var _gaze_pause_seconds: float = 0.0
+var _syllable_seconds: float = 0.0
+var _syllable_length: float = 0.0
+var _syllable_open: float = 0.0
 var _random: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
@@ -131,6 +140,7 @@ func set_detailed(is_detailed: bool) -> void:
 ## Um passo do rosto; o _process chama a cada quadro e os testes chamam com o tempo que quiserem.
 func advance(delta: float) -> void:
 	_advance_expression(delta)
+	_advance_talk(delta)
 	_advance_blink(delta)
 	_advance_gaze(delta)
 	_apply_weights()
@@ -166,6 +176,31 @@ func _advance_expression(delta: float) -> void:
 
 	if _expression_seconds_left <= 0.0:
 		_expression = resting_expression
+
+
+func _advance_talk(delta: float) -> void:
+	var chatter: float
+
+	if not is_talking:
+		return
+
+	_syllable_seconds += delta
+
+	if _syllable_seconds >= _syllable_length:
+		_start_syllable()
+
+	chatter = _syllable_open * sin(PI * _syllable_seconds / _syllable_length)
+	_weights[MOUTH_OPEN] = maxf(_weights.get(MOUTH_OPEN, 0.0), chatter)
+
+
+func _start_syllable() -> void:
+	var is_pause: bool = _random.randf() < SPEECH_PAUSE_CHANCE
+
+	_syllable_seconds = 0.0
+	_syllable_length = _random.randf_range(SYLLABLE_SECONDS_RANGE.x, SYLLABLE_SECONDS_RANGE.y)
+	_syllable_open = (
+		0.0 if is_pause else _random.randf_range(SYLLABLE_OPEN_RANGE.x, SYLLABLE_OPEN_RANGE.y)
+	)
 
 
 func _advance_blink(delta: float) -> void:
