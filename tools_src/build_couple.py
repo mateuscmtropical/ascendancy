@@ -48,6 +48,8 @@ STUBBLE_COLOR = (0.06, 0.055, 0.06)
 STUBBLE_STRENGTH = 0.55
 STUBBLE_FEATHER = 0.005  # share of the texture width over which the stubble fades out at its edges
 FULLNESS_HEIGHTS = (0.45, 1.45)  # metres: thighs to shoulders
+ARM_FULLNESS_REACH = 0.25  # metres from the middle (T-pose) the arms keep all their fullness; it fades to none at the
+# wrist, so forearms stay slim and the hands keep their size
 BROW_THINNING = 0.6  # her eyebrows keep this share of their height: thin, natural brows instead of heavy ones
 OLIVE_GREYING = 0.3  # share of the way an olive skin moves toward its own grey before the tint, so it is not orange
 # Garment colours (sRGB), applied over the luminance of the original cloth so its folds and seams stay.
@@ -70,6 +72,7 @@ COUPLE = {
         "outfit": "Male_Peasant",
         "base_body": "Superhero_Male_FullBody",
         "hair": ["Hair_SimpleParted"],
+        "neck_shrink": 0.012,  # the base neck and shoulders sink under the shirt, so no skin pokes through his back
         "skin": ("olive", (0.98, 0.89, 0.8)),
         "garments": {"Body": ("all", BLACK_SHIRT), "Arms": ("all", BLACK_SHIRT), "Legs": ("all", DARK_TROUSERS), "Feet": ("all", DARK_SHOES)},
         "touch_ups": [("Feet", "boot_shaft", DARK_TROUSERS)],
@@ -353,7 +356,7 @@ def feathered(mask: numpy.ndarray, radius: int) -> numpy.ndarray:
     return coverage
 
 
-def fuller_body(meshes: list, thickness: dict, eyes_z: float) -> None:
+def fuller_body(meshes: list, thickness: dict, eyes_z: float, wrist_x: float) -> None:
     """A plumper figure: every listed piece pushed out along its smoothed normals (seam twins move together)."""
     for mesh_object in meshes:
         amount = thickness[mesh_object.name.split("_")[-1]]  # Head_Skin and Forearms_Skin: "Skin" is the forearms
@@ -370,7 +373,7 @@ def fuller_body(meshes: list, thickness: dict, eyes_z: float) -> None:
 
         for vertex, point in zip(mesh_object.data.vertices, positions):
             normal = normals[tuple(round(value, 4) for value in point)].normalized()
-            share = lower_face_share(point, eyes_z) if mesh_object.name == HEAD_MESH_NAME else fullness_at(point.z)
+            share = lower_face_share(point, eyes_z) if mesh_object.name == HEAD_MESH_NAME else fullness_at(point.z) * arm_share(point.x, wrist_x)
             vertex.co = to_local @ (point + normal * amount * share)
 
         recompute_normals(mesh_object)
@@ -385,6 +388,11 @@ def lower_face_share(point: Vector, eyes_z: float) -> float:
     under_jaw = min(max((below_eyes - 0.13) / 0.04, 0.0), 1.0)
 
     return lower * max(beside_mouth, under_jaw)
+
+
+def arm_share(x: float, wrist_x: float) -> float:
+    """Along the T-posed arm the fullness fades from the shoulder to nothing at the wrist."""
+    return min(max((wrist_x - abs(x)) / (wrist_x - ARM_FULLNESS_REACH), 0.0), 1.0)
 
 
 def fullness_at(height: float) -> float:
@@ -478,6 +486,10 @@ def thinner_brows(eyebrows) -> None:
     recompute_normals(eyebrows)
 
 
+def wrist_x(armature) -> float:
+    return abs((armature.matrix_world @ armature.data.bones["hand_l"].head_local).x)
+
+
 def eye_height() -> float:
     eyes = bpy.data.objects["Eyes"]
 
@@ -496,7 +508,7 @@ def build_partner(name: str) -> Path:
 
     delete_objects([scene_object for scene_object in outfit_objects if scene_object.type == "MESH" and not scene_object.vertex_groups])
     armature.name = "Armature"
-    attach_base_head(recipe["base_body"], 0.15, 0.0, armature)
+    attach_base_head(recipe["base_body"], 0.15, recipe.get("neck_shrink", 0.0), armature)
 
     for hair_name in recipe["hair"]:
         attach_hair(hair_name, armature)
@@ -510,7 +522,7 @@ def build_partner(name: str) -> Path:
     short_sleeves_and_bare_forearms(recipe["base_body"], armature, head.data.materials[0])
 
     if name == "couple_her":
-        fuller_body([outfit_piece("Body"), outfit_piece("Legs"), outfit_piece("Arms"), bpy.data.objects["Forearms_Skin"], head], recipe["fullness"], eye_height())
+        fuller_body([outfit_piece("Body"), outfit_piece("Legs"), outfit_piece("Arms"), bpy.data.objects["Forearms_Skin"], head], recipe["fullness"], eye_height(), wrist_x(armature))
         long_wavy_hair(bpy.data.objects["Hair_Long"], armature, [outfit_piece("Body")])
         thinner_brows(bpy.data.objects["Eyebrows"])
 

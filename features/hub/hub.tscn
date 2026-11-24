@@ -6801,22 +6801,25 @@ animation_offset_seconds = 0.3
 [node name="BenchCoupleHim" parent="Townsfolk" instance=ExtResource("117_ext")]
 body_scene = ExtResource("121_ext")
 hair_color = Color(0.080, 0.070, 0.070, 1)
-position = Vector3(-44.921, 0.000, 25.114)
+position = Vector3(-44.947, 0.000, 25.129)
 rotation = Vector3(0.000, 0.628, 0.000)
 activity = 1
 idle_animation = &"combat/Couple_Embrace"
 animation_offset_seconds = 0.0
 resting_mood = 1
+talk_turn_seconds = 4.0
 
 [node name="BenchCoupleHer" parent="Townsfolk" instance=ExtResource("117_ext")]
 body_scene = ExtResource("122_ext")
 hair_color = Color(0.620, 0.420, 0.220, 1)
-position = Vector3(-44.539, 0.000, 24.894)
+position = Vector3(-44.513, 0.000, 24.879)
 rotation = Vector3(0.000, 0.419, 0.000)
 activity = 1
 idle_animation = &"combat/Couple_Lean"
 animation_offset_seconds = 0.0
 resting_mood = 1
+talk_turn_seconds = 4.0
+talks_first = false
 
 [node name="SittingEast" parent="Townsfolk" instance=ExtResource("117_ext")]
 body_scene = ExtResource("116_ext")

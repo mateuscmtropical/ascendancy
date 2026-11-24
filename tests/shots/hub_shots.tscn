@@ -82,6 +82,21 @@ position = Vector3(-47.366, 1.600, 22.438)
 rotation = Vector3(-0.034, 3.749, 0.000)
 fov = 60.0
 
+[node name="CoupleArm" type="Camera3D" parent="."]
+position = Vector3(-44.280, 1.250, 26.590)
+rotation = Vector3(-0.150, 0.276, 0.000)
+fov = 45.0
+
+[node name="CoupleArmTop" type="Camera3D" parent="."]
+position = Vector3(-45.660, 1.900, 24.380)
+rotation = Vector3(-0.621, -2.159, 0.000)
+fov = 50.0
+
+[node name="CoupleHands" type="Camera3D" parent="."]
+position = Vector3(-44.130, 0.750, 26.040)
+rotation = Vector3(-0.165, 0.523, 0.000)
+fov = 45.0
+
 [node name="BenchSitterWest" type="Camera3D" parent="."]
 position = Vector3(-29.458, 1.250, 4.499)
 rotation = Vector3(-0.207, -1.571, 0.000)

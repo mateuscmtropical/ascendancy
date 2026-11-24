@@ -31,6 +31,13 @@ func test_route_index_wraps_to_start() -> void:
 	assert_eq(WalkingNpc.next_route_index(2, 3), 0)
 
 
+func test_talk_turns_alternate_between_the_two_speakers() -> void:
+	assert_true(WalkingNpc.is_talk_turn(1.0, 4.0, true), "first speaker talks in the first turn")
+	assert_false(WalkingNpc.is_talk_turn(1.0, 4.0, false), "the other listens")
+	assert_false(WalkingNpc.is_talk_turn(5.0, 4.0, true), "then the first one listens")
+	assert_true(WalkingNpc.is_talk_turn(5.0, 4.0, false), "and the other talks")
+
+
 func test_patrol_npc_walks_toward_next_point() -> void:
 	var npc: WalkingNpc = _spawn_walker(PackedVector3Array([Vector3.ZERO, Vector3(10, 0, 0)]), 2.0)
 

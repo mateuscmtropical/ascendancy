@@ -2055,13 +2055,14 @@ def sitter(bench: tuple) -> tuple:
     return (x + SITTER_FORWARD * math.sin(rotation_y), z + SITTER_FORWARD * math.cos(rotation_y)), rotation_y
 
 
-COUPLE_SEAT_SPREAD = 0.22  # metros do meio do banco até cada um: quadril com quadril, ombro com ombro
+COUPLE_SEAT_SPREAD = 0.25  # metros do meio do banco até cada um: quadril com quadril, ombro com ombro
+COUPLE_TALK_TURN = 4.0  # segundos de cada turno da conversa: TALK_TURN de build_combat_animations.py
 COUPLE_TURN = math.radians(6.0)  # cada um vira um pouco para o outro
 
 
 def add_couple(scene: SceneWriter, bench: tuple) -> None:
     """Casal sentado abraçado no banco do rondel entre o casarão e o chafariz (tools_src/build_couple.py): ela à
-    esquerda dele, ele com o braço esquerdo em volta dos ombros dela, ela encostada nele (combat/Couple_*)."""
+    esquerda dele, ele com o braço esquerdo em volta dos ombros dela, conversando em turnos (combat/Couple_*)."""
     (x, z), rotation_y = sitter(bench)
     along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco, para a esquerda de quem senta
     his_seat = (x - along_x * COUPLE_SEAT_SPREAD, z - along_z * COUPLE_SEAT_SPREAD)
@@ -2071,6 +2072,8 @@ def add_couple(scene: SceneWriter, bench: tuple) -> None:
 
     his["resting_mood"] = "1"  # FaceAnimator.Mood.HAPPY: os dois descansam sorrindo
     hers["resting_mood"] = "1"
+    his["talk_turn_seconds"] = hers["talk_turn_seconds"] = f"{COUPLE_TALK_TURN:.1f}"  # ele fala primeiro, ela escuta
+    hers["talks_first"] = "false"
     npc(scene, "BenchCoupleHim", "couple_him", "black", his)
     npc(scene, "BenchCoupleHer", "couple_her", "honey", hers)
 

@@ -29,6 +29,11 @@ const SMILE_HOLD_SECONDS: float = 2.4
 @export var smile_every_seconds: float = 0.0
 ## Expressão para onde o rosto volta sozinho (o casal do banco descansa sorrindo).
 @export var resting_mood: FaceAnimator.Mood = FaceAnimator.Mood.NEUTRAL
+## Conversa em turnos deste tamanho, contados no ciclo da animação: a boca mexe só nos turnos
+## dele (0 = calado). Os dois da conversa tocam clipes do mesmo ciclo, por isso ficam juntos.
+@export var talk_turn_seconds: float = 0.0
+## Fala no primeiro turno do ciclo; o outro escuta.
+@export var talks_first: bool = true
 
 var _model: CharacterModel
 var _patrol_state: PatrolState = PatrolState.WALKING
@@ -62,6 +67,8 @@ func _ready() -> void:
 	if smile_every_seconds > 0.0:
 		_start_smiling()
 
+	set_process(talk_turn_seconds > 0.0)
+
 	_navigation_agent.avoidance_enabled = is_walking
 	_obstacle.avoidance_enabled = not is_walking
 	set_physics_process(is_walking)
@@ -76,10 +83,23 @@ func _ready() -> void:
 	_navigation_agent.velocity_computed.connect(_move_with_safe_velocity)
 
 
+func _process(_delta: float) -> void:
+	var animation_seconds: float = _model.animation_seconds()
+	var is_my_turn: bool = is_talk_turn(animation_seconds, talk_turn_seconds, talks_first)
+
+	_model.set_talking(is_my_turn)
+
+
 func _physics_process(delta: float) -> void:
 	var patrol_step: Callable = _patrol_steps[_patrol_state]
 
 	patrol_step.call(delta)
+
+
+static func is_talk_turn(seconds: float, turn_seconds: float, is_first_speaker: bool) -> bool:
+	var is_first_turn: bool = posmod(floori(seconds / turn_seconds), 2) == 0
+
+	return is_first_turn == is_first_speaker
 
 
 static func next_route_index(current_index: int, route_size: int) -> int:

@@ -76,6 +76,23 @@ func test_expression_blends_in_and_passing_one_returns_to_rest() -> void:
 	assert_almost_eq(_face.weight_of(&"smile"), 0.0, 0.01, "back to the resting face")
 
 
+func test_talking_moves_the_mouth_and_silence_closes_it() -> void:
+	var widest_mouth: float = 0.0
+
+	_face.is_talking = true
+
+	for step in ceili(1.0 / STEP_SECONDS):
+		_face.advance(STEP_SECONDS)
+		widest_mouth = maxf(widest_mouth, _face.weight_of(&"mouth_open"))
+
+	assert_gt(widest_mouth, 0.1, "the mouth opened while talking")
+
+	_face.is_talking = false
+	_advance(2.0 * FaceAnimator.EXPRESSION_BLEND_SECONDS)
+
+	assert_almost_eq(_face.weight_of(&"mouth_open"), 0.0, 0.01, "closed again in silence")
+
+
 func test_weights_reach_the_meshes() -> void:
 	var head: MeshInstance3D = _face.get_parent().get_node("Body/Armature/Skeleton3D/Head_Skin")
 	var smile_index: int = head.find_blend_shape_by_name(&"smile")

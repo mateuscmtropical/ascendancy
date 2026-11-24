@@ -108,6 +108,16 @@ func rest_expression(expression: FaceAnimator.Mood) -> void:
 	_face.show_expression(expression)
 
 
+## Falando, o rosto mexe a boca em sílabas até mandar parar.
+func set_talking(is_talking: bool) -> void:
+	_face.is_talking = is_talking
+
+
+## Onde a animação atual está no próprio ciclo, em segundos.
+func animation_seconds() -> float:
+	return _animation_player.current_animation_position
+
+
 ## Toca um trecho único (impulso, aterrissagem) e emenda no ciclo seguinte.
 func play_animation_then(first_animation: StringName, next_animation: StringName) -> void:
 	_current_animation = next_animation
