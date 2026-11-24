@@ -133,12 +133,18 @@ def furnish_pantry(f) -> None:
 
 
 def furnish_store(f) -> None:
-    """Kegs, barrels, crates and sacks round the back door to the yard."""
+    """Kegs, barrels, crates and sacks round the back door to the yard; an upturned barrel to tap the next keg on."""
     f.on_wall("back", "plank_door", 3.0)
     f.put("barrel_group", 0.4, 18.45)
     f.put("barrel_group", 5.6, 18.45)
     f.on_wall("right", "wall_shelf", 16.6, variant="boxes")
+    f.on_wall("back", "keg_rack", -1.6)
+    f.put("crate_stack", 7.7, 18.5)
+    f.put("crate_stack", 7.9, 14.9, 90.0)
+    f.put("crate_open", 6.6, 18.6)
+    f.put("barrel_table", 1.6, 16.2)
     f.put("sack_pile", -1.6, 15.2)
+    f.put("flour_sacks", 4.8, 15.0)
 
 
 def furnish_tavern(f) -> None:
