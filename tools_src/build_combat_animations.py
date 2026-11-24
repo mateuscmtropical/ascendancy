@@ -358,7 +358,7 @@ LOOP_CLIPS = {
 TALK_TURN = 4.0
 EMBRACE_BASE = {
     "chest": V(4.0, -4.0, 4.0), "head": V(0.0, -10.0, 10.0),
-    "hand_l": V(0.39, 0.076, 0.482), "elbow_l": V(-0.1, 1.0, -0.38), "fist_l": V(0.0, -40.0, 0.0),
+    "hand_l": V(0.374, 0.044, 0.53), "elbow_l": V(-0.1, 1.0, -0.38), "fist_l": V(-106.0, 83.0, 0.0),
     "hand_r": V(-0.05, -0.054, 0.012), "elbow_r": V(-0.3, 1.0, -0.2), "fist_r": V(0.0, 40.0, 0.0),
 }
 # She: faces the plaza and leans into him (her near shoulder ahead of his arm), her head tilted against his; the right leg crossed over the left, both hands on that knee.
