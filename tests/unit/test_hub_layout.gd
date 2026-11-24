@@ -41,6 +41,11 @@ const CORETO_FLOOR_X: float = -43.0
 const CASARAO_STAIR_FOOT: Vector3 = Vector3(0.0, 0.1, -9.5)
 const CASARAO_LANDING_HEIGHT: float = 2.85
 const CASARAO_LANDING_DEPTH: float = -16.5
+## Pé da rampa da taverna, logo depois da porta (coordenadas da taverna, -Z entra no prédio);
+## a rampa sobe junto à parede direita até o terraço em L (tools_src/tavern_layout.py).
+const TAVERN_RAMP_FOOT: Vector3 = Vector3(7.65, 0.1, -1.0)
+const TAVERN_TERRACE_HEIGHT: float = 1.3
+const TAVERN_TERRACE_EDGE: float = -8.4
 
 var _hub: Node3D
 
@@ -220,6 +225,28 @@ func test_player_climbs_the_casarao_grand_stair() -> void:
 
 	assert_lt(reached.z, CASARAO_LANDING_DEPTH, "player reached the landing")
 	assert_almost_eq(reached.y, CASARAO_LANDING_HEIGHT, 0.05, "player stands on the landing")
+
+
+func test_player_walks_up_the_tavern_ramp() -> void:
+	var player: PlayerController = _hub.get_node("Player")
+	var camera_yaw: Node3D = player.get_node("CameraYaw")
+	var tavern: Node3D = get_tree().get_first_node_in_group("shop_tavern")
+	var street_yaw: float = camera_yaw.global_rotation.y
+	var reached: Vector3
+
+	player.global_position = tavern.global_transform * TAVERN_RAMP_FOOT
+	player.velocity = Vector3.ZERO
+	camera_yaw.global_rotation.y = tavern.global_rotation.y
+	player.is_input_enabled = true
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(200)
+	Input.action_release(&"move_forward")
+	player.is_input_enabled = false
+	camera_yaw.global_rotation.y = street_yaw
+	reached = tavern.global_transform.affine_inverse() * player.global_position
+
+	assert_lt(reached.z, TAVERN_TERRACE_EDGE, "player reached the terrace")
+	assert_almost_eq(reached.y, TAVERN_TERRACE_HEIGHT, 0.05, "player stands on the terrace")
 
 
 func _ground_height_at(ground_point: Vector2) -> float:

@@ -381,6 +381,13 @@ class Builder:
         collider_bmesh.free()
         bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{name}{self.count}-colonly", mesh_data))
 
+    def solid(self, piece, name: str = "Collider") -> None:
+        """Collision copy of a visible piece a box cannot follow (a curved floor edge); name as in collider()."""
+        self.count += 1
+        mesh_data = piece.data.copy()
+        mesh_data.materials.clear()
+        bpy.context.scene.collection.objects.link(bpy.data.objects.new(f"{name}{self.count}-colonly", mesh_data))
+
     def camera_stop(self, piece) -> None:
         """Camera-only copy of a visible piece hanging over a walkway (eave, balcony, awning, arch): the camera arm
         stops under it, while the player, the NPCs and the navmesh ignore it (see features/audio/tag_ground_surfaces.gd)."""

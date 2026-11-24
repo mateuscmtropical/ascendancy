@@ -20,7 +20,7 @@ import random
 import sys
 from pathlib import Path
 
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -137,7 +137,7 @@ SHOPS = {  # tipo -> casca; door = (u, largura, altura, topo); roof_shape como A
     ),
     # guilda e banco: salão de guilda com galeria e forro de caixotões, banco com guichês e sala-forte (tools_src/guild_shell.py)
     "guild": dict(archetype="palacete", wall="creme", roof="ardosia", accent="vinho", storeys=(7.4, 3.4), roof_shape=("hip", dict(pitch=24.0, eave_front=0.9, eave_back=0.5)), floor="wood", awning=None, door=(-3.2, 2.4, 3.6, "round"), features=("eave_brackets",), shutters=False, quoins=True, cornice=True, light="FFD9A0", shell="guild_shell"),
-    "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(4.0, 3.2), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=None, door=(0.0, 1.8, 2.6, "pointed"), side_window=(1.1, 0.95, 1.7, "flat"), features=("half_timber",), jetty=0.4, chimney=dict(u=-7.6, d=5.5, extra=1.2, pots=2), light="FFC27A", shell="tavern_shell"),  # casa de cômodos: tavern_shell.py, planta em tavern_layout.py
+    "tavern": dict(archetype="tudor", wall="creme", roof="velha", accent="vinho", storeys=(5.2, 3.0), roof_shape=("gable_parallel", dict(pitch=40.0, eave_front=0.5, eave_back=0.4)), floor="wood", awning=None, door=(7.1, 1.8, 2.6, "pointed"), side_window=(1.1, 0.95, 1.7, "flat"), features=("half_timber",), jetty=0.4, chimney=dict(u=1.8, d=14.0, extra=1.2, pots=2), light="FFC27A", shell="tavern_shell"),  # casa de cômodos: tavern_shell.py, planta em tavern_layout.py
     "armor": dict(  # arsenal hanseático de tijolo (referências em ascendancy-refs/lojas/armor): salão de abóbadas com as armaduras em fila, oficina de armeiro e depósito no fundo
         archetype="hanseatica", wall="tijolo", roof="terracota", accent="vinho", storeys=(4.6, 3.2), roof_shape=("gable_street", dict(pitch=36.0, gable="stepped")), floor="stone", awning=None,
         door=(0.0, 2.4, 3.2, "pointed"), features=("stone_bands",), light="FFD9A0",
@@ -500,8 +500,11 @@ def wall_windows(room: Room) -> dict:
     check read the same list)."""
     side_length = room.depth - 2.0 * WALL
     side = side_windows(room, side_length)
+    hall_d = {"left": lambda opening: room.depth - WALL - opening.u, "right": lambda opening: WALL + opening.u}
+    blind = room.plan.get("blind_walls", {})  # side -> (d from, d to) of the hall where that wall keeps no window
+    open_on = lambda wall: [opening for opening in side if not any(d_from < hall_d[wall](opening) < d_to for d_from, d_to in blind.get(wall, ()))]
 
-    return {"back": back_windows(room), "left": side if "left" in room.exposed else [], "right": side if "right" in room.exposed else []}
+    return {"back": back_windows(room), "left": open_on("left") if "left" in room.exposed else [], "right": open_on("right") if "right" in room.exposed else []}
 
 
 def window_spans(room: Room) -> dict:
@@ -1287,6 +1290,14 @@ def ambient_volume(room: Room) -> dict:
 
 # ---------- furniture ----------
 
+def part_footprint(frame: Matrix, part: tuple) -> tuple:
+    """(u from, u to, d from, d to) round one solid part of a prop, given in the prop's frame."""
+    x_from, x_to, y_from, y_to = part
+    corners = [frame @ Vector((x, y, 0.0)) for x, y in itertools.product((x_from, x_to), (y_from, y_to))]
+
+    return min(corner.x for corner in corners), max(corner.x for corner in corners), min(corner.y for corner in corners), max(corner.y for corner in corners)
+
+
 class Furnisher:
     """Places props of the libraries in a room and keeps their footprints to report overlaps."""
 
@@ -1381,9 +1392,11 @@ class Furnisher:
         if name.startswith("rug") and not entry.get("hang"):
             self.rugs.append((name, (u - half_u, u + half_u, d - half_d, d + half_d)))
 
-        if entry.get("solid"):
-            self.b.collider((-width / 2.0, -depth / 2.0, 0.0), (width / 2.0, depth / 2.0, min(height, COLLIDER_MAX_HEIGHT)), frame)
-            self.footprints.append((name, (u - half_u, u + half_u, d - half_d, d + half_d)))
+        parts = entry.get("parts", ((-width / 2.0, width / 2.0, -depth / 2.0, depth / 2.0),)) if entry.get("solid") else ()
+
+        for x_from, x_to, y_from, y_to in parts:
+            self.b.collider((x_from, y_from, 0.0), (x_to, y_to, min(height, COLLIDER_MAX_HEIGHT)), frame)
+            self.footprints.append((name, part_footprint(frame, (x_from, x_to, y_from, y_to))))
 
         if entry.get("light") and lit:
             position, color, energy, light_range = entry["light"]

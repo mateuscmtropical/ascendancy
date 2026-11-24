@@ -210,13 +210,13 @@ fov = 75.0
 far = 400.0
 
 [node name="TavernDoor" type="Camera3D" parent="."]
-position = Vector3(16.000, 1.600, -65.000)
+position = Vector3(23.100, 1.600, -65.000)
 rotation = Vector3(0.014, -0.000, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="TavernInside" type="Camera3D" parent="."]
-position = Vector3(16.000, 1.600, -70.200)
+position = Vector3(23.100, 1.600, -70.200)
 rotation = Vector3(-0.019, -0.000, 0.000)
 fov = 75.0
 far = 400.0
@@ -737,57 +737,75 @@ rotation = Vector3(-0.056, -0.576, 0.000)
 fov = 75.0
 far = 400.0
 
-[node name="TavernTaproom" type="Camera3D" parent="."]
-position = Vector3(13.000, 1.600, -69.900)
-rotation = Vector3(-0.036, 0.565, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernBar" type="Camera3D" parent="."]
-position = Vector3(9.600, 1.600, -72.000)
-rotation = Vector3(-0.033, -0.197, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernInglenook" type="Camera3D" parent="."]
-position = Vector3(12.700, 1.600, -74.500)
-rotation = Vector3(-0.038, 1.571, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernStube" type="Camera3D" parent="."]
-position = Vector3(20.400, 1.600, -76.800)
-rotation = Vector3(-0.076, -2.667, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernStubeStove" type="Camera3D" parent="."]
-position = Vector3(23.800, 1.600, -72.400)
-rotation = Vector3(-0.063, 0.852, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernKitchen" type="Camera3D" parent="."]
-position = Vector3(13.000, 1.600, -82.200)
-rotation = Vector3(-0.057, 0.704, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernMusic" type="Camera3D" parent="."]
-position = Vector3(19.000, 1.600, -78.000)
-rotation = Vector3(-0.041, -0.418, 0.000)
-fov = 75.0
-far = 400.0
-
-[node name="TavernStore" type="Camera3D" parent="."]
-position = Vector3(16.000, 1.600, -82.100)
-rotation = Vector3(-0.068, -0.000, 0.000)
+[node name="TavernEntrance" type="Camera3D" parent="."]
+position = Vector3(22.600, 1.600, -69.900)
+rotation = Vector3(-0.018, 0.754, 0.000)
 fov = 75.0
 far = 400.0
 
 [node name="TavernHall" type="Camera3D" parent="."]
-position = Vector3(16.000, 1.600, -80.800)
-rotation = Vector3(-0.008, -3.142, 0.000)
+position = Vector3(16.400, 1.600, -70.000)
+rotation = Vector3(0.017, -0.490, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernBar" type="Camera3D" parent="."]
+position = Vector3(18.600, 1.600, -72.600)
+rotation = Vector3(-0.068, 1.077, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernRamp" type="Camera3D" parent="."]
+position = Vector3(19.800, 1.600, -70.200)
+rotation = Vector3(0.000, -0.486, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernTerrace" type="Camera3D" parent="."]
+position = Vector3(23.600, 2.900, -77.800)
+rotation = Vector3(-0.068, 1.194, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernTerraceView" type="Camera3D" parent="."]
+position = Vector3(22.600, 2.900, -82.300)
+rotation = Vector3(-0.186, 2.572, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernInglenook" type="Camera3D" parent="."]
+position = Vector3(19.600, 2.900, -79.900)
+rotation = Vector3(-0.142, 0.540, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernInn" type="Camera3D" parent="."]
+position = Vector3(12.400, 1.600, -69.800)
+rotation = Vector3(-0.069, 0.858, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernKitchen" type="Camera3D" parent="."]
+position = Vector3(12.400, 1.600, -74.600)
+rotation = Vector3(-0.045, 0.454, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernPantry" type="Camera3D" parent="."]
+position = Vector3(12.400, 1.600, -83.600)
+rotation = Vector3(-0.104, 0.748, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernStore" type="Camera3D" parent="."]
+position = Vector3(13.800, 1.600, -83.600)
+rotation = Vector3(-0.059, -1.143, 0.000)
+fov = 75.0
+far = 400.0
+
+[node name="TavernInnDoor" type="Camera3D" parent="."]
+position = Vector3(2.500, 1.600, -74.500)
+rotation = Vector3(0.075, -2.143, 0.000)
 fov = 75.0
 far = 400.0
 

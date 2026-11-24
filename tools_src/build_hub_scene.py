@@ -813,7 +813,7 @@ FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da
     (4, "E"): [(-45.0, -15.0, "library"), (-15.0, 15.0, "vestibule"), (15.0, 45.0, "school")],
 }
 SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
-    "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
+    "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern",),
     "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"),
 }  # os salões do casarão não têm placa pendurada
 CASARAO_HALLS = ("library", "vestibule", "school")  # térreo: o vestíbulo da escadaria no meio, um salão de cada lado
@@ -1141,6 +1141,9 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
     for sign_index, sign in enumerate(SHOP_SIGNS.get(shop_type, ())):
         sign_x = door["x"] + (1.0 - 2.0 * sign_index) * sign_reach
         place(scene, f"Sign{sign_index}", f"Shops/{shop_name}", f"res://art/town/shops/shop_{sign}_sign.gltf", (sign_x, 0.0, 0.0), scale=SHOP_SIGN_SCALE)
+
+    for sign_index, side_sign in enumerate(sidecar.get("side_signs", ())):  # placa de uma porta da lateral (a pousada da taverna)
+        place(scene, f"SideSign{sign_index}", f"Shops/{shop_name}", f"res://art/town/shops/shop_{side_sign['sign']}_sign.gltf", tuple(side_sign["position"]), rotation_y=side_sign["yaw"], scale=SHOP_SIGN_SCALE)
 
     if interior_sidecar:
         scene.add_node("Interior", f"Shops/{shop_name}", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
@@ -2352,16 +2355,19 @@ HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (x = u, y
         "Oven": ((3.2, 1.6, -13.8), (5.0, 1.4, -19.0)),
         "Facade": ((2.0, 1.6, 9.0), (0.0, 3.4, 0.0)),
     },
-    "tavern": {  # cômodos da taverna (tools_src/tavern_layout.py)
-        "Taproom": ((-3.0, 1.6, -0.9), (-7.5, 1.3, -8.0)),
-        "Bar": ((-6.4, 1.6, -3.0), (-4.6, 1.3, -12.0)),
-        "Inglenook": ((-3.3, 1.6, -5.5), (-8.5, 1.4, -5.5)),
-        "Stube": ((4.4, 1.6, -7.8), (8.0, 1.0, -0.8)),
-        "StubeStove": ((7.8, 1.6, -3.4), (3.0, 1.2, -7.6)),
-        "Kitchen": ((-3.0, 1.6, -13.2), (-7.5, 1.2, -18.5)),
-        "Music": ((3.0, 1.6, -9.0), (7.0, 1.2, -18.0)),
-        "Store": ((0.0, 1.6, -13.1), (0.0, 1.2, -19.0)),
-        "Hall": ((0.0, 1.6, -11.8), (0.0, 1.5, 0.0)),
+    "tavern": {  # salão de dois níveis e cômodos da taverna (tools_src/tavern_layout.py; terraço a 1,3 m)
+        "Entrance": ((6.6, 1.6, -0.9), (-1.0, 1.4, -9.0)),
+        "Hall": ((0.4, 1.6, -1.0), (6.0, 1.8, -11.5)),
+        "Bar": ((2.6, 1.6, -3.6), (-2.6, 1.2, -6.4)),
+        "Ramp": ((3.8, 1.6, -1.2), (7.6, 1.6, -8.4)),
+        "Terrace": ((7.6, 2.9, -8.8), (-2.0, 2.2, -12.6)),
+        "TerraceView": ((6.6, 2.9, -13.3), (0.0, 0.6, -3.0)),
+        "Inglenook": ((3.6, 2.9, -10.9), (1.8, 2.4, -13.9)),
+        "Inn": ((-3.6, 1.6, -0.8), (-8.0, 1.2, -4.6)),
+        "Kitchen": ((-3.6, 1.6, -5.6), (-7.5, 1.2, -13.6)),
+        "Pantry": ((-3.6, 1.6, -14.6), (-7.5, 1.0, -18.8)),
+        "Store": ((-2.2, 1.6, -14.6), (7.0, 1.0, -18.8)),
+        "InnDoor": ((-13.5, 1.6, -5.5), (-9.0, 2.0, -2.6)),
     },
     "tailor": {
         "Portico": ((-8.0, 1.6, 1.6), (6.0, 2.0, 1.2)),
