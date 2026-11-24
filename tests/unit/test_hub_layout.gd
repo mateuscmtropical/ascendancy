@@ -50,8 +50,9 @@ const TAVERN_TERRACE_EDGE: float = -8.4
 const TAVERN_INN_STREET: Vector3 = Vector3(-10.8, 0.4, -2.6)
 const TAVERN_INN_INSIDE: float = -7.6  # model-local x past the inn's threshold
 ## Foot of the inn's stair in the reception and its half landing (model-local; flights climb on z).
-const INN_STAIR_FOOT: Vector3 = Vector3(-3.72, 0.1, -5.9)
-const INN_LANDING: Vector3 = Vector3(-4.92, 2.7, -0.85)
+const INN_STAIR_FOOT: Vector3 = Vector3(-4.92, 0.1, -5.9)
+## Model-local x past the spine wall, on the landing at the foot of the second flight.
+const INN_SECOND_FLIGHT_X: float = -4.0
 const INN_LANDING_HEIGHT: float = 2.4
 const INN_GUEST_FLOOR_HEIGHT: float = 5.0
 ## Model-local z past the top of the second flight.
@@ -282,32 +283,43 @@ func test_player_walks_into_the_inn_from_the_side_street() -> void:
 
 func test_player_climbs_the_inn_stair_to_the_guest_floor() -> void:
 	var tavern: Node3D = get_tree().get_first_node_in_group("shop_tavern")
-	var on_landing: Vector3 = await _walk_in_tavern(tavern, INN_STAIR_FOOT, PI, 150)
-	var upstairs: Vector3 = await _walk_in_tavern(tavern, INN_LANDING, 0.0, 180)
+	var legs: Array[Vector3] = await _walk_in_tavern(
+		tavern, INN_STAIR_FOOT, [[PI, 150], [-PI / 2.0, 40], [0.0, 180]]
+	)
+	var on_landing: Vector3 = legs[0]
+	var across_landing: Vector3 = legs[1]
+	var upstairs: Vector3 = legs[2]
 
 	assert_gt(on_landing.y, INN_LANDING_HEIGHT, "first flight climbs to the half landing")
+	assert_gt(
+		across_landing.x, INN_SECOND_FLIGHT_X, "player walked round the spine wall on the landing"
+	)
 	assert_gt(upstairs.y, INN_GUEST_FLOOR_HEIGHT, "second flight climbs to the guest floor")
 	assert_lt(upstairs.z, INN_GUEST_FLOOR_Z, "player stepped off the stair onto the guest floor")
 
 
-## Walks the player forward from a model-local point of the tavern, the camera turned by yaw from
-## the tavern's own; returns where it got to, model-local.
-func _walk_in_tavern(tavern: Node3D, start: Vector3, yaw: float, frames: int) -> Vector3:
+## Walks the player forward without stopping from a model-local point of the tavern, one leg
+## per [yaw, frames] (camera turned by yaw from the tavern's own); returns where each leg
+## ended, model-local.
+func _walk_in_tavern(tavern: Node3D, start: Vector3, legs: Array) -> Array[Vector3]:
 	var player: PlayerController = _hub.get_node("Player")
 	var camera_yaw: Node3D = player.get_node("CameraYaw")
 	var street_yaw: float = camera_yaw.global_rotation.y
-	var reached: Vector3
+	var reached: Array[Vector3] = []
 
 	player.global_position = tavern.global_transform * start
 	player.velocity = Vector3.ZERO
-	camera_yaw.global_rotation.y = tavern.global_rotation.y + yaw
 	player.is_input_enabled = true
 	Input.action_press(&"move_forward")
-	await wait_physics_frames(frames)
+
+	for leg: Array in legs:
+		camera_yaw.global_rotation.y = tavern.global_rotation.y + leg[0]
+		await wait_physics_frames(leg[1])
+		reached.append(tavern.global_transform.affine_inverse() * player.global_position)
+
 	Input.action_release(&"move_forward")
 	player.is_input_enabled = false
 	camera_yaw.global_rotation.y = street_yaw
-	reached = tavern.global_transform.affine_inverse() * player.global_position
 
 	return reached
 

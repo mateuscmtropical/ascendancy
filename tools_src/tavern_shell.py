@@ -277,13 +277,14 @@ def balustrade_run(b: Builder, start: tuple, end: tuple, tint: tuple) -> None:
 
 
 def rail_collider(b: Builder, start: tuple, end: tuple) -> None:
-    """Thin wall from start to end (y along the run, tilted with it), RAIL["collider"] high."""
+    """Thin wall from start to end (y along the run), RAIL["collider"] high: sheared up the slope, so its ends stay
+    plumb over the end points instead of leaning back over a landing."""
     run = math.hypot(end[0] - start[0], end[1] - start[1])
     heading = math.atan2(-(end[0] - start[0]), end[1] - start[1])
-    slope = math.atan2(end[2] - start[2], run)
-    frame = Matrix.Translation(start) @ Matrix.Rotation(heading, 4, "Z") @ Matrix.Rotation(slope, 4, "X")
+    shear = Matrix(((1.0, 0.0, 0.0, 0.0), (0.0, 1.0, 0.0, 0.0), (0.0, (end[2] - start[2]) / run, 1.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
+    frame = Matrix.Translation(start) @ Matrix.Rotation(heading, 4, "Z") @ shear
 
-    b.collider((-0.06, 0.0, 0.0), (0.06, math.hypot(run, end[2] - start[2]), RAIL["collider"]), frame)
+    b.collider((-0.06, 0.0, 0.0), (0.06, run, RAIL["collider"]), frame)
 
 
 # ---------- wall finishes ----------
@@ -439,36 +440,39 @@ def flight_ramp(b: Builder, span: tuple, start_d: float, start_z: float, directi
 
 
 def stair_rails() -> list:
-    """Polylines (u, d, z) of the stair's balustrades: the open side of the landing and of the second flight, the
-    second flight's side over the first, the guest floor round the well."""
+    """Polylines (u, d, z) of the stair's balustrades: the open side of the first flight and of the landing, the
+    second flight's side over the first, the guest floor round the well over the first flight."""
     inset = RAIL["inset"]
     floor = shops.FLOOR_TOP
     landing_top = floor + STAIR_RISERS * STAIR_RISE
     upper_top = UPPER_FLOOR + floor
 
     return [
-        [(LANDING[0] + inset, LANDING[2] + inset, landing_top), (LANDING[0] + inset, LANDING[3], landing_top), (LANDING[0] + inset, STAIR_FOOT, upper_top)],
-        [(SECOND_FLIGHT[1] - inset, LANDING[3], landing_top), (SECOND_FLIGHT[1] - inset, STAIR_FOOT, upper_top)],
-        [(SECOND_FLIGHT[1], STAIR_FOOT + inset, upper_top), (LANDING[1], STAIR_FOOT + inset, upper_top)],
-        [(LANDING[0] - inset, UPPER_FRONT, upper_top), (LANDING[0] - inset, STAIR_FOOT, upper_top)],
+        [(LANDING[0] + inset, STAIR_FOOT, floor), (LANDING[0] + inset, LANDING[3], landing_top), (LANDING[0] + inset, LANDING[2] + inset, landing_top)],
+        [(SECOND_FLIGHT[0] + inset, LANDING[3], landing_top), (SECOND_FLIGHT[0] + inset, STAIR_FOOT, upper_top)],
+        [(LANDING[0] - inset, UPPER_FRONT, upper_top), (LANDING[0] - inset, STAIR_FOOT + inset, upper_top), (FIRST_FLIGHT[1], STAIR_FOOT + inset, upper_top)],
     ]
 
 
 def build_stair(b: Builder, room) -> None:
-    """Oak dog-leg stair: the first flight solid from the reception floor, the half landing and the second flight on
-    a plastered soffit, the spine wall between them, balustrades on the open sides."""
+    """Oak dog-leg stair: the first flight climbing in sight of the side door, the half landing against the street
+    wall, the second flight boxed in along the hall wall, the spine wall between them, balustrades on the open
+    sides."""
     floor = shops.FLOOR_TOP
     landing_top = floor + STAIR_RISERS * STAIR_RISE
     tread_tint = srgb(town.WOOD["media"])
     wood_uv = ("band", *WOOD_LIGHT_BAND, 1.5)
     first = [(STAIR_FOOT, 0.0)] + stair_steps(STAIR_FOOT, floor, -1.0) + [(LANDING[3], 0.0)]
-    second = stair_steps(LANDING[3], landing_top, 1.0) + [(STAIR_FOOT, room.ceiling), (LANDING[3], landing_top - LANDING_SLAB)]
+    second = [(LANDING[3], 0.0), (STAIR_FOOT, 0.0)] + stair_steps(LANDING[3], landing_top, 1.0)[::-1]  # same winding as the first
 
-    b.side_prism(first, *FIRST_FLIGHT, "wood", tread_tint, uv=wood_uv)
-    b.side_prism(second, *SECOND_FLIGHT, "wood", tread_tint, uv=wood_uv)
+    for profile, span in ((first, FIRST_FLIGHT), (second, SECOND_FLIGHT)):
+        b.solid(b.side_prism(profile, *span, "wood", tread_tint, uv=wood_uv))  # solid flights: nobody walks in under the treads
+
     b.box((LANDING[0], LANDING[2], landing_top - LANDING_SLAB), (LANDING[1], LANDING[3], landing_top), "wood", tread_tint, uv=wood_uv)
     b.collider((LANDING[0], LANDING[2], landing_top - LANDING_SLAB), (LANDING[1], LANDING[3], landing_top), name="WoodFloor")
     town.wall_piece(b, (SPINE[0], LANDING[3], 0.0), (SPINE[1], STAIR_FOOT, room.ceiling), room.house.wall_material, room.house.wall_tint)
+    town.wall_piece(b, (SPINE[0], LANDING[2], 0.0), (LANDING[1], LANDING[3], landing_top - LANDING_SLAB), room.house.wall_material, room.house.wall_tint)  # boxed in under the landing behind the luggage
+    town.wall_piece(b, (SPINE[0], STAIR_FOOT, 0.0), (LANDING[1], STAIR_FOOT + 0.05, room.ceiling), room.house.wall_material, room.house.wall_tint)  # plastered end of the boxed second flight
     flight_ramp(b, FIRST_FLIGHT, STAIR_FOOT, floor, -1.0)
     flight_ramp(b, SECOND_FLIGHT, LANDING[3], landing_top, 1.0)
 

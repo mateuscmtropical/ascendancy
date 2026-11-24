@@ -58,9 +58,9 @@ STAIR_RISE = UPPER_FLOOR / (2 * STAIR_RISERS)
 STAIR_TREAD = 0.28
 LANDING = (-5.45, HALL_WALL - HALF_WALL, 0.3, 1.4)  # (u from, u to, d from, d to), the half landing against the street wall
 STAIR_FOOT = LANDING[3] + (STAIR_RISERS - 1) * STAIR_TREAD  # d of the first riser of the first flight and the last of the second
-FIRST_FLIGHT = (-4.3, HALL_WALL - HALF_WALL)  # u from, u to: from the reception floor up to the landing
-SECOND_FLIGHT = (LANDING[0], -4.4)  # from the landing up to the guest floor
-SPINE = (SECOND_FLIGHT[1], FIRST_FLIGHT[0])  # wall between the flights, up to the reception ceiling
+FIRST_FLIGHT = (LANDING[0], -4.4)  # u from, u to: from the reception floor up to the landing, in sight of the side door
+SECOND_FLIGHT = (-4.3, HALL_WALL - HALF_WALL)  # from the landing up to the guest floor, along the hall wall
+SPINE = (FIRST_FLIGHT[1], SECOND_FLIGHT[0])  # wall between the flights, up to the reception ceiling
 STAIR_WELL = (LANDING[0], LANDING[1], LANDING[2], STAIR_FOOT)  # open through the reception ceiling and the guest floor
 
 UPPER_HEIGHT = 3.0  # the second storey of the tavern spec
@@ -166,17 +166,16 @@ INNKEEPER = (RECEPTION_DESK, INN_BACK - HALF_WALL - 0.45)
 
 
 def furnish_inn(f) -> None:
-    """The reception desk (guest book, bell and the key board behind the innkeeper) facing the side door, notices on
-    the stair's spine wall, a bench under the street window, luggage under the landing, a runner to the desk."""
+    """The reception desk (guest book, bell and the key board behind the innkeeper) facing the side door, notices by
+    that door, a bench under the street window, luggage under the landing, a runner to the desk."""
     f.on_face("d", INN_BACK - HALF_WALL, -1, "reception_desk", RECEPTION_DESK)
-    f.on_face("u", SPINE[0], -1, "notice_board", 3.3)  # on the stair's spine wall, facing the side door
-    f.on_face("u", SPINE[0], -1, "wall_lantern", 4.6)
+    f.on_wall("left", "notice_board", 1.0)
     f.on_wall("left", "wall_lantern", 4.4)
     f.on_face("d", 0.3, 1, "bench_long", FRONT_WINDOWS[0])
     f.on_face("d", 0.3, 1, "luggage_pile", -4.9)
     f.put("rug_runner", -7.2, 3.0, variant="red")
     f.put("hanging_lantern", -7.0, 3.0, lit=False)
-    f.block("escada", (FIRST_FLIGHT[0], FIRST_FLIGHT[1], LANDING[3], STAIR_FOOT))
+    f.block("escada", (LANDING[0], LANDING[1], LANDING[3], STAIR_FOOT))
 
 
 def furnish_kitchen(f) -> None:
