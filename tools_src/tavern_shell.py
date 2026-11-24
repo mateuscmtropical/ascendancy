@@ -9,6 +9,7 @@ the street door, benches and barrels, the jettied upper floor and a second chimn
 build_market_shops.py calls build_shell() for the "tavern" entry of SHOPS (shell="tavern_shell").
 """
 
+import copy
 import math
 
 from mathutils import Matrix
@@ -16,7 +17,11 @@ from mathutils import Matrix
 import build_market_shops as shops
 import build_town_houses as town
 from build_town_houses import WOOD_DARK_BAND, WOOD_LIGHT_BAND, Builder, Opening, srgb
-from tavern_layout import BACK_EDGE, FRONT_WINDOWS, HALL, HALL_BACK, INN_BACK, INN_DOOR, PLASTERED, RAMP, ROOMS, SIDE_EDGE, TERRACE_FILLET, TERRACE_PARTS, TERRACE_TOP, WAINSCOT, WINDOW
+from tavern_layout import (
+    BACK_EDGE, CHIMNEY_BREASTS, FIRST_FLIGHT, FRONT_WINDOWS, HALL, HALL_BACK, INN_DOOR, INNKEEPER, LANDING, PLASTERED, RAMP, ROOMS, SECOND_FLIGHT, SIDE_EDGE, SPINE,
+    STAIR_FOOT, STAIR_RISE, STAIR_RISERS, STAIR_TREAD, STAIR_WELL, TERRACE_FILLET, TERRACE_PARTS, TERRACE_TOP, UPPER_CEILING, UPPER_FLOOR, UPPER_FRONT, UPPER_HEIGHT,
+    UPPER_LIGHTS, UPPER_PARTITIONS, UPPER_ROOMS, UPPER_WINDOW, UPPER_WINDOWS, WAINSCOT, WINDOW,
+)
 
 shops.WALL_FINISHES.update({
     WAINSCOT: dict(dado="8B5A3C", trim="4A2E1E", material="wood", uv=("band", *WOOD_LIGHT_BAND, 1.5)),
@@ -45,6 +50,10 @@ RAIL = dict(height=0.95, inset=0.06, pitch=0.14, baluster=0.05, newel=0.12, coll
 ARC_SEGMENTS = 12
 RAMP_CLEAT_PITCH = 0.4
 INN_SIGN_OFFSET = 0.45  # from the edge of the inn's door to the arm of its sign, as on the facades
+WALL = town.WALL
+LANDING_SLAB = 0.3
+CEILING_BAYS = {**ROOMS, "inn": (ROOMS["inn"][0], LANDING[0], ROOMS["inn"][2], ROOMS["inn"][3])}  # the joists of the reception stop at the stair well
+INNKEEPER_FACES = (INNKEEPER[0], INNKEEPER[1] - 3.0)  # he looks over his desk toward the side door
 
 
 # ---------- walls ----------
@@ -136,12 +145,13 @@ def build_floor(b: Builder, room) -> None:
 
 
 def build_ceiling(b: Builder, room) -> None:
-    """Plaster under the upper floor, joists and a summer beam in every room. Its collider comes down to the underside
-    of the summer beams: the camera arm stops under them."""
-    b.box((room.left, room.front, room.ceiling), (room.right, room.back, room.storey), "plaster", CEILING_PLASTER)
-    b.collider((room.left, room.front, room.ceiling - SUMMER[1]), (room.right, room.back, room.storey))
+    """Plaster under the guest floor round the stair well, joists and a summer beam in every room. Its collider comes
+    down to the underside of the summer beams: the camera arm stops under them."""
+    for u_from, u_to, d_from, d_to in rect_minus((room.left, room.right, room.front, room.back), STAIR_WELL):
+        b.box((u_from, d_from, room.ceiling), (u_to, d_to, room.storey), "plaster", CEILING_PLASTER)
+        b.collider((u_from, d_from, room.ceiling - SUMMER[1]), (u_to, d_to, room.storey))
 
-    for bounds in ROOMS.values():
+    for bounds in CEILING_BAYS.values():
         beamed_ceiling(b, room, bounds)
 
 
@@ -233,10 +243,13 @@ def rail_line() -> list:
 
 
 def build_balustrade(b: Builder, room) -> None:
-    """Oak handrail and foot rail on square balusters, a newel at every bend, along rail_line(); each run has a
-    collider up to RAIL["collider"] so nobody walks off the edge."""
-    points = rail_line()
-    tint = room.house.wood_tint
+    """The terrace's balustrade along rail_line()."""
+    railing(b, rail_line(), room.house.wood_tint)
+
+
+def railing(b: Builder, points: list, tint: tuple) -> None:
+    """Oak handrail and foot rail on square balusters along a polyline (u, d, z), a newel at every bend; each run has
+    a collider up to RAIL["collider"] so nobody walks off the edge."""
     wood_uv = ("band", *WOOD_DARK_BAND, 1.5)
     lift = lambda point, height: (point[0], point[1], point[2] + height)
 
@@ -387,6 +400,196 @@ def build_kitchen_chimney(b: Builder, room) -> None:
     town.draw_chimney(b, house, KITCHEN_CHIMNEY[0], KITCHEN_CHIMNEY[1], roof_there + 1.1, material="brick", pots=1)
 
 
+# ---------- inn: the stair and the guest floor ----------
+
+def rect_minus(rect: tuple, hole: tuple) -> list:
+    """(u from, u to, d from, d to) pieces of a rectangle with a rectangular hole (inside it) taken out."""
+    u_from, u_to, d_from, d_to = rect
+    hole_u_from, hole_u_to, hole_d_from, hole_d_to = hole
+    pieces = [(u_from, u_to, d_from, hole_d_from), (u_from, u_to, hole_d_to, d_to), (u_from, hole_u_from, hole_d_from, hole_d_to), (hole_u_to, u_to, hole_d_from, hole_d_to)]
+
+    return [piece for piece in pieces if piece[1] - piece[0] > 1e-3 and piece[3] - piece[2] > 1e-3]
+
+
+def guest_room(room):
+    """The hall as the guest floor sees it (heights over its own slab, inside a lifted block): its storey, ceiling,
+    jettied street wall and partitions."""
+    upper = copy.copy(room)
+    upper.storey, upper.ceiling, upper.front = UPPER_HEIGHT, UPPER_CEILING, UPPER_FRONT
+    upper.partitions = UPPER_PARTITIONS
+
+    return upper
+
+
+def stair_steps(start_d: float, start_z: float, direction: float) -> list:
+    """Stepped top of one flight in (d, z): STAIR_RISERS risers from start_d, climbing toward direction (+1 | -1)."""
+    risers = [(start_d + direction * index * STAIR_TREAD, start_z + index * STAIR_RISE) for index in range(STAIR_RISERS)]
+
+    return [point for d, z in risers for point in ((d, z), (d, z + STAIR_RISE))]
+
+
+def flight_ramp(b: Builder, span: tuple, start_d: float, start_z: float, direction: float) -> None:
+    """Sloped collider through the nosings of one flight, from the floor one tread before its first riser."""
+    length = math.hypot(STAIR_RISERS * STAIR_TREAD, STAIR_RISERS * STAIR_RISE)
+    turn = Matrix.Identity(4) if direction > 0.0 else Matrix.Rotation(math.pi, 4, "Z")
+    frame = Matrix.Translation(((span[0] + span[1]) / 2.0, start_d - direction * STAIR_TREAD, start_z)) @ turn @ Matrix.Rotation(math.atan2(STAIR_RISE, STAIR_TREAD), 4, "X")
+    half = (span[1] - span[0]) / 2.0
+
+    b.collider((-half, 0.0, -0.12), (half, length, 0.0), frame, name="Stairs")
+
+
+def stair_rails() -> list:
+    """Polylines (u, d, z) of the stair's balustrades: the open side of the landing and of the second flight, the
+    second flight's side over the first, the guest floor round the well."""
+    inset = RAIL["inset"]
+    floor = shops.FLOOR_TOP
+    landing_top = floor + STAIR_RISERS * STAIR_RISE
+    upper_top = UPPER_FLOOR + floor
+
+    return [
+        [(LANDING[0] + inset, LANDING[2] + inset, landing_top), (LANDING[0] + inset, LANDING[3], landing_top), (LANDING[0] + inset, STAIR_FOOT, upper_top)],
+        [(SECOND_FLIGHT[1] - inset, LANDING[3], landing_top), (SECOND_FLIGHT[1] - inset, STAIR_FOOT, upper_top)],
+        [(SECOND_FLIGHT[1], STAIR_FOOT + inset, upper_top), (LANDING[1], STAIR_FOOT + inset, upper_top)],
+        [(LANDING[0] - inset, UPPER_FRONT, upper_top), (LANDING[0] - inset, STAIR_FOOT, upper_top)],
+    ]
+
+
+def build_stair(b: Builder, room) -> None:
+    """Oak dog-leg stair: the first flight solid from the reception floor, the half landing and the second flight on
+    a plastered soffit, the spine wall between them, balustrades on the open sides."""
+    floor = shops.FLOOR_TOP
+    landing_top = floor + STAIR_RISERS * STAIR_RISE
+    tread_tint = srgb(town.WOOD["media"])
+    wood_uv = ("band", *WOOD_LIGHT_BAND, 1.5)
+    first = [(STAIR_FOOT, 0.0)] + stair_steps(STAIR_FOOT, floor, -1.0) + [(LANDING[3], 0.0)]
+    second = stair_steps(LANDING[3], landing_top, 1.0) + [(STAIR_FOOT, room.ceiling), (LANDING[3], landing_top - LANDING_SLAB)]
+
+    b.side_prism(first, *FIRST_FLIGHT, "wood", tread_tint, uv=wood_uv)
+    b.side_prism(second, *SECOND_FLIGHT, "wood", tread_tint, uv=wood_uv)
+    b.box((LANDING[0], LANDING[2], landing_top - LANDING_SLAB), (LANDING[1], LANDING[3], landing_top), "wood", tread_tint, uv=wood_uv)
+    b.collider((LANDING[0], LANDING[2], landing_top - LANDING_SLAB), (LANDING[1], LANDING[3], landing_top), name="WoodFloor")
+    town.wall_piece(b, (SPINE[0], LANDING[3], 0.0), (SPINE[1], STAIR_FOOT, room.ceiling), room.house.wall_material, room.house.wall_tint)
+    flight_ramp(b, FIRST_FLIGHT, STAIR_FOOT, floor, -1.0)
+    flight_ramp(b, SECOND_FLIGHT, LANDING[3], landing_top, 1.0)
+
+    for points in stair_rails():
+        railing(b, points, room.house.wood_tint)
+
+    newel = RAIL["newel"] / 2.0
+    b.box((LANDING[0], LANDING[3] - 2.0 * newel, 0.0), (LANDING[0] + 2.0 * newel, LANDING[3], landing_top), "wood", room.house.wood_tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+    b.collider((LANDING[0], LANDING[3] - 2.0 * newel, 0.0), (LANDING[0] + 2.0 * newel, LANDING[3], landing_top))
+
+
+def guest_frames(upper) -> dict:
+    """Frame of each outer wall of the guest floor (as shops.wall_frames, at its own slab): the street wall on the
+    jetty, the side walls from it to the back wall."""
+    return {
+        "front": Matrix.Translation((-upper.half, UPPER_FRONT - WALL, 0.0)),
+        "back": Matrix.Translation((upper.half, upper.depth, 0.0)) @ Matrix.Rotation(math.pi, 4, "Z"),
+        "left": Matrix.Translation((-upper.half, upper.depth - WALL, 0.0)) @ Matrix.Rotation(-math.pi / 2.0, 4, "Z"),
+        "right": Matrix.Translation((upper.half, UPPER_FRONT, 0.0)) @ Matrix.Rotation(math.pi / 2.0, 4, "Z"),
+    }
+
+
+def guest_openings(upper) -> dict:
+    """Casements of the guest floor in wall-local u (from the frame's origin along the wall)."""
+    sill, height = UPPER_WINDOW
+    to_local = {"front": lambda u: u + upper.half, "back": lambda u: upper.half - u, "left": lambda d: upper.depth - WALL - d}
+    openings = {side: [Opening(to_local[side](along), width, sill, height, "flat", kind="vitrine") for along, width in windows] for side, windows in UPPER_WINDOWS.items()}
+
+    return {**openings, "right": []}
+
+
+def guest_wall_stretches(upper) -> list:
+    """(axis, face, normal, span, finish, windows) of the guest floor's outer walls room by room; windows as (from,
+    to) along the face."""
+    sill, height = UPPER_WINDOW
+    windows = {side: [(along - width / 2.0 - 0.1, along + width / 2.0 + 0.1) for along, width in found] for side, found in UPPER_WINDOWS.items()}
+    faces = {"front": ("d", UPPER_FRONT, 1), "back": ("d", upper.depth - WALL, -1), "left": ("u", -upper.half + WALL, 1), "right": ("u", upper.half - WALL, -1)}
+    stretches = (
+        ("gallery", "front", PLASTERED), ("street_twin", "front", WAINSCOT), ("corner_twin", "front", WAINSCOT),
+        ("gallery", "left", PLASTERED), ("side_chamber", "left", WAINSCOT),
+        ("side_chamber", "back", WAINSCOT), ("middle_chamber", "back", WAINSCOT), ("corner_chamber", "back", WAINSCOT),
+        ("corner_twin", "right", WAINSCOT), ("corridor", "right", PLASTERED), ("parlour", "right", WAINSCOT), ("back_corridor", "right", PLASTERED), ("corner_chamber", "right", WAINSCOT),
+    )
+    along = lambda name, side: UPPER_ROOMS[name][:2] if side in ("front", "back") else UPPER_ROOMS[name][2:]
+
+    over_well = ("d", UPPER_FRONT, 1, (LANDING[0] - 0.15, LANDING[1]), PLASTERED, [])  # the street wall over the stair well, on its ledge
+
+    return [(*faces[side], along(name, side), finish, windows.get(side, [])) for name, side, finish in stretches] + [over_well]
+
+
+def build_guest_walls(b: Builder, upper) -> None:
+    """The four outer walls of the guest floor with their leaded casements, inside a lifted block."""
+    frames = guest_frames(upper)
+    openings = guest_openings(upper)
+    lengths = {"front": 2.0 * upper.half, "back": 2.0 * upper.half, "left": upper.depth - WALL - UPPER_FRONT, "right": upper.depth - WALL - UPPER_FRONT}
+
+    for side, frame in frames.items():
+        shops.pierced_wall(b, upper, frame, lengths[side], openings[side])
+
+        for opening in openings[side]:
+            leaded_lights(b, frame, opening)
+
+
+def build_guest_floor_slab(b: Builder, upper) -> None:
+    """Boards of the guest floor round the stair well, inside a lifted block."""
+    board_tint = srgb(town.WOOD["mel"])
+    wood_uv = ("band", *WOOD_LIGHT_BAND, 2.0)
+
+    for u_from, u_to, d_from, d_to in rect_minus((upper.left, upper.right, UPPER_FRONT, upper.back), STAIR_WELL):
+        board_count = max(1, round((u_to - u_from) / shops.BOARD_WIDTH))
+        board_width = (u_to - u_from) / board_count
+
+        for board_index in range(board_count):
+            shade = 1.0 if board_index % 3 else 0.9
+            board_left = u_from + board_index * board_width
+            b.box((board_left, d_from, 0.0), (board_left + board_width, d_to, shops.FLOOR_TOP), "wood", tuple(shade * channel for channel in board_tint), uv=wood_uv)
+
+        b.collider((u_from, d_from, 0.0), (u_to, d_to, shops.FLOOR_TOP), name="WoodFloor")
+
+
+def build_guest_ceiling(b: Builder, upper) -> None:
+    """Plaster under the roof with joists and a summer beam in every room, and the chimney breasts over the
+    fireplaces of the back chambers, inside a lifted block."""
+    b.box((upper.left, UPPER_FRONT, upper.ceiling), (upper.right, upper.back, upper.storey), "plaster", CEILING_PLASTER)
+    b.collider((upper.left, UPPER_FRONT, upper.ceiling - JOIST[1]), (upper.right, upper.back, upper.storey))
+
+    for bounds in UPPER_ROOMS.values():
+        beamed_ceiling(b, upper, bounds)
+
+    fireplace_width, fireplace_depth, fireplace_height = shops.PROPS["fireplace"]["size"]
+    breast_from = UPPER_ROOMS["side_chamber"][2]
+
+    for u in CHIMNEY_BREASTS:
+        b.box((u - fireplace_width / 2.0, breast_from, fireplace_height), (u + fireplace_width / 2.0, breast_from + fireplace_depth, upper.ceiling), "plaster", CEILING_PLASTER)
+        b.collider((u - fireplace_width / 2.0, breast_from, fireplace_height), (u + fireplace_width / 2.0, breast_from + fireplace_depth, upper.ceiling))
+
+
+def build_guest_floor(b: Builder, room) -> None:
+    """The inn's guest floor over the tavern: slab, outer walls with casements, partitions with their doors, wall
+    finishes and ceiling, built with the ground storey's helpers and lifted onto the slab; the jetty's bressummer and
+    the lamps."""
+    upper = guest_room(room)
+
+    with b.lifted(UPPER_FLOOR):
+        build_guest_floor_slab(b, upper)
+        build_guest_walls(b, upper)
+
+        for partition in upper.partitions:
+            shops.build_partition(b, upper, partition)
+
+        for axis, face_at, normal, span, finish, windows in guest_wall_stretches(upper):
+            shops.dress_wall_face(b, upper, axis, face_at, normal, span, finish, windows, [span])
+
+        build_guest_ceiling(b, upper)
+
+    b.box((-room.half, UPPER_FRONT - WALL, UPPER_FLOOR - 0.12), (room.half, 0.0, UPPER_FLOOR), "wood", room.house.wood_tint, uv=("band", *WOOD_DARK_BAND, 1.5))
+
+    for u, d in UPPER_LIGHTS:
+        b.light((u, d, UPPER_FLOOR + UPPER_CEILING - LAMP_DROP), room.spec["light"], 1.0, 6.0)
+
+
 # ---------- assembly ----------
 
 def build_shell(room) -> dict:
@@ -398,6 +601,7 @@ def build_shell(room) -> dict:
     build_terrace(b)
     build_ramp(b, room)
     build_balustrade(b, room)
+    build_stair(b, room)
 
     for partition in room.partitions:
         shops.build_partition(b, room, partition)
@@ -406,11 +610,14 @@ def build_shell(room) -> dict:
     shops.build_roof(b, room)
     build_street_front(b, room)
     build_kitchen_chimney(b, room)
+    build_guest_floor(b, room)
 
     for u, d in LIGHTS:
         b.light((u, d, room.ceiling - LAMP_DROP), room.spec["light"], 1.3, 7.0)
 
     b.marker("shopkeeper", (*room.keeper, 0.0))
+    b.marker("innkeeper", (*INNKEEPER, 0.0))
+    b.marker("innkeeper_faces", (*INNKEEPER_FACES, 0.0))
 
     return b.finish(town.SHOP_DIR / f"shop_{room.shop_type}.gltf", {**shops.shell_sidecar(room), "side_signs": side_signs(room)})
 
