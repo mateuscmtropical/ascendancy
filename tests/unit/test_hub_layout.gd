@@ -46,6 +46,9 @@ const CASARAO_LANDING_DEPTH: float = -16.5
 const TAVERN_RAMP_FOOT: Vector3 = Vector3(7.65, 0.1, -1.0)
 const TAVERN_TERRACE_HEIGHT: float = 1.3
 const TAVERN_TERRACE_EDGE: float = -8.4
+# On the side street, in front of the inn's door.
+const TAVERN_INN_STREET: Vector3 = Vector3(-10.8, 0.4, -2.6)
+const TAVERN_INN_INSIDE: float = -7.6  # model-local x past the inn's threshold
 
 var _hub: Node3D
 
@@ -247,6 +250,27 @@ func test_player_walks_up_the_tavern_ramp() -> void:
 
 	assert_lt(reached.z, TAVERN_TERRACE_EDGE, "player reached the terrace")
 	assert_almost_eq(reached.y, TAVERN_TERRACE_HEIGHT, 0.05, "player stands on the terrace")
+
+
+func test_player_walks_into_the_inn_from_the_side_street() -> void:
+	var player: PlayerController = _hub.get_node("Player")
+	var camera_yaw: Node3D = player.get_node("CameraYaw")
+	var tavern: Node3D = get_tree().get_first_node_in_group("shop_tavern")
+	var street_yaw: float = camera_yaw.global_rotation.y
+	var reached: Vector3
+
+	player.global_position = tavern.global_transform * TAVERN_INN_STREET
+	player.velocity = Vector3.ZERO
+	camera_yaw.global_rotation.y = tavern.global_rotation.y - PI / 2.0
+	player.is_input_enabled = true
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(120)
+	Input.action_release(&"move_forward")
+	player.is_input_enabled = false
+	camera_yaw.global_rotation.y = street_yaw
+	reached = tavern.global_transform.affine_inverse() * player.global_position
+
+	assert_gt(reached.x, TAVERN_INN_INSIDE, "player walked through the inn's door")
 
 
 func _ground_height_at(ground_point: Vector2) -> float:
