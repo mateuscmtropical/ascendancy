@@ -82,13 +82,13 @@ def furnish_hall(f) -> None:
 
 
 def furnish_terrace(f) -> None:
-    """Inglenook with two armchairs and the musicians' stage on the back arm, tables at the corner of the L, casks
-    stored in the corner, the dart board and a stag's head over the right arm, banners on the walls."""
+    """Inglenook with a plank bench and two stools at the fire, the musicians' stage on the back arm, tables at the
+    corner of the L, casks stored in the corner, the dart board and a stag's head over the right arm, banners."""
     f.on_face("d", HALL[3], -1, "inglenook", 1.8, z=TERRACE_TOP)
     f.put("mounted_head", 1.8, 12.4, 0.0, z=TERRACE_TOP + 0.35, variant="boar")
-    f.put("rug_ornate", 1.8, 12.1, 0.0, z=TERRACE_TOP, variant="red")
-    f.put("armchair", 0.9, 12.0, 160.0, z=TERRACE_TOP)
-    f.put("armchair", 2.7, 12.0, -160.0, z=TERRACE_TOP)
+    f.put("bench_long", 1.8, 11.95, 180.0, z=TERRACE_TOP)
+    f.put("stool_round", 0.6, 12.35, z=TERRACE_TOP)
+    f.put("stool_round", 3.0, 12.35, z=TERRACE_TOP)
     f.put("stage", -1.35, 12.85, z=TERRACE_TOP)
     f.put("bunting", -1.35, 12.2)
     f.put("round_table_set", 4.8, 12.8, z=TERRACE_TOP)
