@@ -35,7 +35,7 @@ from face_shapes import add_face_shapes  # noqa: E402
 
 FOREARM_PREFIXES = ("lowerarm", "hand", "thumb", "index", "middle", "ring", "pinky")
 SLEEVE_CUT_WEIGHT = 0.5  # sleeve vertices carried more than this by the forearm and hand go
-FOREARM_KEEP_WEIGHT = 0.3  # bare-skin vertices kept from the base body: a little above where the sleeve ends
+FOREARM_KEEP_WEIGHT = 0.05  # bare-skin vertices kept from the base body: well up under the sleeve, so a bent elbow opens no gap
 MASK_GROW_PIXELS = 3  # the UV footprint grows this much so the seams take the new colour too
 HAIR_CLEARANCE = 0.012  # metres the lengthened hair keeps off the body
 STUBBLE_TOP = 0.06  # metres below the eyes where the stubble starts on the upper lip and chin column
@@ -50,6 +50,7 @@ STUBBLE_FEATHER = 0.005  # share of the texture width over which the stubble fad
 FULLNESS_HEIGHTS = (0.45, 1.45)  # metres: thighs to shoulders
 ARM_FULLNESS_REACH = 0.25  # metres from the middle (T-pose) the arms keep all their fullness; it fades to none at the
 # wrist, so forearms stay slim and the hands keep their size
+HAND_SCALE = 0.85  # her bare hands come from the base body, bigger than the outfit's: shrunk toward the wrist
 BROW_THINNING = 0.6  # her eyebrows keep this share of their height: thin, natural brows instead of heavy ones
 OLIVE_GREYING = 0.3  # share of the way an olive skin moves toward its own grey before the tint, so it is not orange
 # Garment colours (sRGB), applied over the luminance of the original cloth so its folds and seams stay.
@@ -473,6 +474,21 @@ def short_sleeves_and_bare_forearms(base_body_name: str, armature, skin_material
     delete_objects([scene_object for scene_object in base_objects if scene_object is not forearms])
 
 
+def smaller_hands(forearms, armature) -> None:
+    """Everything past each wrist (T-pose, along x) scaled toward that wrist, so the fingers shrink with the palm."""
+    to_local = forearms.matrix_world.inverted()
+    wrists = {side: armature.matrix_world @ armature.data.bones[f"hand_{side}"].head_local for side in ("l", "r")}
+
+    for vertex in forearms.data.vertices:
+        point = forearms.matrix_world @ vertex.co
+        wrist = wrists["l" if (point.x > 0.0) == (wrists["l"].x > 0.0) else "r"]
+
+        if abs(point.x) > abs(wrist.x):
+            vertex.co = to_local @ (wrist + (point - wrist) * HAND_SCALE)
+
+    recompute_normals(forearms)
+
+
 def thinner_brows(eyebrows) -> None:
     """Each eyebrow squeezed toward its own middle line, so it keeps its arch and length but loses height."""
     positions = [eyebrows.matrix_world @ vertex.co for vertex in eyebrows.data.vertices]
@@ -525,6 +541,7 @@ def build_partner(name: str) -> Path:
         fuller_body([outfit_piece("Body"), outfit_piece("Legs"), outfit_piece("Arms"), bpy.data.objects["Forearms_Skin"], head], recipe["fullness"], eye_height(), wrist_x(armature))
         long_wavy_hair(bpy.data.objects["Hair_Long"], armature, [outfit_piece("Body")])
         thinner_brows(bpy.data.objects["Eyebrows"])
+        smaller_hands(bpy.data.objects["Forearms_Skin"], armature)
 
     skin_materials = [material for scene_object in bpy.data.objects if scene_object.type == "MESH" for material in scene_object.data.materials if material and material.name.startswith(("MI_Superhero", "MI_Regular"))]
     recolor_skin(skin_materials, recipe["skin"], prefix)

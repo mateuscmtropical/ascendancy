@@ -349,45 +349,57 @@ LOOP_CLIPS = {
     ]),
 }
 
-# The couple on the plaza bench (tools_src/build_hub_scene.py, add_couple): she sits on his left, hip to hip, and
-# they talk in turns of TALK_TURN seconds (WalkingNpc.talk_turn_seconds opens the mouth of whoever has the turn):
-# he talks first, she listens, then she talks and he listens. Offsets from the library's Sitting_Idle.
-# He: the left forearm lies across her shoulders, the elbow behind her near shoulder blade, the hand bent over her far
-# shoulder; the
-# right hand rests on his thigh and gestures while he talks; head turned to her.
+# The couple on the plaza bench (tools_src/build_hub_scene.py, add_couple): she sits on his left, hip to hip, his
+# right hand on the bench's iron armrest; they talk in turns of TALK_TURN seconds (WalkingNpc.talk_turn_seconds opens
+# the mouth of whoever has the turn): he talks first, she listens, then she talks and he listens. Whoever listens
+# looks at the other; whoever talks looks at the other and away. Offsets from the library's Sitting_Idle.
+# He: sits back, the left arm up around her shoulders (elbow high behind her neck, outside her hair), the hand
+# hanging over her far shoulder; the right forearm along the armrest, the hand over its front curl.
 TALK_TURN = 4.0
 EMBRACE_BASE = {
-    "chest": V(6.0, 0.0, 5.0), "head": V(18.0, 0.0, 6.0),
-    "hand_l": V(0.371, 0.136, 0.472), "elbow_l": V(0.0, 1.0, 0.0), "fist_l": V(0.0, -18.0, 0.0),
-    "hand_r": V(0.02, -0.06, 0.02),
+    "chest": V(4.0, -4.0, 4.0), "head": V(0.0, -10.0, 10.0),
+    "hand_l": V(0.39, 0.056, 0.512), "elbow_l": V(-0.1, 1.0, 0.38), "fist_l": V(0.0, -40.0, 0.0),
+    "hand_r": V(-0.13, -0.054, 0.042), "elbow_r": V(-0.8, 0.6, -0.2), "fist_r": V(0.0, -40.0, 0.0),
 }
-# She: trunk a little forward and toward him (his arm passes behind her shoulders), head turned to him, her right
-# hand on his knee, the left one in her lap, gesturing while she talks.
+# She: faces the plaza and leans into him (her near shoulder ahead of his arm), her head tilted against his; the right leg crossed over the left, both hands on that knee.
 LEAN_BASE = {
-    "chest": V(-6.0, 8.0, -4.0), "head": V(-20.0, 2.0, -10.0),
-    "hand_r": V(-0.12, -0.13, -0.02), "elbow_r": V(-0.5, 0.7, -0.4),
-    "hand_l": V(-0.1, -0.02, 0.0),
+    "chest": V(4.0, 2.0, -11.0), "head": V(-32.0, -14.0, -14.0),
+    "foot_r": V(0.415, -0.14, 0.217), "knee_r": V(0.1, -0.3, 1.0), "sole_r": V(10.0, 30.0, 0.0),
+    "hand_r": V(0.188, -0.126, 0.125), "elbow_r": V(-0.6, 0.3, -0.7),
+    "hand_l": V(-0.068, -0.133, 0.143), "elbow_l": V(0.6, 0.3, -0.7),
 }
-NOD = {"head": V(0.0, 6.0, 0.0)}
 STILL_HEAD = {"head": V(0.0, 0.0, 0.0)}
+# The library's Sitting_Idle already turns the head ~15 degrees to the left; these turns allow for it and stop ~20
+# degrees short of the other's face (the eyes do the rest).
+HIM_AT_HER = V(47.0, 0.0, -6.0)
+HER_AT_HIM = V(-65.0, 0.0, 6.0)
+NODDING = 6.0  # degrees the listener's head dips at each nod
 SEATED_CLIPS = {
     "Couple_Embrace_Loop": (2.0 * TALK_TURN, EMBRACE_BASE, [
-        (1.0, {"head": V(2.0, -4.0, 0.0), "hand_r": V(0.04, -0.10, 0.12), "fist_r": V(-30.0, 0.0, 0.0)}),
-        (2.0, {"head": V(-2.0, 3.0, 0.0), "hand_r": V(0.06, -0.12, 0.08), "fist_r": V(-20.0, 0.0, 0.0), "chest": V(0.0, 1.5, 0.0)}),
-        (3.0, {"head": V(3.0, -2.0, 0.0), "hand_r": V(0.03, -0.08, 0.12), "fist_r": V(-35.0, 0.0, 0.0)}),
-        (TALK_TURN, {**STILL_HEAD, "hand_r": V(0.0, 0.0, 0.0), "fist_r": V(0.0, 0.0, 0.0), "chest": V(0.0, 0.0, 0.0)}),
-        (5.2, NOD), (5.6, STILL_HEAD),
+        # talking: looks at her, away, at her again; the right hand lifts off the armrest with the words
+        (0.6, {"head": HIM_AT_HER, "hand_r": V(0.0, -0.04, 0.06), "fist_r": V(-25.0, 0.0, 0.0)}),
+        (1.4, {"hand_r": V(0.02, -0.06, 0.04), "fist_r": V(-10.0, 0.0, 0.0)}),
+        (2.0, {"head": HIM_AT_HER, "chest": V(0.0, 1.5, 0.0)}),
+        (2.6, {"head": V(-4.0, 2.0, 0.0), "hand_r": V(0.0, -0.04, 0.06), "fist_r": V(-25.0, 0.0, 0.0)}),
+        (3.4, {"head": HIM_AT_HER, "hand_r": V(0.0, 0.0, 0.0), "fist_r": V(0.0, 0.0, 0.0)}),
+        (TALK_TURN, {"head": HIM_AT_HER, "chest": V(0.0, 0.0, 0.0)}),
+        # listening: looks at her and nods
+        (5.0, {"head": HIM_AT_HER}), (5.3, {"head": HIM_AT_HER + V(0.0, NODDING, 0.0)}), (5.6, {"head": HIM_AT_HER}),
         (6.0, {"chest": V(0.0, 1.5, 0.0)}),
-        (6.8, NOD), (7.2, STILL_HEAD),
+        (6.6, {"head": HIM_AT_HER}), (6.9, {"head": HIM_AT_HER + V(0.0, NODDING, 0.0)}), (7.2, {"head": HIM_AT_HER}),
+        (7.6, STILL_HEAD),
     ]),
     "Couple_Lean_Loop": (2.0 * TALK_TURN, LEAN_BASE, [
-        (1.2, NOD), (1.6, STILL_HEAD),
+        # listening: looks at him and nods
+        (0.5, {"head": HER_AT_HIM}), (1.3, {"head": HER_AT_HIM + V(0.0, NODDING, 0.0)}), (1.6, {"head": HER_AT_HIM}),
         (2.0, {"chest": V(0.0, 1.5, 0.0)}),
-        (2.8, NOD), (3.2, STILL_HEAD),
-        (TALK_TURN, {"hand_l": V(0.0, 0.0, 0.0), "fist_l": V(0.0, 0.0, 0.0), "chest": V(0.0, 0.0, 0.0)}),
-        (5.0, {"head": V(-3.0, -3.0, 2.0), "hand_l": V(-0.03, -0.10, 0.10), "fist_l": V(30.0, 0.0, 0.0)}),
-        (6.0, {"head": V(2.0, 2.0, -2.0), "hand_l": V(-0.05, -0.12, 0.07), "fist_l": V(20.0, 0.0, 0.0), "chest": V(0.0, 1.5, 0.0)}),
-        (7.0, {"head": V(-2.0, -2.0, 0.0), "hand_l": V(-0.02, -0.08, 0.11), "fist_l": V(35.0, 0.0, 0.0)}),
+        (2.8, {"head": HER_AT_HIM}), (3.1, {"head": HER_AT_HIM + V(0.0, NODDING, 0.0)}), (3.4, {"head": HER_AT_HIM}),
+        (TALK_TURN, {"head": HER_AT_HIM, "hand_l": V(0.0, 0.0, 0.0), "fist_l": V(0.0, 0.0, 0.0), "chest": V(0.0, 0.0, 0.0)}),
+        # talking: at him, away, at him again; the left hand lifts off her knee with the words
+        (4.8, {"head": HER_AT_HIM, "hand_l": V(0.02, -0.04, 0.07), "fist_l": V(25.0, 0.0, 0.0)}),
+        (5.6, {"head": V(4.0, 2.0, 0.0), "hand_l": V(0.04, -0.06, 0.05), "fist_l": V(10.0, 0.0, 0.0), "chest": V(0.0, 1.5, 0.0)}),
+        (6.4, {"head": HER_AT_HIM, "hand_l": V(0.02, -0.04, 0.07), "fist_l": V(25.0, 0.0, 0.0)}),
+        (7.4, {"head": HER_AT_HIM, "hand_l": V(0.0, 0.0, 0.0), "fist_l": V(0.0, 0.0, 0.0)}),
     ]),
 }
 
