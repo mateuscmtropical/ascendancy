@@ -417,6 +417,17 @@ class Builder:
 
         self.turning_parts[name] = (frame or Matrix.Identity(4)) @ Vector(axle)
 
+    @contextlib.contextmanager
+    def lifted(self, height: float):
+        """Pieces made inside the block are raised by height: an upper storey drawn with the helpers of a ground one.
+        Lights and markers are not moved (give them their real height)."""
+        before = set(bpy.data.objects)
+
+        yield
+
+        for piece in set(bpy.data.objects) - before:
+            piece.data.transform(Matrix.Translation((0.0, 0.0, height)))
+
     # -- kit grafts --
 
     def kit(self, piece: str, location: tuple, degrees: float = 0.0, scale: tuple = (1.0, 1.0, 1.0), tints: dict = None, frame: Matrix = None, props: bool = False):
@@ -804,10 +815,16 @@ def draw_chimney(b: Builder, house: House, u: float, d: float, top: float, size:
         b.cylinder((pot_u, d, top + 0.12), 0.09, 0.35, 8, "brick", srgb(BRICK["escuro"]))
 
 
+def first_drawn_storey(house: House, ground: str) -> int:
+    """Lowest storey the house builder draws: all of them for a plain house, the upper ones over a shop's own ground
+    storey, none of them ("hollow") when walk-in halls build every storey and the house only roofs them."""
+    return {"solid": 0, "shop": 1, "hollow": len(house.storeys)}[ground]
+
+
 def draw_body(b: Builder, house: House, ground: str = "solid") -> None:
     """Wall mass storey by storey (each upper storey may hang forward by house.jetty, the ground storey may sit back
-    behind an arcade), plus its collider. ground == "shop": the ground storey is built by shop_shell."""
-    first = 1 if ground == "shop" else 0
+    behind an arcade), plus its collider, from the first storey this builder draws (first_drawn_storey)."""
+    first = first_drawn_storey(house, ground)
     storeys = list(enumerate(zip(house.levels, house.levels[1:])))[first:]
     jetty = house.jetty
 
@@ -1373,19 +1390,19 @@ def build_house(b: Builder, house: House, spec: dict, ground: str = "solid") -> 
     """Shell, windows, door, mouldings, roof and signature details of one archetype. Returns the roof top height."""
     bays = house.bays(max(1, int(round(2.0 * house.half / spec["bay"]))))
     door_u = door_axis(house, spec, bays)
-    storeys = range(1 if ground == "shop" else 0, len(house.storeys) - (1 if spec.get("loggia_top") else 0))
+    storeys = range(first_drawn_storey(house, ground), len(house.storeys) - (1 if spec.get("loggia_top") else 0))
     roof_name, roof_options = spec["roof"]
 
     draw_body(b, house, ground)
     paint_upper_wall(b, house, spec, ground)
 
-    if spec.get("base") and ground != "shop":
+    if spec.get("base") and ground == "solid":
         draw_base_band(b, house, min(spec["base"][1], house.storeys[0]), spec["base"][0], srgb(BRICK["tudor"]) if spec["base"][0] == "brick" else None)
 
     for storey in storeys:
         draw_storey_windows(b, house, spec, storey, bays, door_u)
 
-    if ground != "shop":
+    if ground == "solid":
         draw_door(b, house, door_u, spec["door"][1], spec["door"][2], spec["door"][3], front=house.setback + house.ground_recess)
 
     if spec.get("quoins"):
