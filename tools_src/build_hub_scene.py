@@ -2056,7 +2056,7 @@ def sitter(bench: tuple) -> tuple:
 
 
 COUPLE_SEAT_SPREAD = 0.24  # metros do meio do casal até cada um: quadril com quadril, ombro com ombro
-COUPLE_SHIFT = 0.30  # o casal desliza para o lado dele até a mão direita dele pousar no braço de ferro do banco
+COUPLE_SHIFT = 0.38  # o casal desliza para o lado dele: o braço de ferro do banco fica junto do quadril dele, sob a mão direita
 COUPLE_TALK_TURN = 4.0  # segundos de cada turno da conversa: TALK_TURN de build_combat_animations.py
 COUPLE_TURN = math.radians(6.0)  # ele vira um pouco para ela
 COUPLE_HER_FORWARD = 0.08  # ela senta um pouco à frente dele, que fica recostado: o braço dele passa atrás do cabelo dela
