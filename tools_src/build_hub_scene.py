@@ -2055,9 +2055,12 @@ def sitter(bench: tuple) -> tuple:
     return (x + SITTER_FORWARD * math.sin(rotation_y), z + SITTER_FORWARD * math.cos(rotation_y)), rotation_y
 
 
-COUPLE_SEAT_SPREAD = 0.25  # metros do meio do banco até cada um: quadril com quadril, ombro com ombro
+COUPLE_SEAT_SPREAD = 0.24  # metros do meio do casal até cada um: quadril com quadril, ombro com ombro
+COUPLE_SHIFT = 0.30  # o casal desliza para o lado dele até a mão direita dele pousar no braço de ferro do banco
 COUPLE_TALK_TURN = 4.0  # segundos de cada turno da conversa: TALK_TURN de build_combat_animations.py
-COUPLE_TURN = math.radians(6.0)  # cada um vira um pouco para o outro
+COUPLE_TURN = math.radians(6.0)  # ele vira um pouco para ela
+COUPLE_HER_FORWARD = 0.08  # ela senta um pouco à frente dele, que fica recostado: o braço dele passa atrás do cabelo dela
+COUPLE_HER_TURN = math.radians(4.0)  # ela fica um pouco virada para a praça, encostada nele, como na foto de referência
 
 
 def add_couple(scene: SceneWriter, bench: tuple) -> None:
@@ -2065,10 +2068,12 @@ def add_couple(scene: SceneWriter, bench: tuple) -> None:
     esquerda dele, ele com o braço esquerdo em volta dos ombros dela, conversando em turnos (combat/Couple_*)."""
     (x, z), rotation_y = sitter(bench)
     along_x, along_z = math.cos(rotation_y), -math.sin(rotation_y)  # eixo comprido do banco, para a esquerda de quem senta
+    x, z = x - along_x * COUPLE_SHIFT, z - along_z * COUPLE_SHIFT
     his_seat = (x - along_x * COUPLE_SEAT_SPREAD, z - along_z * COUPLE_SEAT_SPREAD)
-    her_seat = (x + along_x * COUPLE_SEAT_SPREAD, z + along_z * COUPLE_SEAT_SPREAD)
+    forward_x, forward_z = math.sin(rotation_y), math.cos(rotation_y)
+    her_seat = (x + along_x * COUPLE_SEAT_SPREAD + forward_x * COUPLE_HER_FORWARD, z + along_z * COUPLE_SEAT_SPREAD + forward_z * COUPLE_HER_FORWARD)
     his = stand(his_seat, rotation_y + COUPLE_TURN, "combat/Couple_Embrace", 0.0)
-    hers = stand(her_seat, rotation_y - COUPLE_TURN, "combat/Couple_Lean", 0.0)
+    hers = stand(her_seat, rotation_y + COUPLE_HER_TURN, "combat/Couple_Lean", 0.0)
 
     his["resting_mood"] = "1"  # FaceAnimator.Mood.HAPPY: os dois descansam sorrindo
     hers["resting_mood"] = "1"
