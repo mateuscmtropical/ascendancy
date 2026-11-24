@@ -353,13 +353,13 @@ LOOP_CLIPS = {
 # right hand on the bench's iron armrest; they talk in turns of TALK_TURN seconds (WalkingNpc.talk_turn_seconds opens
 # the mouth of whoever has the turn): he talks first, she listens, then she talks and he listens. Whoever listens
 # looks at the other; whoever talks looks at the other and away. Offsets from the library's Sitting_Idle.
-# He: sits back, the left arm up around her shoulders (elbow high behind her neck, outside her hair), the hand
-# hanging over her far shoulder; the right forearm along the armrest, the hand over its front curl.
+# He: sits back, the left arm around her shoulders (elbow low behind her back, hidden by her, outside her hair), the
+# hand over her far shoulder; the right arm hangs at his side, the hand on the front curl of the armrest.
 TALK_TURN = 4.0
 EMBRACE_BASE = {
     "chest": V(4.0, -4.0, 4.0), "head": V(0.0, -10.0, 10.0),
-    "hand_l": V(0.39, 0.056, 0.512), "elbow_l": V(-0.1, 1.0, 0.38), "fist_l": V(0.0, -40.0, 0.0),
-    "hand_r": V(-0.13, -0.054, 0.042), "elbow_r": V(-0.8, 0.6, -0.2), "fist_r": V(0.0, -40.0, 0.0),
+    "hand_l": V(0.39, 0.076, 0.482), "elbow_l": V(-0.1, 1.0, -0.38), "fist_l": V(0.0, -40.0, 0.0),
+    "hand_r": V(-0.05, -0.054, 0.012), "elbow_r": V(-0.3, 1.0, -0.2), "fist_r": V(0.0, 40.0, 0.0),
 }
 # She: faces the plaza and leans into him (her near shoulder ahead of his arm), her head tilted against his; the right leg crossed over the left, both hands on that knee.
 LEAN_BASE = {
