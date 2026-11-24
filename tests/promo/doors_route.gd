@@ -66,12 +66,12 @@ const CLIPS: Array[Dictionary] = [
 	{
 		"name": "tavern",
 		"time": DAY,
-		"start": Vector3(22.6, 0.0, SHOP_STREET_Z),
+		"start": Vector3(22.4, 0.0, SHOP_STREET_Z),
 		"path":
 		[
-			Vector3(22.6, 0.0, -70.2),
-			Vector3(19.0, 0.0, -73.5),
-			Vector3(17.0, 0.0, -74.5),
+			Vector3(22.4, 0.0, -70.1),
+			Vector3(16.6, 0.0, -70.1),
+			Vector3(16.6, 0.0, -74.5),
 		],
 		"direct": true,
 		"sweep": Vector2(40.0, 3.0),

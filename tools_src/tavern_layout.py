@@ -28,7 +28,7 @@ ROOMS = {  # name -> (u from, u to, d from, d to) inside the walls
 }
 
 TERRACE = 1.25  # rise of the terrace over the hall floor: chest height of a man standing below
-TERRACE_BAND = 3.2  # depth of each arm of the L: one row of tables against the wall and an aisle
+TERRACE_BAND = 3.6  # depth of each arm of the L: one row of tables or the hearth chairs, and a 1.2 m aisle by the rail
 TERRACE_FILLET = 1.8  # radius of the rounded inner corner of the L
 RAMP = dict(u_from=6.75, u_to=8.55, d_from=2.2, d_to=8.2)  # along the right wall, from the door landing up to the terrace
 HALL = ROOMS["hall"]
@@ -53,41 +53,47 @@ PARTITIONS = (
 )
 STONE_FLOORS = tuple(ROOMS[name] for name in ("inn", "kitchen", "pantry", "store"))
 TERRACE_TOP = 0.05 + TERRACE  # build_market_shops.FLOOR_TOP + TERRACE
+# Round table sets (2.05 m) on the low floor, 1.2 m aisles along the stools, along the street wall, between the columns
+# and the rows; the door's lane keeps a standing barrel table instead of a fifth set.
+LOW_TABLES = ((2.23, 2.53), (2.23, 5.78), (5.48, 5.78), (2.23, 9.03))
 
 
 def furnish_hall(f) -> None:
-    """The U bar on the left wall (casks and bottles behind it, the flap at the front end), stools along it, six round
-    tables on the low floor; shields and banners on the tall wall over the ramp."""
+    """The U bar on the left wall (casks and bottles behind it, the flap at the front end), stools along it, four round
+    tables and a standing barrel table on the low floor between 1.2 m aisles; shields and banners on the tall wall over
+    the ramp."""
     f.on_face("u", HALL[0], 1, "tavern_bar", BAR_MIDDLE)
     f.on_face("u", HALL[0], 1, "keg_rack", BAR_MIDDLE - 1.3)
     f.on_face("u", HALL[0], 1, "bottle_shelf", BAR_MIDDLE + 0.9)
     f.grid("bar_stool", (-0.2, -0.2), (BAR_MIDDLE - 2.4, BAR_MIDDLE + 2.4), 1, 6)
     f.put("ceiling_beam_hooks", -1.9, BAR_MIDDLE, variant="sausages")
 
-    for u, d in ((1.7, 2.3), (4.5, 2.3), (1.7, 5.1), (4.5, 5.1), (1.7, 7.9), (4.2, 7.9)):
+    for u, d in LOW_TABLES:
         f.put("round_table_set", u, d)
+
+    f.put("barrel_table", 5.2, 2.5)
 
     f.on_face("d", HALL[2], 1, "menu_board", -1.5)
     f.on_face("d", HALL[2], 1, "wall_banner", 5.15, z=1.4)
-    f.put("wheel_chandelier", 3.1, 5.1)
+    f.put("wheel_chandelier", 3.85, 4.15)
     f.on_wall("right", "shield_wall", 5.2, z=1.7)
     f.on_wall("right", "wall_banner", 3.0, z=1.6)
     f.on_wall("right", "wall_banner", 7.4, z=1.6)
 
 
 def furnish_terrace(f) -> None:
-    """Inglenook with two armchairs and the musicians' stage on the back arm, tables at the corner of the L, a standing
-    barrel table in the corner, the dart board and a stag's head over the right arm, banners on the walls."""
+    """Inglenook with two armchairs and the musicians' stage on the back arm, tables at the corner of the L, casks
+    stored in the corner, the dart board and a stag's head over the right arm, banners on the walls."""
     f.on_face("d", HALL[3], -1, "inglenook", 1.8, z=TERRACE_TOP)
     f.put("mounted_head", 1.8, 12.4, 0.0, z=TERRACE_TOP + 0.35, variant="boar")
-    f.put("rug_ornate", 1.8, 11.7, 0.0, z=TERRACE_TOP, variant="red")
-    f.put("armchair", 0.9, 11.5, 160.0, z=TERRACE_TOP)
-    f.put("armchair", 2.7, 11.5, -160.0, z=TERRACE_TOP)
+    f.put("rug_ornate", 1.8, 12.1, 0.0, z=TERRACE_TOP, variant="red")
+    f.put("armchair", 0.9, 12.0, 160.0, z=TERRACE_TOP)
+    f.put("armchair", 2.7, 12.0, -160.0, z=TERRACE_TOP)
     f.put("stage", -1.35, 12.85, z=TERRACE_TOP)
     f.put("bunting", -1.35, 12.2)
     f.put("round_table_set", 4.8, 12.8, z=TERRACE_TOP)
     f.put("round_table_set", 7.5, 11.0, z=TERRACE_TOP)
-    f.put("barrel_table", 7.9, 13.3, z=TERRACE_TOP)
+    f.put("barrel_group", 7.8, 13.3, z=TERRACE_TOP)
     f.on_wall("right", "dart_board", 9.4, z=TERRACE_TOP)
     f.on_wall("right", "mounted_head", 12.4, z=TERRACE_TOP + 0.4, variant="stag")
     f.on_face("u", HALL[0], 1, "wall_banner", 12.3, z=TERRACE_TOP + 0.3)
@@ -120,7 +126,7 @@ def furnish_kitchen(f) -> None:
     f.put("hanging_pan_rack", -5.8, 9.0)
     f.put("garlic_strings", -7.6, 6.2)
     f.put("ceiling_beam_hooks", -4.4, 12.4, variant="herbs")
-    f.put("chopping_block", -4.4, 12.2)
+    f.put("chopping_block", -7.9, 7.4)
     f.put("flour_sacks", -7.7, 6.0)
 
 
