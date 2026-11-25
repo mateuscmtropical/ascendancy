@@ -87,6 +87,30 @@ func test_steps_sound_with_the_stride_not_with_a_clock() -> void:
 	assert_between(get_signal_emit_count(footsteps, "stepped"), 3, 5, "two footfalls per cycle")
 
 
+func test_no_two_steps_sound_on_top_of_each_other() -> void:
+	var footsteps: FootstepPlayer = _player.get_node("Footsteps")
+	var step_frames: Array[int] = []
+	var closest_frames: int = 1000
+
+	footsteps.stepped.connect(func() -> void: step_frames.append(Engine.get_physics_frames()))
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(40)
+	Input.action_press(&"jump")
+	await wait_physics_frames(2)
+	Input.action_release(&"jump")
+	await wait_physics_frames(70)
+	Input.action_press(&"sprint")
+	await wait_physics_frames(50)
+	Input.action_release(&"sprint")
+	await wait_physics_frames(40)
+
+	for index in range(1, step_frames.size()):
+		closest_frames = mini(closest_frames, step_frames[index] - step_frames[index - 1])
+
+	assert_gt(step_frames.size(), 5, "kept stepping through the jump and the gait changes")
+	assert_gt(closest_frames, 8, "landing or changing gait never doubles a step (0.15 s apart)")
+
+
 func test_body_leans_into_the_start_and_stands_up_again() -> void:
 	var body: Node3D = _player.get_node("CharacterModel/Body")
 	var forward: Vector3

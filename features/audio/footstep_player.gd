@@ -38,6 +38,9 @@ const LANDING_FALL_SPEED: float = 4.0
 const NO_STRIDE: float = -1.0
 ## Os ciclos de andar da biblioteca dão dois passos: um pé pisa na fase 0, o outro na 0,5.
 const STEPS_PER_STRIDE: float = 2.0
+## Trocar de ciclo (trote para disparada, pouso) recomeça a fase: sem isto sairiam dois passos
+## colados.
+const MIN_STEP_GAP_SECONDS: float = 0.15
 
 ## Com isto ligado o passo segue stride_phase em vez da cadência estimada pela velocidade.
 var follows_stride: bool = false
@@ -50,6 +53,7 @@ var _was_grounded: bool = true
 var _fall_speed: float = 0.0
 ## Fase dentro do passo atual; começa no fim para o primeiro pé soar assim que a passada começa.
 var _step_phase: float = 1.0
+var _seconds_since_step: float = MIN_STEP_GAP_SECONDS
 
 @onready var _ground_probe: RayCast3D = $GroundProbe
 
@@ -70,6 +74,7 @@ func _physics_process(delta: float) -> void:
 	)
 
 	_was_grounded = is_grounded
+	_seconds_since_step += delta
 
 	if has_jumped:
 		_play_from(JUMP_SOUNDS)
@@ -105,7 +110,7 @@ func _step_with_stride() -> void:
 
 	_step_phase = step_phase
 
-	if has_stepped:
+	if has_stepped and _seconds_since_step >= MIN_STEP_GAP_SECONDS:
 		_play_from(STEP_SOUNDS)
 
 
@@ -121,5 +126,6 @@ func _play_from(sounds_by_surface: Dictionary[GroundSurface.Kind, AudioStream]) 
 
 	play()
 
-	if sounds_by_surface == STEP_SOUNDS:
+	if sounds_by_surface != JUMP_SOUNDS:
+		_seconds_since_step = 0.0
 		stepped.emit()
