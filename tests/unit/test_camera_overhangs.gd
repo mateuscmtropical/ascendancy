@@ -15,7 +15,8 @@ const GUILD_SCENE: PackedScene = preload("res://art/town/shops/shop_guild.gltf")
 const IMPORT_SCRIPT: GDScript = preload("res://features/audio/tag_ground_surfaces.gd")
 const LOOK_DOWN: Vector2 = Vector2(0.0, 2000.0)
 const CAMERA_STOP_PREFIX: String = "CameraStop"
-## Ferreiro na origem: o telheiro de ferrar cobre x 6,2..11,6 até 2,3 m da fachada e sobe até 3,9 m junto dela.
+## Ferreiro na origem: o telheiro de ferrar cobre x 6,2..11,6 até 2,3 m da fachada e sobe até
+## 3,9 m junto dela.
 const LEAN_TO_SPOT: Vector3 = Vector3(9.6, 0.0, 1.2)
 const LEAN_TO_TOP: float = 3.9
 ## Coreto na origem: piso a 1,2 m e o frechal (viga em volta do forro) com a face de baixo a 3,93 m.

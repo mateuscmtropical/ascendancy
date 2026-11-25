@@ -50,6 +50,76 @@ func test_sprint_covers_more_ground_than_jog() -> void:
 	assert_gt(sprint_distance, jog_distance * 1.3)
 
 
+func test_stride_follows_the_ground_speed() -> void:
+	var animation_player: AnimationPlayer = _player.get_node("CharacterModel/AnimationPlayer")
+	var jog_pace: float = PlayerController.ANIMATION_SPEED_BY_STANCE[PlayerController.Stance.RUN]
+	var starting_pace: float
+
+	await wait_physics_frames(10)
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(3)
+	starting_pace = animation_player.speed_scale
+	await wait_physics_frames(40)
+
+	assert_eq(String(animation_player.current_animation), "ual1/Jog_Fwd")
+	assert_lt(starting_pace, jog_pace * 0.8, "slow strides while the body is still speeding up")
+	assert_almost_eq(animation_player.speed_scale, jog_pace, 0.01, "full stride at full speed")
+
+	Input.action_release(&"move_forward")
+	await wait_physics_frames(30)
+
+	assert_eq(animation_player.speed_scale, 1.0, "standing still plays at its own pace")
+
+
+func test_steps_sound_with_the_stride_not_with_a_clock() -> void:
+	var footsteps: FootstepPlayer = _player.get_node("Footsteps")
+
+	await wait_physics_frames(10)
+	watch_signals(footsteps)
+	await wait_physics_frames(30)
+
+	assert_signal_emit_count(footsteps, "stepped", 0, "silent while standing")
+
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(120)
+
+	# Trote: ciclo de 0,93 s tocado a 0,83 = um passo a cada 0,56 s.
+	assert_between(get_signal_emit_count(footsteps, "stepped"), 3, 5, "two footfalls per cycle")
+
+
+func test_body_leans_into_the_start_and_stands_up_again() -> void:
+	var body: Node3D = _player.get_node("CharacterModel/Body")
+	var forward: Vector3
+	var start_lean: float
+
+	await wait_physics_frames(10)
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(10)
+	forward = Vector3(_player.velocity.x, 0.0, _player.velocity.z).normalized()
+	start_lean = body.global_basis.y.dot(forward)
+	await wait_physics_frames(90)
+
+	assert_gt(start_lean, 0.03, "head ahead of the feet while speeding up")
+	assert_almost_eq(body.global_basis.y.dot(forward), 0.0, 0.01, "upright at steady speed")
+
+
+func test_landing_squashes_the_body_for_a_moment() -> void:
+	var body: Node3D = _player.get_node("CharacterModel/Body")
+	var shortest: float = 1.0
+
+	await wait_physics_frames(10)
+	Input.action_press(&"jump")
+	await wait_physics_frames(2)
+	Input.action_release(&"jump")
+
+	for frame in 70:
+		await wait_physics_frames(1)
+		shortest = minf(shortest, body.global_basis.get_scale().y)
+
+	assert_lt(shortest, 0.96, "squash on landing")
+	assert_almost_eq(body.global_basis.get_scale().y, 1.0, 0.01, "full height again")
+
+
 func test_disabled_input_keeps_player_still() -> void:
 	var start: Vector3
 

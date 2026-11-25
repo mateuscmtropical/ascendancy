@@ -47,6 +47,20 @@ func test_patrol_npc_walks_toward_next_point() -> void:
 	assert_almost_eq(npc.global_position.z, 0.0, 0.05)
 
 
+func test_faster_walker_takes_faster_steps() -> void:
+	var stroller: WalkingNpc = _spawn_walker(
+		PackedVector3Array([Vector3.ZERO, Vector3(10, 0, 0)]), 1.03
+	)
+	var hurried: WalkingNpc = _spawn_walker(
+		PackedVector3Array([Vector3(0, 0, 5), Vector3(10, 0, 5)]), 1.4
+	)
+	var stroller_player: AnimationPlayer = stroller.get_node("CharacterModel/AnimationPlayer")
+	var hurried_player: AnimationPlayer = hurried.get_node("CharacterModel/AnimationPlayer")
+
+	assert_almost_eq(stroller_player.speed_scale, 1.0, 0.01, "the clip's own speed, its own pace")
+	assert_almost_eq(hurried_player.speed_scale, 1.4 / WalkingNpc.WALK_CLIP_SPEED, 0.01)
+
+
 func test_patrol_npc_pauses_on_arrival_then_turns_back() -> void:
 	var npc: WalkingNpc = _spawn_walker(PackedVector3Array([Vector3.ZERO, Vector3(2, 0, 0)]), 2.0)
 	var paused_position: Vector3

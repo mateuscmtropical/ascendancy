@@ -8,6 +8,10 @@ enum PatrolState { WALKING, PAUSED }
 
 const CHARACTER_MODEL_SCENE: PackedScene = preload("res://features/player/character_model.tscn")
 const WALK_ANIMATION: StringName = &"ual1/Walk"
+## Velocidade que o passo da biblioteca cobre no ritmo 1 (medida no pé de apoio, corpo de adulto).
+const WALK_CLIP_SPEED: float = 1.03
+const MIN_WALK_PACE: float = 0.7
+const MAX_WALK_PACE: float = 1.6
 const TURN_SPEED: float = 6.0
 ## Folga de 2,5 m em volta do corpo: cobre a sombra (sol a 45°), que entra na tela antes dele.
 const ANIMATION_CULLING_BOUNDS: AABB = AABB(Vector3(-2.5, -0.5, -2.5), Vector3(5.0, 3.5, 5.0))
@@ -62,6 +66,9 @@ func _ready() -> void:
 	_model.scale = Vector3.ONE * body_scale
 	add_child(_model)
 	_model.rest_expression(resting_mood)
+
+	if is_walking:
+		_pace_walk()
 	_stop_animating_off_screen()
 
 	if smile_every_seconds > 0.0:
@@ -183,3 +190,13 @@ func _wait_at_target(delta: float) -> void:
 	_patrol_state = PatrolState.WALKING
 	_navigation_agent.target_position = route[_target_index]
 	_model.play_animation(walk_animation)
+	_pace_walk()
+
+
+## Quem anda mais rápido dá passos mais rápidos, em vez de patinar no ritmo do clipe. Só para o
+## passo da biblioteca: clipe próprio (o pulo do Saci) já vem no ritmo dele.
+func _pace_walk() -> void:
+	var pace: float = walk_speed / (WALK_CLIP_SPEED * body_scale)
+
+	if walk_animation == WALK_ANIMATION:
+		_model.pace_animation(clampf(pace, MIN_WALK_PACE, MAX_WALK_PACE))

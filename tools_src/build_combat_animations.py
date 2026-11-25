@@ -6,6 +6,11 @@ interpolated with its own spline, limbs are solved with two-bone IK and the resu
 All clips start and end in the guard of the library's Punch_Jab, so they chain with it without a pop; the seated
 clips of the couple on the plaza bench (SEATED_CLIPS) start from the library's Sitting_Idle instead.
 
+The blows follow the classic animation principles: a wind-up against the blow before it (anticipation), few
+frames into the strike and a short hold on it (timing), the trunk and the head arriving a few frames after the
+hips (overlapping action, OVERLAP_LAG), and a dip that settles back into the guard (follow-through). Each kick
+also comes as a flying kick for the fighter on the move (FLYING_KICKS): the same poses with the body off the ground.
+
 Usage:
   blender -b --factory-startup -P tools_src/build_combat_animations.py
 Output: art/animations/combat.glb (animations only), imported by Godot as the "combat" AnimationLibrary.
@@ -38,6 +43,9 @@ MOVED_BONES = ("root", "pelvis")
 TOE_FLATTEN = 0.8
 # Above this height over its guard position a foot is in the air and its toe follows it rigidly.
 TOE_GROUND_HEIGHT = 0.12
+# Seconds the trunk and the head trail the hips in a blow: the body unwinds from the ground up instead of
+# turning as one block.
+OVERLAP_LAG = {"chest": 0.03, "head": 0.05}
 
 
 def turn(yaw: float, pitch: float, roll: float) -> Matrix:
@@ -204,14 +212,15 @@ def V(x: float, y: float, z: float) -> Vector:
     return Vector((x, y, z))
 
 
-def clip_keys(rig: Rig, seconds: float, poses: list, base: dict | None = None) -> dict:
+def clip_keys(rig: Rig, seconds: float, poses: list, base: dict | None = None, lag: dict | None = None) -> dict:
     """Per channel, the (time, value) keys of a clip. A pose names only the channels it sets, as offsets from
     the guard (positions in metres: x to the character's left, y backwards, z up; turns in degrees). Two kinds
     of channel are absolute instead: limb poles (the direction the elbow or knee points) and soles (toe heading
     to the left of straight ahead, toes-down pitch, roll with the instep to the left). Every channel starts and
     ends in the guard. A looping clip (riding) gives a base pose instead: it starts and ends there, and its key
-    poses are offsets from the base."""
+    poses are offsets from the base. `lag` delays the keys of the channels it names (seconds)."""
     guard = rig.guard_channels()
+    lag = lag or {}
     poles = set(POLE_OF_LIMB.values())
     soles = {"sole_l", "sole_r"}
     absolutes = poles | soles
@@ -222,7 +231,7 @@ def clip_keys(rig: Rig, seconds: float, poses: list, base: dict | None = None) -
     for time, pose in poses:
         for channel, value in pose.items():
             absolute = value.normalized() if channel in poles else value
-            keys[channel].append((time, absolute if channel in absolutes else rest[channel] + value))
+            keys[channel].append((time + lag.get(channel, 0.0), absolute if channel in absolutes else rest[channel] + value))
 
     for channel, value in rest.items():
         keys[channel].append((seconds, value))
@@ -230,10 +239,10 @@ def clip_keys(rig: Rig, seconds: float, poses: list, base: dict | None = None) -
     return keys
 
 
-def bake_clip(rig: Rig, name: str, seconds: float, poses: list, base: dict | None = None) -> None:
+def bake_clip(rig: Rig, name: str, seconds: float, poses: list, base: dict | None = None, lag: dict | None = None) -> None:
     armature = rig.armature
     action = bpy.data.actions.new(name)
-    keys = clip_keys(rig, seconds, poses, base)
+    keys = clip_keys(rig, seconds, poses, base, lag)
 
     armature.animation_data_create()
     armature.animation_data.action = action
@@ -264,30 +273,30 @@ CLIPS = {
     ]),
     # rear-leg push kick: weight over the lead leg, knee up, heel driven out by the hips, back the same way
     "Kick_Front": (0.90, [
-        (0.10, {"pelvis": V(0.07, -0.04, -0.02), "hips": V(6.0, 0.0, 0.0), "foot_r": V(0.0, -0.02, 0.05), "sole_r": V(-40.0, 28.0, 0.0), "hand_r": V(0.03, 0.02, 0.03)}),
+        (0.10, {"pelvis": V(0.07, -0.03, -0.05), "hips": V(6.0, 4.0, 0.0), "chest": V(0.0, 7.0, 0.0), "foot_r": V(0.0, -0.02, 0.05), "sole_r": V(-40.0, 28.0, 0.0), "hand_r": V(0.03, 0.02, 0.03), "hand_l": V(0.0, 0.02, 0.02)}),
         (0.24, {"pelvis": V(0.11, -0.06, 0.02), "hips": V(14.0, -8.0, 0.0), "chest": V(0.0, 10.0, 0.0), "foot_r": V(0.14, -0.50, 0.58), "sole_r": V(-10.0, 30.0, 0.0), "knee_r": V(-0.05, -1.0, 0.75), "sole_l": V(12.0, 0.0, 0.0), "hand_r": V(0.05, 0.03, 0.05), "hand_l": V(0.02, 0.06, -0.02)}),
         (0.34, {"pelvis": V(0.11, -0.17, 0.03), "hips": V(18.0, -26.0, 0.0), "chest": V(0.0, 12.0, 0.0), "head": V(0.0, 4.0, 0.0), "foot_r": V(0.16, -1.36, 0.88), "sole_r": V(0.0, -35.0, 0.0), "knee_r": V(0.0, -0.4, 1.0), "sole_l": V(18.0, 0.0, 0.0), "hand_r": V(-0.10, 0.20, -0.22), "hand_l": V(0.02, 0.07, -0.03)}),
         (0.40, {"pelvis": V(0.11, -0.18, 0.03), "hips": V(18.0, -27.0, 0.0), "foot_r": V(0.16, -1.38, 0.89), "sole_r": V(0.0, -38.0, 0.0), "hand_r": V(-0.11, 0.22, -0.24)}),
         (0.54, {"pelvis": V(0.10, -0.07, 0.02), "hips": V(12.0, -8.0, 0.0), "chest": V(0.0, 8.0, 0.0), "foot_r": V(0.13, -0.55, 0.55), "sole_r": V(-10.0, 25.0, 0.0), "knee_r": V(-0.05, -1.0, 0.7), "sole_l": V(12.0, 0.0, 0.0), "hand_r": V(0.0, 0.08, -0.05)}),
-        (0.72, {"pelvis": V(0.02, 0.0, -0.03), "hips": V(2.0, 0.0, 0.0), "foot_r": V(0.0, 0.0, 0.01), "sole_r": V(-40.0, 8.0, 0.0), "hand_r": V(0.0, 0.0, -0.02), "hand_l": V(0.0, 0.0, -0.02)}),
+        (0.72, {"pelvis": V(0.02, 0.0, -0.045), "hips": V(2.0, 0.0, 0.0), "chest": V(0.0, 5.0, 0.0), "foot_r": V(0.0, 0.0, 0.01), "sole_r": V(-40.0, 8.0, 0.0), "hand_r": V(0.0, 0.0, -0.03), "hand_l": V(0.0, 0.0, -0.03)}),
     ]),
     # rear-leg roundhouse: support foot turns out, hips roll over, the shin whips across at rib height
     "Kick_Roundhouse": (1.00, [
-        (0.10, {"pelvis": V(0.08, -0.03, -0.02), "hips": V(18.0, 0.0, 0.0), "sole_l": V(30.0, 0.0, 0.0), "foot_r": V(-0.02, -0.02, 0.05), "sole_r": V(-40.0, 30.0, 0.0), "hand_r": V(-0.04, -0.03, 0.03)}),
+        (0.10, {"pelvis": V(0.08, -0.03, -0.05), "hips": V(18.0, 3.0, 0.0), "chest": V(-12.0, 5.0, 0.0), "sole_l": V(30.0, 0.0, 0.0), "foot_r": V(-0.02, -0.02, 0.05), "sole_r": V(-40.0, 30.0, 0.0), "hand_r": V(-0.04, -0.03, 0.03)}),
         (0.24, {"pelvis": V(0.13, -0.05, 0.03), "hips": V(58.0, -4.0, 14.0), "chest": V(-12.0, 0.0, 6.0), "head": V(0.0, 0.0, 6.0), "sole_l": V(75.0, 0.0, 0.0), "knee_l": V(0.97, -0.26, 0.1), "foot_r": V(-0.36, -0.22, 0.92), "sole_r": V(-60.0, 40.0, 40.0), "knee_r": V(-0.8, -0.9, 0.5), "hand_r": V(-0.05, -0.02, 0.0), "hand_l": V(-0.04, 0.05, 0.02)}),
         (0.33, {"pelvis": V(0.15, -0.10, 0.04), "hips": V(104.0, -6.0, 26.0), "chest": V(-26.0, 0.0, 8.0), "head": V(0.0, 0.0, 10.0), "sole_l": V(115.0, 0.0, 0.0), "knee_l": V(0.9, 0.42, 0.1), "foot_r": V(0.24, -1.28, 1.02), "sole_r": V(12.0, 12.0, 80.0), "knee_r": V(-0.3, -0.8, 0.6), "hand_r": V(-0.26, 0.26, -0.30), "elbow_r": V(-0.6, 0.6, -0.5), "hand_l": V(-0.10, 0.08, 0.03)}),
         (0.39, {"pelvis": V(0.15, -0.10, 0.04), "hips": V(112.0, -6.0, 26.0), "chest": V(-28.0, 0.0, 8.0), "sole_l": V(118.0, 0.0, 0.0), "foot_r": V(0.42, -1.18, 1.00), "sole_r": V(22.0, 12.0, 82.0), "hand_r": V(-0.30, 0.30, -0.34)}),
         (0.54, {"pelvis": V(0.12, -0.05, 0.03), "hips": V(64.0, -4.0, 14.0), "chest": V(-12.0, 0.0, 6.0), "head": V(0.0, 0.0, 6.0), "sole_l": V(80.0, 0.0, 0.0), "knee_l": V(0.98, -0.17, 0.1), "foot_r": V(-0.30, -0.28, 0.86), "sole_r": V(-55.0, 40.0, 40.0), "knee_r": V(-0.8, -0.9, 0.5), "hand_r": V(-0.10, 0.10, -0.10)}),
-        (0.78, {"pelvis": V(0.02, 0.0, -0.035), "hips": V(4.0, 0.0, 0.0), "sole_l": V(-2.0, 0.0, 0.0), "foot_r": V(0.0, 0.0, 0.01), "sole_r": V(-42.0, 6.0, 0.0), "hand_r": V(0.0, 0.0, -0.02), "hand_l": V(0.0, 0.0, -0.02)}),
+        (0.78, {"pelvis": V(0.02, 0.0, -0.05), "hips": V(4.0, 0.0, 0.0), "chest": V(4.0, 5.0, 0.0), "sole_l": V(-2.0, 0.0, 0.0), "foot_r": V(0.0, 0.0, 0.01), "sole_r": V(-42.0, 6.0, 0.0), "hand_r": V(0.0, 0.0, -0.03), "hand_l": V(0.0, 0.0, -0.03)}),
     ]),
     # lead-leg side kick: the body turns side-on, knee to the chest, heel thrust straight out, trunk leaning away
     "Kick_Side": (1.05, [
-        (0.13, {"pelvis": V(-0.10, 0.10, -0.03), "hips": V(-35.0, 0.0, 0.0), "sole_r": V(-84.0, 0.0, 0.0), "knee_r": V(-0.99, -0.1, 0.1), "foot_l": V(-0.03, 0.03, 0.05), "sole_l": V(-36.0, 25.0, 0.0), "hand_l": V(-0.03, 0.04, -0.02)}),
+        (0.13, {"pelvis": V(-0.10, 0.10, -0.055), "hips": V(-35.0, 3.0, 0.0), "chest": V(6.0, 5.0, 0.0), "sole_r": V(-84.0, 0.0, 0.0), "knee_r": V(-0.99, -0.1, 0.1), "foot_l": V(-0.03, 0.03, 0.05), "sole_l": V(-36.0, 25.0, 0.0), "hand_l": V(-0.03, 0.04, -0.02)}),
         (0.28, {"pelvis": V(-0.17, 0.20, 0.02), "hips": V(-78.0, 0.0, -10.0), "chest": V(10.0, 0.0, -4.0), "head": V(0.0, 0.0, -6.0), "sole_r": V(-154.0, 0.0, 0.0), "knee_r": V(-0.44, 0.9, 0.1), "foot_l": V(-0.22, 0.02, 0.62), "sole_l": V(-88.0, 10.0, -25.0), "knee_l": V(0.3, -1.0, 0.9), "hand_l": V(-0.10, 0.06, -0.12), "hand_r": V(0.06, 0.02, 0.0)}),
         (0.38, {"pelvis": V(-0.19, 0.16, 0.03), "hips": V(-88.0, 0.0, -30.0), "chest": V(8.0, 0.0, -10.0), "head": V(0.0, 0.0, -14.0), "sole_r": V(-188.0, 0.0, 0.0), "knee_r": V(0.14, 0.99, 0.1), "foot_l": V(-0.22, -1.06, 0.92), "sole_l": V(-98.0, 0.0, -72.0), "knee_l": V(0.2, -0.6, 1.0), "hand_l": V(-0.12, -0.10, -0.26), "elbow_l": V(0.3, -0.2, -1.0), "hand_r": V(0.08, 0.04, -0.02)}),
         (0.45, {"pelvis": V(-0.19, 0.15, 0.03), "hips": V(-88.0, 0.0, -31.0), "sole_r": V(-190.0, 0.0, 0.0), "foot_l": V(-0.22, -1.08, 0.93), "sole_l": V(-98.0, 0.0, -75.0), "hand_l": V(-0.12, -0.11, -0.27)}),
         (0.60, {"pelvis": V(-0.16, 0.19, 0.02), "hips": V(-76.0, 0.0, -10.0), "chest": V(10.0, 0.0, -4.0), "head": V(0.0, 0.0, -6.0), "sole_r": V(-154.0, 0.0, 0.0), "knee_r": V(-0.44, 0.9, 0.1), "foot_l": V(-0.20, 0.0, 0.58), "sole_l": V(-88.0, 10.0, -25.0), "knee_l": V(0.3, -1.0, 0.9), "hand_l": V(-0.08, 0.04, -0.10)}),
-        (0.84, {"pelvis": V(-0.01, 0.01, -0.035), "hips": V(-4.0, 0.0, 0.0), "sole_r": V(-48.0, 0.0, 0.0), "foot_l": V(0.0, 0.0, 0.01), "sole_l": V(-6.0, 6.0, 0.0), "hand_l": V(0.0, 0.0, -0.02), "hand_r": V(0.0, 0.0, -0.02)}),
+        (0.84, {"pelvis": V(-0.01, 0.01, -0.05), "hips": V(-4.0, 0.0, 0.0), "chest": V(0.0, 5.0, 0.0), "sole_r": V(-48.0, 0.0, 0.0), "foot_l": V(0.0, 0.0, 0.01), "sole_l": V(-6.0, 6.0, 0.0), "hand_l": V(0.0, 0.0, -0.03), "hand_r": V(0.0, 0.0, -0.03)}),
     ]),
     # rear uppercut: dip and coil to the rear side, then legs and hips throw the fist up the centre line
     "Punch_Uppercut": (0.70, [
@@ -295,15 +304,50 @@ CLIPS = {
         (0.21, {"pelvis": V(0.03, -0.05, 0.03), "hips": V(30.0, -4.0, 2.0), "chest": V(16.0, -8.0, 4.0), "head": V(0.0, -3.0, 0.0), "hand_r": V(0.25, -0.33, 0.11), "elbow_r": V(-0.3, 0.2, -1.0), "fist_r": V(60.0, 0.0, 0.0), "foot_r": V(0.02, -0.04, 0.05), "sole_r": V(-22.0, 34.0, 0.0), "hand_l": V(-0.05, 0.10, -0.02)}),
         (0.27, {"pelvis": V(0.03, -0.05, 0.04), "hips": V(34.0, -5.0, 2.0), "chest": V(18.0, -10.0, 4.0), "hand_r": V(0.26, -0.31, 0.19), "fist_r": V(60.0, 0.0, 0.0), "foot_r": V(0.02, -0.04, 0.06), "sole_r": V(-20.0, 38.0, 0.0)}),
         (0.44, {"pelvis": V(0.01, -0.01, -0.01), "hips": V(8.0, 0.0, 0.0), "chest": V(4.0, 0.0, 0.0), "hand_r": V(0.08, -0.08, 0.06), "fist_r": V(15.0, 0.0, 0.0), "foot_r": V(0.0, -0.01, 0.01), "sole_r": V(-40.0, 8.0, 0.0)}),
+        (0.56, {"pelvis": V(0.0, 0.0, -0.03), "hips": V(-3.0, 0.0, 0.0), "chest": V(-3.0, 4.0, 0.0), "hand_r": V(0.0, 0.0, -0.035), "hand_l": V(0.0, 0.0, -0.02)}),
     ]),
     # lead hook: short coil, then the whole lead side turns in with the elbow up and the forearm level
     "Punch_Hook": (0.62, [
         (0.09, {"pelvis": V(0.03, 0.0, -0.03), "hips": V(12.0, 0.0, 0.0), "chest": V(10.0, 2.0, 0.0), "hand_l": V(0.10, 0.12, -0.03), "elbow_l": V(1.0, 0.4, -0.2), "hand_r": V(0.02, 0.03, 0.02)}),
         (0.18, {"pelvis": V(-0.02, -0.03, -0.01), "hips": V(-34.0, 0.0, 0.0), "chest": V(-30.0, 4.0, 0.0), "foot_l": V(0.0, 0.0, 0.03), "sole_l": V(-44.0, 18.0, 0.0), "hand_l": V(-0.13, -0.19, 0.0), "elbow_l": V(1.0, 0.1, 0.45), "fist_l": V(-50.0, 0.0, 0.0), "hand_r": V(0.04, 0.05, 0.04)}),
         (0.24, {"pelvis": V(-0.02, -0.03, -0.01), "hips": V(-42.0, 0.0, 0.0), "chest": V(-38.0, 4.0, 0.0), "sole_l": V(-50.0, 20.0, 0.0), "foot_l": V(0.0, 0.0, 0.03), "hand_l": V(-0.27, -0.13, 0.0), "elbow_l": V(1.0, 0.0, 0.45), "fist_l": V(-50.0, 0.0, 0.0)}),
-        (0.42, {"pelvis": V(0.0, 0.0, -0.015), "hips": V(-8.0, 0.0, 0.0), "chest": V(-8.0, 0.0, 0.0), "sole_l": V(-12.0, 4.0, 0.0), "foot_l": V(0.0, 0.0, 0.005), "hand_l": V(-0.08, -0.02, 0.0), "fist_l": V(-10.0, 0.0, 0.0)}),
+        (0.40, {"pelvis": V(0.0, 0.0, -0.015), "hips": V(-8.0, 0.0, 0.0), "chest": V(-8.0, 0.0, 0.0), "sole_l": V(-12.0, 4.0, 0.0), "foot_l": V(0.0, 0.0, 0.005), "hand_l": V(-0.08, -0.02, 0.0), "fist_l": V(-10.0, 0.0, 0.0)}),
+        (0.50, {"pelvis": V(0.0, 0.0, -0.025), "hips": V(3.0, 0.0, 0.0), "chest": V(4.0, 3.0, 0.0), "hand_l": V(0.02, 0.01, -0.03), "hand_r": V(0.0, 0.0, -0.02)}),
     ]),
 }
+
+# Flying kicks, for the fighter on the move (UnarmedFighter.FLYING_BY_KICK): the body cannot plant a foot while it
+# travels, so it leaves the ground for the kick. Same six poses as the standing kick (wind-up, chamber, strike, hold,
+# re-chamber, landing) with the hop on top: per pose, how far the hips rise and how far the support foot lifts and
+# trails behind. The wind-up is the last stride of the run: a short dip while the support foot sweeps back under the
+# body and pushes off on its toes (a foot planted for longer would skid, the body is travelling); the landing sinks to
+# take the fall (squash). The 0.4 s in the air between them is what a 0.2 m hop lasts.
+HOP = [(-0.04, 0.03, 0.28), (0.10, 0.12, 0.20), (0.20, 0.30, 0.16), (0.20, 0.31, 0.17), (0.08, 0.09, 0.05), (-0.07, 0.0, 0.0)]
+HOP_TOES_DOWN = [35.0, 40.0, 45.0, 45.0, 20.0, 0.0]  # pitch of the support sole: pushing off, then hanging in the air
+# standing clip -> (flying clip, support leg, which way that leg trails: x to the character's left, y backwards,
+# how much of the tuck it takes: the roundhouse turns the hips over the leg, which needs more of it to read)
+FLYING_KICKS = {
+    "Kick_Front": ("Kick_Front_Flying", "l", V(0.0, 1.0, 0.0), 1.0),
+    "Kick_Roundhouse": ("Kick_Roundhouse_Flying", "l", V(-0.7, 0.7, 0.0), 1.6),
+    "Kick_Side": ("Kick_Side_Flying", "r", V(0.7, 0.7, 0.0), 1.0),
+}
+
+
+def flying(poses: list, support: str, trail: Vector, tuck: float, rig_heading: dict) -> list:
+    """The key poses of a standing kick with the hop added: hips up, support foot tucked under and behind."""
+    foot, sole = f"foot_{support}", f"sole_{support}"
+    airborne = []
+
+    for (time, pose), (rise, lift, back), toes_down in zip(poses, HOP, HOP_TOES_DOWN):
+        heading = pose[sole].x if sole in pose else rig_heading[support]
+        hop = {"pelvis": pose.get("pelvis", V(0.0, 0.0, 0.0)) + V(0.0, 0.0, rise), foot: pose.get(foot, V(0.0, 0.0, 0.0)) + trail * back + V(0.0, 0.0, lift * tuck)}
+
+        hop[sole] = V(heading, toes_down, 0.0)
+        airborne.append((time, {**pose, **hop}))
+
+    return airborne
+
+
 
 
 # Riding the Mula (features/mobs/mula_mount.gd): seated on its back, legs straddling the barrel with the knees
@@ -481,8 +525,12 @@ if __name__ == "__main__":
 
     bpy.context.scene.render.fps = FRAMES_PER_SECOND
 
+    for standing_clip, (flying_clip, support_leg, trail_direction, tuck_share) in FLYING_KICKS.items():
+        standing_seconds, standing_poses = CLIPS[standing_clip]
+        CLIPS[flying_clip] = (standing_seconds, flying(standing_poses, support_leg, trail_direction, tuck_share, combat_rig.guard_heading))
+
     for clip_name, (clip_seconds, clip_poses) in CLIPS.items():
-        bake_clip(combat_rig, clip_name, clip_seconds, clip_poses)
+        bake_clip(combat_rig, clip_name, clip_seconds, clip_poses, lag=OVERLAP_LAG)
 
     for clip_name, (clip_seconds, clip_base, clip_poses) in LOOP_CLIPS.items():
         bake_clip(combat_rig, clip_name, clip_seconds, clip_poses, clip_base)
