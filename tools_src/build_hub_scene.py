@@ -813,7 +813,7 @@ FIXED_LOTS = {  # (bloco, lado) -> [(início, fim, prédio ou None)] ao longo da
     (4, "E"): [(-45.0, -15.0, "library"), (-15.0, 15.0, "vestibule"), (15.0, 45.0, "school")],
 }
 SHOP_SIGNS = {  # prédio -> placas penduradas (build_shops.py): o ofício principal e o da ala
-    "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern", "inn"),
+    "smith": ("smith",), "armor": ("armor",), "magic": ("magic",), "tailor": ("tailor", "jeweler"), "tavern": ("tavern",),
     "alchemy": ("alchemy", "herbalist"), "general": ("general", "bakery"), "guild": ("guild", "bank"),
 }  # os salões do casarão não têm placa pendurada
 CASARAO_HALLS = ("library", "vestibule", "school")  # térreo: o vestíbulo da escadaria no meio, um salão de cada lado
@@ -1065,6 +1065,9 @@ SHOPKEEPERS = {  # prédio -> (corpo, cabelo, animação) de quem atende atrás 
     "reading": ("villager_female", "auburn", "ual1/Idle"),
     "seminary": ("villager_female", "grey", "ual1/Idle"),  # a irmã sacristã, na capela
 }
+HOUSE_KEEPERS = {  # prédio -> ((marcador, corpo, cabelo, animação),): quem atende num segundo balcão (a recepção da pousada da taverna), olhando para o marcador <nome>_faces
+    "tavern": (("innkeeper", "villager_male", "brown", "ual1/Idle"),),
+}
 SHOP_SIGN_SCALE = 1.6  # as placas foram feitas para fachadas de 8 m
 SHOP_SIGN_OFFSET = 0.45  # da borda da porta até o braço da placa, no pilar entre a porta e a primeira vitrine
 
@@ -1142,6 +1145,9 @@ def add_shop_building(scene: SceneWriter, index: int, lot: dict) -> None:
         sign_x = door["x"] + (1.0 - 2.0 * sign_index) * sign_reach
         place(scene, f"Sign{sign_index}", f"Shops/{shop_name}", f"res://art/town/shops/shop_{sign}_sign.gltf", (sign_x, 0.0, 0.0), scale=SHOP_SIGN_SCALE)
 
+    for sign_index, side_sign in enumerate(sidecar.get("side_signs", ())):  # placa de uma porta da lateral (a pousada da taverna)
+        place(scene, f"SideSign{sign_index}", f"Shops/{shop_name}", f"res://art/town/shops/shop_{side_sign['sign']}_sign.gltf", tuple(side_sign["position"]), rotation_y=side_sign["yaw"], scale=SHOP_SIGN_SCALE)
+
     if interior_sidecar:
         scene.add_node("Interior", f"Shops/{shop_name}", "Node3D", properties={"script": f'ExtResource("{interior_script}")', "visible_distance": f"{INTERIOR_VISIBLE_DISTANCE}"})
         place(scene, "Props", f"Shops/{shop_name}/Interior", interior_model, (0.0, 0.0, 0.0))
@@ -1199,6 +1205,11 @@ def add_shopkeepers(scene: SceneWriter, lots: list) -> None:
         entry_world = lot_to_world(lot, (entry_x, 0.0, entry_z))
         facing = facing_yaw((keeper[0], keeper[2]), (entry_world[0], entry_world[2]))
         npc(scene, f"Shopkeeper{index:02d}", keeper_body, keeper_hair, stand((keeper[0], keeper[2]), facing, keeper_animation, 0.0, height=keeper[1]))
+
+        for marker, body, hair, animation in HOUSE_KEEPERS.get(lot["shop"], ()):
+            spot = lot_to_world(lot, sidecar["markers"][marker])
+            faces = lot_to_world(lot, sidecar["markers"][f"{marker}_faces"])
+            npc(scene, f"Shopkeeper{index:02d}{marker.title()}", body, hair, stand((spot[0], spot[2]), facing_yaw((spot[0], spot[2]), (faces[0], faces[2])), animation, 0.0, height=spot[1]))
 
 
 SIDEWALK_DOOR_REACH = 1.6  # do pé da fachada até onde quem olha a vitrine para, no meio da calçada de 3 m
@@ -2352,16 +2363,32 @@ HALL_SHOT_VIEWS = {  # salão -> vistas a mais, nas mesmas coordenadas (x = u, y
         "Oven": ((3.2, 1.6, -13.8), (5.0, 1.4, -19.0)),
         "Facade": ((2.0, 1.6, 9.0), (0.0, 3.4, 0.0)),
     },
-    "tavern": {  # cômodos da taverna (tools_src/tavern_layout.py)
-        "Taproom": ((-3.0, 1.6, -0.9), (-7.5, 1.3, -8.0)),
-        "Bar": ((-6.4, 1.6, -3.0), (-4.6, 1.3, -12.0)),
-        "Inglenook": ((-3.3, 1.6, -5.5), (-8.5, 1.4, -5.5)),
-        "Stube": ((4.4, 1.6, -7.8), (8.0, 1.0, -0.8)),
-        "StubeStove": ((7.8, 1.6, -3.4), (3.0, 1.2, -7.6)),
-        "Kitchen": ((-3.0, 1.6, -13.2), (-7.5, 1.2, -18.5)),
-        "Music": ((3.0, 1.6, -9.0), (7.0, 1.2, -18.0)),
-        "Store": ((0.0, 1.6, -13.1), (0.0, 1.2, -19.0)),
-        "Hall": ((0.0, 1.6, -11.8), (0.0, 1.5, 0.0)),
+    "tavern": {  # salão de dois níveis e cômodos da taverna (tools_src/tavern_layout.py; terraço a 1,3 m)
+        "Entrance": ((6.6, 1.6, -0.9), (-1.0, 1.4, -9.0)),
+        "Hall": ((0.4, 1.6, -1.0), (6.0, 1.8, -11.5)),
+        "Bar": ((2.6, 1.6, -3.6), (-2.6, 1.2, -6.4)),
+        "Ramp": ((3.8, 1.6, -1.2), (7.6, 1.6, -8.4)),
+        "Terrace": ((7.6, 2.9, -8.8), (-2.0, 2.2, -12.6)),
+        "TerraceView": ((6.6, 2.9, -13.3), (0.0, 0.6, -3.0)),
+        "Inglenook": ((3.6, 2.9, -10.9), (1.8, 2.4, -13.9)),
+        "Inn": ((-5.0, 1.7, -1.0), (-7.4, 1.2, -6.0)),
+        "InnEntry": ((-8.1, 1.7, -2.6), (-4.9, 1.6, -3.6)),
+        "Reception": ((-7.9, 1.7, -5.9), (-4.9, 1.6, -2.4)),
+        "StairFoot": ((-4.9, 1.6, -6.4), (-4.9, 2.6, -1.4)),
+        "Stair": ((-3.7, 4.3, -1.0), (-3.7, 5.8, -5.8)),
+        "Kitchen": ((-3.6, 1.6, -7.4), (-7.5, 1.2, -13.6)),
+        "Pantry": ((-3.6, 1.6, -14.6), (-7.5, 1.0, -18.8)),
+        "Store": ((-2.2, 1.6, -14.6), (7.0, 1.0, -18.8)),
+        "InnDoor": ((-13.5, 1.6, -5.5), (-9.0, 2.0, -2.6)),
+        "Gallery": ((-7.0, 6.9, -0.6), (-7.0, 6.5, -12.5)),
+        "WellView": ((-6.6, 7.0, -5.0), (-3.8, 3.0, -1.4)),
+        "Corridor": ((-5.0, 6.9, -6.5), (8.0, 6.5, -6.5)),
+        "TwinRoom": ((0.0, 6.9, -5.0), (0.0, 6.3, 0.0)),
+        "Parlour": ((2.3, 6.9, -8.0), (7.5, 6.2, -10.2)),
+        "Washroom": ((-4.4, 6.9, -7.9), (-3.7, 6.0, -10.6)),
+        "SideChamber": ((-6.6, 6.9, -18.7), (-5.0, 6.0, -14.4)),
+        "Chamber": ((0.5, 6.9, -18.6), (1.2, 6.0, -14.2)),
+        "CornerChamber": ((4.0, 6.9, -14.0), (7.6, 6.0, -18.0)),
     },
     "tailor": {
         "Portico": ((-8.0, 1.6, 1.6), (6.0, 2.0, 1.2)),

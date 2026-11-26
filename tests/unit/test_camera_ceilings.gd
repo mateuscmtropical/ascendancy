@@ -17,9 +17,10 @@ const CATACOMB_CEILING: float = -2.35
 const SMITH_SPOT: Vector3 = Vector3(0.0, 0.3, -9.0)
 const SMITH_BEAM_UNDERSIDE: float = 4.03
 const TAVERN_SCENE: PackedScene = preload("res://art/town/shops/shop_tavern.gltf")
-## Taverna na origem, no salão diante do balcão: forro baixo a 3,6 m, viga-mestra descendo 0,32 m.
-const TAVERN_SPOT: Vector3 = Vector3(-5.5, 0.3, -9.0)
-const TAVERN_BEAM_UNDERSIDE: float = 3.28
+## Taverna na origem, em cima do terraço do salão (1,3 m): forro a 4,8 m, viga-mestra descendo
+## 0,32 m.
+const TAVERN_SPOT: Vector3 = Vector3(-1.0, 1.6, -12.0)
+const TAVERN_BEAM_UNDERSIDE: float = 4.48
 const ALCHEMY_SCENE: PackedScene = preload("res://art/town/shops/shop_alchemy.gltf")
 ## Botica na origem, na Offizin junto da fachada: a abóbada nasce a 2,9 m e ali, a 1,3 m da
 ## parede, ainda está abaixo de 3,7 m (o forro plano e o colisor dele ficam acima, a 4,15 m).
@@ -50,7 +51,7 @@ func test_camera_stays_under_the_shop_beams() -> void:
 func test_camera_stays_under_the_tavern_beams() -> void:
 	var camera: Camera3D = await _look_down_in(TAVERN_SCENE, Transform3D.IDENTITY, TAVERN_SPOT)
 
-	assert_lt(camera.global_position.y, TAVERN_BEAM_UNDERSIDE, "camera under the taproom beams")
+	assert_lt(camera.global_position.y, TAVERN_BEAM_UNDERSIDE, "camera under the hall beams")
 
 
 func test_camera_follows_the_offizin_vault() -> void:
