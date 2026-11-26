@@ -3,6 +3,9 @@ extends AudioStreamPlayer3D
 ## Passos do corpo pai (CharacterBody3D) conforme o piso embaixo dele: cadência que sobe com a
 ## velocidade, impulso ao pular, pouso ao cair de um pulo, silêncio no ar e parado.
 ## O filho GroundProbe (RayCast3D para baixo) diz qual colisor está sob os pés.
+## Quem anima o corpo pode dar a passada (follows_stride): aí o passo soa quando o pé pisa.
+
+signal stepped
 
 const STEP_SOUNDS: Dictionary[GroundSurface.Kind, AudioStream] = {
 	GroundSurface.Kind.STONE: preload("res://art/audio/step_stone.tres"),
@@ -31,11 +34,26 @@ const BASE_STEPS_PER_SECOND: float = 1.6
 const FIRST_STEP_PROGRESS: float = 0.7
 ## Descer um meio-fio também tira o pé do chão; só queda mais rápida que isto soa como pouso.
 const LANDING_FALL_SPEED: float = 4.0
+## Fora do ciclo de andar (parado, golpe de corpo inteiro): nenhum pé pisando.
+const NO_STRIDE: float = -1.0
+## Os ciclos de andar da biblioteca dão dois passos: um pé pisa na fase 0, o outro na 0,5.
+const STEPS_PER_STRIDE: float = 2.0
+## Trocar de ciclo (trote para disparada, pouso) recomeça a fase: sem isto sairiam dois passos
+## colados.
+const MIN_STEP_GAP_SECONDS: float = 0.15
+
+## Com isto ligado o passo segue stride_phase em vez da cadência estimada pela velocidade.
+var follows_stride: bool = false
+## Fase do ciclo de andar que o corpo está mostrando (0..1), ou NO_STRIDE.
+var stride_phase: float = NO_STRIDE
 
 var _body: CharacterBody3D
 var _step_progress: float = FIRST_STEP_PROGRESS
 var _was_grounded: bool = true
 var _fall_speed: float = 0.0
+## Fase dentro do passo atual; começa no fim para o primeiro pé soar assim que a passada começa.
+var _step_phase: float = 1.0
+var _seconds_since_step: float = MIN_STEP_GAP_SECONDS
 
 @onready var _ground_probe: RayCast3D = $GroundProbe
 
@@ -56,6 +74,7 @@ func _physics_process(delta: float) -> void:
 	)
 
 	_was_grounded = is_grounded
+	_seconds_since_step += delta
 
 	if has_jumped:
 		_play_from(JUMP_SOUNDS)
@@ -69,6 +88,10 @@ func _physics_process(delta: float) -> void:
 		_step_progress = FIRST_STEP_PROGRESS
 		return
 
+	if follows_stride:
+		_step_with_stride()
+		return
+
 	if horizontal_speed < MIN_STEP_SPEED:
 		_step_progress = FIRST_STEP_PROGRESS
 		return
@@ -76,6 +99,18 @@ func _physics_process(delta: float) -> void:
 	_step_progress += steps_per_second * delta
 
 	if _step_progress >= 1.0:
+		_play_from(STEP_SOUNDS)
+
+
+## O passo soa quando a fase dá a volta: é o instante em que um pé toca o chão no ciclo.
+func _step_with_stride() -> void:
+	var is_striding: bool = stride_phase >= 0.0
+	var step_phase: float = fposmod(stride_phase * STEPS_PER_STRIDE, 1.0) if is_striding else 1.0
+	var has_stepped: bool = step_phase < _step_phase
+
+	_step_phase = step_phase
+
+	if has_stepped and _seconds_since_step >= MIN_STEP_GAP_SECONDS:
 		_play_from(STEP_SOUNDS)
 
 
@@ -90,3 +125,7 @@ func _play_from(sounds_by_surface: Dictionary[GroundSurface.Kind, AudioStream]) 
 		stream = sound
 
 	play()
+
+	if sounds_by_surface != JUMP_SOUNDS:
+		_seconds_since_step = 0.0
+		stepped.emit()

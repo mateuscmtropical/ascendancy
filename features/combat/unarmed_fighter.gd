@@ -3,17 +3,38 @@ extends Node
 ## Luta sem arma: encadeia socos e chutes em sequência, guarda o pedido feito cedo demais
 ## e avisa o instante em que cada golpe acerta. Não toca animação nem lê teclado: quem usa
 ## pede o ataque, avança o tempo e ouve os sinais.
+## Andando, o soco sai só no tronco (as pernas seguem no passo) e o chute vira chute voador;
+## parado, o chute prende os pés no chão até a perna voltar.
 
 signal move_started(move: Move)
 signal strike_reached(move: Move)
+## O braço ou a perna começa a cortar o ar: hora do som do golpe.
+signal swing_started(attack: Attack)
 signal move_finished
 
 enum Attack { PUNCH, KICK }
-enum Move { JAB, CROSS, HOOK, UPPERCUT, FRONT_KICK, ROUNDHOUSE_KICK, SIDE_KICK }
+enum Move {
+	JAB,
+	CROSS,
+	HOOK,
+	UPPERCUT,
+	FRONT_KICK,
+	ROUNDHOUSE_KICK,
+	SIDE_KICK,
+	FLYING_FRONT_KICK,
+	FLYING_ROUNDHOUSE_KICK,
+	FLYING_SIDE_KICK,
+}
 
 const CHAIN_BY_ATTACK: Dictionary[Attack, Array] = {
 	Attack.PUNCH: [Move.JAB, Move.CROSS, Move.HOOK, Move.UPPERCUT],
 	Attack.KICK: [Move.FRONT_KICK, Move.ROUNDHOUSE_KICK, Move.SIDE_KICK],
+}
+## O chute de quem vem andando: o corpo todo sai do chão, então não há pé de apoio para escorregar.
+const FLYING_BY_KICK: Dictionary[Move, Move] = {
+	Move.FRONT_KICK: Move.FLYING_FRONT_KICK,
+	Move.ROUNDHOUSE_KICK: Move.FLYING_ROUNDHOUSE_KICK,
+	Move.SIDE_KICK: Move.FLYING_SIDE_KICK,
 }
 const ANIMATION_BY_MOVE: Dictionary[Move, StringName] = {
 	Move.JAB: &"ual1/Punch_Jab",
@@ -23,6 +44,9 @@ const ANIMATION_BY_MOVE: Dictionary[Move, StringName] = {
 	Move.FRONT_KICK: &"combat/Kick_Front",
 	Move.ROUNDHOUSE_KICK: &"combat/Kick_Roundhouse",
 	Move.SIDE_KICK: &"combat/Kick_Side",
+	Move.FLYING_FRONT_KICK: &"combat/Kick_Front_Flying",
+	Move.FLYING_ROUNDHOUSE_KICK: &"combat/Kick_Roundhouse_Flying",
+	Move.FLYING_SIDE_KICK: &"combat/Kick_Side_Flying",
 }
 ## Os socos da biblioteca são lentos para um combo; os clipes próprios já saem no tempo certo.
 const ANIMATION_SPEED_BY_MOVE: Dictionary[Move, float] = {
@@ -30,7 +54,8 @@ const ANIMATION_SPEED_BY_MOVE: Dictionary[Move, float] = {
 	Move.CROSS: 1.3,
 }
 ## Tempos em segundos do clipe: quando o golpe acerta, a partir de quando o próximo golpe
-## pode cortar a volta à guarda, e quando o clipe acaba.
+## pode cortar a volta à guarda (e as pernas de um chute ficam livres para andar), e quando o
+## clipe acaba.
 const STRIKE_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.JAB: 0.21,
 	Move.CROSS: 0.29,
@@ -39,6 +64,9 @@ const STRIKE_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.FRONT_KICK: 0.36,
 	Move.ROUNDHOUSE_KICK: 0.35,
 	Move.SIDE_KICK: 0.4,
+	Move.FLYING_FRONT_KICK: 0.36,
+	Move.FLYING_ROUNDHOUSE_KICK: 0.35,
+	Move.FLYING_SIDE_KICK: 0.4,
 }
 const CHAIN_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.JAB: 0.36,
@@ -48,6 +76,10 @@ const CHAIN_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.FRONT_KICK: 0.56,
 	Move.ROUNDHOUSE_KICK: 0.6,
 	Move.SIDE_KICK: 0.66,
+	# O chute voador só solta as pernas com o pé de volta no chão.
+	Move.FLYING_FRONT_KICK: 0.62,
+	Move.FLYING_ROUNDHOUSE_KICK: 0.68,
+	Move.FLYING_SIDE_KICK: 0.74,
 }
 const LENGTH_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.JAB: 0.87,
@@ -57,14 +89,25 @@ const LENGTH_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.FRONT_KICK: 0.9,
 	Move.ROUNDHOUSE_KICK: 1.0,
 	Move.SIDE_KICK: 1.05,
+	Move.FLYING_FRONT_KICK: 0.9,
+	Move.FLYING_ROUNDHOUSE_KICK: 1.0,
+	Move.FLYING_SIDE_KICK: 1.05,
 }
+## O som do golpe começa este tempo de clipe antes do acerto e é mais forte no acerto
+## (tools_src/compose_sounds.py, SWING_BY_ATTACK).
+const SWING_LEAD_SECONDS: float = 0.09
 ## Depois do último golpe o lutador fica este tempo em guarda antes de relaxar.
 const GUARD_HOLD_SECONDS: float = 3.0
 
+## Quem usa diz se o lutador está andando; vale para o próximo golpe que começar.
+var is_on_the_move: bool = false
+
 var _is_attacking: bool = false
+var _attack: Attack = Attack.PUNCH
 var _move: Move = Move.JAB
 var _move_seconds: float = 0.0
 var _has_struck: bool = false
+var _has_swung: bool = false
 var _chain_step: int = 0
 var _has_pending_attack: bool = false
 var _pending_attack: Attack = Attack.PUNCH
@@ -78,6 +121,27 @@ func is_attacking() -> bool:
 ## Em guarda: no meio de um golpe ou há pouco tempo do último.
 func is_on_guard() -> bool:
 	return _is_attacking or _guard_seconds_left > 0.0
+
+
+## Chute ainda sem a perna de volta: o clipe é dono do corpo inteiro.
+func is_committed() -> bool:
+	var is_leg_back: bool = _move_seconds >= CHAIN_SECONDS_BY_MOVE[_move]
+
+	return _is_attacking and _attack == Attack.KICK and not is_leg_back
+
+
+## Chute dado parado, com o pé de apoio no chão: andar agora arrastaria esse pé.
+func holds_feet() -> bool:
+	return is_committed() and FLYING_BY_KICK.has(_move)
+
+
+## Onde o golpe atual está no próprio clipe, em segundos.
+func move_seconds() -> float:
+	return _move_seconds
+
+
+func current_move() -> Move:
+	return _move
 
 
 func animation_of(move: Move) -> StringName:
@@ -119,6 +183,10 @@ func advance(delta: float) -> void:
 
 	_move_seconds += delta * animation_speed_of(_move)
 
+	if not _has_swung and _move_seconds >= STRIKE_SECONDS_BY_MOVE[_move] - SWING_LEAD_SECONDS:
+		_has_swung = true
+		swing_started.emit(_attack)
+
 	if not _has_struck and _move_seconds >= STRIKE_SECONDS_BY_MOVE[_move]:
 		_has_struck = true
 		strike_reached.emit(_move)
@@ -136,10 +204,13 @@ func advance(delta: float) -> void:
 
 func _start_move(attack: Attack) -> void:
 	var chain: Array = CHAIN_BY_ATTACK[attack]
+	var standing_move: Move = chain[_chain_step % chain.size()]
 
-	_move = chain[_chain_step % chain.size()]
+	_attack = attack
+	_move = FLYING_BY_KICK.get(standing_move, standing_move) if is_on_the_move else standing_move
 	_move_seconds = 0.0
 	_has_struck = false
+	_has_swung = false
 	_has_pending_attack = false
 	_is_attacking = true
 	_guard_seconds_left = GUARD_HOLD_SECONDS

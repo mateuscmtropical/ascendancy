@@ -35,6 +35,40 @@ func test_single_punch_strikes_once_and_returns_to_guard() -> void:
 	assert_false(_fighter.is_on_guard(), "relaxed after the guard time")
 
 
+func test_swing_sounds_once_per_blow_just_before_it_lands() -> void:
+	var swung_attacks: Array[UnarmedFighter.Attack] = []
+	var jab_strike: float = UnarmedFighter.STRIKE_SECONDS_BY_MOVE[UnarmedFighter.Move.JAB]
+
+	_fighter.swing_started.connect(swung_attacks.append)
+	_fighter.request_attack(UnarmedFighter.Attack.PUNCH)
+	_advance((jab_strike - UnarmedFighter.SWING_LEAD_SECONDS) / 1.3 - 0.03)
+
+	assert_eq(swung_attacks.size(), 0, "silent while the fist is still loading")
+
+	_advance(0.05)
+
+	assert_eq(swung_attacks, [UnarmedFighter.Attack.PUNCH])
+	assert_eq(_struck_moves.size(), 0, "the air sounds before the blow lands")
+
+	_advance(1.0)
+	_fighter.request_attack(UnarmedFighter.Attack.KICK)
+	_advance(1.2)
+
+	assert_eq(swung_attacks, [UnarmedFighter.Attack.PUNCH, UnarmedFighter.Attack.KICK])
+
+
+func test_player_swing_is_heard_when_punching() -> void:
+	var player: PlayerController = _spawn_player()
+	var swings: AudioStreamPlayer3D = player.get_node("Swings")
+
+	await wait_physics_frames(10)
+	_press(&"attack_punch")
+	await wait_physics_frames(10)
+
+	assert_eq(swings.stream, PlayerController.SWING_SOUND_BY_ATTACK[UnarmedFighter.Attack.PUNCH])
+	assert_true(swings.playing, "the punch cuts the air")
+
+
 func test_punches_asked_early_chain_through_the_combo() -> void:
 	_fighter.request_attack(UnarmedFighter.Attack.PUNCH)
 
@@ -95,26 +129,127 @@ func test_every_move_has_its_clip_and_timings_in_order() -> void:
 		_assert_move_is_playable(move, animation_player)
 
 
-func test_player_punch_plays_the_jab_and_plants_the_feet() -> void:
+func test_kick_on_the_move_is_a_flying_kick_that_never_holds_the_feet() -> void:
+	_fighter.is_on_the_move = true
+	_fighter.request_attack(UnarmedFighter.Attack.KICK)
+
+	assert_eq(_started_moves, [UnarmedFighter.Move.FLYING_FRONT_KICK])
+	assert_true(_fighter.is_committed(), "the kick owns the whole body")
+	assert_false(_fighter.holds_feet(), "but the body keeps travelling")
+
+	_advance(UnarmedFighter.CHAIN_SECONDS_BY_MOVE[UnarmedFighter.Move.FLYING_FRONT_KICK])
+
+	assert_false(_fighter.is_committed(), "legs free once the foot is back down")
+	assert_eq(_struck_moves, [UnarmedFighter.Move.FLYING_FRONT_KICK])
+
+
+func test_standing_kick_holds_the_feet_until_the_leg_is_back() -> void:
+	_fighter.request_attack(UnarmedFighter.Attack.KICK)
+
+	assert_true(_fighter.holds_feet())
+
+	_advance(UnarmedFighter.CHAIN_SECONDS_BY_MOVE[UnarmedFighter.Move.FRONT_KICK])
+
+	assert_false(_fighter.holds_feet())
+	assert_true(_fighter.is_attacking(), "still coming back to the guard")
+
+
+func test_punch_never_commits_the_legs() -> void:
+	_fighter.request_attack(UnarmedFighter.Attack.PUNCH)
+
+	assert_false(_fighter.is_committed())
+	assert_false(_fighter.holds_feet())
+
+
+func test_standing_punch_plays_the_jab_on_the_whole_body() -> void:
 	var player: PlayerController = _spawn_player()
 	var animation_player: AnimationPlayer = player.get_node("CharacterModel/AnimationPlayer")
-	var start: Vector3
 
 	await wait_physics_frames(10)
-	start = player.global_position
-	Input.action_press(&"move_forward")
 	_press(&"attack_punch")
 	await wait_physics_frames(12)
 
 	assert_eq(String(animation_player.current_animation), "ual1/Punch_Jab")
-	assert_lt(player.global_position.distance_to(start), 0.3, "attack holds the step")
 
-	Input.action_release(&"move_forward")
 	await wait_physics_frames(60)
 
 	assert_eq(
 		String(animation_player.current_animation), "combat/Fight_Idle", "guard after the blow"
 	)
+
+
+func test_punch_on_the_move_keeps_the_step_and_throws_with_the_trunk() -> void:
+	var player: PlayerController = _spawn_player()
+	var animation_player: AnimationPlayer = player.get_node("CharacterModel/AnimationPlayer")
+	var fighter: UnarmedFighter = player.get_node("UnarmedFighter")
+	var skeleton: Skeleton3D = player.get_node("CharacterModel/Body/Armature/Skeleton3D")
+	var hand: BoneAttachment3D = _attach_to_bone(skeleton, "hand_l")
+	var chest: BoneAttachment3D = _attach_to_bone(skeleton, "spine_03")
+	var start: Vector3
+	var jog_reach: float
+	var punch_reach: float
+
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(40)
+	jog_reach = hand.global_position.distance_to(chest.global_position)
+	start = player.global_position
+	_press(&"attack_punch")
+	await wait_physics_frames(13)
+	punch_reach = hand.global_position.distance_to(chest.global_position)
+
+	assert_true(fighter.is_attacking())
+	assert_eq(String(animation_player.current_animation), "combat/Run", "legs keep the step")
+	assert_gt(player.global_position.distance_to(start), 0.9, "the blow does not brake the run")
+	assert_gt(punch_reach, jog_reach + 0.15, "the jab reaches out over the jog")
+
+	Input.action_release(&"move_forward")
+	await wait_physics_frames(3)
+
+	assert_eq(
+		String(animation_player.current_animation),
+		"ual1/Punch_Jab",
+		"stopping mid-blow hands the whole body to the clip"
+	)
+	assert_gt(animation_player.current_animation_position, 0.2, "from where the blow already is")
+
+
+func test_kick_on_the_move_flies_and_then_hands_the_legs_back() -> void:
+	var player: PlayerController = _spawn_player()
+	var animation_player: AnimationPlayer = player.get_node("CharacterModel/AnimationPlayer")
+	var start: Vector3
+
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(40)
+	start = player.global_position
+	_press(&"attack_kick")
+	await wait_physics_frames(20)
+
+	assert_eq(String(animation_player.current_animation), "combat/Kick_Front_Flying")
+	assert_gt(player.global_position.distance_to(start), 1.4, "the kick travels with the run")
+
+	await wait_physics_frames(25)
+
+	assert_eq(String(animation_player.current_animation), "combat/Run", "back to the step")
+	Input.action_release(&"move_forward")
+
+
+func test_standing_kick_holds_the_step_until_the_leg_is_back() -> void:
+	var player: PlayerController = _spawn_player()
+	var start: Vector3
+
+	await wait_physics_frames(10)
+	start = player.global_position
+	_press(&"attack_kick")
+	await wait_physics_frames(3)
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(22)
+
+	assert_lt(player.global_position.distance_to(start), 0.05, "support foot stays planted")
+
+	await wait_physics_frames(40)
+	Input.action_release(&"move_forward")
+
+	assert_gt(player.global_position.distance_to(start), 1.0, "free to walk after the kick")
 
 
 func test_player_jump_cancels_the_blow() -> void:
@@ -132,6 +267,17 @@ func test_player_jump_cancels_the_blow() -> void:
 	Input.action_release(&"jump")
 
 	assert_false(fighter.is_attacking())
+
+
+## Segue o osso já com a camada do tronco aplicada (a pose lida direto do esqueleto é a de
+## antes dos modificadores).
+func _attach_to_bone(skeleton: Skeleton3D, bone_name: String) -> BoneAttachment3D:
+	var attachment: BoneAttachment3D = BoneAttachment3D.new()
+
+	attachment.bone_name = bone_name
+	skeleton.add_child(attachment)
+
+	return attachment
 
 
 func _advance(seconds: float) -> void:

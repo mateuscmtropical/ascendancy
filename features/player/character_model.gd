@@ -9,6 +9,8 @@ const HAIR_ROUGHNESS: float = 1.0
 const SKELETON_PATH: NodePath = ^"Armature/Skeleton3D"
 const BODY_NODE_NAME: StringName = &"Body"
 const ANIMATION_BLEND_SECONDS: float = 0.2
+## Tempo para o tronco e os braços voltarem à animação de baixo depois de um golpe em camada.
+const UPPER_BODY_RELEASE_SECONDS: float = 0.18
 ## As poses UAL deixam a sola ~5 cm abaixo da origem; o corpo sobe para o pé pisar no chão.
 const SOLE_LIFT: float = 0.05
 ## Detalhe pela distância à câmera (só moradores): até aqui o rosto anima.
@@ -33,6 +35,9 @@ const ANIMATION_STEP_BY_DISTANCE: Array[Vector2] = [
 
 var _current_animation: StringName
 var _pending_animation_seconds: float = 0.0
+var _body: Node3D
+## Só existe em quem já deu golpe andando (o jogador); nasce no primeiro uso.
+var _upper_body: UpperBodyOverlay
 
 @onready var _animation_player: AnimationPlayer = $AnimationPlayer
 @onready var _face: FaceAnimator = $FaceAnimator
@@ -82,6 +87,9 @@ func set_body(new_body_scene: PackedScene, new_hair_color: Color) -> void:
 	body_scene = new_body_scene
 	hair_color = new_hair_color
 
+	# A camada do tronco mora no esqueleto antigo e vai embora com ele.
+	_upper_body = null
+
 	if old_body:
 		remove_child(old_body)
 		old_body.queue_free()
@@ -90,11 +98,51 @@ func set_body(new_body_scene: PackedScene, new_hair_color: Color) -> void:
 
 
 ## blend_seconds menor que o padrão serve para golpes, que não podem amolecer na entrada.
+## from_seconds entra no meio do clipe (golpe que já vinha tocando só no tronco).
 func play_animation(
-	animation_name: StringName, speed: float = 1.0, blend_seconds: float = ANIMATION_BLEND_SECONDS
+	animation_name: StringName,
+	speed: float = 1.0,
+	blend_seconds: float = ANIMATION_BLEND_SECONDS,
+	from_seconds: float = 0.0
 ) -> void:
 	_current_animation = animation_name
+	_animation_player.speed_scale = 1.0
 	_animation_player.play(animation_name, blend_seconds, speed)
+
+	if from_seconds > 0.0:
+		_animation_player.seek(from_seconds)
+
+
+## Ritmo do ciclo que está tocando: a passada acompanha a velocidade real do corpo. Vale até a
+## próxima troca de animação.
+func pace_animation(pace: float) -> void:
+	_animation_player.speed_scale = pace
+
+
+## Toca um clipe só da cintura para cima, por cima da animação do corpo (soco andando).
+func play_upper_body(animation_name: StringName, speed: float, blend_seconds: float) -> void:
+	var clip: Animation = _animation_player.get_animation(animation_name)
+
+	if _upper_body == null:
+		_upper_body = UpperBodyOverlay.new()
+		_body.get_node(SKELETON_PATH).add_child(_upper_body)
+
+	_upper_body.play(clip, speed, blend_seconds)
+
+
+func stop_upper_body() -> void:
+	if _upper_body != null:
+		_upper_body.stop(UPPER_BODY_RELEASE_SECONDS)
+
+
+## Peso do corpo por cima da animação: lean inclina a partir dos pés (x = para a frente,
+## y = para a esquerda, em rad) e stretch estica (>0) ou amassa (<0) a altura mantendo o volume.
+func set_sway(lean: Vector2, stretch: float) -> void:
+	var height: float = 1.0 + stretch
+	var width: float = 1.0 / sqrt(height)
+	var tilt: Basis = Basis.from_euler(Vector3(lean.x, 0.0, -lean.y))
+
+	_body.basis = tilt * Basis.from_scale(Vector3(width, height, width))
 
 
 ## Expressão do rosto; com hold_seconds ela passa e o rosto volta à de descanso.
@@ -118,9 +166,17 @@ func animation_seconds() -> float:
 	return _animation_player.current_animation_position
 
 
+## Onde a animação atual está no próprio ciclo, de 0 a 1.
+func animation_phase() -> float:
+	var length: float = _animation_player.current_animation_length
+
+	return _animation_player.current_animation_position / maxf(length, 0.001)
+
+
 ## Toca um trecho único (impulso, aterrissagem) e emenda no ciclo seguinte.
 func play_animation_then(first_animation: StringName, next_animation: StringName) -> void:
 	_current_animation = next_animation
+	_animation_player.speed_scale = 1.0
 	_animation_player.play(first_animation, ANIMATION_BLEND_SECONDS)
 	_animation_player.queue(next_animation)
 
@@ -131,6 +187,7 @@ func _build_body() -> void:
 	body.name = BODY_NODE_NAME
 	body.position.y = SOLE_LIFT
 	add_child(body)
+	_body = body
 
 	_tint_hair(body.get_node(SKELETON_PATH))
 
