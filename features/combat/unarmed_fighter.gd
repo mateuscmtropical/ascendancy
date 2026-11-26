@@ -8,6 +8,8 @@ extends Node
 
 signal move_started(move: Move)
 signal strike_reached(move: Move)
+## O braço ou a perna começa a cortar o ar: hora do som do golpe.
+signal swing_started(attack: Attack)
 signal move_finished
 
 enum Attack { PUNCH, KICK }
@@ -91,6 +93,9 @@ const LENGTH_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.FLYING_ROUNDHOUSE_KICK: 1.0,
 	Move.FLYING_SIDE_KICK: 1.05,
 }
+## O som do golpe começa este tempo de clipe antes do acerto e é mais forte no acerto
+## (tools_src/compose_sounds.py, SWING_BY_ATTACK).
+const SWING_LEAD_SECONDS: float = 0.09
 ## Depois do último golpe o lutador fica este tempo em guarda antes de relaxar.
 const GUARD_HOLD_SECONDS: float = 3.0
 
@@ -102,6 +107,7 @@ var _attack: Attack = Attack.PUNCH
 var _move: Move = Move.JAB
 var _move_seconds: float = 0.0
 var _has_struck: bool = false
+var _has_swung: bool = false
 var _chain_step: int = 0
 var _has_pending_attack: bool = false
 var _pending_attack: Attack = Attack.PUNCH
@@ -177,6 +183,10 @@ func advance(delta: float) -> void:
 
 	_move_seconds += delta * animation_speed_of(_move)
 
+	if not _has_swung and _move_seconds >= STRIKE_SECONDS_BY_MOVE[_move] - SWING_LEAD_SECONDS:
+		_has_swung = true
+		swing_started.emit(_attack)
+
 	if not _has_struck and _move_seconds >= STRIKE_SECONDS_BY_MOVE[_move]:
 		_has_struck = true
 		strike_reached.emit(_move)
@@ -200,6 +210,7 @@ func _start_move(attack: Attack) -> void:
 	_move = FLYING_BY_KICK.get(standing_move, standing_move) if is_on_the_move else standing_move
 	_move_seconds = 0.0
 	_has_struck = false
+	_has_swung = false
 	_has_pending_attack = false
 	_is_attacking = true
 	_guard_seconds_left = GUARD_HOLD_SECONDS

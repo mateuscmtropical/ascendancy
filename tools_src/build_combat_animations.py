@@ -11,6 +11,8 @@ frames into the strike and a short hold on it (timing), the trunk and the head a
 hips (overlapping action, OVERLAP_LAG), and a dip that settles back into the guard (follow-through). Each kick
 also comes as a flying kick for the fighter on the move (FLYING_KICKS): the same poses with the body off the ground.
 
+The player's run (STRIDE_CLIPS) is the library's jog with the feet reaching less far: the same cycle, shorter steps.
+
 Usage:
   blender -b --factory-startup -P tools_src/build_combat_animations.py
 Output: art/animations/combat.glb (animations only), imported by Godot as the "combat" AnimationLibrary.
@@ -239,13 +241,26 @@ def clip_keys(rig: Rig, seconds: float, poses: list, base: dict | None = None, l
     return keys
 
 
-def bake_clip(rig: Rig, name: str, seconds: float, poses: list, base: dict | None = None, lag: dict | None = None) -> None:
-    armature = rig.armature
+def open_clip(armature, name: str):
     action = bpy.data.actions.new(name)
-    keys = clip_keys(rig, seconds, poses, base, lag)
 
     armature.animation_data_create()
     armature.animation_data.action = action
+
+    return action
+
+
+def close_clip(armature, name: str, action, seconds: float) -> None:
+    track = armature.animation_data.nla_tracks.new()
+    track.name = name
+    track.strips.new(name, 0, action)
+    armature.animation_data.action = None
+    print(f"CLIP {name} {seconds:.2f}s")
+
+
+def bake_clip(rig: Rig, name: str, seconds: float, poses: list, base: dict | None = None, lag: dict | None = None) -> None:
+    action = open_clip(rig.armature, name)
+    keys = clip_keys(rig, seconds, poses, base, lag)
 
     for frame in range(round(seconds * FRAMES_PER_SECOND) + 1):
         time = frame / FRAMES_PER_SECOND
@@ -255,11 +270,43 @@ def bake_clip(rig: Rig, name: str, seconds: float, poses: list, base: dict | Non
         rig.finish_toes(world)
         rig.apply(world, frame)
 
-    track = armature.animation_data.nla_tracks.new()
-    track.name = name
-    track.strips.new(name, 0, action)
-    armature.animation_data.action = None
-    print(f"CLIP {name} {seconds:.2f}s")
+    close_clip(rig.armature, name, action, seconds)
+
+
+def shorten_stride(rig: Rig, world: dict, share: float) -> dict:
+    """The same pose with each foot only `share` as far ahead of or behind its hip, at the same height: the knee
+    bends to make up for it, the foot keeps its own turn and whatever hangs from the leg goes along."""
+    shortened = dict(world)
+
+    for side in SIDES:
+        root, middle, end = LIMBS[f"foot_{side}"]
+        hip, knee, foot = (world[name].translation for name in (root, middle, end))
+        target = Vector((foot.x, hip.y + (foot.y - hip.y) * share, foot.z))
+        new_knee, new_foot = bend_point(hip, target, (knee - hip).length, (foot - knee).length, knee - (hip + foot) / 2.0)
+        upper_turn = (knee - hip).rotation_difference(new_knee - hip).to_matrix()
+        lower_turn = (foot - knee).rotation_difference(new_foot - new_knee).to_matrix()
+
+        shortened[root] = Matrix.Translation(hip) @ (upper_turn @ world[root].to_3x3()).to_4x4()
+        shortened[middle] = Matrix.Translation(new_knee) @ (lower_turn @ world[middle].to_3x3()).to_4x4()
+        shortened[end] = Matrix.Translation(new_foot) @ world[end].to_3x3().to_4x4()
+
+    for name in rig.bones:
+        parent = rig.parent[name]
+
+        # a bone carried by one that moved keeps its place on it (toes, twist bones)
+        if parent and shortened[name] is world[name] and shortened[parent] is not world[parent]:
+            shortened[name] = shortened[parent] @ world[parent].inverted() @ world[name]
+
+    return shortened
+
+
+def bake_stride_clip(rig: Rig, name: str, frames: list, share: float) -> None:
+    action = open_clip(rig.armature, name)
+
+    for frame, world in enumerate(frames):
+        rig.apply(shorten_stride(rig, world, share), frame)
+
+    close_clip(rig.armature, name, action, (len(frames) - 1) / FRAMES_PER_SECOND)
 
 
 # Key poses. Stance of the guard: left foot and left hand lead, right side behind; the target is in front (-Y).
@@ -448,6 +495,13 @@ SEATED_CLIPS = {
 }
 
 
+# Player's run: (library clip, share of its stride kept). The library's jog covers 2.9 m a step; at the game's run
+# speed that is under two steps a second, long bounds in slow motion. With the feet reaching this share as far the same
+# cycle plays faster for the same ground speed (PlayerController.ANIMATION_SPEED_BY_STANCE, measured on the planted
+# foot) and no foot slides.
+STRIDE_CLIPS = {"Run_Loop": ("Jog_Fwd_Loop", 0.64)}
+
+
 def local_matrix(bone, matrix_of) -> Matrix:
     return matrix_of(bone.parent).inverted() @ matrix_of(bone) if bone.parent else matrix_of(bone)
 
@@ -472,8 +526,36 @@ def copy_library_pose(armature, library) -> None:
     bpy.context.view_layer.update()
 
 
-def load_rigs(base_actions: tuple) -> dict:
-    """One Rig per base pose of the library (its first frame), all on the same character armature."""
+def play_on_library(library, action_name: str):
+    action = bpy.data.actions[action_name]
+    library.animation_data.action = action
+
+    if action.slots:
+        library.animation_data.action_slot = action.slots[0]
+
+    return action
+
+
+def sample_action(armature, library, action_name: str) -> list:
+    """Armature-space matrix of every bone of the character at each baked frame of a library clip."""
+    first_frame, last_frame = play_on_library(library, action_name).frame_range
+    library_rate = bpy.context.scene.render.fps
+    frames = []
+
+    for index in range(round((last_frame - first_frame) / library_rate * FRAMES_PER_SECOND) + 1):
+        frame = first_frame + index * library_rate / FRAMES_PER_SECOND
+
+        bpy.context.scene.frame_set(int(frame), subframe=frame - int(frame))
+        bpy.context.view_layer.update()
+        copy_library_pose(armature, library)
+        frames.append({bone.name: bone.matrix.copy() for bone in armature.pose.bones})
+
+    return frames
+
+
+def load_rigs(base_actions: tuple, sampled_actions: set) -> tuple:
+    """One Rig per base pose of the library (its first frame), all on the same character armature, and the frames
+    of the library clips that others are made from."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(RIG_SOURCE))
 
@@ -488,16 +570,14 @@ def load_rigs(base_actions: tuple) -> dict:
     library.animation_data_create()
 
     for action_name in base_actions:
-        action = bpy.data.actions[action_name]
-        library.animation_data.action = action
-
-        if action.slots:
-            library.animation_data.action_slot = action.slots[0]
+        action = play_on_library(library, action_name)
 
         bpy.context.scene.frame_set(int(action.frame_range[0]))
         bpy.context.view_layer.update()
         copy_library_pose(armature, library)
         rigs[action_name] = Rig(armature)
+
+    frames_by_action = {action_name: sample_action(armature, library, action_name) for action_name in sampled_actions}
 
     for scene_object in set(bpy.data.objects) - rig_objects:
         bpy.data.objects.remove(scene_object, do_unlink=True)
@@ -505,7 +585,7 @@ def load_rigs(base_actions: tuple) -> dict:
     for action in list(bpy.data.actions):
         bpy.data.actions.remove(action)
 
-    return rigs
+    return rigs, frames_by_action
 
 
 def export_clips(armature) -> None:
@@ -520,7 +600,7 @@ def export_clips(armature) -> None:
 
 
 if __name__ == "__main__":
-    base_rigs = load_rigs((GUARD_ACTION, SEATED_ACTION))
+    base_rigs, library_frames = load_rigs((GUARD_ACTION, SEATED_ACTION), {source for source, _ in STRIDE_CLIPS.values()})
     combat_rig = base_rigs[GUARD_ACTION]
 
     bpy.context.scene.render.fps = FRAMES_PER_SECOND
@@ -537,6 +617,9 @@ if __name__ == "__main__":
 
     for clip_name, (clip_seconds, clip_base, clip_poses) in SEATED_CLIPS.items():
         bake_clip(base_rigs[SEATED_ACTION], clip_name, clip_seconds, clip_poses, clip_base)
+
+    for clip_name, (source_action, stride_share) in STRIDE_CLIPS.items():
+        bake_stride_clip(combat_rig, clip_name, library_frames[source_action], stride_share)
 
     export_clips(combat_rig.armature)
     print(f"BUILT {OUTPUT_PATH}")

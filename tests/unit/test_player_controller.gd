@@ -61,7 +61,7 @@ func test_stride_follows_the_ground_speed() -> void:
 	starting_pace = animation_player.speed_scale
 	await wait_physics_frames(40)
 
-	assert_eq(String(animation_player.current_animation), "ual1/Jog_Fwd")
+	assert_eq(String(animation_player.current_animation), "combat/Run")
 	assert_lt(starting_pace, jog_pace * 0.8, "slow strides while the body is still speeding up")
 	assert_almost_eq(animation_player.speed_scale, jog_pace, 0.01, "full stride at full speed")
 
@@ -83,8 +83,8 @@ func test_steps_sound_with_the_stride_not_with_a_clock() -> void:
 	Input.action_press(&"move_forward")
 	await wait_physics_frames(120)
 
-	# Trote: ciclo de 0,93 s tocado a 0,83 = um passo a cada 0,56 s.
-	assert_between(get_signal_emit_count(footsteps, "stepped"), 3, 5, "two footfalls per cycle")
+	# Corrida: ciclo de 0,93 s tocado a 1,24 = um passo a cada 0,38 s.
+	assert_between(get_signal_emit_count(footsteps, "stepped"), 4, 6, "two footfalls per cycle")
 
 
 func test_no_two_steps_sound_on_top_of_each_other() -> void:

@@ -21,7 +21,7 @@ const SPEED_BY_STANCE: Dictionary[Stance, float] = {
 const ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
 	Stance.IDLE: &"ual1/Idle",
 	Stance.WALK: &"ual1/Walk",
-	Stance.RUN: &"ual1/Jog_Fwd",
+	Stance.RUN: &"combat/Run",
 	Stance.SPRINT: &"ual1/Sprint",
 	Stance.AIRBORNE: &"ual1/Jump",
 	Stance.HOVER: &"ual1/Swim_Idle",
@@ -29,10 +29,11 @@ const ANIMATION_BY_STANCE: Dictionary[Stance, StringName] = {
 	Stance.GUARD: &"combat/Fight_Idle",
 }
 ## Ritmo do ciclo na velocidade cheia da postura, para o pé de apoio não escorregar: velocidade
-## do corpo dividida pela do pé no clipe (medida: 1,03 m/s no passo, 6,26 no trote, 9,58 no sprint).
+## do corpo dividida pela do pé no clipe (medida: 1,03 m/s no passo, 4,19 na corrida, 9,58 no
+## sprint).
 const ANIMATION_SPEED_BY_STANCE: Dictionary[Stance, float] = {
 	Stance.WALK: 1.55,
-	Stance.RUN: 0.83,
+	Stance.RUN: 1.24,
 	Stance.SPRINT: 0.86,
 }
 ## Arrancando e freando, o ciclo segue a velocidade real dentro desta faixa do ritmo cheio.
@@ -40,6 +41,10 @@ const MIN_STRIDE_PACE: float = 0.6
 const MAX_STRIDE_PACE: float = 1.15
 const JUMP_START_ANIMATION: StringName = &"ual1/Jump_Start"
 const JUMP_LAND_ANIMATION: StringName = &"ual1/Jump_Land"
+const SWING_SOUND_BY_ATTACK: Dictionary[UnarmedFighter.Attack, AudioStream] = {
+	UnarmedFighter.Attack.PUNCH: preload("res://art/audio/swing_punch.tres"),
+	UnarmedFighter.Attack.KICK: preload("res://art/audio/swing_kick.tres"),
+}
 const ATTACK_BY_ACTION: Dictionary[StringName, UnarmedFighter.Attack] = {
 	&"attack_punch": UnarmedFighter.Attack.PUNCH,
 	&"attack_kick": UnarmedFighter.Attack.KICK,
@@ -88,6 +93,7 @@ var _rider: MountRider
 @onready var _avoidance_obstacle: NavigationObstacle3D = $AvoidanceObstacle
 @onready var _mount_collision: CollisionShape3D = $MountCollision
 @onready var _footsteps: FootstepPlayer = $Footsteps
+@onready var _swings: AudioStreamPlayer3D = $Swings
 
 
 func _ready() -> void:
@@ -96,6 +102,7 @@ func _ready() -> void:
 	_rider = MountRider.new(self, _model, _camera_yaw, _avoidance_obstacle)
 	_fighter.move_started.connect(_on_move_started)
 	_fighter.strike_reached.connect(_on_strike_reached)
+	_fighter.swing_started.connect(_on_swing_started)
 	_fighter.move_finished.connect(_model.stop_upper_body)
 	_footsteps.follows_stride = true
 
@@ -331,6 +338,16 @@ func _on_move_started(move: UnarmedFighter.Move) -> void:
 		return
 
 	_model.play_upper_body(animation, animation_speed, ATTACK_BLEND_SECONDS)
+
+
+func _on_swing_started(attack: UnarmedFighter.Attack) -> void:
+	var sound: AudioStream = SWING_SOUND_BY_ATTACK[attack]
+
+	# Trocar o stream corta o som que está tocando: só troca quando muda.
+	if _swings.stream != sound:
+		_swings.stream = sound
+
+	_swings.play()
 
 
 func _on_strike_reached(_move: UnarmedFighter.Move) -> void:

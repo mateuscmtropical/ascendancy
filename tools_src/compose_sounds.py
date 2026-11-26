@@ -1,6 +1,6 @@
 """Synthesise the game's sound effects and ambience loops (all original, no recordings): footsteps, jump take-offs and
-landings on stone, grass, wood and dirt (with a Godot AudioStreamRandomizer .tres per set), the fountain's water, the
-town's breeze and birdsong, the cathedral bell and the menu sounds.
+landings on stone, grass, wood and dirt (with a Godot AudioStreamRandomizer .tres per set), the air cut by a punch or a
+kick, the fountain's water, the town's breeze and birdsong, the cathedral bell and the menu sounds.
 
 Noise is shaped in the frequency domain (FFT of white noise times a spectral envelope), which makes every loop
 periodic: the end flows into the start with no seam. Events (droplets, chirps) are placed modulo the loop length.
@@ -211,6 +211,32 @@ def jump_landing(surface: str, variant: int) -> np.ndarray:
     return normalized(fade_edges(feet + 0.7 * body + settle, 0.001, 0.08), 0.85)
 
 
+# Air cut by a limb, per attack: (seconds, when the swing is fastest, how long the rush lasts, low band, high band, peak).
+# The game starts the sound SWING_LEAD_SECONDS before the blow lands (features/combat/unarmed_fighter.gd), so the
+# fastest instant has to sit that far into the sound.
+SWING_BY_ATTACK = {
+    "punch": (0.22, 0.09, 0.032, (500.0, 1800.0), (1800.0, 7000.0), 0.5),
+    "kick": (0.34, 0.1, 0.05, (220.0, 900.0), (900.0, 4200.0), 0.7),
+}
+SEED_BY_ATTACK = {"punch": 500, "kick": 600}
+SWING_VARIANTS = 4
+
+
+def swing(attack: str, variant: int) -> np.ndarray:
+    """Whoosh of a punch or a kick: a rush of air that swells and brightens up to the fastest instant and dies after it,
+    with the dull flap of the sleeve or the trouser leg right behind."""
+    generator = np.random.default_rng(SEED_BY_ATTACK[attack] + variant)
+    seconds, fastest, rush_seconds, low_band, high_band, peak = SWING_BY_ATTACK[attack]
+    length = int(seconds * RATE)
+    time = timeline(seconds)[:length]
+    rush = np.exp(-0.5 * ((time - fastest) / (rush_seconds * generator.uniform(0.85, 1.15))) ** 2)
+    air = shaped_noise(length, band(*low_band), generator) * rush ** 0.6
+    hiss = shaped_noise(length, band(*high_band), generator) * rush ** 1.6
+    flap = burst(length, 120.0, 500.0, 0.03, generator, int((fastest + 0.01) * RATE))
+
+    return normalized(fade_edges(air + generator.uniform(0.7, 1.0) * hiss + 0.35 * flap, 0.004, 0.05), peak)
+
+
 def church_bell() -> np.ndarray:
     """Bronze bell strike in G: hum, prime, minor tierce, quint and nominal partials with their own decays, slightly
     detuned pairs for the slow beating of a real bell, and a clang at the strike."""
@@ -338,6 +364,7 @@ SOUNDS = {
     **{f"step_{surface}_{variant}": (lambda surface=surface, variant=variant: footstep(surface, variant)) for surface in SURFACES for variant in range(1, STEP_VARIANTS + 1)},
     **{f"jump_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_takeoff(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
     **{f"land_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_landing(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
+    **{f"swing_{attack}_{variant}": (lambda attack=attack, variant=variant: swing(attack, variant)) for attack in SWING_BY_ATTACK for variant in range(1, SWING_VARIANTS + 1)},
     "church_bell": church_bell,
     "ui_click": interface_click,
     "ui_open": lambda: interface_tone((660.0, 990.0), 0.07, 0.15),
@@ -352,6 +379,7 @@ RANDOMIZERS = {
     **{f"step_{surface}": (STEP_VARIANTS, 1.08, 3.0) for surface in SURFACES},
     **{f"jump_{surface}": (JUMP_VARIANTS, 1.06, 2.0) for surface in SURFACES},
     **{f"land_{surface}": (JUMP_VARIANTS, 1.05, 2.0) for surface in SURFACES},
+    **{f"swing_{attack}": (SWING_VARIANTS, 1.1, 2.0) for attack in SWING_BY_ATTACK},
 }
 
 
