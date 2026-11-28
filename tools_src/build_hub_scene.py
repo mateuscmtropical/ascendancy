@@ -2243,6 +2243,16 @@ adjustment_saturation = 1.08''')
     })
 
 
+RUINS_FIELD = (200.0, 0.0)  # campo de ruínas destrutíveis no campo aberto além da fazenda (vão na cerca leste)
+
+
+def add_ruins_field(scene: SceneWriter) -> None:
+    """Ruins, crates and fences that punches, kicks and spells break (features/destruction): out in the open
+    country, far from the town, which stays intact."""
+    x, z = RUINS_FIELD
+    place(scene, "RuinsField", ".", "res://features/destruction/ruins_field.tscn", (x, -STREET_DROP, z))
+
+
 def add_mula(scene: SceneWriter) -> None:
     """The Mula sem cabeça (features/mobs/mula_sem_cabeca.tscn) standing in the meadow beyond the farm gate."""
     place(scene, "MulaSemCabeca", ".", "res://features/mobs/mula_sem_cabeca.tscn", grounded(*MULA["position"]), MULA["rotation"])
@@ -2267,6 +2277,7 @@ def build_hub_scene() -> str:
     add_townsfolk(scene, benches)
     add_farm(scene)
     add_mula(scene)
+    add_ruins_field(scene)
     add_carriages(scene)
     add_distance_fades(scene)
     add_shadowless_scenery(scene)

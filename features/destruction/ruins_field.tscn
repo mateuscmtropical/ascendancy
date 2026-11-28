@@ -1,0 +1,48 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/destruction/block_ruin.gd" id="1_ruin"]
+[ext_resource type="Script" path="res://features/destruction/wooden_crate.gd" id="2_crate"]
+[ext_resource type="Script" path="res://features/destruction/wooden_fence.gd" id="3_fence"]
+
+[node name="RuinsField" type="Node3D"]
+
+[node name="Temple" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -8)
+script = ExtResource("1_ruin")
+
+[node name="Gate" type="Node3D" parent="."]
+transform = Transform3D(0.866025, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866025, -12, 0, 5)
+script = ExtResource("1_ruin")
+plan = 1
+
+[node name="Crates" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 5)
+
+[node name="Crate1" type="Node3D" parent="Crates"]
+script = ExtResource("2_crate")
+
+[node name="Crate2" type="Node3D" parent="Crates"]
+transform = Transform3D(0.985, 0, -0.174, 0, 1, 0, 0.174, 0, 0.985, 1.05, 0, 0.1)
+script = ExtResource("2_crate")
+
+[node name="Crate3" type="Node3D" parent="Crates"]
+transform = Transform3D(0.94, 0, 0.342, 0, 1, 0, -0.342, 0, 0.94, 0.4, 0, 1.15)
+script = ExtResource("2_crate")
+
+[node name="Crate4" type="Node3D" parent="Crates"]
+transform = Transform3D(0.996, 0, 0.087, 0, 1, 0, -0.087, 0, 0.996, 0.05, 0.905, 0.02)
+script = ExtResource("2_crate")
+
+[node name="Crate5" type="Node3D" parent="Crates"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0, -1.4)
+script = ExtResource("2_crate")
+
+[node name="Fence" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 12)
+script = ExtResource("3_fence")
+bays = 5
+
+[node name="FenceSide" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6, 0, 12)
+script = ExtResource("3_fence")
+bays = 2

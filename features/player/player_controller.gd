@@ -350,8 +350,12 @@ func _on_swing_started(attack: UnarmedFighter.Attack) -> void:
 	_swings.play()
 
 
-func _on_strike_reached(_move: UnarmedFighter.Move) -> void:
+## No instante do acerto o golpe chega no que estiver à frente: madeira quebra, pedra só soa.
+func _on_strike_reached(move: UnarmedFighter.Move) -> void:
+	var impact: Impact = _fighter.impact_of(move, global_position, _model.global_basis.z)
+
 	_model.show_expression(FaceAnimator.Mood.EFFORT, STRIKE_FACE_SECONDS)
+	Destruction.strike(impact, self)
 
 
 ## O que o corpo mostra: o golpe só toma o corpo todo com o jogador parado ou num chute.

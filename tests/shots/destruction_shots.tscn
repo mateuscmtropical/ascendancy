@@ -1,0 +1,98 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/shots/destruction_shots.gd" id="1_shots"]
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="2_capture"]
+[ext_resource type="PackedScene" path="res://features/destruction/ruins_field.tscn" id="3_field"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.361, 0.561, 0.82, 1)
+sky_horizon_color = Color(0.843, 0.933, 0.961, 1)
+ground_horizon_color = Color(0.843, 0.933, 0.961, 1)
+ground_bottom_color = Color(0.486, 0.494, 0.596, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 1.0
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.4
+glow_blend_mode = 1
+glow_hdr_threshold = 1.0
+fog_enabled = true
+fog_light_color = Color(0.843, 0.933, 0.961, 1)
+fog_density = 0.002
+fog_sun_scatter = 0.2
+fog_aerial_perspective = 0.35
+
+[sub_resource type="StandardMaterial3D" id="ground_material"]
+albedo_color = Color(0.725, 0.667, 0.573, 1)
+roughness = 1.0
+
+[sub_resource type="PlaneMesh" id="ground_mesh_with_material"]
+size = Vector2(120, 120)
+material = SubResource("ground_material")
+
+[sub_resource type="WorldBoundaryShape3D" id="floor_shape"]
+
+[node name="DestructionShots" type="Node3D"]
+script = ExtResource("1_shots")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.698, 0.6, 0)
+light_color = Color(1, 0.902, 0.769, 1)
+light_energy = 1.3
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_max_distance = 60.0
+
+[node name="RimLight" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.35, 3.4, 0)
+light_color = Color(0.749, 0.902, 1, 1)
+light_energy = 0.5
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground_mesh_with_material")
+
+[node name="Floor" type="StaticBody3D" parent="."]
+
+[node name="Shape" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("floor_shape")
+
+[node name="RuinsField" parent="." instance=ExtResource("3_field")]
+
+[node name="FieldOverview" type="Camera3D" parent="."]
+position = Vector3(15, 7, 13)
+fov = 50.0
+current = true
+
+[node name="TempleClose" type="Camera3D" parent="."]
+position = Vector3(5.5, 2.4, -0.5)
+fov = 50.0
+
+[node name="TempleSide" type="Camera3D" parent="."]
+position = Vector3(-9, 2.0, -3.5)
+fov = 50.0
+
+[node name="CratesClose" type="Camera3D" parent="."]
+position = Vector3(11.5, 1.7, 9.5)
+fov = 50.0
+
+[node name="GateClose" type="Camera3D" parent="."]
+position = Vector3(-7.5, 1.8, 10.5)
+fov = 50.0
+
+[node name="FenceClose" type="Camera3D" parent="."]
+position = Vector3(4, 1.6, 17)
+fov = 50.0
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("2_capture")

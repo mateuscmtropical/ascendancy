@@ -93,6 +93,30 @@ const LENGTH_SECONDS_BY_MOVE: Dictionary[Move, float] = {
 	Move.FLYING_ROUNDHOUSE_KICK: 1.0,
 	Move.FLYING_SIDE_KICK: 1.05,
 }
+## Energia que cada golpe leva ao cenário (Destruction): soco e chute quebram madeira, nunca pedra;
+## o chute voador leva o peso do corpo todo e arrebenta até porta de tábua grossa.
+const ENERGY_BY_MOVE: Dictionary[Move, float] = {
+	Move.JAB: 30.0,
+	Move.CROSS: 36.0,
+	Move.HOOK: 42.0,
+	Move.UPPERCUT: 44.0,
+	Move.FRONT_KICK: 55.0,
+	Move.ROUNDHOUSE_KICK: 60.0,
+	Move.SIDE_KICK: 65.0,
+	Move.FLYING_FRONT_KICK: 95.0,
+	Move.FLYING_ROUNDHOUSE_KICK: 100.0,
+	Move.FLYING_SIDE_KICK: 110.0,
+}
+## Onde o golpe chega, à frente do corpo: altura do punho ou do pé e raio do alcance.
+const STRIKE_HEIGHT_BY_ATTACK: Dictionary[Attack, float] = {
+	Attack.PUNCH: 1.35,
+	Attack.KICK: 0.95,
+}
+const STRIKE_RADIUS_BY_ATTACK: Dictionary[Attack, float] = {
+	Attack.PUNCH: 0.45,
+	Attack.KICK: 0.55,
+}
+const STRIKE_REACH: float = 0.75
 ## O som do golpe começa este tempo de clipe antes do acerto e é mais forte no acerto
 ## (tools_src/compose_sounds.py, SWING_BY_ATTACK).
 const SWING_LEAD_SECONDS: float = 0.09
@@ -142,6 +166,23 @@ func move_seconds() -> float:
 
 func current_move() -> Move:
 	return _move
+
+
+func current_attack() -> Attack:
+	return _attack
+
+
+func energy_of(move: Move) -> float:
+	return ENERGY_BY_MOVE[move]
+
+
+## O golpe chegando no cenário, para um corpo em body_position virado para forward.
+func impact_of(move: Move, body_position: Vector3, forward: Vector3) -> Impact:
+	var flat_forward: Vector3 = Vector3(forward.x, 0.0, forward.z).normalized()
+	var height: float = STRIKE_HEIGHT_BY_ATTACK[_attack]
+	var strike_point: Vector3 = body_position + Vector3.UP * height + flat_forward * STRIKE_REACH
+
+	return Impact.new(strike_point, flat_forward, STRIKE_RADIUS_BY_ATTACK[_attack], energy_of(move))
 
 
 func animation_of(move: Move) -> StringName:
