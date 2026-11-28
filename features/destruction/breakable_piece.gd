@@ -31,6 +31,8 @@ const KNOCKS_PER_PIECE: int = 2
 ## Fatia logo acima do pedaço onde procura quem está sentado nele.
 const SUPPORT_PROBE_HEIGHT: float = 0.06
 const SUPPORT_PROBE_INSET: float = 0.04
+## Quanto o casco de um pedaço pré-fraturado encolhe em cada canto.
+const HULL_SHRINK: float = 0.008
 
 const BLOCK_SHADER: Shader = preload("res://art/shaders/breakable_block.gdshader")
 
@@ -81,6 +83,43 @@ static func make_box(
 	piece.add_child(view)
 
 	return piece
+
+
+## Peça de um modelo pré-fraturado: a malha vira filha do corpo, no mesmo lugar, e a colisão é o
+## casco convexo dela (os pedaços do corte de Voronoi já são convexos).
+static func make_from_mesh(
+	view: MeshInstance3D, piece_substance: Destruction.Substance, firmness: float = 1.0
+) -> BreakablePiece:
+	var piece: BreakablePiece = BreakablePiece.new()
+	var collision: CollisionShape3D = CollisionShape3D.new()
+	var bounds: AABB = view.mesh.get_aabb()
+
+	collision.shape = _shrunk_hull(view.mesh, bounds.get_center())
+	piece.transform = view.transform
+	piece.substance = piece_substance
+	piece.toughness = firmness
+	piece.mass = maxf(bounds.size.x * bounds.size.y * bounds.size.z * 600.0, 1.0)
+	piece.set_bounds(bounds)
+	view.get_parent().remove_child(view)
+	view.transform = Transform3D.IDENTITY
+	piece.add_child(collision)
+	piece.add_child(view)
+
+	return piece
+
+
+## Casco convexo da malha com cada canto puxado HULL_SHRINK para o centro: pedaços cortados
+## encostam exatamente no vizinho, e sem folga o atrito prende quem se solta (tábua no batente).
+static func _shrunk_hull(mesh: Mesh, center: Vector3) -> ConvexPolygonShape3D:
+	var hull: ConvexPolygonShape3D = mesh.create_convex_shape(true, false)
+	var points: PackedVector3Array = hull.points
+
+	for index in points.size():
+		points[index] = points[index].move_toward(center, HULL_SHRINK)
+
+	hull.points = points
+
+	return hull
 
 
 ## Material dos blocos e tábuas: cor, quina mais escura e, na madeira, veio ao longo de grain_axis.
@@ -176,12 +215,33 @@ func break_free() -> void:
 	broke_free.emit(self)
 
 
-## Solta os pedaços ainda presos que estavam sentados neste e os devolve.
+## Solta os pedaços ainda presos sentados neste que ficaram sem nenhum outro apoio e os devolve.
 func release_pieces_on_top(world: World3D) -> Array[BreakablePiece]:
+	var released: Array[BreakablePiece] = []
+
+	for piece in _frozen_pieces_in_slab(world, _local_bounds.end.y + SUPPORT_PROBE_HEIGHT / 2.0):
+		if not piece.rests_on_frozen_piece(world):
+			piece.break_free()
+			released.append(piece)
+
+	return released
+
+
+## Se ainda tem algum pedaço preso logo embaixo (verga apoiada na outra ponta, telhado na outra
+## parede): aí fica; só cai o que perdeu todo o apoio.
+func rests_on_frozen_piece(world: World3D) -> bool:
+	var below: float = _local_bounds.position.y - SUPPORT_PROBE_HEIGHT / 2.0
+
+	return not _frozen_pieces_in_slab(world, below).is_empty()
+
+
+## Pedaços presos que tocam uma fatia fina na altura height (no espaço do pedaço), do tamanho da
+## base dele.
+func _frozen_pieces_in_slab(world: World3D, height: float) -> Array[BreakablePiece]:
 	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 	var probe: BoxShape3D = BoxShape3D.new()
-	var top: Vector3 = Vector3(0.0, _local_bounds.end.y + SUPPORT_PROBE_HEIGHT / 2.0, 0.0)
-	var released: Array[BreakablePiece] = []
+	var center: Vector3 = _local_bounds.get_center()
+	var found: Array[BreakablePiece] = []
 	var hits: Array[Dictionary]
 
 	probe.size = Vector3(
@@ -189,11 +249,11 @@ func release_pieces_on_top(world: World3D) -> Array[BreakablePiece]:
 		SUPPORT_PROBE_HEIGHT,
 		maxf(_local_bounds.size.z - SUPPORT_PROBE_INSET * 2.0, 0.01)
 	)
-	top.x = _local_bounds.get_center().x
-	top.z = _local_bounds.get_center().z
 	query.shape = probe
-	query.transform = global_transform * Transform3D(Basis.IDENTITY, top)
-	query.collision_mask = FROZEN_LAYERS & Destruction.BREAKABLE_LAYER
+	query.transform = (
+		global_transform * Transform3D(Basis.IDENTITY, Vector3(center.x, height, center.z))
+	)
+	query.collision_mask = Destruction.BREAKABLE_LAYER
 	query.exclude = [get_rid()]
 	hits = world.direct_space_state.intersect_shape(query, Destruction.MAX_QUERY_RESULTS)
 
@@ -201,10 +261,9 @@ func release_pieces_on_top(world: World3D) -> Array[BreakablePiece]:
 		var piece: BreakablePiece = hit.collider as BreakablePiece
 
 		if piece != null and not piece.is_loose:
-			piece.break_free()
-			released.append(piece)
+			found.append(piece)
 
-	return released
+	return found
 
 
 ## Some encolhendo (sem colidir) e sai da cena.
@@ -232,7 +291,8 @@ func _launch(direction: Vector3, spare_energy: float) -> void:
 	var speed: float = minf(
 		MIN_LAUNCH_SPEED + root_energy * LAUNCH_SPEED_PER_ROOT_ENERGY, MAX_LAUNCH_SPEED
 	)
-	var spin_axis: Vector3 = direction.cross(Vector3.UP)
+	# Tomba para a frente, para onde vai: porta arrombada cai para dentro, não volta no batente.
+	var spin_axis: Vector3 = Vector3.UP.cross(direction)
 
 	if spin_axis.length_squared() < 0.0001:
 		spin_axis = Vector3.RIGHT

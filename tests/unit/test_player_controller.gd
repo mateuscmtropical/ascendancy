@@ -33,6 +33,28 @@ func test_player_jogs_forward_away_from_camera() -> void:
 	assert_almost_eq(_player.global_position.x, start.x, 0.05)
 
 
+func test_kick_on_the_run_survives_stepping_onto_a_curb() -> void:
+	var curb: StaticBody3D = StaticBody3D.new()
+	var curb_shape: CollisionShape3D = CollisionShape3D.new()
+	var box: BoxShape3D = BoxShape3D.new()
+	var fighter: UnarmedFighter = _player.get_node("UnarmedFighter")
+	var struck: Array[UnarmedFighter.Move] = []
+
+	box.size = Vector3(4.0, 0.15, 4.0)
+	curb_shape.shape = box
+	curb.add_child(curb_shape)
+	curb.position = Vector3(0.0, 0.075, -2.6)
+	add_child_autofree(curb)
+	fighter.strike_reached.connect(func(move: UnarmedFighter.Move) -> void: struck.append(move))
+	Input.action_press(&"move_forward")
+	await wait_physics_frames(6)
+	fighter.request_attack(UnarmedFighter.Attack.KICK)
+	await wait_physics_frames(45)
+
+	assert_gt(_player.global_position.y, 0.1, "went up the curb during the kick")
+	assert_eq(struck.size(), 1, "the kick still landed")
+
+
 func test_sprint_covers_more_ground_than_jog() -> void:
 	var start: Vector3 = _player.global_position
 	var jog_distance: float

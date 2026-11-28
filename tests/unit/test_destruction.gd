@@ -1,6 +1,7 @@
 extends GutTest
 
 const PLAYER_SCENE: PackedScene = preload("res://features/player/player.tscn")
+const COTTAGE: PackedScene = preload("res://art/destruction/cottage.gltf")
 const BLOCK_SIZE: Vector3 = Vector3(0.8, 0.4, 0.5)
 const PUNCH: UnarmedFighter.Attack = UnarmedFighter.Attack.PUNCH
 const KICK: UnarmedFighter.Attack = UnarmedFighter.Attack.KICK
@@ -77,6 +78,19 @@ func test_what_rested_on_a_broken_block_comes_down_with_it() -> void:
 	assert_false(beside.is_loose, "nothing to do with it")
 
 
+func test_a_block_still_resting_on_another_support_stays() -> void:
+	var left: BreakablePiece = _piece_at(Vector3(-0.45, 0.2, 0), Destruction.Substance.STONE)
+	var right: BreakablePiece = _piece_at(Vector3(0.45, 0.2, 0), Destruction.Substance.STONE)
+	var bridge: BreakablePiece = _piece_at(Vector3(0, 0.6, 0), Destruction.Substance.STONE)
+
+	await _settle()
+	Destruction.strike(Impact.new(Vector3(-0.45, 0.2, -0.3), Vector3.BACK, 0.22, 600.0), _stage)
+
+	assert_true(left.is_loose)
+	assert_false(right.is_loose)
+	assert_false(bridge.is_loose, "still sits on the right block")
+
+
 func test_standing_kick_bounces_off_the_door_and_flying_kick_bursts_it() -> void:
 	var gate: BlockRuin = BlockRuin.new()
 	var door: Array[BreakablePiece]
@@ -128,6 +142,49 @@ func test_no_two_blocks_of_a_ruin_overlap() -> void:
 	assert_eq(overlaps, 0, "overlapping blocks would burst apart when freed")
 
 
+func test_cottage_stands_whole_until_a_blow_breaks_a_section() -> void:
+	var cottage: FracturedBuilding = FracturedBuilding.new()
+	var front_wall: Node3D
+	var back_wall: Node3D
+	var kick: float = UnarmedFighter.ENERGY_BY_MOVE[UnarmedFighter.Move.FLYING_SIDE_KICK]
+
+	cottage.model = COTTAGE
+	_stage.add_child(cottage)
+	front_wall = cottage.find_child("Section_PLASTER_FrontWall", true, false)
+	back_wall = cottage.find_child("Section_PLASTER_BackWall", true, false)
+	await _settle()
+
+	assert_eq(cottage.find_children("*", "BreakablePiece", true, false).size(), 142)
+	Destruction.strike(Impact.new(Vector3(1.2, 1.4, 2.3), Vector3.FORWARD, 0.55, kick), _stage)
+	assert_true(_whole_of(front_wall).visible, "a kick does not break plaster")
+
+	Destruction.strike(Impact.new(Vector3(1.2, 1.4, 2.6), Vector3.FORWARD, 1.5, 900.0), _stage)
+	assert_false(_whole_of(front_wall).visible, "the broken wall shows its pieces")
+	assert_true(_whole_of(back_wall).visible, "the far wall stays one mesh")
+
+
+func test_cottage_door_bursts_only_to_a_flying_kick() -> void:
+	var cottage: FracturedBuilding = FracturedBuilding.new()
+	var fighter: UnarmedFighter = UnarmedFighter.new()
+	var door: Array[BreakablePiece]
+	var aim: Vector3 = Vector3(-1.0, 0, 2.7)
+
+	cottage.model = COTTAGE
+	_stage.add_child(cottage)
+	_stage.add_child(fighter)
+	door = _wooden_pieces(cottage.find_child("Section_WOOD_Door", true, false))
+	await _settle()
+
+	Destruction.strike(
+		fighter.impact_of(UnarmedFighter.Move.SIDE_KICK, aim, Vector3.FORWARD), _stage
+	)
+	assert_eq(_loose_count(door), 0)
+	Destruction.strike(
+		fighter.impact_of(UnarmedFighter.Move.FLYING_FRONT_KICK, aim, Vector3.FORWARD), _stage
+	)
+	assert_eq(_loose_count(door), door.size())
+
+
 func test_loose_pieces_never_pass_the_cap() -> void:
 	var extra: int = 5
 
@@ -167,6 +224,10 @@ func _pieces_broken_by(energy: float) -> int:
 	return Destruction.strike(
 		Impact.new(Vector3(0, 1.0, -3.0), Vector3.FORWARD, 3.0, energy), _stage
 	)
+
+
+func _whole_of(section: Node3D) -> MeshInstance3D:
+	return section.find_child("Whole_*", false, false) as MeshInstance3D
 
 
 func _fastest_loose_speed() -> float:

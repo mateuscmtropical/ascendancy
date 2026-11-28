@@ -73,6 +73,9 @@ const DOUBLE_TAP_SECONDS: float = 0.3
 const HIDE_MODEL_DISTANCE: float = 0.7
 ## Antecipação do teste do degrau, para o corpo encostar na borda já levantando.
 const STEP_PROBE_SECONDS: float = 0.08
+## Fora do chão por menos que isso (subindo degrau ou meio-fio) ainda conta como no chão: o golpe
+## não é cortado nem o corpo troca para a pose de queda.
+const OFF_FLOOR_GRACE_SECONDS: float = 0.12
 
 @export var is_input_enabled: bool = true
 
@@ -83,6 +86,7 @@ var _stance: Stance = Stance.IDLE
 var _is_blow_fresh: bool = false
 var _sway: BodySway = BodySway.new()
 var _takeoff_speed: float = 0.0
+var _seconds_off_floor: float = 0.0
 var _last_jump_press_seconds: float = -1.0
 var _ground_collision_mask: int
 var _rider: MountRider
@@ -240,6 +244,7 @@ func _walk(input_vector: Vector2, delta: float) -> void:
 
 	move_and_slide()
 
+	_seconds_off_floor = 0.0 if is_on_floor() else _seconds_off_floor + delta
 	# NPCs desviam do jogador prevendo para onde ele vai.
 	_avoidance_obstacle.velocity = Vector3(velocity.x, 0.0, velocity.z)
 	_turn_model_toward(move_direction, delta)
@@ -362,7 +367,7 @@ func _on_strike_reached(move: UnarmedFighter.Move) -> void:
 func _choose_ground_stance(travel_stance: Stance) -> Stance:
 	var is_still: bool = travel_stance == Stance.IDLE
 
-	if not is_on_floor():
+	if not is_on_floor() and _seconds_off_floor >= OFF_FLOOR_GRACE_SECONDS:
 		return Stance.AIRBORNE
 
 	if _fighter.is_attacking() and (is_still or _fighter.is_committed()):

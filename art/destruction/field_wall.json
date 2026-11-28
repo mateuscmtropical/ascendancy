@@ -1,0 +1,40 @@
+{
+ "aabb_min": [
+  -4.0,
+  0.0,
+  -0.3
+ ],
+ "aabb_max": [
+  4.0,
+  2.235,
+  0.3
+ ],
+ "pieces": 36,
+ "triangles_whole": 72,
+ "triangles_pieces": 736,
+ "sections": [
+  {
+   "node": "Section_STONE_Wall",
+   "name": "Wall",
+   "substance": "STONE",
+   "pieces": 36,
+   "origin": [
+    0.0,
+    1.117,
+    -0.0
+   ],
+   "aabb_min": [
+    -4.0,
+    0.0,
+    -0.3
+   ],
+   "aabb_max": [
+    4.0,
+    2.235,
+    0.3
+   ],
+   "triangles_whole": 72,
+   "triangles_pieces": 736
+  }
+ ]
+}

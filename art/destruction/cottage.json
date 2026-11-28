@@ -1,0 +1,201 @@
+{
+ "aabb_min": [
+  -2.8,
+  0.0,
+  -2.35
+ ],
+ "aabb_max": [
+  3.17,
+  5.02,
+  2.45
+ ],
+ "pieces": 142,
+ "triangles_whole": 832,
+ "triangles_pieces": 1868,
+ "sections": [
+  {
+   "node": "Section_STONE_Plinth",
+   "name": "Plinth",
+   "substance": "STONE",
+   "pieces": 21,
+   "origin": [
+    0.0,
+    0.225,
+    0.215
+   ],
+   "aabb_min": [
+    -2.52,
+    0.0,
+    -2.02
+   ],
+   "aabb_max": [
+    2.52,
+    0.45,
+    2.45
+   ],
+   "triangles_whole": 24,
+   "triangles_pieces": 348
+  },
+  {
+   "node": "Section_PLASTER_FrontWall",
+   "name": "FrontWall",
+   "substance": "PLASTER",
+   "pieces": 24,
+   "origin": [
+    0.0,
+    1.55,
+    1.9
+   ],
+   "aabb_min": [
+    -2.28,
+    0.45,
+    1.78
+   ],
+   "aabb_max": [
+    2.28,
+    2.65,
+    2.02
+   ],
+   "triangles_whole": 180,
+   "triangles_pieces": 288
+  },
+  {
+   "node": "Section_PLASTER_BackWall",
+   "name": "BackWall",
+   "substance": "PLASTER",
+   "pieces": 18,
+   "origin": [
+    0.0,
+    1.55,
+    -1.9
+   ],
+   "aabb_min": [
+    -2.28,
+    0.45,
+    -2.02
+   ],
+   "aabb_max": [
+    2.28,
+    2.65,
+    -1.78
+   ],
+   "triangles_whole": 104,
+   "triangles_pieces": 224
+  },
+  {
+   "node": "Section_PLASTER_LeftWall",
+   "name": "LeftWall",
+   "substance": "PLASTER",
+   "pieces": 22,
+   "origin": [
+    -2.4,
+    2.35,
+    -0.0
+   ],
+   "aabb_min": [
+    -2.52,
+    0.45,
+    -2.0
+   ],
+   "aabb_max": [
+    -2.28,
+    4.25,
+    2.0
+   ],
+   "triangles_whole": 220,
+   "triangles_pieces": 244
+  },
+  {
+   "node": "Section_PLASTER_RightWall",
+   "name": "RightWall",
+   "substance": "PLASTER",
+   "pieces": 21,
+   "origin": [
+    2.4,
+    2.35,
+    -0.0
+   ],
+   "aabb_min": [
+    2.28,
+    0.45,
+    -2.0
+   ],
+   "aabb_max": [
+    2.52,
+    4.25,
+    2.0
+   ],
+   "triangles_whole": 160,
+   "triangles_pieces": 248
+  },
+  {
+   "node": "Section_WOOD_Door",
+   "name": "Door",
+   "substance": "WOOD",
+   "pieces": 5,
+   "origin": [
+    -1.0,
+    1.4,
+    1.9
+   ],
+   "aabb_min": [
+    -1.45,
+    0.45,
+    1.87
+   ],
+   "aabb_max": [
+    -0.55,
+    2.35,
+    1.93
+   ],
+   "triangles_whole": 60,
+   "triangles_pieces": 60
+  },
+  {
+   "node": "Section_WOOD_Roof",
+   "name": "Roof",
+   "substance": "WOOD",
+   "pieces": 22,
+   "origin": [
+    0.0,
+    3.39,
+    -0.0
+   ],
+   "aabb_min": [
+    -2.8,
+    2.37,
+    -2.35
+   ],
+   "aabb_max": [
+    2.8,
+    4.41,
+    2.35
+   ],
+   "triangles_whole": 48,
+   "triangles_pieces": 336
+  },
+  {
+   "node": "Section_STONE_Chimney",
+   "name": "Chimney",
+   "substance": "STONE",
+   "pieces": 9,
+   "origin": [
+    2.82,
+    2.51,
+    -0.0
+   ],
+   "aabb_min": [
+    2.47,
+    0.0,
+    -0.5
+   ],
+   "aabb_max": [
+    3.17,
+    5.02,
+    0.5
+   ],
+   "triangles_whole": 36,
+   "triangles_pieces": 120
+  }
+ ]
+}
