@@ -28,7 +28,23 @@ func test_a_cut_carries_its_energy_along_the_whole_line() -> void:
 
 	assert_eq(cut.energy_at(Vector3(7.0, 0, 0)), 100.0)
 	assert_eq(cut.energy_at(Vector3(11.0, 0, 0)), 0.0, "past the end of the line")
-	assert_almost_eq(cut.push_direction_at(Vector3(5, 0, 1)).z, 0.6, 0.15, "out of the cut")
+	assert_almost_eq(cut.push_direction_at(Vector3(5, 1, 1)).z, 1.0, 0.01, "flat, out of the cut")
+
+
+func test_what_a_cut_frees_slides_off_flat_without_spinning() -> void:
+	var slice: BreakablePiece = _piece_at(Vector3(3, 1.6, 0.3), Destruction.Substance.EARTH)
+	var punch: BreakablePiece = _piece_at(Vector3(3, 1.6, 6.3), Destruction.Substance.EARTH)
+
+	await _settle()
+	Destruction.strike(Impact.new(Vector3(0, 1.4, 0), Vector3.RIGHT, 0.7, 3000.0, 6.0), _stage)
+	Destruction.strike(Impact.new(Vector3(3, 1.4, 6.0), Vector3.BACK, 0.7, 3000.0), _stage)
+	await get_tree().physics_frame
+
+	assert_true(slice.is_loose)
+	assert_almost_eq(slice.angular_velocity.length(), 0.0, 0.01, "a cut slice does not tumble")
+	assert_lt(slice.linear_velocity.length(), BreakablePiece.MAX_SLIDE_SPEED + 0.01)
+	assert_gt(slice.linear_velocity.z, absf(slice.linear_velocity.y) * 3.0, "pushed sideways")
+	assert_gt(punch.angular_velocity.length(), 1.0, "a round blow still sends it spinning")
 
 
 func test_punch_breaks_wood_but_not_stone() -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://features/player/player_camera.gd" id="cam_script"]
 [ext_resource type="Script" path="res://features/player/player_controller.gd" id="1_script"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://features/audio/footstep_player.gd" id="4_footsteps"]
 [ext_resource type="Script" path="res://features/combat/unarmed_fighter.gd" id="5_fighter"]
 [ext_resource type="Script" path="res://features/combat/explosion_spell.gd" id="6_spell"]
+[ext_resource type="Script" path="res://features/combat/cleave_spell.gd" id="7_cleave"]
 
 [sub_resource type="SphereShape3D" id="camera_probe"]
 radius = 0.22
@@ -83,4 +84,8 @@ script = ExtResource("5_fighter")
 
 [node name="ExplosionSpell" type="Node3D" parent="." node_paths=PackedStringArray("aim_from")]
 script = ExtResource("6_spell")
+aim_from = NodePath("../CharacterModel")
+
+[node name="CleaveSpell" type="Node3D" parent="." node_paths=PackedStringArray("aim_from")]
+script = ExtResource("7_cleave")
 aim_from = NodePath("../CharacterModel")

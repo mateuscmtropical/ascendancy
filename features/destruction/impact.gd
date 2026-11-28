@@ -45,14 +45,25 @@ func energy_at(point: Vector3) -> float:
 	return energy * maxf(share, 0.0)
 
 
+## Corte em linha: o que ele solta escorrega pelo plano do corte em vez de voar.
+func is_cut() -> bool:
+	return length > 0.0
+
+
 ## Para onde um pedaço em point voa: para fora do golpe, puxado na direção dele e um pouco
-## para cima.
+## para cima. No corte, deitado para fora da linha: o topo cortado desliza de lado.
 func push_direction_at(point: Vector3) -> Vector3:
 	var outward: Vector3 = point - nearest_point_to(point)
 	var push: Vector3
 
+	if is_cut():
+		outward.y = 0.0
+
 	if outward.length_squared() < 0.0001:
 		outward = direction
+
+	if is_cut():
+		return outward.normalized()
 
 	push = outward.normalized() * OUTWARD_SHARE + direction * (1.0 - OUTWARD_SHARE)
 

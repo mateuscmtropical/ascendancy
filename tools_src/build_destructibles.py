@@ -3,10 +3,11 @@
 Outputs, each with a JSON sidecar beside it (sections, substance, piece count, bounds in Godot coords):
   art/destruction/cottage.gltf      half-timbered cottage, 5 x 4 m, gable roof, end chimney
   art/destruction/field_wall.gltf   old free-standing stone wall, 8 x 2.2 x 0.6 m
+  art/destruction/sliced_hill.gltf  grassy hill, 12 x 24 x 6 m, pre-cut flat at 1.4 m; the cap is sliced like bread
 
 Node contract read by the game:
   (scene root made by the Godot importer; the sections are the top-level glTF nodes)
-    Section_<SUBSTANCE>_<Name>         empty at the centre of the section bounds; SUBSTANCE in WOOD, PLASTER, STONE
+    Section_<SUBSTANCE>_<Name>         empty at the centre of the section bounds; SUBSTANCE in WOOD, PLASTER, STONE, EARTH
       Whole_<Name>                     the intact section as one mesh
       Pieces_<Name>                    empty
         Piece_<Name>_<NNN>             closed convex chunk, origin at its bounds centre, sitting where it belongs
@@ -16,10 +17,11 @@ Blender coords: origin on the ground at the footprint centre, front toward -Y (G
 Every section is a list of convex solids (boxes and prisms). Each solid is cut on its own into Voronoi cells:
 a copy of the solid per seed, bisected by the planes halfway to every other seed, each cut capped with the
 "inner" material of the substance. Seeds sit on a jittered grid, which keeps slivers away. UVs are set on the
-solid before the cuts, so the pieces together look exactly like the whole.
+solid before the cuts, so the pieces together look exactly like the whole. The hill is the exception: one convex
+mound cut by planes only (Solid.slicer), so the cut faces are flat and every piece stays convex.
 
 Usage:
-  blender -b --factory-startup -P tools_src/build_destructibles.py [-- --preview <folder>]
+  blender -b --factory-startup -P tools_src/build_destructibles.py [-- [model...] [--preview <folder>]]
 """
 
 import itertools
@@ -51,6 +53,9 @@ MATERIALS = {
     "stone_inner": ("T_TownStone_BaseColor", None, "8E8A92", 1.0, ("world", 1.1)),  # raw stone
     "plaster_inner": ("T_FarmHay_BaseColor", None, "B79C80", 1.0, ("world", 0.7)),  # daub and straw core
     "wood_inner": ("T_WoodTrim_BaseColor", None, "FFF0D8", 0.9, ("band", *WOOD_LIGHT_BAND, 0.6)),  # pale splinters
+    "grass": ("T_Lawn_BaseColor", None, "FFFFFF", 0.9, ("top", 7.0)),  # the town lawn, as BlastGround lays it
+    "earth": ("T_FarmSoil_BaseColor", None, "A8825E", 0.95, ("world", 3.0)),
+    "earth_inner": ("T_FarmSoil_BaseColor", None, "7A5236", 1.0, ("world", 1.6)),  # fresh damp soil
 }
 SLOT = {name: index for index, name in enumerate(MATERIALS)}
 UV_MODES = [entry[4] for entry in MATERIALS.values()]
@@ -58,7 +63,7 @@ AXES = {"xz": (0, 2, 1), "yz": (1, 2, 0), "xy": (0, 1, 2)}  # plane -> axis of a
 
 SEED_JITTER = 0.28  # fraction of a grid cell
 FRACTURE_ATTEMPTS = 8  # the try whose smallest piece is biggest wins
-PIECE_GUIDE = {"cottage": 220, "field_wall": 50}
+PIECE_GUIDE = {"cottage": 220, "field_wall": 50, "sliced_hill": 60}
 
 # cottage measurements
 HALF_WIDTH, HALF_DEPTH = 2.5, 2.0
@@ -77,6 +82,18 @@ PANEL_AREA = 0.45  # plaster m2 per piece
 BRACE = 0.16
 STACK_HALF = 0.33  # chimney stack half width; the roof is notched around it
 
+# sliced hill measurements; the ridge runs along Y (Godot Z), the way the cut travels
+HILL_WIDTH, HILL_LENGTH, HILL_HEIGHT = 12.0, 24.0, 6.0
+CUT_HEIGHT = 1.4
+HILL_RING = 24  # points around each level of the mound
+HILL_LEVELS = [(0.0, 1.0), (0.18, 0.95), (0.38, 0.85), (0.58, 0.7), (0.76, 0.5), (0.9, 0.32), (0.97, 0.16)]  # height share, reach share
+HILL_RIDGE = [(-0.4, 0.6), (-0.22, 0.9), (0.02, 1.0), (0.2, 0.92), (0.38, 0.64)]  # along share, height share
+GRASS_SLOPE = 0.5  # faces with normal.z above this grow grass, steeper ones show earth
+CAP_SLICES, BASE_SLICES = 9, 4
+SLICE_JITTER = 0.2  # fraction of a slice
+SLICE_YAW = 0.08
+RIDGE_SPLIT_REACH = 0.3  # the split of a slice stays this close to the centre line, where the cut runs
+
 
 class Solid(NamedTuple):
     mesh: object  # bmesh in model coords, materials and UVs set
@@ -85,6 +102,7 @@ class Solid(NamedTuple):
     flat: int = -1  # axis that gets a single row of seeds
     settle: Callable = None  # moves a seed onto the solid (sloped slabs)
     convex: bool = True
+    slicer: Callable = None  # cuts the mesh into the pieces itself, instead of the Voronoi cells
 
 
 class Opening(NamedTuple):
@@ -133,6 +151,13 @@ def build_materials() -> list:
 def map_face(face, uv_layer) -> None:
     """Same mapping as build_town_houses.map_uvs, chosen by the material of the face."""
     mode, *parameters = UV_MODES[face.material_index]
+
+    if mode == "top":
+        for loop in face.loops:
+            loop[uv_layer].uv = (loop.vert.co.x / parameters[0], loop.vert.co.y / parameters[0])
+
+        return
+
     u_axis, v_axis = face_frame(face)
     planar = [(loop.vert.co.dot(u_axis), loop.vert.co.dot(v_axis)) for loop in face.loops]
 
@@ -272,6 +297,9 @@ def shatter(solid: Solid, rng: random.Random) -> list:
 
 
 def fracture(solid: Solid, rng: random.Random) -> list:
+    if solid.slicer:
+        return solid.slicer(solid.mesh)
+
     if solid.count <= 1:
         return [solid.mesh.copy()]
 
@@ -507,6 +535,88 @@ def field_wall_sections() -> list:
     return [("STONE", "Wall", [Solid(body, "stone_inner", 36, convex=False)])]
 
 
+# ---------- sliced hill ----------
+
+def hill_mound(rng: random.Random):
+    """Convex mound: the hull of jittered rings of points. Convex, so any plane cut leaves convex pieces."""
+    mesh = bmesh.new()
+    uv_layer = mesh.loops.layers.uv.verify()
+
+    for (height_share, reach_share), step in itertools.product(HILL_LEVELS, range(HILL_RING)):
+        angle = math.tau * (step + rng.uniform(-0.25, 0.25)) / HILL_RING
+        reach = reach_share * rng.uniform(0.92, 1.0)
+        mesh.verts.new((HILL_WIDTH / 2.0 * reach * math.cos(angle), HILL_LENGTH / 2.0 * reach * math.sin(angle), HILL_HEIGHT * height_share * rng.uniform(0.93, 1.0)))
+
+    for along, height_share in HILL_RIDGE:
+        mesh.verts.new((rng.uniform(-0.5, 0.5), HILL_LENGTH * along, HILL_HEIGHT * height_share))
+
+    bmesh.ops.convex_hull(mesh, input=mesh.verts)
+    bmesh.ops.delete(mesh, geom=[vert for vert in mesh.verts if not vert.link_faces], context="VERTS")
+    bmesh.ops.recalc_face_normals(mesh, faces=mesh.faces)
+    mesh.normal_update()
+
+    for face in mesh.faces:
+        face.material_index = SLOT["grass"] if face.normal.z > GRASS_SLOPE else SLOT["earth"]
+        face.smooth = face.normal.z > -0.9  # the slopes shade as one surface; the underside and the cuts stay flat
+        map_face(face, uv_layer)
+
+    return mesh
+
+
+def is_convex(mesh) -> bool:
+    return all((vert.co - face.verts[0].co).dot(face.normal) < 1e-3 for face, vert in itertools.product(mesh.faces, mesh.verts))
+
+
+def bread_slices(mesh, inner: str, count: int, split_reach: float, rng: random.Random) -> list:
+    """Vertical planes across the ridge, a little uneven and turned; split_reach >= 0 also halves each slice along it."""
+    low, high = bounds(mesh)
+    step = (high.y - low.y) / count
+    walls = [(Vector((0.0, low.y + step * (index + rng.uniform(-SLICE_JITTER, SLICE_JITTER)), 0.0)), Vector((rng.uniform(-SLICE_YAW, SLICE_YAW), 1.0, 0.0))) for index in range(1, count)]
+    pieces = []
+
+    for before, after in zip([None] + walls, walls + [None]):
+        slab = mesh.copy()
+        keep = ([after] if after else []) + ([(before[0], -before[1])] if before else [])
+        split = Vector((rng.uniform(-split_reach, split_reach), 0.0, 0.0)) if split_reach >= 0.0 else None
+        halves = [(split, Vector((side, 0.0, 0.0))) for side in (1.0, -1.0)] if split else [None]
+
+        for plane in keep:
+            cut(slab, plane, inner)
+
+        for half in halves:
+            piece = slab.copy()
+
+            if half:
+                cut(piece, half, inner)
+
+            bmesh.ops.recalc_face_normals(piece, faces=piece.faces)
+            piece.normal_update()
+            pieces.append(piece)
+
+    assert all(is_convex(piece) for piece in pieces), "morro: fatia côncava"
+    assert min(piece.calc_volume() for piece in pieces) > 0.5, "morro: fatia fina demais"
+
+    return pieces
+
+
+def sliced_hill_sections() -> list:
+    rng = random.Random(11)
+    base = hill_mound(rng)
+    cap = base.copy()
+    level = Vector((0.0, 0.0, CUT_HEIGHT))
+
+    cut(base, (level, Vector((0.0, 0.0, 1.0))), "earth_inner")
+    cut(cap, (level, Vector((0.0, 0.0, -1.0))), "earth_inner")
+
+    def slicer(count: int, split_reach: float) -> Callable:
+        return lambda mesh: bread_slices(mesh, "earth_inner", count, split_reach, rng)
+
+    return [
+        ("EARTH", "Base", [Solid(base, "earth_inner", slicer=slicer(BASE_SLICES, -1.0))]),
+        ("EARTH", "Cap", [Solid(cap, "earth_inner", slicer=slicer(CAP_SLICES, RIDGE_SPLIT_REACH))]),
+    ]
+
+
 # ---------- export and preview ----------
 
 def render_previews(model: str, folder: Path, low: Vector, high: Vector) -> None:
@@ -597,5 +707,8 @@ if __name__ == "__main__":
     arguments = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     preview_folder = Path(arguments[arguments.index("--preview") + 1]) if "--preview" in arguments else None
 
-    build_model("cottage", cottage_sections(), preview_folder)
-    build_model("field_wall", field_wall_sections(), preview_folder)
+    builders = {"cottage": cottage_sections, "field_wall": field_wall_sections, "sliced_hill": sliced_hill_sections}
+    wanted = [argument for argument in arguments if argument in builders] or list(builders)
+
+    for model in wanted:
+        build_model(model, builders[model](), preview_folder)

@@ -22,5 +22,5 @@ window/stretch/mode="viewport"
 CFG
 trap 'rm -f override.cfg' EXIT
 
-timeout 900 "$GODOT" --path . --screen 0 --audio-driver Dummy res://tests/shots/fps_bench.tscn \
+timeout ${BENCH_TIMEOUT:-900} "$GODOT" --path . --screen 0 --audio-driver Dummy res://tests/shots/fps_bench.tscn \
 	-- "$@" 2>&1 | grep -E "BENCH|ERROR" || true

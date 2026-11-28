@@ -1,0 +1,116 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/shots/cleave_shots.gd" id="1_shots"]
+[ext_resource type="Script" path="res://tests/shots/shot_capture.gd" id="2_capture"]
+[ext_resource type="Script" path="res://features/destruction/blast_ground.gd" id="3_ground"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.361, 0.561, 0.82, 1)
+sky_horizon_color = Color(0.843, 0.933, 0.961, 1)
+ground_horizon_color = Color(0.843, 0.933, 0.961, 1)
+ground_bottom_color = Color(0.486, 0.494, 0.596, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 1.0
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.4
+glow_blend_mode = 1
+glow_hdr_threshold = 1.0
+fog_enabled = true
+fog_light_color = Color(0.843, 0.933, 0.961, 1)
+fog_density = 0.002
+fog_sun_scatter = 0.2
+fog_aerial_perspective = 0.35
+
+[sub_resource type="StandardMaterial3D" id="surround_material"]
+albedo_color = Color(0.3, 0.46, 0.2, 1)
+roughness = 1.0
+
+[sub_resource type="PlaneMesh" id="surround_long_mesh"]
+size = Vector2(400, 176)
+material = SubResource("surround_material")
+
+[sub_resource type="PlaneMesh" id="surround_short_mesh"]
+size = Vector2(176, 48)
+material = SubResource("surround_material")
+
+[sub_resource type="StandardMaterial3D" id="figure_material"]
+albedo_color = Color(0.914, 0.863, 0.776, 1)
+roughness = 1.0
+
+[sub_resource type="CapsuleMesh" id="figure_mesh"]
+radius = 0.28
+height = 1.75
+material = SubResource("figure_material")
+
+[node name="CleaveShots" type="Node3D"]
+script = ExtResource("1_shots")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.698, 0.6, 0)
+light_color = Color(1, 0.902, 0.769, 1)
+light_energy = 1.3
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_max_distance = 80.0
+
+[node name="RimLight" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.35, 3.4, 0)
+light_color = Color(0.749, 0.902, 1, 1)
+light_energy = 0.5
+
+[node name="SurroundNorth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -112)
+mesh = SubResource("surround_long_mesh")
+
+[node name="SurroundSouth" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 112)
+mesh = SubResource("surround_long_mesh")
+
+[node name="SurroundWest" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -112, 0, 0)
+mesh = SubResource("surround_short_mesh")
+
+[node name="SurroundEast" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 112, 0, 0)
+mesh = SubResource("surround_short_mesh")
+
+[node name="Ground" type="Node3D" parent="."]
+script = ExtResource("3_ground")
+
+[node name="Figure" type="MeshInstance3D" parent="."]
+mesh = SubResource("figure_mesh")
+
+[node name="CleaveWide" type="Camera3D" parent="."]
+position = Vector3(21, 9, 19)
+fov = 50.0
+current = true
+
+[node name="CleavePlayer" type="Camera3D" parent="."]
+fov = 65.0
+
+[node name="CleaveSide" type="Camera3D" parent="."]
+position = Vector3(24, 2.4, 2)
+fov = 55.0
+
+[node name="CleaveFront" type="Camera3D" parent="."]
+position = Vector3(5, 3.2, 23)
+fov = 55.0
+
+[node name="CleaveTop" type="Camera3D" parent="."]
+position = Vector3(0, 38, 0.5)
+fov = 50.0
+
+[node name="ShotCapture" type="Node" parent="."]
+script = ExtResource("2_capture")

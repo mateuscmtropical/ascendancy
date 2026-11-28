@@ -98,7 +98,10 @@ var _rider: MountRider
 @onready var _mount_collision: CollisionShape3D = $MountCollision
 @onready var _footsteps: FootstepPlayer = $Footsteps
 @onready var _swings: AudioStreamPlayer3D = $Swings
-@onready var _spell: ExplosionSpell = $ExplosionSpell
+## Magias de carga por ação: segurar carrega, soltar dispara.
+@onready var _spell_by_action: Dictionary = {
+	ExplosionSpell.CAST_ACTION: $ExplosionSpell, CleaveSpell.CAST_ACTION: $CleaveSpell
+}
 
 
 func _ready() -> void:
@@ -335,14 +338,12 @@ func _request_attack_from(event: InputEvent) -> void:
 func _cast_from(event: InputEvent) -> void:
 	var can_cast: bool = not is_flying and not is_riding()
 
-	if event.is_echo():
-		return
+	for action in _spell_by_action:
+		if can_cast and event.is_action_pressed(action):
+			_spell_by_action[action].begin_charge()
 
-	if can_cast and event.is_action_pressed(ExplosionSpell.CAST_ACTION):
-		_spell.begin_charge()
-
-	if event.is_action_released(ExplosionSpell.CAST_ACTION):
-		_spell.release()
+		if event.is_action_released(action):
+			_spell_by_action[action].release()
 
 
 ## O corpo entra no clipe do golpe em _apply_stance; o soco já arma o tronco aqui, por cima do

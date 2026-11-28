@@ -1,0 +1,127 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/destruction/cleave_effect.gd" id="1_effect"]
+[ext_resource type="Shader" path="res://art/shaders/cleave_beam.gdshader" id="2_beam"]
+[ext_resource type="Shader" path="res://art/shaders/cleave_crescent.gdshader" id="3_crescent"]
+[ext_resource type="Shader" path="res://art/shaders/cleave_flash.gdshader" id="4_flash"]
+[ext_resource type="Shader" path="res://art/shaders/smoke.gdshader" id="5_smoke"]
+
+[sub_resource type="FastNoiseLite" id="dust_noise"]
+frequency = 0.012
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="dust_noise_texture"]
+width = 256
+height = 256
+seamless = true
+noise = SubResource("dust_noise")
+
+[sub_resource type="ShaderMaterial" id="line_material"]
+shader = ExtResource("2_beam")
+
+[sub_resource type="ShaderMaterial" id="edge_material"]
+shader = ExtResource("2_beam")
+shader_parameter/taper = 1.0
+shader_parameter/energy = 3.6
+
+[sub_resource type="ShaderMaterial" id="crescent_material"]
+shader = ExtResource("3_crescent")
+
+[sub_resource type="ShaderMaterial" id="flash_material"]
+shader = ExtResource("4_flash")
+
+[sub_resource type="ShaderMaterial" id="dust_material"]
+shader = ExtResource("5_smoke")
+shader_parameter/noise_texture = SubResource("dust_noise_texture")
+shader_parameter/smoke_color = Color(0.66, 0.6, 0.5, 1)
+shader_parameter/ember_color = Color(0.75, 0.9, 1, 1)
+shader_parameter/density = 0.65
+
+[sub_resource type="QuadMesh" id="line_mesh"]
+material = SubResource("line_material")
+
+[sub_resource type="QuadMesh" id="edge_mesh"]
+material = SubResource("edge_material")
+
+[sub_resource type="PlaneMesh" id="crescent_mesh"]
+material = SubResource("crescent_material")
+size = Vector2(1, 0.5)
+
+[sub_resource type="QuadMesh" id="flash_mesh"]
+material = SubResource("flash_material")
+size = Vector2(5, 5)
+
+[sub_resource type="QuadMesh" id="dust_quad"]
+material = SubResource("dust_material")
+
+[sub_resource type="Curve" id="dust_scale_curve"]
+_data = [Vector2(0, 0.35), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="dust_scale"]
+curve = SubResource("dust_scale_curve")
+
+[sub_resource type="Gradient" id="dust_fade_gradient"]
+offsets = PackedFloat32Array(0, 0.1, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.9, 1, 1, 1, 0.55, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="dust_fade"]
+gradient = SubResource("dust_fade_gradient")
+
+[sub_resource type="ParticleProcessMaterial" id="dust_process"]
+emission_shape = 3
+emission_box_extents = Vector3(0.35, 0.05, 0.4)
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 75.0
+initial_velocity_min = 0.4
+initial_velocity_max = 1.6
+gravity = Vector3(0, 0.3, 0)
+damping_min = 0.8
+damping_max = 1.6
+scale_min = 0.9
+scale_max = 1.9
+scale_curve = SubResource("dust_scale")
+color_ramp = SubResource("dust_fade")
+
+[node name="CleaveEffect" type="Node3D"]
+visible = false
+script = ExtResource("1_effect")
+
+[node name="Flash" type="MeshInstance3D" parent="."]
+cast_shadow = 0
+mesh = SubResource("flash_mesh")
+
+[node name="Light" type="OmniLight3D" parent="."]
+light_color = Color(0.7, 0.92, 1, 1)
+light_energy = 0.0
+omni_range = 14.0
+
+[node name="CutLine" type="MeshInstance3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, 0)
+cast_shadow = 0
+extra_cull_margin = 2.0
+mesh = SubResource("line_mesh")
+
+[node name="Slash" type="Node3D" parent="."]
+
+[node name="Crescent" type="MeshInstance3D" parent="Slash"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25)
+cast_shadow = 0
+mesh = SubResource("crescent_mesh")
+
+[node name="Edge" type="MeshInstance3D" parent="Slash"]
+transform = Transform3D(0.55, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.04)
+cast_shadow = 0
+extra_cull_margin = 2.0
+mesh = SubResource("edge_mesh")
+
+[node name="Dust" type="GPUParticles3D" parent="Slash"]
+emitting = false
+amount = 220
+lifetime = 1.1
+visibility_aabb = AABB(-6, -3, -40, 12, 8, 80)
+local_coords = false
+process_material = SubResource("dust_process")
+draw_pass_1 = SubResource("dust_quad")

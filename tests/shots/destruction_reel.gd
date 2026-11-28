@@ -30,6 +30,9 @@ const REEL_ARGUMENT: String = "--reel="
 const GATE_CAST_SPOT: Array = ["RuinsField/Gate", Vector3(0, 0, 11.0), Vector3(0, 0, 0)]
 const TEMPLE_CAST_SPOT: Array = ["RuinsField/Temple", Vector3(0, 0, 12.0), Vector3(0, 0, 0)]
 const COTTAGE_CAST_SPOT: Array = ["RuinsField/Cottage", Vector3(0, 0, 11.5), Vector3(0, 0, 0)]
+const WALL_CUT_SPOT: Array = ["RuinsField/FieldWall", Vector3(1.5, 0, 5.0), Vector3(1.5, 0, 0)]
+const HILL_CUT_SPOT: Array = ["RuinsField/SlicedHill", Vector3(0, 0, 13.5), Vector3(0, 0, 0)]
+const COTTAGE_CUT_SPOT: Array = ["RuinsField/Cottage", Vector3(0, 0, 9.0), Vector3(0, 0, 0)]
 ## Impactos de teste: nó de referência, ponto (no espaço dele), energia e raio.
 const FIELD_TIMELINE: Array[Dictionary] = [
 	{"at": 0.0, "cue": Cue.CAMERA, "value": "CratesCam"},
@@ -134,21 +137,40 @@ const SPELL_TIMELINE: Array[Dictionary] = [
 	{"at": 0.0, "cue": Cue.CAMERA, "value": "GateSpellCam"},
 	{"at": 0.0, "cue": Cue.PLACE, "value": GATE_CAST_SPOT},
 	{"at": 0.0, "cue": Cue.CAPTION, "value": "Explosão, carga curta (0,6 s)"},
-	{"at": 0.8, "cue": Cue.CHARGE, "value": null},
-	{"at": 1.4, "cue": Cue.RELEASE, "value": null},
+	{"at": 0.8, "cue": Cue.CHARGE, "value": "ExplosionSpell"},
+	{"at": 1.4, "cue": Cue.RELEASE, "value": "ExplosionSpell"},
 	{"at": 6.0, "cue": Cue.CAMERA, "value": "TempleSpellCam"},
 	{"at": 6.0, "cue": Cue.PLACE, "value": TEMPLE_CAST_SPOT},
 	{"at": 6.0, "cue": Cue.CAPTION, "value": "Carga média (1,5 s)"},
-	{"at": 6.6, "cue": Cue.CHARGE, "value": null},
-	{"at": 8.1, "cue": Cue.RELEASE, "value": null},
+	{"at": 6.6, "cue": Cue.CHARGE, "value": "ExplosionSpell"},
+	{"at": 8.1, "cue": Cue.RELEASE, "value": "ExplosionSpell"},
 	{"at": 14.0, "cue": Cue.CAMERA, "value": "CottageSpellCam"},
 	{"at": 14.0, "cue": Cue.PLACE, "value": COTTAGE_CAST_SPOT},
 	{"at": 14.0, "cue": Cue.CAPTION, "value": "Carga cheia (2,5 s)"},
-	{"at": 14.6, "cue": Cue.CHARGE, "value": null},
-	{"at": 17.1, "cue": Cue.RELEASE, "value": null},
+	{"at": 14.6, "cue": Cue.CHARGE, "value": "ExplosionSpell"},
+	{"at": 17.1, "cue": Cue.RELEASE, "value": "ExplosionSpell"},
 	{"at": 26.0, "cue": Cue.QUIT, "value": null},
 ]
+const CLEAVE_TIMELINE: Array[Dictionary] = [
+	{"at": 0.0, "cue": Cue.CAMERA, "value": "WallCleaveCam"},
+	{"at": 0.0, "cue": Cue.PLACE, "value": WALL_CUT_SPOT},
+	{"at": 0.0, "cue": Cue.CAPTION, "value": "Corte, carga curta (0,4 s): muro de pedra"},
+	{"at": 0.8, "cue": Cue.CHARGE, "value": "CleaveSpell"},
+	{"at": 1.2, "cue": Cue.RELEASE, "value": "CleaveSpell"},
+	{"at": 5.0, "cue": Cue.CAMERA, "value": "HillCleaveCam"},
+	{"at": 5.0, "cue": Cue.PLACE, "value": HILL_CUT_SPOT},
+	{"at": 5.0, "cue": Cue.CAPTION, "value": "Carga cheia (1,5 s): o morro"},
+	{"at": 5.6, "cue": Cue.CHARGE, "value": "CleaveSpell"},
+	{"at": 7.1, "cue": Cue.RELEASE, "value": "CleaveSpell"},
+	{"at": 13.0, "cue": Cue.CAMERA, "value": "CottageCleaveCam"},
+	{"at": 13.0, "cue": Cue.PLACE, "value": COTTAGE_CUT_SPOT},
+	{"at": 13.0, "cue": Cue.CAPTION, "value": "Carga média (0,9 s): o chalé"},
+	{"at": 13.6, "cue": Cue.CHARGE, "value": "CleaveSpell"},
+	{"at": 14.5, "cue": Cue.RELEASE, "value": "CleaveSpell"},
+	{"at": 21.0, "cue": Cue.QUIT, "value": null},
+]
 const TIMELINE_BY_REEL: Dictionary[String, Array] = {
+	"cleave": CLEAVE_TIMELINE,
 	"spell": SPELL_TIMELINE,
 	"field": FIELD_TIMELINE,
 	"house": HOUSE_TIMELINE,
@@ -166,6 +188,9 @@ const CAMERA_TARGETS: Dictionary[String, String] = {
 	"GateSpellCam": "RuinsField/Gate",
 	"TempleSpellCam": "RuinsField/Temple",
 	"CottageSpellCam": "RuinsField/Cottage",
+	"WallCleaveCam": "RuinsField/FieldWall",
+	"HillCleaveCam": "RuinsField/SlicedHill",
+	"CottageCleaveCam": "RuinsField/Cottage",
 }
 ## Onde cada câmera mira, no espaço do nó de referência dela.
 const CAMERA_AIMS: Dictionary[String, Vector3] = {
@@ -181,6 +206,9 @@ const CAMERA_AIMS: Dictionary[String, Vector3] = {
 	"GateSpellCam": Vector3(0, 1.5, 4.5),
 	"TempleSpellCam": Vector3(0, 1.8, 5.0),
 	"CottageSpellCam": Vector3(0, 2.0, 5.0),
+	"WallCleaveCam": Vector3(1.0, 1.2, 1.5),
+	"HillCleaveCam": Vector3(0, 2.0, 2.0),
+	"CottageCleaveCam": Vector3(0, 1.6, 2.0),
 }
 ## Câmeras postas pelo script, no espaço do nó de referência (as outras ficam onde a cena põe).
 const CAMERA_PLACES: Dictionary[String, Vector3] = {
@@ -190,6 +218,9 @@ const CAMERA_PLACES: Dictionary[String, Vector3] = {
 	"GateSpellCam": Vector3(13.0, 4.0, 9.0),
 	"TempleSpellCam": Vector3(15.0, 5.0, 10.0),
 	"CottageSpellCam": Vector3(15.0, 5.0, 9.0),
+	"WallCleaveCam": Vector3(-6.0, 3.0, 8.0),
+	"HillCleaveCam": Vector3(17.0, 6.0, 9.0),
+	"CottageCleaveCam": Vector3(9.0, 4.0, 10.0),
 }
 
 var _seconds: float = -LEAD_IN_SECONDS
@@ -212,7 +243,6 @@ var _cue_players: Dictionary[Cue, Callable] = {
 @onready var _model: CharacterModel = $Player/CharacterModel
 @onready var _camera_yaw: Node3D = $Player/CameraYaw
 @onready var _caption: Label = $Interface/Caption
-@onready var _spell: ExplosionSpell = $Player/ExplosionSpell
 
 
 func _ready() -> void:
@@ -282,12 +312,13 @@ func _blast(blast: Array) -> void:
 	Destruction.strike(impact, self)
 
 
-func _charge_spell(_value: Variant) -> void:
-	_spell.begin_charge()
+## Começa a carregar a magia do nó spell_name do jogador (ExplosionSpell, CleaveSpell).
+func _charge_spell(spell_name: String) -> void:
+	_player.get_node(spell_name).begin_charge()
 
 
-func _release_spell(_value: Variant) -> void:
-	_spell.release()
+func _release_spell(spell_name: String) -> void:
+	_player.get_node(spell_name).release()
 
 
 func _show_caption(text: String) -> void:
