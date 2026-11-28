@@ -96,3 +96,11 @@ fov = 50.0
 
 [node name="ShotCapture" type="Node" parent="."]
 script = ExtResource("2_capture")
+
+[node name="CottageClose" type="Camera3D" parent="."]
+position = Vector3(17.5, 2.4, 3)
+fov = 55.0
+
+[node name="WallClose" type="Camera3D" parent="."]
+position = Vector3(-6.5, 1.8, 0.5)
+fov = 55.0

@@ -12,6 +12,8 @@ const CAMERA_TARGETS: Dictionary[String, Vector3] = {
 	"CratesClose": Vector3(7.6, 0.7, 5.5),
 	"GateClose": Vector3(-12, 1.3, 5),
 	"FenceClose": Vector3(0, 0.7, 12),
+	"CottageClose": Vector3(13, 1.8, -6),
+	"WallClose": Vector3(-13, 1.0, -5),
 }
 
 var _blasts: Array[PackedFloat64Array] = []
