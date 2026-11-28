@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://features/destruction/fractured_building.gd" id="4_fractured"]
 [ext_resource type="PackedScene" path="res://art/destruction/cottage.gltf" id="5_cottage"]
 [ext_resource type="PackedScene" path="res://art/destruction/field_wall.gltf" id="6_wall"]
+[ext_resource type="PackedScene" path="res://art/destruction/sliced_hill.gltf" id="7_hill"]
 
 [node name="RuinsField" type="Node3D"]
 
@@ -59,3 +60,12 @@ model = ExtResource("5_cottage")
 transform = Transform3D(0.5, 0, 0.866025, 0, 1, 0, -0.866025, 0, 0.5, -13, 0, -5)
 script = ExtResource("4_fractured")
 model = ExtResource("6_wall")
+
+[node name="SlicedHill" type="Node3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0, 0, -18)
+script = ExtResource("4_fractured")
+model = ExtResource("7_hill")
+toughness_by_section = Dictionary[String, float]({
+"Base": 50.0
+})
+linked_sections = PackedStringArray("Cap")

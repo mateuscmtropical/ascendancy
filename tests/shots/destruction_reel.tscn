@@ -105,6 +105,15 @@ fov = 50.0
 [node name="GateSpellCam" type="Camera3D" parent="."]
 fov = 55.0
 
+[node name="WallCleaveCam" type="Camera3D" parent="."]
+fov = 55.0
+
+[node name="HillCleaveCam" type="Camera3D" parent="."]
+fov = 55.0
+
+[node name="CottageCleaveCam" type="Camera3D" parent="."]
+fov = 55.0
+
 [node name="TempleSpellCam" type="Camera3D" parent="."]
 fov = 55.0
 

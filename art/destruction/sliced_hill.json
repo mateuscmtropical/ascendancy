@@ -1,0 +1,63 @@
+{
+ "aabb_min": [
+  -5.985,
+  0.0,
+  -11.629
+ ],
+ "aabb_max": [
+  5.789,
+  6.0,
+  11.399
+ ],
+ "pieces": 22,
+ "triangles_whole": 340,
+ "triangles_pieces": 1240,
+ "sections": [
+  {
+   "node": "Section_EARTH_Base",
+   "name": "Base",
+   "substance": "EARTH",
+   "pieces": 4,
+   "origin": [
+    -0.098,
+    0.7,
+    -0.115
+   ],
+   "aabb_min": [
+    -5.985,
+    0.0,
+    -11.629
+   ],
+   "aabb_max": [
+    5.789,
+    1.4,
+    11.399
+   ],
+   "triangles_whole": 154,
+   "triangles_pieces": 342
+  },
+  {
+   "node": "Section_EARTH_Cap",
+   "name": "Cap",
+   "substance": "EARTH",
+   "pieces": 18,
+   "origin": [
+    -0.024,
+    3.7,
+    -0.007
+   ],
+   "aabb_min": [
+    -5.39,
+    1.4,
+    -10.714
+   ],
+   "aabb_max": [
+    5.341,
+    6.0,
+    10.699
+   ],
+   "triangles_whole": 186,
+   "triangles_pieces": 898
+  }
+ ]
+}

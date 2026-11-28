@@ -324,7 +324,8 @@ DESTRUCTION_MAKERS = {"hit_wood": hit_wood, "hit_stone": hit_stone, "break_wood"
 
 
 BOOM_VARIANTS = 3
-SEED_BY_SPELL = {"explosion_charge": 800, "explosion_boom": 810, "fire_loop": 820}
+SEED_BY_SPELL = {"explosion_charge": 800, "explosion_boom": 810, "fire_loop": 820, "cleave_slash": 830, "cleave_charge": 840}
+SLASH_VARIANTS = 3
 
 
 def explosion_charge() -> np.ndarray:
@@ -369,6 +370,36 @@ def fire_loop() -> np.ndarray:
         add_wrapped(crackles, pop * generator.uniform(0.2, 1.0), int(generator.uniform(0, length)))
 
     return normalized(0.5 * roar + 0.6 * crackles, 0.7)
+
+
+def cleave_charge() -> np.ndarray:
+    """Blade of air gathering for the line cut (2 s, stopped by the game at release): a thin metallic whine rising
+    two octaves over a soft wind that tightens, louder all the way."""
+    generator = np.random.default_rng(SEED_BY_SPELL["cleave_charge"])
+    seconds = 2.0
+    time = timeline(seconds)
+    progress = time / seconds
+    whine = sweep(440.0, 1760.0, seconds) + 0.4 * sweep(660.0, 2640.0, seconds)
+    wind = shaped_noise(len(time), band(600.0, 4000.0, 2.0), generator)
+    swell = 0.1 + 0.9 * progress ** 1.5
+
+    return normalized(fade_edges((0.5 * whine * progress + 0.6 * wind) * swell, 0.1, 0.01))
+
+
+def cleave_slash(variant: int) -> np.ndarray:
+    """The cut: a ringing metallic shing over a fast tearing whoosh, then earth splitting and a low thud as the cut
+    side drops; the game plays it louder and lower the stronger the spell."""
+    generator = np.random.default_rng(SEED_BY_SPELL["cleave_slash"] + variant)
+    length = int(2.6 * RATE)
+    seconds = length / RATE
+    ring_hz = generator.uniform(2300.0, 2700.0)
+    ring = (sweep(ring_hz, ring_hz * 0.92, seconds) + 0.5 * sweep(ring_hz * 1.51, ring_hz * 1.4, seconds)) * decay(seconds, 0.35)
+    whoosh = burst(length, 800.0, 7000.0, 0.12, generator)
+    split = burst(length, 120.0, 1800.0, 0.3, generator, int(0.18 * RATE))
+    thud = sweep(70.0, 35.0, seconds) * decay(seconds, 0.4)
+    rubble = scattered(length, 14, 0.4, 2.0, stone_clack, generator)
+
+    return normalized(fade_edges(0.55 * ring + 0.8 * whoosh + 0.6 * split + 0.7 * delayed(length, thud, int(0.25 * RATE)) + 0.3 * rubble, 0.001, 0.3))
 
 
 def church_bell() -> np.ndarray:
@@ -502,6 +533,8 @@ SOUNDS = {
     **{f"{kind}_{variant}": (lambda kind=kind, variant=variant: destruction(kind, variant)) for kind in SEED_BY_DESTRUCTION for variant in range(1, DESTRUCTION_VARIANTS + 1)},
     **{f"explosion_boom_{variant}": (lambda variant=variant: explosion_boom(variant)) for variant in range(1, BOOM_VARIANTS + 1)},
     "explosion_charge": explosion_charge,
+    **{f"cleave_slash_{variant}": (lambda variant=variant: cleave_slash(variant)) for variant in range(1, SLASH_VARIANTS + 1)},
+    "cleave_charge": cleave_charge,
     "fire_loop": fire_loop,
     "church_bell": church_bell,
     "ui_click": interface_click,
@@ -520,6 +553,7 @@ RANDOMIZERS = {
     **{f"swing_{attack}": (SWING_VARIANTS, 1.1, 2.0) for attack in SWING_BY_ATTACK},
     **{kind: (DESTRUCTION_VARIANTS, 1.08, 2.0) for kind in SEED_BY_DESTRUCTION},
     "explosion_boom": (BOOM_VARIANTS, 1.04, 1.0),
+    "cleave_slash": (SLASH_VARIANTS, 1.05, 1.0),
 }
 
 

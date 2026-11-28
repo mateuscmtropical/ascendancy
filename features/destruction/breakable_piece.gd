@@ -16,6 +16,10 @@ const LAUNCH_SPEED_PER_ROOT_ENERGY: float = 0.7
 ## Quem quebra sempre sai com pelo menos isso: peça que só se solta parece descolar, não quebrar.
 const MIN_LAUNCH_SPEED: float = 2.5
 const MAX_LAUNCH_SPEED: float = 11.0
+## O que um corte solta escorrega no plano dele, sem girar; mais devagar atola no atrito.
+const MAX_SLIDE_SPEED: float = 7.0
+## Face recém-cortada escorrega: o que o corte solta perde quase todo o atrito.
+const SLIDE_FRICTION: float = 0.2
 ## Giro de quem sai voando, em rad/s por m/s de saída.
 const SPIN_PER_SPEED: float = 0.6
 ## Entulho solto que leva outro golpe: empurrado com esta fração da energia que chega.
@@ -172,30 +176,37 @@ func take_impact(impact: Impact) -> bool:
 	var center: Vector3 = global_transform * _local_bounds.get_center()
 	var push: Vector3 = impact.push_direction_at(center)
 
-	if is_loose:
+	# A lâmina de um corte atravessa o entulho já solto: empurrar de novo a cada trecho do
+	# corte somaria impulsos e o topo cortado voaria em vez de escorregar.
+	if is_loose and not impact.is_cut():
 		_launch(push, energy * LOOSE_PUSH_SHARE)
 
+	if is_loose:
 		return false
 
 	if energy <= resistance():
 		return false
 
 	break_free()
-	_launch(push, energy - resistance())
+	_launch(push, energy - resistance(), impact.is_cut())
 
 	for piece in linked_pieces:
-		piece.burst_along(push, energy - resistance())
+		piece.burst_along(impact, energy - resistance())
 
 	return true
 
 
-## Sai junto de uma peça pregada nela que quebrou, empurrada para o mesmo lado.
-func burst_along(push: Vector3, spare_energy: float) -> void:
+## Sai junto de uma peça pregada nela que quebrou, com a mesma sobra de energia, empurrada
+## para fora do golpe a partir de onde ela está (as metades de um topo cortado vão cada uma
+## para o seu lado).
+func burst_along(impact: Impact, spare_energy: float) -> void:
+	var center: Vector3 = global_transform * _local_bounds.get_center()
+
 	if is_loose:
 		return
 
 	break_free()
-	_launch(push, spare_energy)
+	_launch(impact.push_direction_at(center), spare_energy, impact.is_cut())
 
 
 ## Desprende o pedaço sem empurrão: a física decide se cai ou fica equilibrado.
@@ -286,10 +297,11 @@ func fade_out() -> void:
 	tween.chain().tween_callback(queue_free)
 
 
-func _launch(direction: Vector3, spare_energy: float) -> void:
+func _launch(direction: Vector3, spare_energy: float, slides: bool = false) -> void:
 	var root_energy: float = sqrt(maxf(spare_energy, 0.0))
 	var speed: float = minf(
-		MIN_LAUNCH_SPEED + root_energy * LAUNCH_SPEED_PER_ROOT_ENERGY, MAX_LAUNCH_SPEED
+		MIN_LAUNCH_SPEED + root_energy * LAUNCH_SPEED_PER_ROOT_ENERGY,
+		MAX_SLIDE_SPEED if slides else MAX_LAUNCH_SPEED
 	)
 	# Tomba para a frente, para onde vai: porta arrombada cai para dentro, não volta no batente.
 	var spin_axis: Vector3 = Vector3.UP.cross(direction)
@@ -299,7 +311,12 @@ func _launch(direction: Vector3, spare_energy: float) -> void:
 
 	sleeping = false
 	apply_central_impulse(direction * speed * mass)
-	angular_velocity += spin_axis.normalized() * speed * SPIN_PER_SPEED
+
+	if slides:
+		physics_material_override = PhysicsMaterial.new()
+		physics_material_override.friction = SLIDE_FRICTION
+	else:
+		angular_velocity += spin_axis.normalized() * speed * SPIN_PER_SPEED
 
 
 func _on_body_entered(_body: Node) -> void:
