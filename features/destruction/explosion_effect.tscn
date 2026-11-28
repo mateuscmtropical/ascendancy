@@ -1,0 +1,473 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/destruction/explosion_effect.gd" id="1_effect"]
+[ext_resource type="Shader" path="res://art/shaders/flame.gdshader" id="2_flame"]
+[ext_resource type="Shader" path="res://art/shaders/smoke.gdshader" id="3_smoke"]
+[ext_resource type="Shader" path="res://art/shaders/ember_spark.gdshader" id="4_spark"]
+
+[sub_resource type="Shader" id="rune_shader"]
+code = "shader_type spatial;
+render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabled;
+// Círculo de runas da carga: anéis, uma faixa de glifos sorteados por célula e um polígono
+// estrelado no meio, revelados do centro para fora por progress.
+
+uniform vec3 rune_color : source_color = vec3(1.0, 0.42, 0.1);
+uniform vec3 core_color : source_color = vec3(1.0, 0.92, 0.62);
+uniform float energy = 2.2;
+uniform float glyph_count = 20.0;
+uniform float star_sides = 3.0;
+uniform float glyph_seed = 0.0;
+instance uniform float progress = 1.0;
+instance uniform float fade = 1.0;
+
+float hash(float value) {
+	return fract(sin(value * 127.1 + glyph_seed * 31.7) * 43758.5453);
+}
+
+float ring(float radius, float at, float width) {
+	return 1.0 - smoothstep(width * 0.4, width, abs(radius - at));
+}
+
+float stroke(vec2 point, vec2 from, vec2 to, float width) {
+	vec2 along = to - from;
+	float share = clamp(dot(point - from, along) / dot(along, along), 0.0, 1.0);
+	return 1.0 - smoothstep(width * 0.5, width, length(point - from - along * share));
+}
+
+float glyph(vec2 cell, float id) {
+	float pick = hash(id);
+	float width = 0.12;
+	float ink = stroke(cell, vec2(0.5, 0.12), vec2(0.5, 0.88), width);
+
+	ink = max(ink, step(0.5, fract(pick * 2.0)) * stroke(cell, vec2(0.5, 0.88), vec2(0.82, 0.6), width));
+	ink = max(ink, step(0.5, fract(pick * 4.0)) * stroke(cell, vec2(0.5, 0.5), vec2(0.18, 0.74), width));
+	ink = max(ink, step(0.5, fract(pick * 8.0)) * stroke(cell, vec2(0.5, 0.36), vec2(0.82, 0.12), width));
+	ink = max(ink, step(0.5, fract(pick * 16.0)) * stroke(cell, vec2(0.18, 0.3), vec2(0.5, 0.12), width));
+	return ink;
+}
+
+float polygon(vec2 point, float turn, float inner_radius, float width) {
+	float sector = TAU / star_sides;
+	float angle = atan(point.y, point.x) + turn;
+	float to_side = cos(floor(0.5 + angle / sector) * sector - angle) * length(point);
+	return ring(to_side, inner_radius, width);
+}
+
+void fragment() {
+	vec2 point = (UV - 0.5) * 2.0;
+	float radius = length(point);
+	float around = (atan(point.y, point.x) / TAU + 0.5) * glyph_count;
+	float band = step(0.75, radius) * step(radius, 0.87);
+	float ink = ring(radius, 0.96, 0.022) + ring(radius, 0.9, 0.012) + ring(radius, 0.72, 0.014);
+	float inside = step(radius, 0.72);
+	float reveal = smoothstep(radius - 0.2, radius, progress * 1.25);
+
+	ink += band * glyph(vec2(fract(around), (radius - 0.75) / 0.12), floor(around));
+	ink += inside * (polygon(point, 0.0, 0.36, 0.014) + polygon(point, PI / star_sides, 0.36, 0.014));
+	ink += ring(radius, 0.3, 0.012) + ring(radius, 0.08, 0.025);
+	ink = clamp(ink, 0.0, 1.0);
+	ALBEDO = mix(rune_color, core_color, ink * 0.25) * energy * (0.6 + 0.4 * progress);
+	ALPHA = ink * reveal * fade * step(radius, 1.0);
+}
+"
+
+[sub_resource type="Shader" id="flash_shader"]
+code = "shader_type spatial;
+render_mode blend_mix, unshaded, cull_disabled, depth_draw_never, depth_test_disabled, shadows_disabled;
+// Clarão da explosão: disco branco virado para a câmera com raios, por cima de tudo.
+
+uniform float ray_count = 7.0;
+instance uniform float strength = 0.0;
+
+void vertex() {
+	mat4 facing_camera = mat4(
+			normalize(INV_VIEW_MATRIX[0]) * length(MODEL_MATRIX[0]),
+			normalize(INV_VIEW_MATRIX[1]) * length(MODEL_MATRIX[1]),
+			normalize(INV_VIEW_MATRIX[2]) * length(MODEL_MATRIX[2]),
+			MODEL_MATRIX[3]);
+
+	MODELVIEW_MATRIX = VIEW_MATRIX * facing_camera;
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
+
+void fragment() {
+	vec2 point = (UV - 0.5) * 2.0;
+	float radius = length(point);
+	float angle = atan(point.y, point.x);
+	float core = 1.0 - smoothstep(0.0, 0.6, radius);
+	float rays = abs(sin(angle * ray_count + 1.0) * sin(angle * (ray_count * 2.0 - 1.0) + 2.3));
+
+	rays = smoothstep(0.2, 0.75, rays) * (1.0 - smoothstep(0.15, 1.0, radius));
+	ALBEDO = vec3(1.0, 0.98, 0.92) * 1.6;
+	ALPHA = clamp(core * 1.6 + rays * 0.9, 0.0, 1.0) * strength;
+}
+"
+
+[sub_resource type="Shader" id="fireball_shader"]
+code = "shader_type spatial;
+render_mode unshaded, cull_back, shadows_disabled;
+// Bola de fogo: esfera encaroçada por ruído, cor em faixas pela rampa de calor; life (0 a 1)
+// esfria as faixas, rói a casca e escurece o que sobra em fumaça.
+
+uniform sampler2D noise_texture : repeat_enable, filter_linear_mipmap;
+uniform sampler2D heat_ramp : repeat_disable, source_color;
+uniform vec3 smoke_color : source_color = vec3(0.1, 0.085, 0.09);
+uniform float energy = 1.25;
+uniform float bands = 5.0;
+instance uniform float life = 0.0;
+
+void vertex() {
+	float lump = textureLod(noise_texture, UV * vec2(2.0, 1.0) + vec2(0.0, -TIME * 0.12), 0.0).r;
+
+	VERTEX += NORMAL * (lump - 0.5) * 0.3;
+}
+
+void fragment() {
+	vec2 noise_uv = UV * vec2(3.0, 1.5) + vec2(TIME * 0.04, -TIME * 0.25);
+	float coarse = texture(noise_texture, noise_uv).r;
+	float fine = texture(noise_texture, noise_uv * 2.7 + vec2(0.3, -TIME * 0.2)).r;
+	float facing = clamp(dot(NORMAL, VIEW), 0.0, 1.0);
+	float heat = clamp(coarse * 0.8 + fine * 0.3 + facing * 0.45 - life * 1.15, 0.0, 1.0);
+	vec3 fire = texture(heat_ramp, vec2(floor(heat * bands) / bands + 0.5 / bands, 0.5)).rgb * energy;
+
+	if (coarse * 0.7 + fine * 0.3 + facing * 0.2 < smoothstep(0.3, 1.0, life) * 1.25) {
+		discard;
+	}
+
+	ALBEDO = mix(fire, smoke_color, smoothstep(0.45, 0.95, life) * (1.0 - heat));
+}
+"
+
+[sub_resource type="Shader" id="shockwave_shader"]
+code = "shader_type spatial;
+render_mode blend_add, unshaded, cull_disabled, depth_draw_never, shadows_disabled;
+// Onda de choque rente ao chão: anel fino com rastro para dentro.
+
+uniform vec3 wave_color : source_color = vec3(1.0, 0.85, 0.6);
+uniform float energy = 2.5;
+instance uniform float fade = 0.0;
+
+void fragment() {
+	float radius = length((UV - 0.5) * 2.0);
+	float front = 1.0 - smoothstep(0.0, 0.05, abs(radius - 0.93));
+	float trail = smoothstep(0.55, 0.93, radius) * step(radius, 0.93) * 0.35;
+
+	ALBEDO = wave_color * energy;
+	ALPHA = (front + trail) * fade;
+}
+"
+
+[sub_resource type="FastNoiseLite" id="fire_noise"]
+frequency = 0.012
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="fire_noise_texture"]
+width = 256
+height = 256
+seamless = true
+noise = SubResource("fire_noise")
+
+[sub_resource type="Gradient" id="heat_gradient"]
+offsets = PackedFloat32Array(0, 0.22, 0.55, 0.85, 1)
+colors = PackedColorArray(0.1, 0.004, 0, 1, 0.6, 0.04, 0.004, 1, 1, 0.22, 0.015, 1, 1, 0.5, 0.07, 1, 1, 0.85, 0.42, 1)
+
+[sub_resource type="GradientTexture1D" id="heat_ramp"]
+gradient = SubResource("heat_gradient")
+
+[sub_resource type="ShaderMaterial" id="rune_material"]
+shader = SubResource("rune_shader")
+
+[sub_resource type="ShaderMaterial" id="rune_small_material"]
+shader = SubResource("rune_shader")
+shader_parameter/glyph_count = 12.0
+shader_parameter/star_sides = 4.0
+shader_parameter/glyph_seed = 3.0
+
+[sub_resource type="ShaderMaterial" id="flash_material"]
+shader = SubResource("flash_shader")
+
+[sub_resource type="ShaderMaterial" id="fireball_material"]
+shader = SubResource("fireball_shader")
+shader_parameter/noise_texture = SubResource("fire_noise_texture")
+shader_parameter/heat_ramp = SubResource("heat_ramp")
+
+[sub_resource type="ShaderMaterial" id="shockwave_material"]
+shader = SubResource("shockwave_shader")
+
+[sub_resource type="ShaderMaterial" id="flame_material"]
+shader = ExtResource("2_flame")
+shader_parameter/noise_texture = SubResource("fire_noise_texture")
+shader_parameter/heat_ramp = SubResource("heat_ramp")
+shader_parameter/energy = 1.0
+shader_parameter/erosion = 1.1
+
+[sub_resource type="ShaderMaterial" id="smoke_material"]
+shader = ExtResource("3_smoke")
+shader_parameter/noise_texture = SubResource("fire_noise_texture")
+shader_parameter/smoke_color = Color(0.08, 0.07, 0.075, 1)
+shader_parameter/ember_color = Color(0.3, 0.1, 0.04, 1)
+shader_parameter/density = 0.85
+
+[sub_resource type="ShaderMaterial" id="dust_material"]
+shader = ExtResource("3_smoke")
+shader_parameter/noise_texture = SubResource("fire_noise_texture")
+shader_parameter/smoke_color = Color(0.62, 0.55, 0.45, 1)
+shader_parameter/ember_color = Color(0.62, 0.55, 0.45, 1)
+shader_parameter/density = 0.45
+
+[sub_resource type="ShaderMaterial" id="spark_material"]
+shader = ExtResource("4_spark")
+
+[sub_resource type="PlaneMesh" id="rune_mesh"]
+material = SubResource("rune_material")
+
+[sub_resource type="PlaneMesh" id="rune_small_mesh"]
+material = SubResource("rune_small_material")
+
+[sub_resource type="QuadMesh" id="flash_mesh"]
+material = SubResource("flash_material")
+size = Vector2(7, 7)
+
+[sub_resource type="SphereMesh" id="fireball_mesh"]
+material = SubResource("fireball_material")
+radius = 1.0
+height = 2.0
+radial_segments = 48
+rings = 24
+
+[sub_resource type="PlaneMesh" id="shockwave_mesh"]
+material = SubResource("shockwave_material")
+
+[sub_resource type="QuadMesh" id="flame_quad"]
+material = SubResource("flame_material")
+size = Vector2(1, 1.5)
+center_offset = Vector3(0, 0.45, 0)
+
+[sub_resource type="QuadMesh" id="smoke_quad"]
+material = SubResource("smoke_material")
+
+[sub_resource type="QuadMesh" id="dust_quad"]
+material = SubResource("dust_material")
+
+[sub_resource type="QuadMesh" id="spark_quad"]
+material = SubResource("spark_material")
+size = Vector2(0.035, 0.035)
+
+[sub_resource type="Curve" id="flame_scale_curve"]
+_data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.25), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="flame_scale"]
+curve = SubResource("flame_scale_curve")
+
+[sub_resource type="Curve" id="smoke_scale_curve"]
+_data = [Vector2(0, 0.35), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="smoke_scale"]
+curve = SubResource("smoke_scale_curve")
+
+[sub_resource type="Gradient" id="fade_gradient"]
+offsets = PackedFloat32Array(0, 0.12, 0.65, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0.85, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="fade"]
+gradient = SubResource("fade_gradient")
+
+[sub_resource type="Gradient" id="smoke_fade_gradient"]
+offsets = PackedFloat32Array(0, 0.1, 0.6, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.9, 1, 1, 1, 0.55, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="smoke_fade"]
+gradient = SubResource("smoke_fade_gradient")
+
+[sub_resource type="ParticleProcessMaterial" id="charge_spark_process"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.1
+emission_ring_radius = 1.1
+emission_ring_inner_radius = 0.7
+direction = Vector3(0, 1, 0)
+spread = 10.0
+initial_velocity_min = 0.2
+initial_velocity_max = 0.6
+radial_velocity_min = -1.3
+radial_velocity_max = -0.8
+gravity = Vector3(0, 0.3, 0)
+color = Color(1, 0.5, 0.12, 1)
+scale_min = 1.2
+scale_max = 2.6
+color_ramp = SubResource("fade")
+
+[sub_resource type="ParticleProcessMaterial" id="fire_burst_process"]
+emission_shape = 1
+emission_sphere_radius = 0.55
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 1.2
+initial_velocity_max = 3.2
+gravity = Vector3(0, 0.8, 0)
+damping_min = 1.5
+damping_max = 2.5
+scale_min = 0.7
+scale_max = 1.4
+scale_curve = SubResource("flame_scale")
+color_ramp = SubResource("fade")
+
+[sub_resource type="ParticleProcessMaterial" id="smoke_column_process"]
+emission_shape = 1
+emission_sphere_radius = 0.6
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 40.0
+initial_velocity_min = 0.5
+initial_velocity_max = 1.7
+gravity = Vector3(0, 0.25, 0)
+damping_min = 0.4
+damping_max = 0.8
+scale_min = 2.0
+scale_max = 3.4
+scale_curve = SubResource("smoke_scale")
+color_ramp = SubResource("smoke_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="dust_process"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.05
+emission_ring_radius = 0.7
+emission_ring_inner_radius = 0.4
+angle_min = -180.0
+angle_max = 180.0
+direction = Vector3(0, 1, 0)
+spread = 20.0
+initial_velocity_min = 0.05
+initial_velocity_max = 0.3
+radial_velocity_min = 1.6
+radial_velocity_max = 3.2
+gravity = Vector3(0, 0.15, 0)
+damping_min = 1.4
+damping_max = 2.2
+scale_min = 1.3
+scale_max = 2.2
+scale_curve = SubResource("smoke_scale")
+color_ramp = SubResource("smoke_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="ember_process"]
+emission_shape = 1
+emission_sphere_radius = 0.3
+direction = Vector3(0, 1, 0)
+spread = 75.0
+initial_velocity_min = 2.5
+initial_velocity_max = 6.0
+gravity = Vector3(0, -5, 0)
+damping_min = 0.3
+damping_max = 0.9
+color = Color(1, 0.45, 0.1, 1)
+scale_min = 0.6
+scale_max = 1.6
+color_ramp = SubResource("fade")
+
+[node name="ExplosionEffect" type="Node3D"]
+script = ExtResource("1_effect")
+
+[node name="Charge" type="Node3D" parent="."]
+visible = false
+
+[node name="RuneGround" type="MeshInstance3D" parent="Charge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("rune_mesh")
+
+[node name="RuneMiddle" type="MeshInstance3D" parent="Charge"]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0.38, 0)
+cast_shadow = 0
+mesh = SubResource("rune_small_mesh")
+
+[node name="RuneTop" type="MeshInstance3D" parent="Charge"]
+transform = Transform3D(0.34, 0, 0, 0, 0.34, 0, 0, 0, 0.34, 0, 0.72, 0)
+cast_shadow = 0
+mesh = SubResource("rune_small_mesh")
+
+[node name="Sparks" type="GPUParticles3D" parent="Charge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+emitting = false
+amount = 70
+lifetime = 0.9
+visibility_aabb = AABB(-2, -1, -2, 4, 4, 4)
+process_material = SubResource("charge_spark_process")
+draw_pass_1 = SubResource("spark_quad")
+
+[node name="Glow" type="OmniLight3D" parent="Charge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+light_color = Color(1, 0.5, 0.15, 1)
+light_energy = 0.0
+omni_range = 9.0
+
+[node name="Blast" type="Node3D" parent="."]
+visible = false
+
+[node name="Fireball" type="MeshInstance3D" parent="Blast"]
+cast_shadow = 0
+mesh = SubResource("fireball_mesh")
+
+[node name="Shockwave" type="MeshInstance3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+cast_shadow = 0
+mesh = SubResource("shockwave_mesh")
+
+[node name="Flash" type="MeshInstance3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+cast_shadow = 0
+mesh = SubResource("flash_mesh")
+
+[node name="FireBurst" type="GPUParticles3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+emitting = false
+amount = 40
+lifetime = 0.9
+one_shot = true
+explosiveness = 0.85
+visibility_aabb = AABB(-6, -2, -6, 12, 12, 12)
+process_material = SubResource("fire_burst_process")
+draw_pass_1 = SubResource("flame_quad")
+
+[node name="SmokeColumn" type="GPUParticles3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+emitting = false
+amount = 44
+lifetime = 3.5
+one_shot = true
+explosiveness = 0.7
+visibility_aabb = AABB(-6, -2, -6, 12, 14, 12)
+process_material = SubResource("smoke_column_process")
+draw_pass_1 = SubResource("smoke_quad")
+
+[node name="Dust" type="GPUParticles3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+emitting = false
+amount = 48
+lifetime = 2.0
+one_shot = true
+explosiveness = 0.95
+visibility_aabb = AABB(-6, -2, -6, 12, 6, 12)
+process_material = SubResource("dust_process")
+draw_pass_1 = SubResource("dust_quad")
+
+[node name="Embers" type="GPUParticles3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+emitting = false
+amount = 90
+lifetime = 1.6
+one_shot = true
+explosiveness = 1.0
+visibility_aabb = AABB(-8, -3, -8, 16, 14, 16)
+process_material = SubResource("ember_process")
+draw_pass_1 = SubResource("spark_quad")
+
+[node name="Light" type="OmniLight3D" parent="Blast"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+light_energy = 0.0
+omni_range = 30.0

@@ -98,6 +98,7 @@ var _rider: MountRider
 @onready var _mount_collision: CollisionShape3D = $MountCollision
 @onready var _footsteps: FootstepPlayer = $Footsteps
 @onready var _swings: AudioStreamPlayer3D = $Swings
+@onready var _spell: ExplosionSpell = $ExplosionSpell
 
 
 func _ready() -> void:
@@ -129,6 +130,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_summon_mount()
 
 	_request_attack_from(event)
+	_cast_from(event)
 
 	if event is InputEventMouseMotion and is_mouse_captured:
 		_camera_yaw.rotate_by_mouse(event.relative)
@@ -327,6 +329,20 @@ func _request_attack_from(event: InputEvent) -> void:
 	for action in ATTACK_BY_ACTION:
 		if event.is_action_pressed(action):
 			_fighter.request_attack(ATTACK_BY_ACTION[action])
+
+
+## Segurar a tecla da magia carrega, soltar dispara (montado ou voando não dá).
+func _cast_from(event: InputEvent) -> void:
+	var can_cast: bool = not is_flying and not is_riding()
+
+	if event.is_echo():
+		return
+
+	if can_cast and event.is_action_pressed(ExplosionSpell.CAST_ACTION):
+		_spell.begin_charge()
+
+	if event.is_action_released(ExplosionSpell.CAST_ACTION):
+		_spell.release()
 
 
 ## O corpo entra no clipe do golpe em _apply_stance; o soco já arma o tronco aqui, por cima do

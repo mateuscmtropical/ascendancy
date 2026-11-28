@@ -481,24 +481,35 @@ def add_house_occluder(scene: SceneWriter, index: int, lot: dict) -> None:
     add_occluder(scene, f"House{index:03d}", lot_to_world(lot, local_center), (width, height, depth), lot["rotation"])
 
 
-def rectangles_around(hole: tuple, half: float) -> list:
-    """Four rectangles ((x, z) min, max) covering the square of half size `half` around the origin minus the hole."""
-    (hole_min_x, hole_min_z), (hole_max_x, hole_max_z) = hole
+def rectangles_minus(holes: list, half: float) -> list:
+    """Rectangles ((x, z) min, max) covering the square of half size `half` around the origin minus the holes
+    (axis-aligned, not overlapping): strips cut at every hole edge along x, each split around the holes crossing it."""
+    edges = sorted({-half, half, *(hole[0][0] for hole in holes), *(hole[1][0] for hole in holes)})
+    strips = list(zip(edges, edges[1:]))
+    rectangles = []
 
-    return [
-        ((-half, -half), (hole_min_x, half)),
-        ((hole_max_x, -half), (half, half)),
-        ((hole_min_x, -half), (hole_max_x, hole_min_z)),
-        ((hole_min_x, hole_max_z), (hole_max_x, half)),
-    ]
+    for left, right in strips:
+        crossing = sorted((hole[0][1], hole[1][1]) for hole in holes if hole[0][0] <= left and right <= hole[1][0])
+        starts = [-half] + [top for _, top in crossing]
+        ends = [bottom for bottom, _ in crossing] + [half]
+        rectangles += [((left, start), (right, end)) for start, end in zip(starts, ends) if end > start]
+
+    return rectangles
+
+
+def ground_holes() -> list:
+    """Where the flat ground stops: the crypt stair and the blast ground of the ruins field (it digs its own craters)."""
+    x, z = RUINS_FIELD
+
+    return [CRYPT_SHAFT_HOLE, ((x - RUINS_GROUND_HALF, z - RUINS_GROUND_HALF), (x + RUINS_GROUND_HALF, z + RUINS_GROUND_HALF))]
 
 
 def add_ground(scene: SceneWriter) -> None:
     """Streets, curbed pavements and raised beds come modelled from build_ground.py; here the floor under them, out to
-    the horizon: countryside planes and collision slabs around the hole of the crypt stair (CRYPT_SHAFT_HOLE)."""
+    the horizon: countryside planes and collision slabs around the holes (ground_holes: crypt stair, ruins blast ground)."""
     scene.add_node("Ground", ".", "StaticBody3D", groups=[NAVIGATION_SOURCE_GROUP])
 
-    for index, (minimum, maximum) in enumerate(rectangles_around(CRYPT_SHAFT_HOLE, GROUND_COLLISION_HALF)):
+    for index, (minimum, maximum) in enumerate(rectangles_minus(ground_holes(), GROUND_COLLISION_HALF)):
         size = (maximum[0] - minimum[0], GROUND_COLLISION_DEPTH, maximum[1] - minimum[1])
         center = ((minimum[0] + maximum[0]) / 2.0, -STREET_DROP - GROUND_COLLISION_DEPTH / 2.0, (minimum[1] + maximum[1]) / 2.0)
         scene.add_sub_resource(f'''
@@ -506,7 +517,7 @@ def add_ground(scene: SceneWriter) -> None:
 size = {vector(*size)}''')
         scene.add_node(f"Collision{index}", "Ground", "CollisionShape3D", properties={"position": vector(*center), "shape": f'SubResource("ground_shape_{index}")'})
 
-    for index, (minimum, maximum) in enumerate(rectangles_around(CRYPT_SHAFT_HOLE, COUNTRYSIDE_HALF)):
+    for index, (minimum, maximum) in enumerate(rectangles_minus(ground_holes(), COUNTRYSIDE_HALF)):
         scene.add_sub_resource(f'''
 [sub_resource type="PlaneMesh" id="countryside_mesh_{index}"]
 material = SubResource("countryside_material")
@@ -518,7 +529,7 @@ size = Vector2({maximum[0] - minimum[0]:.3f}, {maximum[1] - minimum[1]:.3f})''')
     # Chão como oclusor, com o furo da escada da cripta: de baixo a cidade não é desenhada, de cima a cripta.
     scene.add_node("Occluders", ".", "Node3D")
 
-    for index, (minimum, maximum) in enumerate(rectangles_around(CRYPT_SHAFT_HOLE, OCCLUDER_GROUND_HALF)):
+    for index, (minimum, maximum) in enumerate(rectangles_minus([CRYPT_SHAFT_HOLE], OCCLUDER_GROUND_HALF)):
         size = (maximum[0] - minimum[0], OCCLUDER_GROUND_THICKNESS, maximum[1] - minimum[1])
         center = ((minimum[0] + maximum[0]) / 2.0, -STREET_DROP - OCCLUDER_GROUND_THICKNESS / 2.0 - 0.02, (minimum[1] + maximum[1]) / 2.0)
         add_occluder(scene, f"Ground{index}", center, size)
@@ -2244,6 +2255,7 @@ adjustment_saturation = 1.08''')
 
 
 RUINS_FIELD = (200.0, 0.0)  # campo de ruínas destrutíveis no campo aberto além da fazenda (vão na cerca leste)
+RUINS_GROUND_HALF = 24.0  # metade do BlastGround do campo (ruins_field.tscn): o chão plano tem um furo ali
 
 
 def add_ruins_field(scene: SceneWriter) -> None:
@@ -2251,6 +2263,11 @@ def add_ruins_field(scene: SceneWriter) -> None:
     country, far from the town, which stays intact."""
     x, z = RUINS_FIELD
     place(scene, "RuinsField", ".", "res://features/destruction/ruins_field.tscn", (x, -STREET_DROP, z))
+    # Chão que afunda e queima no lugar do campo plano (furo em ground_holes) e o fogo que anda nele.
+    scene.add_node("BlastGround", ".", "Node3D", groups=["blast_ground"], properties={
+        "position": vector(x, -STREET_DROP, z), "script": f'ExtResource("{scene.external_id("Script", "res://features/destruction/blast_ground.gd")}")', "size": f"{2.0 * RUINS_GROUND_HALF:.1f}"})
+    scene.add_node("FireGrid", ".", "Node", groups=["fire_grid"], properties={
+        "script": f'ExtResource("{scene.external_id("Script", "res://features/destruction/fire_grid.gd")}")', "ground": 'NodePath("../BlastGround")'})
 
 
 def add_mula(scene: SceneWriter) -> None:

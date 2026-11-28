@@ -323,6 +323,54 @@ def debris_stone(generator: np.random.Generator) -> np.ndarray:
 DESTRUCTION_MAKERS = {"hit_wood": hit_wood, "hit_stone": hit_stone, "break_wood": break_wood, "break_stone": break_stone, "debris_wood": debris_wood, "debris_stone": debris_stone}
 
 
+BOOM_VARIANTS = 3
+SEED_BY_SPELL = {"explosion_charge": 800, "explosion_boom": 810, "fire_loop": 820}
+
+
+def explosion_charge() -> np.ndarray:
+    """Power gathering for the explosion spell (3 s, stopped by the game at release): a hum rising an octave with
+    its fifth, a pulse speeding up and a bright shimmer swelling on top, louder all the way."""
+    generator = np.random.default_rng(SEED_BY_SPELL["explosion_charge"])
+    seconds = 3.0
+    time = timeline(seconds)
+    progress = time / seconds
+    hum = sweep(110.0, 220.0, seconds) + 0.5 * sweep(165.0, 330.0, seconds) + 0.25 * sweep(55.0, 110.0, seconds)
+    pulse_rate = 3.0 + 13.0 * progress ** 1.5
+    pulse = 0.65 + 0.35 * np.sin(2.0 * np.pi * np.cumsum(pulse_rate) / RATE)
+    shimmer = shaped_noise(len(time), band(3000.0, 9000.0, 3.0), generator) * progress ** 2.0
+    swell = 0.15 + 0.85 * progress ** 1.3
+
+    return normalized(fade_edges((hum * pulse + 0.35 * shimmer) * swell, 0.15, 0.01))
+
+
+def explosion_boom(variant: int) -> np.ndarray:
+    """The blast: a sharp crack, a sub-bass punch dropping in pitch, a long rumble and debris raining down; the game
+    plays it louder and lower the stronger the spell."""
+    generator = np.random.default_rng(SEED_BY_SPELL["explosion_boom"] + variant)
+    length = int(4.5 * RATE)
+    crack = burst(length, 400.0, 8000.0, 0.025, generator)
+    punch = sweep(generator.uniform(55.0, 65.0), 24.0, length / RATE) * decay(length / RATE, 0.7)
+    rumble = burst(length, 25.0, 260.0, 1.4, generator, int(0.02 * RATE))
+    roar = burst(length, 150.0, 1500.0, 0.5, generator, int(0.01 * RATE))
+    rain = scattered(length, 26, 0.5, 3.6, stone_clack, generator)
+
+    return normalized(fade_edges(0.8 * crack + 1.0 * punch + 0.9 * rumble + 0.45 * roar + 0.35 * rain, 0.001, 0.4))
+
+
+def fire_loop() -> np.ndarray:
+    """Grass and timber burning (seamless 6 s loop): a soft roar with slow swells and dry pops and crackles."""
+    generator = np.random.default_rng(SEED_BY_SPELL["fire_loop"])
+    length = int(6.0 * RATE)
+    roar = shaped_noise(length, band(120.0, 900.0, 2.0), generator) * slow_swell(length, (2, 3, 5), 0.5, generator)
+    crackles = np.zeros(length)
+
+    for index in range(140):
+        pop = burst(int(0.05 * RATE), 1500.0, 7000.0, generator.uniform(0.002, 0.008), generator)
+        add_wrapped(crackles, pop * generator.uniform(0.2, 1.0), int(generator.uniform(0, length)))
+
+    return normalized(0.5 * roar + 0.6 * crackles, 0.7)
+
+
 def church_bell() -> np.ndarray:
     """Bronze bell strike in G: hum, prime, minor tierce, quint and nominal partials with their own decays, slightly
     detuned pairs for the slow beating of a real bell, and a clang at the strike."""
@@ -452,6 +500,9 @@ SOUNDS = {
     **{f"land_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_landing(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
     **{f"swing_{attack}_{variant}": (lambda attack=attack, variant=variant: swing(attack, variant)) for attack in SWING_BY_ATTACK for variant in range(1, SWING_VARIANTS + 1)},
     **{f"{kind}_{variant}": (lambda kind=kind, variant=variant: destruction(kind, variant)) for kind in SEED_BY_DESTRUCTION for variant in range(1, DESTRUCTION_VARIANTS + 1)},
+    **{f"explosion_boom_{variant}": (lambda variant=variant: explosion_boom(variant)) for variant in range(1, BOOM_VARIANTS + 1)},
+    "explosion_charge": explosion_charge,
+    "fire_loop": fire_loop,
     "church_bell": church_bell,
     "ui_click": interface_click,
     "ui_open": lambda: interface_tone((660.0, 990.0), 0.07, 0.15),
@@ -468,6 +519,7 @@ RANDOMIZERS = {
     **{f"land_{surface}": (JUMP_VARIANTS, 1.05, 2.0) for surface in SURFACES},
     **{f"swing_{attack}": (SWING_VARIANTS, 1.1, 2.0) for attack in SWING_BY_ATTACK},
     **{kind: (DESTRUCTION_VARIANTS, 1.08, 2.0) for kind in SEED_BY_DESTRUCTION},
+    "explosion_boom": (BOOM_VARIANTS, 1.04, 1.0),
 }
 
 

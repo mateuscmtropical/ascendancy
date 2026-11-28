@@ -2,10 +2,11 @@ extends Node3D
 ## Vídeo de conferência da destruição no campo de ruínas: o jogador de verdade soca e chuta caixa,
 ## pedra, porta e cerca (pedidos de um roteiro, ações seguradas no InputMap, nada vai para a
 ## janela) e impactos de teste com energia crescente batem na ruína (a mesma chamada de
-## Destruction que golpes e magias usam). `--reel=house`: a casa e o muro pré-fraturados.
+## Destruction que golpes e magias usam). `--reel=house`: a casa e o muro pré-fraturados;
+## `--reel=spell`: a magia de explosão com carga curta, média e cheia.
 ## Gravar com tools_src/record.sh; fecha sozinha.
 
-enum Cue { PLACE, ATTACK, MOVE, CAMERA, BLAST, CAPTION, QUIT }
+enum Cue { PLACE, ATTACK, MOVE, CAMERA, BLAST, CAPTION, CHARGE, RELEASE, QUIT }
 
 const OFFSCREEN_POSITION: Vector2i = Vector2i(-20000, -20000)
 const PUNCH: UnarmedFighter.Attack = UnarmedFighter.Attack.PUNCH
@@ -26,6 +27,9 @@ const HOUSE_RUN_SPOT: Array = ["RuinsField/Cottage", Vector3(-1.0, 0, 6.9), Vect
 const HOUSE_WALL_SPOT: Array = ["RuinsField/Cottage", Vector3(1.2, 0, 2.75), Vector3(1.2, 0, 0)]
 const HOUSE_ASIDE_SPOT: Array = ["RuinsField/Cottage", Vector3(-7.0, 0, 9.0), Vector3(0, 0, 0)]
 const REEL_ARGUMENT: String = "--reel="
+const GATE_CAST_SPOT: Array = ["RuinsField/Gate", Vector3(0, 0, 11.0), Vector3(0, 0, 0)]
+const TEMPLE_CAST_SPOT: Array = ["RuinsField/Temple", Vector3(0, 0, 12.0), Vector3(0, 0, 0)]
+const COTTAGE_CAST_SPOT: Array = ["RuinsField/Cottage", Vector3(0, 0, 11.5), Vector3(0, 0, 0)]
 ## Impactos de teste: nó de referência, ponto (no espaço dele), energia e raio.
 const FIELD_TIMELINE: Array[Dictionary] = [
 	{"at": 0.0, "cue": Cue.CAMERA, "value": "CratesCam"},
@@ -126,7 +130,26 @@ const HOUSE_TIMELINE: Array[Dictionary] = [
 	},
 	{"at": 25.0, "cue": Cue.QUIT, "value": null},
 ]
+const SPELL_TIMELINE: Array[Dictionary] = [
+	{"at": 0.0, "cue": Cue.CAMERA, "value": "GateSpellCam"},
+	{"at": 0.0, "cue": Cue.PLACE, "value": GATE_CAST_SPOT},
+	{"at": 0.0, "cue": Cue.CAPTION, "value": "Explosão, carga curta (0,6 s)"},
+	{"at": 0.8, "cue": Cue.CHARGE, "value": null},
+	{"at": 1.4, "cue": Cue.RELEASE, "value": null},
+	{"at": 6.0, "cue": Cue.CAMERA, "value": "TempleSpellCam"},
+	{"at": 6.0, "cue": Cue.PLACE, "value": TEMPLE_CAST_SPOT},
+	{"at": 6.0, "cue": Cue.CAPTION, "value": "Carga média (1,5 s)"},
+	{"at": 6.6, "cue": Cue.CHARGE, "value": null},
+	{"at": 8.1, "cue": Cue.RELEASE, "value": null},
+	{"at": 14.0, "cue": Cue.CAMERA, "value": "CottageSpellCam"},
+	{"at": 14.0, "cue": Cue.PLACE, "value": COTTAGE_CAST_SPOT},
+	{"at": 14.0, "cue": Cue.CAPTION, "value": "Carga cheia (2,5 s)"},
+	{"at": 14.6, "cue": Cue.CHARGE, "value": null},
+	{"at": 17.1, "cue": Cue.RELEASE, "value": null},
+	{"at": 26.0, "cue": Cue.QUIT, "value": null},
+]
 const TIMELINE_BY_REEL: Dictionary[String, Array] = {
+	"spell": SPELL_TIMELINE,
 	"field": FIELD_TIMELINE,
 	"house": HOUSE_TIMELINE,
 }
@@ -140,6 +163,9 @@ const CAMERA_TARGETS: Dictionary[String, String] = {
 	"HouseNearCam": "RuinsField/Cottage",
 	"HouseCam": "RuinsField/Cottage",
 	"WallCam": "RuinsField/FieldWall",
+	"GateSpellCam": "RuinsField/Gate",
+	"TempleSpellCam": "RuinsField/Temple",
+	"CottageSpellCam": "RuinsField/Cottage",
 }
 ## Onde cada câmera mira, no espaço do nó de referência dela.
 const CAMERA_AIMS: Dictionary[String, Vector3] = {
@@ -152,12 +178,18 @@ const CAMERA_AIMS: Dictionary[String, Vector3] = {
 	"HouseNearCam": Vector3(0.2, 1.3, 2.4),
 	"HouseCam": Vector3(0, 1.6, 0.5),
 	"WallCam": Vector3(0, 1.0, 0),
+	"GateSpellCam": Vector3(0, 1.5, 4.5),
+	"TempleSpellCam": Vector3(0, 1.8, 5.0),
+	"CottageSpellCam": Vector3(0, 2.0, 5.0),
 }
 ## Câmeras postas pelo script, no espaço do nó de referência (as outras ficam onde a cena põe).
 const CAMERA_PLACES: Dictionary[String, Vector3] = {
 	"HouseNearCam": Vector3(4.2, 1.7, 6.6),
 	"HouseCam": Vector3(5.5, 3.2, 11.0),
 	"WallCam": Vector3(2.0, 2.0, 8.0),
+	"GateSpellCam": Vector3(13.0, 4.0, 9.0),
+	"TempleSpellCam": Vector3(15.0, 5.0, 10.0),
+	"CottageSpellCam": Vector3(15.0, 5.0, 9.0),
 }
 
 var _seconds: float = -LEAD_IN_SECONDS
@@ -170,6 +202,8 @@ var _cue_players: Dictionary[Cue, Callable] = {
 	Cue.CAMERA: _cut_to_camera,
 	Cue.BLAST: _blast,
 	Cue.CAPTION: _show_caption,
+	Cue.CHARGE: _charge_spell,
+	Cue.RELEASE: _release_spell,
 	Cue.QUIT: _quit,
 }
 
@@ -178,6 +212,7 @@ var _cue_players: Dictionary[Cue, Callable] = {
 @onready var _model: CharacterModel = $Player/CharacterModel
 @onready var _camera_yaw: Node3D = $Player/CameraYaw
 @onready var _caption: Label = $Interface/Caption
+@onready var _spell: ExplosionSpell = $Player/ExplosionSpell
 
 
 func _ready() -> void:
@@ -245,6 +280,14 @@ func _blast(blast: Array) -> void:
 	var impact: Impact = Impact.new(origin, Vector3.FORWARD, blast[3], blast[2])
 
 	Destruction.strike(impact, self)
+
+
+func _charge_spell(_value: Variant) -> void:
+	_spell.begin_charge()
+
+
+func _release_spell(_value: Variant) -> void:
+	_spell.release()
 
 
 func _show_caption(text: String) -> void:
