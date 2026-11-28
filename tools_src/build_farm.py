@@ -1455,7 +1455,9 @@ def build_farm_fields() -> dict:
     for side in (-1, 1):
         gate_post(b, (CITY_EAST_WALL_X + 0.6, (FARM_GATE_Z[0] if side < 0 else FARM_GATE_Z[1]) + side * 0.5))
 
-    fence_run(b, [(min_x + 0.2, min_z), (max_x, min_z), (max_x, max_z), (min_x + 0.2, max_z)], OUTSIDE_GROUND, SEED + 40, gaps=())
+    # Vão na cerca leste onde a estradinha acaba: dali o campo aberto segue até as ruínas (RUINS_FIELD).
+    east_gap = (max_x - min_x - 0.2) + (FIELD_LANE[-1][1] - min_z)
+    fence_run(b, [(min_x + 0.2, min_z), (max_x, min_z), (max_x, max_z), (min_x + 0.2, max_z)], OUTSIDE_GROUND, SEED + 40, gaps=((east_gap - 3.0, east_gap + 3.0),))
     farm_cart(b, frame_at_world(113.0, -21.4, track_top, 90.0), load="produce", seed=9)
 
     return finish_model(b, "farm_fields", {"origin": "world", "doors": []})

@@ -237,6 +237,92 @@ def swing(attack: str, variant: int) -> np.ndarray:
     return normalized(fade_edges(air + generator.uniform(0.7, 1.0) * hiss + 0.35 * flap, 0.004, 0.05), peak)
 
 
+DESTRUCTION_VARIANTS = 4
+SEED_BY_DESTRUCTION = {"hit_wood": 700, "hit_stone": 710, "break_wood": 720, "break_stone": 730, "debris_wood": 740, "debris_stone": 750}
+
+
+def scattered(length: int, count: int, start: float, end: float, make, generator: np.random.Generator) -> np.ndarray:
+    """count copies of make(length, generator, delay) at random instants between start and end seconds, quieter later."""
+    total = np.zeros(length)
+
+    for index in range(count):
+        at = generator.uniform(start, end)
+        total += make(length, generator, int(at * RATE)) * generator.uniform(0.3, 1.0) * (1.0 - 0.6 * (at - start) / (end - start + 1e-9))
+
+    return total
+
+
+def stone_clack(length: int, generator: np.random.Generator, delay: int = 0) -> np.ndarray:
+    """A chunk of stone hitting the ground: a short low knock and a dry gritty click."""
+    knock = delayed(length, thud(length / RATE, generator.uniform(110.0, 190.0), generator.uniform(0.015, 0.03)), delay)
+    click = burst(length, generator.uniform(500.0, 900.0), generator.uniform(2500.0, 4500.0), generator.uniform(0.008, 0.02), generator, delay)
+
+    return 0.8 * knock + 0.9 * click
+
+
+def destruction(kind: str, variant: int) -> np.ndarray:
+    """Sounds of things being hit and broken; the game plays them lower and louder the stronger the blow
+    (Destruction.play_sound_at), so each is written at the size of a medium blow."""
+    generator = np.random.default_rng(SEED_BY_DESTRUCTION[kind] + variant)
+    return normalized(fade_edges(DESTRUCTION_MAKERS[kind](generator), 0.002, 0.08))
+
+
+def hit_wood(generator: np.random.Generator) -> np.ndarray:
+    """Fist or boot on a board that holds: hollow knock of the planks, the dull thump of the blow and a rattle."""
+    length = int(0.45 * RATE)
+    blow = delayed(length, thud(length / RATE, generator.uniform(70.0, 95.0), 0.04), 0)
+    rattle = scattered(length, 3, 0.03, 0.12, wood_knock, generator)
+
+    return 0.9 * wood_knock(length, generator) + 0.7 * blow + 0.3 * rattle + 0.25 * burst(length, 1500.0, 5000.0, 0.005, generator)
+
+
+def hit_stone(generator: np.random.Generator) -> np.ndarray:
+    """Blow on solid stone: a dead heavy thump with almost no ring and a puff of grit."""
+    length = int(0.4 * RATE)
+    blow = thud(length / RATE, generator.uniform(55.0, 75.0), 0.05)
+    grit = burst(length, 1800.0, 6000.0, generator.uniform(0.01, 0.02), generator)
+
+    return blow + 0.35 * burst(length, 200.0, 900.0, 0.03, generator) + 0.2 * grit
+
+
+def break_wood(generator: np.random.Generator) -> np.ndarray:
+    """Planks giving way: a sharp crack, the dry tearing of splinters and the boards clattering down after it."""
+    length = int(1.3 * RATE)
+    crack = burst(length, 300.0, 6000.0, generator.uniform(0.006, 0.012), generator) + delayed(length, thud(length / RATE, 85.0, 0.06), 0)
+    splinters = normalized(crackle(length, generator.uniform(6000.0, 9000.0), 0.09, generator, int(0.01 * RATE)), 1.0)
+    clatter = scattered(length, 7, 0.15, 0.9, wood_knock, generator)
+
+    return 1.0 * crack + 0.5 * splinters + 0.6 * clatter
+
+
+def break_stone(generator: np.random.Generator) -> np.ndarray:
+    """Masonry coming apart: a deep boom, the rumble of the blocks sliding and a long patter of chunks landing."""
+    length = int(2.2 * RATE)
+    boom = thud(length / RATE, generator.uniform(42.0, 55.0), 0.25)
+    rumble = burst(length, 40.0, 400.0, 0.5, generator)
+    crumble = normalized(crackle(length, generator.uniform(1500.0, 2500.0), 0.35, generator, int(0.05 * RATE)), 1.0)
+    chunks = scattered(length, 14, 0.1, 1.6, stone_clack, generator)
+
+    return 1.0 * boom + 0.7 * rumble + 0.25 * crumble + 0.5 * chunks
+
+
+def debris_wood(generator: np.random.Generator) -> np.ndarray:
+    """A loose plank landing: one hollow knock and a smaller bounce."""
+    length = int(0.35 * RATE)
+
+    return wood_knock(length, generator) + 0.4 * wood_knock(length, generator, int(generator.uniform(0.08, 0.14) * RATE))
+
+
+def debris_stone(generator: np.random.Generator) -> np.ndarray:
+    """A stone block landing: a clack and a small second hit as it settles."""
+    length = int(0.35 * RATE)
+
+    return stone_clack(length, generator) + 0.35 * stone_clack(length, generator, int(generator.uniform(0.07, 0.12) * RATE))
+
+
+DESTRUCTION_MAKERS = {"hit_wood": hit_wood, "hit_stone": hit_stone, "break_wood": break_wood, "break_stone": break_stone, "debris_wood": debris_wood, "debris_stone": debris_stone}
+
+
 def church_bell() -> np.ndarray:
     """Bronze bell strike in G: hum, prime, minor tierce, quint and nominal partials with their own decays, slightly
     detuned pairs for the slow beating of a real bell, and a clang at the strike."""
@@ -365,6 +451,7 @@ SOUNDS = {
     **{f"jump_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_takeoff(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
     **{f"land_{surface}_{variant}": (lambda surface=surface, variant=variant: jump_landing(surface, variant)) for surface in SURFACES for variant in range(1, JUMP_VARIANTS + 1)},
     **{f"swing_{attack}_{variant}": (lambda attack=attack, variant=variant: swing(attack, variant)) for attack in SWING_BY_ATTACK for variant in range(1, SWING_VARIANTS + 1)},
+    **{f"{kind}_{variant}": (lambda kind=kind, variant=variant: destruction(kind, variant)) for kind in SEED_BY_DESTRUCTION for variant in range(1, DESTRUCTION_VARIANTS + 1)},
     "church_bell": church_bell,
     "ui_click": interface_click,
     "ui_open": lambda: interface_tone((660.0, 990.0), 0.07, 0.15),
@@ -380,6 +467,7 @@ RANDOMIZERS = {
     **{f"jump_{surface}": (JUMP_VARIANTS, 1.06, 2.0) for surface in SURFACES},
     **{f"land_{surface}": (JUMP_VARIANTS, 1.05, 2.0) for surface in SURFACES},
     **{f"swing_{attack}": (SWING_VARIANTS, 1.1, 2.0) for attack in SWING_BY_ATTACK},
+    **{kind: (DESTRUCTION_VARIANTS, 1.08, 2.0) for kind in SEED_BY_DESTRUCTION},
 }
 
 
