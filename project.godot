@@ -96,6 +96,10 @@ summon_mount={
 "events": [Object(InputEventKey,"physical_keycode":77)]
 }
 
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
 [rendering]
 
 renderer/rendering_method="forward_plus"
