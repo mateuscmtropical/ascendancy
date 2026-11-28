@@ -1,4 +1,4 @@
-[gd_scene load_steps=212 format=3]
+[gd_scene load_steps=220 format=3]
 
 [ext_resource type="Script" path="res://features/hub/hub.gd" id="1_ext"]
 [ext_resource type="Texture2D" path="res://art/town/textures/T_RockTrim_BaseColor.png" id="2_ext"]
@@ -136,17 +136,19 @@
 [ext_resource type="Script" path="res://features/hub/monjolo.gd" id="134_ext"]
 [ext_resource type="PackedScene" path="res://features/mobs/mula_sem_cabeca.tscn" id="135_ext"]
 [ext_resource type="PackedScene" path="res://features/destruction/ruins_field.tscn" id="136_ext"]
-[ext_resource type="Script" path="res://features/hub/carriage.gd" id="137_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="138_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="139_ext"]
-[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="140_ext"]
-[ext_resource type="Script" path="res://features/hub/distance_fade.gd" id="141_ext"]
-[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="142_ext"]
-[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="143_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="144_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="145_ext"]
-[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="146_ext"]
-[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="147_ext"]
+[ext_resource type="Script" path="res://features/destruction/blast_ground.gd" id="137_ext"]
+[ext_resource type="Script" path="res://features/destruction/fire_grid.gd" id="138_ext"]
+[ext_resource type="Script" path="res://features/hub/carriage.gd" id="139_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/farm_wagon.gltf" id="140_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/animals/horse_harness.gltf" id="141_ext"]
+[ext_resource type="PackedScene" path="res://art/town/farm/hay_cart.gltf" id="142_ext"]
+[ext_resource type="Script" path="res://features/hub/distance_fade.gd" id="143_ext"]
+[ext_resource type="PackedScene" path="res://features/player/player.tscn" id="144_ext"]
+[ext_resource type="Script" path="res://features/hub/cinematic_tour.gd" id="145_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/character_select.tscn" id="146_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/fps_counter.tscn" id="147_ext"]
+[ext_resource type="PackedScene" path="res://features/ui/settings_menu.tscn" id="148_ext"]
+[ext_resource type="PackedScene" path="res://features/hub/hub_audio.tscn" id="149_ext"]
 
 [sub_resource type="StandardMaterial3D" id="wall_material"]
 albedo_color = Color(0.85, 0.82, 0.76, 1)
@@ -202,13 +204,22 @@ adjustment_saturation = 1.08
 size = Vector3(1038.900, 1.000, 2000.000)
 
 [sub_resource type="BoxShape3D" id="ground_shape_1"]
-size = Vector3(950.600, 1.000, 2000.000)
-
-[sub_resource type="BoxShape3D" id="ground_shape_2"]
 size = Vector3(10.500, 1.000, 1010.800)
 
-[sub_resource type="BoxShape3D" id="ground_shape_3"]
+[sub_resource type="BoxShape3D" id="ground_shape_2"]
 size = Vector3(10.500, 1.000, 987.500)
+
+[sub_resource type="BoxShape3D" id="ground_shape_3"]
+size = Vector3(126.600, 1.000, 2000.000)
+
+[sub_resource type="BoxShape3D" id="ground_shape_4"]
+size = Vector3(48.000, 1.000, 976.000)
+
+[sub_resource type="BoxShape3D" id="ground_shape_5"]
+size = Vector3(48.000, 1.000, 976.000)
+
+[sub_resource type="BoxShape3D" id="ground_shape_6"]
+size = Vector3(776.000, 1.000, 2000.000)
 
 [sub_resource type="PlaneMesh" id="countryside_mesh_0"]
 material = SubResource("countryside_material")
@@ -216,27 +227,39 @@ size = Vector2(288.900, 500.000)
 
 [sub_resource type="PlaneMesh" id="countryside_mesh_1"]
 material = SubResource("countryside_material")
-size = Vector2(200.600, 500.000)
+size = Vector2(10.500, 260.800)
 
 [sub_resource type="PlaneMesh" id="countryside_mesh_2"]
 material = SubResource("countryside_material")
-size = Vector2(10.500, 260.800)
+size = Vector2(10.500, 237.500)
 
 [sub_resource type="PlaneMesh" id="countryside_mesh_3"]
 material = SubResource("countryside_material")
-size = Vector2(10.500, 237.500)
+size = Vector2(126.600, 500.000)
+
+[sub_resource type="PlaneMesh" id="countryside_mesh_4"]
+material = SubResource("countryside_material")
+size = Vector2(48.000, 226.000)
+
+[sub_resource type="PlaneMesh" id="countryside_mesh_5"]
+material = SubResource("countryside_material")
+size = Vector2(48.000, 226.000)
+
+[sub_resource type="PlaneMesh" id="countryside_mesh_6"]
+material = SubResource("countryside_material")
+size = Vector2(26.000, 500.000)
 
 [sub_resource type="BoxOccluder3D" id="occluder_Ground0"]
 size = Vector3(178.900, 0.100, 280.000)
 
 [sub_resource type="BoxOccluder3D" id="occluder_Ground1"]
-size = Vector3(90.600, 0.100, 280.000)
-
-[sub_resource type="BoxOccluder3D" id="occluder_Ground2"]
 size = Vector3(10.500, 0.100, 150.800)
 
-[sub_resource type="BoxOccluder3D" id="occluder_Ground3"]
+[sub_resource type="BoxOccluder3D" id="occluder_Ground2"]
 size = Vector3(10.500, 0.100, 127.500)
+
+[sub_resource type="BoxOccluder3D" id="occluder_Ground3"]
+size = Vector3(90.600, 0.100, 280.000)
 
 [sub_resource type="BoxShape3D" id="town_wall_north_shape"]
 size = Vector3(206.400, 4.500, 1.200)
@@ -424,32 +447,56 @@ position = Vector3(-480.550, -0.620, 0.000)
 shape = SubResource("ground_shape_0")
 
 [node name="Collision1" type="CollisionShape3D" parent="Ground"]
-position = Vector3(524.700, -0.620, 0.000)
+position = Vector3(44.150, -0.620, -494.600)
 shape = SubResource("ground_shape_1")
 
 [node name="Collision2" type="CollisionShape3D" parent="Ground"]
-position = Vector3(44.150, -0.620, -494.600)
+position = Vector3(44.150, -0.620, 506.250)
 shape = SubResource("ground_shape_2")
 
 [node name="Collision3" type="CollisionShape3D" parent="Ground"]
-position = Vector3(44.150, -0.620, 506.250)
+position = Vector3(112.700, -0.620, 0.000)
 shape = SubResource("ground_shape_3")
+
+[node name="Collision4" type="CollisionShape3D" parent="Ground"]
+position = Vector3(200.000, -0.620, -512.000)
+shape = SubResource("ground_shape_4")
+
+[node name="Collision5" type="CollisionShape3D" parent="Ground"]
+position = Vector3(200.000, -0.620, 512.000)
+shape = SubResource("ground_shape_5")
+
+[node name="Collision6" type="CollisionShape3D" parent="Ground"]
+position = Vector3(612.000, -0.620, 0.000)
+shape = SubResource("ground_shape_6")
 
 [node name="Countryside0" type="MeshInstance3D" parent="Ground"]
 position = Vector3(-105.550, -0.150, 0.000)
 mesh = SubResource("countryside_mesh_0")
 
 [node name="Countryside1" type="MeshInstance3D" parent="Ground"]
-position = Vector3(149.700, -0.150, 0.000)
+position = Vector3(44.150, -0.150, -119.600)
 mesh = SubResource("countryside_mesh_1")
 
 [node name="Countryside2" type="MeshInstance3D" parent="Ground"]
-position = Vector3(44.150, -0.150, -119.600)
+position = Vector3(44.150, -0.150, 131.250)
 mesh = SubResource("countryside_mesh_2")
 
 [node name="Countryside3" type="MeshInstance3D" parent="Ground"]
-position = Vector3(44.150, -0.150, 131.250)
+position = Vector3(112.700, -0.150, 0.000)
 mesh = SubResource("countryside_mesh_3")
+
+[node name="Countryside4" type="MeshInstance3D" parent="Ground"]
+position = Vector3(200.000, -0.150, -137.000)
+mesh = SubResource("countryside_mesh_4")
+
+[node name="Countryside5" type="MeshInstance3D" parent="Ground"]
+position = Vector3(200.000, -0.150, 137.000)
+mesh = SubResource("countryside_mesh_5")
+
+[node name="Countryside6" type="MeshInstance3D" parent="Ground"]
+position = Vector3(237.000, -0.150, 0.000)
+mesh = SubResource("countryside_mesh_6")
 
 [node name="City" parent="Ground" instance=ExtResource("6_ext")]
 position = Vector3(0.000, 0.000, 0.000)
@@ -462,17 +509,17 @@ rotation = Vector3(0.000, 0.000, 0.000)
 occluder = SubResource("occluder_Ground0")
 
 [node name="Ground1" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(94.700, -0.190, 0.000)
+position = Vector3(44.150, -0.190, -64.600)
 rotation = Vector3(0.000, 0.000, 0.000)
 occluder = SubResource("occluder_Ground1")
 
 [node name="Ground2" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(44.150, -0.190, -64.600)
+position = Vector3(44.150, -0.190, 76.250)
 rotation = Vector3(0.000, 0.000, 0.000)
 occluder = SubResource("occluder_Ground2")
 
 [node name="Ground3" type="OccluderInstance3D" parent="Occluders"]
-position = Vector3(44.150, -0.190, 76.250)
+position = Vector3(94.700, -0.190, 0.000)
 rotation = Vector3(0.000, 0.000, 0.000)
 occluder = SubResource("occluder_Ground3")
 
@@ -7715,15 +7762,24 @@ rotation = Vector3(0.000, 3.142, 0.000)
 [node name="RuinsField" parent="." instance=ExtResource("136_ext")]
 position = Vector3(200.000, -0.120, 0.000)
 
+[node name="BlastGround" type="Node3D" parent="." groups=["blast_ground"]]
+position = Vector3(200.000, -0.120, 0.000)
+script = ExtResource("137_ext")
+size = 48.0
+
+[node name="FireGrid" type="Node" parent="." groups=["fire_grid"] node_paths=PackedStringArray("ground")]
+script = ExtResource("138_ext")
+ground = NodePath("../BlastGround")
+
 [node name="Carriages" type="Node3D" parent="."]
 
 [node name="Carriage0" type="AnimatableBody3D" parent="Carriages"]
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("137_ext")
-wagon_scene = ExtResource("138_ext")
-horse_scene = ExtResource("139_ext")
+script = ExtResource("139_ext")
+wagon_scene = ExtResource("140_ext")
+horse_scene = ExtResource("141_ext")
 driver_body = ExtResource("116_ext")
 driver_hair_color = Color(0.320, 0.210, 0.140, 1)
 driver_seat = Vector3(0.000, 1.010, 1.300)
@@ -7735,9 +7791,9 @@ start_distance = 0.00
 collision_layer = 4
 collision_mask = 0
 sync_to_physics = false
-script = ExtResource("137_ext")
-wagon_scene = ExtResource("140_ext")
-horse_scene = ExtResource("139_ext")
+script = ExtResource("139_ext")
+wagon_scene = ExtResource("142_ext")
+horse_scene = ExtResource("141_ext")
 driver_body = ExtResource("118_ext")
 driver_hair_color = Color(0.080, 0.070, 0.070, 1)
 driver_seat = Vector3(0.000, 1.010, 1.300)
@@ -7748,25 +7804,25 @@ start_distance = 235.41
 [node name="DistanceFades" type="Node" parent="."]
 
 [node name="GrassTufts" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("141_ext")
+script = ExtResource("143_ext")
 target = NodePath("../../Trees")
 child_prefixes = PackedStringArray("Grass")
 range_end = 45.0
 
 [node name="SquareSmallProps" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("141_ext")
+script = ExtResource("143_ext")
 target = NodePath("../../SquareProps")
 child_prefixes = PackedStringArray("Bench", "FlowerBush", "Planter")
 range_end = 70.0
 
 [node name="MarketProps" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("141_ext")
+script = ExtResource("143_ext")
 target = NodePath("../../Market")
 child_prefixes = PackedStringArray()
 range_end = 70.0
 
 [node name="FarmFieldCrops" type="Node" parent="DistanceFades" node_paths=PackedStringArray("target")]
-script = ExtResource("141_ext")
+script = ExtResource("143_ext")
 target = NodePath("../../Farm/FarmFields")
 child_prefixes = PackedStringArray("Crops")
 range_end = 80.0
@@ -7781,7 +7837,7 @@ script = ExtResource("111_ext")
 target = NodePath("../Trees")
 mesh_names = PackedStringArray("Grass_Common_Short")
 
-[node name="Player" parent="." instance=ExtResource("142_ext")]
+[node name="Player" parent="." instance=ExtResource("144_ext")]
 position = Vector3(-38.400, 0.000, -13.000)
 rotation = Vector3(0.000, -1.571, 0.000)
 
@@ -7791,7 +7847,7 @@ rotation = Vector3(-0.120, 1.837, 0.000)
 fov = 42.0
 
 [node name="CinematicTour" type="Node3D" parent="."]
-script = ExtResource("143_ext")
+script = ExtResource("145_ext")
 
 [node name="Key0" type="Marker3D" parent="CinematicTour"]
 position = Vector3(-90.000, 28.000, -30.000)
@@ -7821,10 +7877,10 @@ rotation = Vector3(0.114, -1.571, 0.000)
 position = Vector3(-90.000, 4.000, -57.000)
 rotation = Vector3(-0.011, -1.571, 0.000)
 
-[node name="CharacterSelect" parent="." instance=ExtResource("144_ext")]
+[node name="CharacterSelect" parent="." instance=ExtResource("146_ext")]
 
-[node name="FpsCounter" parent="." instance=ExtResource("145_ext")]
+[node name="FpsCounter" parent="." instance=ExtResource("147_ext")]
 
-[node name="SettingsMenu" parent="." instance=ExtResource("146_ext")]
+[node name="SettingsMenu" parent="." instance=ExtResource("148_ext")]
 
-[node name="HubAudio" parent="." instance=ExtResource("147_ext")]
+[node name="HubAudio" parent="." instance=ExtResource("149_ext")]

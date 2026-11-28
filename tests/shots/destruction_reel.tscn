@@ -4,6 +4,9 @@
 [ext_resource type="Script" path="res://tests/shots/destruction_reel.gd" id="2_reel"]
 [ext_resource type="PackedScene" path="res://features/destruction/ruins_field.tscn" id="3_field"]
 
+[ext_resource type="Script" path="res://features/destruction/blast_ground.gd" id="90_blast_ground"]
+[ext_resource type="Script" path="res://features/destruction/fire_grid.gd" id="91_fire_grid"]
+
 [sub_resource type="ProceduralSkyMaterial" id="sky_material"]
 sky_top_color = Color(0.361, 0.561, 0.82, 1)
 sky_horizon_color = Color(0.843, 0.933, 0.961, 1)
@@ -30,16 +33,6 @@ fog_density = 0.002
 fog_sun_scatter = 0.2
 fog_aerial_perspective = 0.35
 
-[sub_resource type="StandardMaterial3D" id="ground_material"]
-albedo_color = Color(0.725, 0.667, 0.573, 1)
-roughness = 1.0
-
-[sub_resource type="PlaneMesh" id="ground_mesh_with_material"]
-size = Vector2(160, 160)
-material = SubResource("ground_material")
-
-[sub_resource type="WorldBoundaryShape3D" id="floor_shape"]
-
 [sub_resource type="LabelSettings" id="caption_settings"]
 font_size = 44
 outline_size = 10
@@ -64,13 +57,14 @@ rotation = Vector3(-0.35, 3.4, 0)
 light_color = Color(0.749, 0.902, 1, 1)
 light_energy = 0.5
 
-[node name="Ground" type="MeshInstance3D" parent="."]
-mesh = SubResource("ground_mesh_with_material")
+[node name="BlastGround" type="Node3D" parent="." groups=["blast_ground"]]
+script = ExtResource("90_blast_ground")
+size = 120.0
+vertices_per_meter = 2
 
-[node name="Floor" type="StaticBody3D" parent="."]
-
-[node name="Shape" type="CollisionShape3D" parent="Floor"]
-shape = SubResource("floor_shape")
+[node name="FireGrid" type="Node" parent="." node_paths=PackedStringArray("ground") groups=["fire_grid"]]
+script = ExtResource("91_fire_grid")
+ground = NodePath("../BlastGround")
 
 [node name="RuinsField" parent="." instance=ExtResource("3_field")]
 
@@ -107,6 +101,15 @@ fov = 50.0
 
 [node name="WallCam" type="Camera3D" parent="."]
 fov = 50.0
+
+[node name="GateSpellCam" type="Camera3D" parent="."]
+fov = 55.0
+
+[node name="TempleSpellCam" type="Camera3D" parent="."]
+fov = 55.0
+
+[node name="CottageSpellCam" type="Camera3D" parent="."]
+fov = 55.0
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4.15)
